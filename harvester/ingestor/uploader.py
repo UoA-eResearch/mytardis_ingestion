@@ -15,13 +15,13 @@ import sys
 from urllib.parse import urljoin, urlparse
 import backoff
 from requests.auth import AuthBase
-from helper import readJSON
+from helper import helper as hlp
 import datetime
 import os
 import hashlib
 import mimetypes
 import subprocess
-import six
+#import six
 
 DEBUG = True
 logger = logging.getLogger(__name__)
@@ -32,21 +32,6 @@ else:
 PROXY = True
 proxies = {"http": 'http://squid.auckland.ac.nz:3128',
            'https': 'https://squid.auckland.ac.nz:3128'}
-    
-def readJSON(json_file):
-    try:
-        with open(json_file) as in_file:
-            json_dict = json.load(in_file)
-    except FileNotFoundError as fnferr:
-        logger.exception(fnferr)
-        return False
-    except Exception as err:
-        logger.error(f'JSON file, {json_file}, unable to be read into dictionary')
-        logger.exception(err)
-        return False
-    else:
-        logger.info(f'JSON file, {json_file}, sucessfully loaded')
-        return json_dict
 
 class TastyPieAuth(AuthBase):
     """
@@ -57,16 +42,13 @@ class TastyPieAuth(AuthBase):
     will act as the primary source for uploading to myTardis, authentication
     via a username and api key is used.
     """
-
     def __init__(self, username, api_key):
         self.username = username
         self.api_key = api_key
-
     def __call__(self, r):
         r.headers['Authorization'] = 'ApiKey %s:%s' % (self.username,
                                                        self.api_key)
         return r
-
 
 class MyTardisUploader:
     user_agent_name = __name__
@@ -108,12 +90,8 @@ class MyTardisUploader:
                          'username',
                          'api_key',
                          'root_dir']
-        check = self.__check_dictionary(config_dict,required_keys)
-        #if 'root_dir' in config_dict.keys():
-        #    log_file = logging.FileHandler(os.path.join(config_dict['root_dir'],'mytardis_upload.log'))
-        #else:
-        log_file = logging.FileHandler('mytardis_upload.log')
-        logger.addHandler(log_file)
+        check = hlp.check_dictionary(config_dict,
+                                     required_keys)
         if not check[0]:
             logger.critical(f'Config dictionary is incomplete. Missing keys: {", ".join(check[1])}')
             sys.exit()
@@ -132,36 +110,11 @@ class MyTardisUploader:
                 self.store_dir = config_dict['store_dir']
             else:
                 self.store_dir = None
-                # Not sure that we want to force this but lets see if it breaks
+            # Not sure that we want to force this but lets see if it breaks
             self.verify_certificate = True
 
     # Public Functions
     # =================================
-
-    @staticmethod
-    def dict_to_json(dictionary):
-        """
-        Serialize a dictionary to JSON, correctly handling datetime.datetime
-        objects (to ISO 8601 dates, as strings).
-        
-        Input:
-        =================================
-        dictionary: Dictionary to serialise
-        
-        Returns:
-        =================================
-        JSON string
-        """
-        if not isinstance(dictionary, dict):
-            raise TypeError("Must be a dictionary")
-        
-        def date_handler(obj): return (
-            obj.isoformat(' ')
-            if isinstance(obj, datetime.date)
-            or isinstance(obj, datetime.datetime)
-            else None
-        )
-        return json.dumps(dictionary, default=date_handler)
 
     def do_post_request(self, action, data, extra_headers=None):
         '''Wrapper around self.__do_rest_api_request to handle POST requests
@@ -175,8 +128,6 @@ class MyTardisUploader:
         Returns:
         =================================
         A Python requests module response object'''
-        print(action)
-        print(data)
         return self.__do_rest_api_request('POST',
                                           action,
                                           data=data,
@@ -194,8 +145,6 @@ class MyTardisUploader:
         Returns:
         =================================
         A Python requests module response object'''
-        print(action)
-        print(params)
         return self.__do_rest_api_request('GET',
                                           action,
                                           params=params,
@@ -237,8 +186,8 @@ class MyTardisUploader:
         required_keys = ['title',
                          'internal_id',
                          'schema_namespace']
-        check = self.__check_dictionary(expt_dict,
-                                        required_keys)
+        check = hlp.check_dictionary(expt_dict,
+                                     required_keys)
         if not check[0]:
             logger.error(f'The experiment dictionary is incomplete. Missing keys: {", ".join(check[1])}')
             return (False, {})
@@ -283,13 +232,10 @@ class MyTardisUploader:
         elif uri:
             return (False, uri)
         else:
-            expt_json = self.dict_to_json(mytardis)
+            expt_json = hlp.dict_to_json(mytardis)
             try:
                 response = self.do_post_request('experiment', expt_json)
                 response.raise_for_status()
-            except HTTPError as http_err:
-                logger.error(f'HTTP error occurred when creating experiment {mytardis["title"]}. Error: {http_err}')
-                return (False, {})
             except Exception as err:
                 logger.error(f'Error occurred when creating experiment {mytardis["title"]}. Error: {err}')
                 return (False, {})
@@ -302,14 +248,11 @@ class MyTardisUploader:
             parameter_set = {'experiment': uri,
                              'schema': schema_uri,
                              'parameters': parameter_list}
-            parameter_set_json = self.dict_to_json(parameter_set)
+            parameter_set_json = hlp.dict_to_json(parameter_set)
             try:
                 response = self.do_post_request('experimentparameterset',
                                                 parameter_set_json)
                 response.raise_for_status()
-            except HTTPError as http_err:
-                logger.error(f'HTTP error occurred when attaching metadata to experiment {mytardis["internal_id"]}. Error: {http_err}')
-                return (True, uri)
             except Exception as err:
                 logger.error(f'Error occurred when attaching metadata to experiment {mytardis["internal_id"]}. Error: {err}')
                 return (True, uri)
@@ -323,9 +266,7 @@ class MyTardisUploader:
                         try:
                             response = self.share_experiment_with_group(uri,
                                                                         group_uri)
-                        except HTTPError as http_err:
-                            logger.error(f'HTTP error occurred when attaching group {group} to experiment {mytardis["internal_id"]}. Error: {http_err}')
-                            return (True, uri)
+                            response.raise_for_status()
                         except Exception as err:
                             logger.error(f'Error occurred when attaching group {group} to experiment {mytardis["internal_id"]}. Error: {err}')
                             return (True, uri)
@@ -341,17 +282,13 @@ class MyTardisUploader:
                         try:
                             response = self.share_experiment_with_user(uri,
                                                                        user_uri)
-                            logger.debug(f'{response.text}')
-                        except HTTPError as http_err:
-                            logger.error(f'HTTP error occurred when attaching user {user} to experiment {mytardis["internal_id"]}. Error: {http_err}')
-                            return (True, uri)
+                            response.raise_for_status()
                         except Exception as err:
                             logger.error(f'Error occurred when attaching user {user} to experiment {mytardis["internal_id"]}. Error: {err}')
                             return (True, uri)
                     else:
-                        logger.warning(f'Unable to find group {group} in the database, so not adding group {group} to experiment {mytardis["internal_id"]}')
+                        logger.warning(f'Unable to find user {user} in the database, so not adding user {user} to experiment {mytardis["internal_id"]}')
             os.chdir(self.cwd)
-            logger.debug(f'created experiment')
             return (True, uri)
 
     def share_experiment_with_group(self, experiment_uri, group_uri,
@@ -427,8 +364,8 @@ class MyTardisUploader:
                          'schema_namespace',
                          'description',
                          'dataset_id']
-        check = self.__check_dictionary(dataset_dict,
-                                        required_keys)
+        check = hlp.check_dictionary(dataset_dict,
+                                     required_keys)
         if not check[0]:
             logger.error(f'The dataset dictionary is incomplete. Missing keys: {", ".join(check[1])}')
             return (False, {})
@@ -441,7 +378,7 @@ class MyTardisUploader:
                         logger.critcal(f'Experiment ID {dataset_dict["internal_id"]} is not unique in the database.')
                         return (False, {})
                     elif not uri:
-                        logger.warning(f'Experiment ID {dataset_dict["internal_id"]} not found in the database, skipping.')
+                        logger.error(f'Experiment ID {dataset_dict["internal_id"]} not found in the database, skipping.')
                         return (False, {})
                     else:
                         mytardis['experiments'] = [uri]
@@ -449,7 +386,7 @@ class MyTardisUploader:
                     schema = dataset_dict.pop(key)
                     schema_uri = self.__get_schema_by_name(schema)
                     if schema_uri == -1:
-                        logger.error(f'Unable to uniquley identify schema {schema}. Please check database')
+                        logger.error(f'Unable to uniquely identify schema {schema}. Please check database')
                         return (False, {})
                     elif not schema:
                         logger.error(f'Schema {schema} not present in the database.')
@@ -461,9 +398,14 @@ class MyTardisUploader:
             for key in optional.keys():
                 if key in dataset_dict.keys():
                     if key == 'instrument':
-                        response = self.__get_instrument_by_name(dataset_dict.pop(key))
-                        if response:
-                            mytardis[key] = response
+                        if 'facility' in dataset_dict.keys():
+                            facility = dataset_dict.pop('facility')
+                        else:
+                            facility = None
+                        instrument = self.__get_instrument_by_name(dataset_dict.pop(key),
+                                                                   facility)
+                        if instrument:
+                            mytardis[key] = instrument
                     else:
                         mytardis[key] = dataset_dict.pop(key)
                 else:
@@ -471,18 +413,20 @@ class MyTardisUploader:
             params = {}
             for key in dataset_dict.keys():
                 params[key] = dataset_dict[key]
-            data_json = self.dict_to_json(mytardis)
-            print(data_json)
-            try:
-                response = self.do_post_request('dataset', data_json)
-                print(response.text)
-                response.raise_for_status()
-            except HTTPError as http_err:
-                logger.error(f'HTTP error occurred when creating dataset {mytardis["description"]}. Error: {http_err}')
+            data_json = hlp.dict_to_json(mytardis)
+            uri = self.__get_dataset_uri(mytardis['dataset_id'])
+            if uri == -1:
+                logger.error(f'Unable to create dataset due to clash of unique ID.')
                 return (False, {})
-            except Exception as err:
-                logger.error(f'Error occurred when creating dataset {mytardis["description"]}. Error: {err}')
-                return (False, {})
+            elif uri:
+                return (False, uri)
+            else:
+                try:
+                    response = self.do_post_request('dataset', data_json)
+                    response.raise_for_status()
+                except Exception as err:
+                    logger.error(f'Error occurred when creating dataset {mytardis["description"]}. Error: {err}')
+                    return (False, {})
             response_dict = json.loads(response.text)
             dataset_id = response_dict['resource_uri']
             parameter_list = []
@@ -492,7 +436,7 @@ class MyTardisUploader:
             parameter_set = {'dataset': dataset_id,
                              'schema': schema_uri,
                              'parameters': parameter_list}
-            parameter_set_json = self.dict_to_json(parameter_set)
+            parameter_set_json = hlp.dict_to_json(parameter_set)
             response = self.do_post_request('datasetparameterset',
                                             parameter_set_json)
         os.chdir(self.cwd)
@@ -536,8 +480,8 @@ class MyTardisUploader:
                          'dataset_id',
                          'in_store',
                          'file_name']
-        check = self.__check_dictionary(datafile_dict,
-                                        required_keys)
+        check = hlp.check_dictionary(datafile_dict,
+                                     required_keys)
         if not check[0]:
             logger.error(f'The datafile dictionary is incomplete. Missing keys: {", ".join(check[1])}')
             return (False, {})
@@ -549,8 +493,8 @@ class MyTardisUploader:
                              'rel_path']
         else:
             required_keys = ['rel_path']
-        check = self.__check_dictionary(datafile_dict,
-                                        required_keys)
+        check = hlp.check_dictionary(datafile_dict,
+                                     required_keys)
         if not check[0]:
             logger.error(f'The datafile dictionary is incomplete. Missing keys: {", ".join(check[1])}')
             return (False, {})
@@ -602,11 +546,11 @@ class MyTardisUploader:
             except AttributeError:
                 pass
             if in_store:
-                print('Pushing by location')
+                logger.debug(f'Pushing {file_name} to myTardis by location')
                 uri = self.__add_datafile_by_location(file_name, rel_path, s3_path, dataset_uri, bucket, parameter_sets, md5_checksum)
                 return uri
             else:
-                print('Pushing through MyTardis')
+                logger.debug(f'Pushing {file_name} through MyTardis')
                 uri = self.__push_datafile(file_name,
                                            file_path,
                                            dataset_uri,
@@ -624,30 +568,6 @@ class MyTardisUploader:
         return {'Accept': 'application/json',
                 'Content-Type': 'application/json',
                 'User-Agent': self.user_agent}
-
-    def __check_dictionary(self,
-                           dictionary,
-                           required_keys):
-        '''Carry out basic sanity tests on the configuration read in from the JSON
-
-        Inputs:
-        =================================
-        dictionary: The dictionary to check
-        required_keys: A list of required keys for the dictionary
-
-        Returns:
-        =================================
-        True and an empty list if all the keys are found
-        False and a list of missing keys if some are missing
-        '''
-        lost_keys = []
-        for key in required_keys:
-            if key not in dictionary.keys():
-                lost_keys.append(key)
-        if lost_keys == []:
-            return (True, [])
-        else:
-            return (False, lost_keys)
 
     def __get_experiment_uri(self, internal_id):
         '''Uses REST API GET with an internal_id filter
@@ -690,7 +610,7 @@ class MyTardisUploader:
                               params=None,
                               extra_headers=None,
                               api_url_template=None,
-                              proxies=proxies):
+                              proxies=None):
         '''Function to handle the REST API calls
         
         Inputs:
@@ -714,14 +634,23 @@ class MyTardisUploader:
             headers = {**headers, **extra_headers}
         logger.debug(url)
         try:
-            response = requests.request(method,
-                                        url,
-                                        data=data,
-                                        params=params,
-                                        headers=headers,
-                                        auth=self.auth,
-                                        verify=self.verify_certificate,
-                                        proxies=proxies)
+            if proxies:
+                response = requests.request(method,
+                                            url,
+                                            data=data,
+                                            params=params,
+                                            headers=headers,
+                                            auth=self.auth,
+                                            verify=self.verify_certificate,
+                                            proxies=proxies)
+            else:
+                response = requests.request(method,
+                                            url,
+                                            data=data,
+                                            params=params,
+                                            headers=headers,
+                                            auth=self.auth,
+                                            verify=self.verify_certificate)
             # 502 Bad Gateway triggers retries, since the proxy web
             # server (eg Nginx or Apache) in front of MyTardis could be
             # temporarily restarting
@@ -730,6 +659,9 @@ class MyTardisUploader:
         except requests.exceptions.RequestException as e:
             logger.error("Request failed : %s : %s", e.message, url)
             raise e
+        except Exception as err:
+            logger.error(f'Error, {err.message}, occurred when attempting to call api request {url}')
+            raise err
         return response
 
     def __get_group_by_name(self, group):
@@ -810,8 +742,10 @@ class MyTardisUploader:
         query_params = {u'name': name}
         if facility is not None:
             query_params['facility__name'] = facility
-        response = self.do_get_request("instrument",
+        try:
+            response = self.do_get_request("instrument",
                                        params=query_params)
+        
         instrument_dict = json.loads(response.text)
         if instrument_dict['objects'] == []:
             logger.warning(
@@ -840,7 +774,6 @@ class MyTardisUploader:
         URI if one schema with the search namespace.
         '''
         query_params = {"namespace": name}
-        print(query_params)
         schema_uris_filtered_by_name = self.do_get_request('schema',
                                                           params=query_params)
         schema_dict = json.loads(schema_uris_filtered_by_name.text)
@@ -935,24 +868,17 @@ class MyTardisUploader:
                 u'protocol': "file"}]
         }
         print(f'Building with {file_dict}')
-        data = self.dict_to_json(file_dict)
+        data = hlp.dict_to_json(file_dict)
         print(data)
         headers = self.__json_request_headers()
         try:
             response = self.do_post_request('dataset_file',
                                             data,
                                             extra_headers=headers)
-            #print(f'Datafile response: {response.meta} {response.text} {response.body}')
             response.raise_for_status()
-            
-        except HTTPError as http_err:
-            logger.error(f'HTTP error occurred when creating datafile {filename}. Error: {http_err}')
-            return False
         except Exception as err:
             logger.error(f'Error occurred when creating datafile {filename}. Error: {err}')
             return False
-        #response_dict = json.loads(response.text)
-        #return response_dict['resource_uri']
         return True
         
     def __push_datafile(self,
@@ -994,7 +920,7 @@ class MyTardisUploader:
             u'parameter_sets': parameter_sets_list
         }
         from requests_toolbelt import MultipartEncoder
-        data = self.dict_to_json(file_dict)
+        data = hlp.dict_to_json(file_dict)
         with open(filename, 'rb') as f:
             form = MultipartEncoder(fields={'json_data': data,
                                             'attached_file': ('text/plain', f)})
@@ -1005,9 +931,6 @@ class MyTardisUploader:
                                             form,
                                             extra_headers=headers)
                 response.raise_for_status()
-            except HTTPError as http_err:
-                logger.error(f'HTTP error occurred when creating datafile {filename}. Error: {http_err}')
-                return False
             except Exception as err:
                 logger.error(f'Error occurred when creating datafile {filename}. Error: {err}')
                 return False
@@ -1108,6 +1031,7 @@ class MyTardisUploader:
         :return: A requests Response object
         :rtype: Response
         """
+        import six
         if isinstance(content_object, six.string_types):
             object_id = self.__resource_uri_to_id(content_object)
         elif isinstance(content_object, int):
@@ -1135,7 +1059,7 @@ class MyTardisUploader:
             u'effectiveDate': None,
             u'expiryDate': None
         }
-        response = self.do_post_request('objectacl', self.dict_to_json(data))
+        response = self.do_post_request('objectacl', hlp.dict_to_json(data))
         return response
     
     def __raise_request_exception(self, response):
