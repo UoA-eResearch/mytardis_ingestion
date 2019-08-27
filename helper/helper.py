@@ -69,3 +69,51 @@ def lowercase(obj):
         return obj.lower()
     else:
         return obj
+
+def check_dictionary(self,
+                     dictionary,
+                     required_keys):
+    '''Carry out basic sanity tests on a dictionary
+
+    Inputs:
+    =================================
+    dictionary: The dictionary to check
+    required_keys: A list of required keys for the dictionary
+
+    Returns:
+    =================================
+    True and an empty list if all the keys are found
+    False and a list of missing keys if some are missing
+    '''
+    lost_keys = []
+    for key in required_keys:
+        if key not in dictionary.keys():
+            lost_keys.append(key)
+    if lost_keys == []:
+        return (True, [])
+    else:
+        return (False, lost_keys)
+
+def dict_to_json(dictionary):
+    """
+    Serialize a dictionary to JSON, correctly handling datetime.datetime
+    objects (to ISO 8601 dates, as strings).
+    
+    Input:
+    =================================
+    dictionary: Dictionary to serialise
+        
+    Returns:
+    =================================
+    JSON string
+    """
+    if not isinstance(dictionary, dict):
+        raise TypeError("Must be a dictionary")
+        
+    def date_handler(obj): return (
+        obj.isoformat(' ')
+        if isinstance(obj, datetime.date)
+        or isinstance(obj, datetime.datetime)
+        else None
+    )
+    return json.dumps(dictionary, default=date_handler)

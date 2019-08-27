@@ -20,7 +20,7 @@ KB = 1024
 MB = KB ** 2
 GB = KB ** 3
 
-DEBUG = True
+DEBUG = False
 logger = logging.getLogger(__name__)
 if DEBUG:
     logger.setLevel(logging.DEBUG)
@@ -116,7 +116,6 @@ class S3Uploader():
             if s3_header:
                 etag = self.__checkETag(file_path,
                                       test_etag = s3_header['ETag'])
-                print(etag)
             else:
                 raise FileNotFoundError(f'Upload of {file_path} to {s3_location_path} did not complete successfully')
         except FileNotFoundError:
@@ -153,7 +152,6 @@ class S3Uploader():
         response = self.s3_client.list_objects_v2(Bucket=bucket,
                                                   Prefix=s3_location_path)
         for obj in response.get('Contents', []):
-            print(obj['Key'])
             if obj['Key'] == s3_location_path:
                 return obj
         logger.warning(f'File {s3_location_path} was not found in the object store')
@@ -232,13 +230,9 @@ class S3Uploader():
             bucket = file_dict['bucket']
         s3_location_path = os.path.join(file_dict['s3_path'],file_dict['file_name'])
         file_path = os.path.join(self.file_root_directory, file_dict['rel_path'], file_dict['file_name'])
-
-        print(file_dict['rel_path'], file_dict['file_name'])
-        print(file_path)
         response = self.__multipart_upload(file_path,
                                            s3_location_path,
                                            bucket)
-        print(response)
         if not response:
             logger.error(f'File {file_path} was not successfully uploaded into s3 object store. Please check this log for further details.')
             # TODO: add email warning to logger
@@ -266,13 +260,9 @@ class S3Uploader():
                 bucket = file_dict['bucket']
             s3_location_path = os.path.join(file_dict['s3_path'],file_dict['file_name'])
             file_path = os.path.join(self.file_root_directory, file_dict['rel_path'], file_dict['file_name'])
-
-            print(file_dict['rel_path'], file_dict['file_name'])
-            print(file_path)
             response = self.__multipart_upload(file_path,
                                                s3_location_path,
                                                bucket)
-            print(response)
             if response:
                 uploads.append(file_path)
         return uploads
