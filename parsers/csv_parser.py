@@ -121,7 +121,6 @@ class CSVParser():
         past_indices = []
         for ind in range(len(self.datasets)):
             dataset = self.datasets[ind]
-            print(dataset)
             if past_dataset:
                 if dataset[0] == past_dataset[0] and dataset[1] == past_dataset[1]:
                     indices.append(ind)
@@ -143,7 +142,6 @@ class CSVParser():
                     # Assume values are strings - need to think about how to handle other data types
                     if old_value != new_value:
                         value = f'{new_value}, {old_value}'
-                        print(value)
                     new[key] = value
                 else:
                     value = old[key]

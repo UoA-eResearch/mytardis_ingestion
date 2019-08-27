@@ -24,7 +24,7 @@ import subprocess
 #import six
 
 DEBUG = True
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('mytardis')
 if DEBUG:
     logger.setLevel(logging.DEBUG)
 else:
@@ -536,9 +536,7 @@ class MyTardisUploader:
                                        u'value': params[pkey]})
             parameter_set = {'schema': schema_uri,
                              'parameters': parameter_list}
-            print(parameter_set)
             parameter_sets = [parameter_set]
-            print(parameter_sets)
             filename = os.path.join(rel_path, file_name)
             md5_checksum = self.__md5_file_calc(filename)
             try:
@@ -585,7 +583,6 @@ class MyTardisUploader:
         URI of the experiment if a single instance of the id is found in the database
         '''
         query_params = {u'internal_id': internal_id}
-        print(query_params)
         response = self.do_get_request('experiment',
                                        params=query_params)
         resp_dict = json.loads(response.text)
@@ -745,7 +742,10 @@ class MyTardisUploader:
         try:
             response = self.do_get_request("instrument",
                                        params=query_params)
-        
+            response.raise_for_status()
+        except Exception as err:
+            logger.error(f'Error occurred when creating dataset {mytardis["description"]}. Error: {err}')
+            return False        
         instrument_dict = json.loads(response.text)
         if instrument_dict['objects'] == []:
             logger.warning(
@@ -867,9 +867,7 @@ class MyTardisUploader:
                 u'location': 'tardis', #storage_box - taken from mytardis admin,
                 u'protocol': "file"}]
         }
-        print(f'Building with {file_dict}')
         data = hlp.dict_to_json(file_dict)
-        print(data)
         headers = self.__json_request_headers()
         try:
             response = self.do_post_request('dataset_file',
@@ -1044,7 +1042,6 @@ class MyTardisUploader:
             entity_id = enitity_object
         else:
             raise TypeError("'entity_object' must be a URL string or int ID")
-        print(entity_id)
         acl_ownership_type = self.__get_ownership_int(acl_ownership_type)
         data = {
             u'pluginId': plugin_id,

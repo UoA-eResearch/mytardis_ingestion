@@ -70,8 +70,7 @@ def lowercase(obj):
     else:
         return obj
 
-def check_dictionary(self,
-                     dictionary,
+def check_dictionary(dictionary,
                      required_keys):
     '''Carry out basic sanity tests on a dictionary
 
@@ -107,6 +106,8 @@ def dict_to_json(dictionary):
     =================================
     JSON string
     """
+    import json
+    import datetime
     if not isinstance(dictionary, dict):
         raise TypeError("Must be a dictionary")
         
