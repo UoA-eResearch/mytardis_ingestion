@@ -404,17 +404,204 @@ class MyTardisUploader:
                                                 parameter_set_json)
                 response.raise_for_status()
             except Exception as err:
-                logger.error(f'Error occurred when attaching metadata to experiment {mytardis["internal_id"]}. Error: {err}')
-                return (True, uri)
+                logger.error(f'Error occurred when attaching metadata to experiment {mytardis["title"]}. Error: {err}')
             if groups:
                 for group in groups:
                     try:
                         group_uri = self.__get_group_uri(group)
                     except Exception as err:
-                        logger.error(f'Error: {err} occured when allocating group {group} access to experiment')
-                        return (True, uri)
-                        
-            
+                        logger.error(f'Error: {err} occured when searching for group {group}')
+                    else:
+                        try:
+                            response = self.share_experiment_with_group(uri,
+                                                                        group_uri)
+                            response.raise_for_status()
+                        except Exception as err:
+                            logger.error(f'Error: {err} occured when allocating group {group} access to experiment: {mytardis["title"]}')
+            if users:
+                for user in users:
+                    try:
+                        user_uri = self.__get_user_uri(user)
+                    except Exception as err:
+                        logger.error(f'Error: {err} occured when searching for group {group}')
+                    else:
+                        try:
+                            response = self.share_experiment_with_user(uri,
+                                                                       user_uri)
+                            response.raise_for_status()
+                        except Exception as err:
+                            logger.error(f'Error: {err} occured when allocating user {user} access to experiment: {mytardis["title"]}')
+            os.chdir(self.cwd)
+            return (True, uri)
+
+    def __share_experiment(self,
+                          content_object,
+                          plugin_id,
+                          entity_object,
+                          content_type=u'experiment',
+                          acl_ownership_type=u'Owner-owned'):
+        """
+        Executes an HTTP request to share an MyTardis object with a user or
+        group, via updating the ObjectACL.
+        #
+        :param content_object: The integer ID or URL path to the Experiment,
+                               Dataset or DataFile to update.
+        :param plugin_id: django_user or django_group
+        :param content_type: Django ContentType for the target object, usually
+                             'experiment', 'dataset' or 'datafile'
+        :type content_object: union(str, int)
+        :type plugin_id: str
+        :type content_type: basestring
+        :return: A requests Response object
+        :rtype: Response
+        """
+        import six
+        if isinstance(content_object, six.string_types):
+            object_id = self.__resource_uri_to_id(content_object)
+        elif isinstance(content_object, int):
+            object_id = content_object
+        else:
+            raise TypeError("'content_object' must be a URL string or int ID")
+        if isinstance(entity_object, six.string_types):
+            entity_id = self.__resource_uri_to_id(entity_object)
+        elif isinstance(entity_object, int):
+            entity_id = enitity_object
+        else:
+            raise TypeError("'entity_object' must be a URL string or int ID")
+        acl_ownership_type = self.__get_ownership_int(acl_ownership_type)
+        data = {
+            u'pluginId': plugin_id,
+            u'entityId': str(entity_id),
+            u'content_type': str(content_type),
+            u'object_id': str(object_id),
+            u'aclOwnershipType': acl_ownership_type,
+            u'isOwner': True,
+            u'canRead': True,
+            u'canWrite': True,
+            u'canDelete': False,
+            u'effectiveDate': None,
+            u'expiryDate': None
+        }
+        response = self.do_post_request('objectacl', hlp.dict_to_json(data))
+        return response
+
+    def __resource_uri_to_id(self, uri):
+        """
+        Takes resource URI like: http://example.org/api/v1/experiment/998
+        and returns just the id value (998).
+        #
+        :type uri: str
+        :rtype: int"""
+        resource_id = int(urlparse(uri).path.rstrip(
+            os.sep).split(os.sep).pop())
+        return resource_id
+
+    def share_experiment_with_group(self, experiment_uri, group_uri,
+                                    *args, **kwargs):
+        """
+        Executes an HTTP request to share an experiment with a group,
+        via updating the ObjectACL.
+
+        Inputs:
+        =================================
+        experiment_uri: The integer ID or URL path to the Experiment.
+        group_uri: The integer ID or URL of the group we with share with.
+        
+        Returns:
+        =================================
+        A requests Response object
+        """
+        return self.__share_experiment(experiment_uri,
+                                      'django_group',
+                                      group_uri,
+                                      *args,
+                                      **kwargs)
+
+    def share_experiment_with_user(self, experiment, user_uri, *args, **kwargs):
+        """
+        Executes an HTTP request to share an experiment with a user,
+        via updating the ObjectACL.
+
+        Inputs:
+        =================================
+        experiment_uri: The integer ID or URL path to the Experiment
+        user_uri: The integer ID or URL of the User to share with.
+        
+        Returns:
+        =================================
+        A requests Response object
+        """
+        return self.__share_experiment(experiment,
+                                      'django_user',
+                                      user_uri,
+                                      *args,
+                                      **kwargs)
+
+    def __get_group_uri(self, group):
+        '''Use the user api in myTardis to search on groups
+
+        Inputs:
+        =================================
+        group: The group name
+
+        Returns:
+        =================================
+        False if group is not in the database
+        -1 if more than one group with the same name exists. 
+        URI to the goup id if exactly one group with the name is found.
+        '''
+        query_params = {u'name': group}
+        try:
+            response = self.do_get_request('group',
+                                           params=query_params)
+        except Exception as err:
+            raise err
+        else:
+            resp_dict = json.loads(response.text)
+            if resp_dict['objects'] == []:
+                logger.warning(f'Group: {group} has not been added to the database.')
+                return False
+            elif len(resp_dict['objects']) > 1:
+                logger.error(f'Multiple instances of Group: {group} found in database. Please verify and clean up.')
+                raise Exception(f'Multiple instances of Group: {group} found in database. Please verify and clean up.')
+            else:
+                obj = resp_dict['objects'][0]
+                logger.debug(obj)
+                return obj['resource_uri']
+
+    def __get_user_uri(self, username):
+        '''Use the user api in myTardis to search on the username (should be UoA UPI).
+        
+        Inputs:
+        =================================
+        username: The user name to look up. Should be a UoA UPI
+
+        Returns:
+        =================================
+        False if user name is not in the database: ToDo: If this is the case look up the UoA LDAP
+            and add a user if they exist within the university.
+        -1 if more than one user with the same name exists.
+        URI to the user if exactly one group with the name is found.
+        '''
+        query_params = {'username': username}
+        try:
+            response = self.do_get_request('user',
+                                           params=query_params)
+        except Exception as err:
+            raise err
+        else:
+            resp_dict = json.loads(response.text)
+            if resp_dict['objects'] == []:
+                logger.warning(f'UPI: {username} has not been added to the user database and the user cannot add or make changes.')
+                return False
+            elif len(resp_dict['objects']) > 1:
+                logger.error(f'Multiple instances of UPI: {upi} found in user database. Please verify and clean up.')
+                raise Exception(f'Multiple instances of UPI: {upi} found in user database. Please verify and clean up.')
+            else:
+                obj = resp_dict['objects'][0]
+                logger.debug(obj)
+                return obj['resource_uri']
+    
 class TastyPieAuth(AuthBase):
     """
     Attaches HTTP headers for Tastypie API key Authentication to the given

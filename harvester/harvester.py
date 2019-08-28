@@ -7,6 +7,7 @@ from ingestor import MyTardisUploader
 from helper import readJSON
 import logging
 import os
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +41,13 @@ class Harvester(ABC):
 
     def mytardis(self,
                  config_dict):
-        return MyTardisUploader(config_dict)
-
+        try:
+            ingestor = MyTardisUploader(config_dict)
+        except Exception as err:
+            logger.critical('Shutting down harvester')
+            sys.exit()
+        return ingestor
+            
     @abstractmethod
     def fileuploader(self,
                      config_dict):
@@ -70,3 +76,15 @@ class Harvester(ABC):
             for dataset in dataset_list:
                 datasets.append(self.mytardis.create_dataset(dataset))
         return datasets
+
+    def __create_datafiles(self,
+                           datafile_dicts):
+        datafiles = []
+        for datafile_list in datafile_dicts:
+            for datafile in datafile_list:
+                datafiles.append(self.mytardis.create_datafile(datafile))
+        return datafiles
+
+    def __upload_file(self,
+                      file_dict):
+        return self.fileuploader.upload_file(file_dict)
