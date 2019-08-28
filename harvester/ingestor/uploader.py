@@ -15,7 +15,7 @@ import sys
 from urllib.parse import urljoin, urlparse
 import backoff
 from requests.auth import AuthBase
-from helper import helper as hlp
+from ..helper import helper as hlp
 import datetime
 import os
 import hashlib
@@ -84,8 +84,8 @@ class MyTardisUploader:
         self.cwd: The current working directory (where the script is being run from typically)
         self.auth: TastyPie authorisation for the username/API combination
         self.user_agent: User agent for the REST API calls
-        self.verify_certificate: Flag telling MyTardis to verify the security certificate'''
-
+        self.verify_certificate: Flag telling MyTardis to verify the security certificate
+        '''
         required_keys = ['server',
                          'username',
                          'api_key',
@@ -172,6 +172,7 @@ class MyTardisUploader:
         description / Defaults to No description
         users / list of MyTardis users who should have access to the experiment, defaults to None
         groups / list of MyTardis groups who should have access to the experiment, defaults to None
+        proxies / http and https proxies if needed to pass through the firewall
         
         Returns:
         =================================
@@ -200,7 +201,7 @@ class MyTardisUploader:
                     schema = expt_dict.pop(key)
                     schema_uri = self.__get_schema_by_name(schema)
                     if schema_uri == -1:
-                        logger.error(f'Unable to uniquley identify schema {schema}. Please check database')
+                        logger.error(f'Unable to uniquely identify schema {schema}. Please check database')
                         return (False, {})
                     elif not schema:
                         logger.error(f'Schema {schema} not present in the database.')
