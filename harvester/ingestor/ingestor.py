@@ -484,7 +484,8 @@ class MyTardisUploader:
             u'effectiveDate': None,
             u'expiryDate': None
         }
-        response = self.do_post_request('objectacl', hlp.dict_to_json(data))
+        response = self.do_post_request('objectacl',
+                                        dict_to_json(data))
         return response
 
     def __get_ownership_int(self, ownership_type):
@@ -765,7 +766,7 @@ class MyTardisUploader:
         try:
             dataset_uri = self.__get_dataset_uri(dataset_dict['dataset_id'])
         except Exception as err:
-            logger.error(f'Encountered error: {err}, when looking for dataset: {dataset_dict["description"]')
+            logger.error(f'Encountered error: {err}, when looking for dataset: {dataset_dict["description"]}')
             return (False, None)
         if dataset_uri:
             return (False, dataset_uri)
@@ -847,56 +848,31 @@ class MyTardisUploader:
             raise
         else:
             if not uri:
-                logger.error(f'Dataset ID {datafile_dict["dataset_id"]} not found in the database, skipping.')
+                logger.warning(f'Dataset ID {datafile_dict["dataset_id"]} not found in the database, skipping.')
                 raise Exception(f'Dataset ID {datafile_dict["dataset_id"]} not found in the database, skipping.')
             else:
                 mytardis['dataset'] = uri
-        mytardis['filename'] = datafile_dict.pop('file_name')
+        filename = datafile_dict.pop('filename')
+        mytardis['filename'] = filename
         remote_path = datafile_dict.pop('remote_path')
         mytardis['directory'] = remote_path
-        
-        
-        for key in datafile_dict.keys():
-            if key == 'schema_namespace': # This is a special case where the URI is needed
-                
-            elif key == 'dataset_id':
-                
-                    else:
-                        file_dict['dataset'] = uri
+        for key in datafile_dict:
+            if key in required_keys:
+                mytardis[key] = datafile_dict[key]
             else:
-                    params[key] = dataset_dict.pop(key)
-        if 'instrument' in params[key]:
-            instrument = params.pop('instrument')
-            if 'facility' in params[key]:
-                facility = params.pop('facility')
-            else:
-                facility = None
-            instrument_uri = self.__get_instrument_uri(instrument,
-                                                       facility)
-            if instrument_uri:
-                mytardis['instrument'] = instrument_uri   
+                params[key] = datafile_dict[key]            
+        store_loc = {'uri': os.path.join(remote_path, filename),
+                     'location': self.storage_box,
+                     'protocol': 'file'}
+        mytardis['replicas'] = [store_loc]
         parameter_list = []
         for key in params.keys():
             parameter_list.append({u'name': key,
                                    u'value': params[key]})
         paramset['parameters'] = parameter_list
-        return (mytardis, paramset)
-
-
-            u'filename': file_name,
-            u'directory': s3_path,
-            u'mimetype': mimetypes.guess_type(filename)[0],
-            u'size': file_size,
-            u'parameter_sets': parameter_sets_list,
-            u'md5sum': md5_checksum,
-            u'verified': True,
-            u'replicas': [{
-                u'uri': os.path.join(s3_path,file_name),
-                u'location': 'tardis', #storage_box - taken from mytardis admin,
-                u'protocol': "file"}]
-
-                            
-                            
+        mytardis['parameter_sets'] = paramset   
+        return mytardis
+    
     def create_datafile(self, datafile_dict):
         '''Read in a datafile dictionary. If the file has already been pushed to
         s3 or Ceph storage, create a datafile object pointing to the stored data. If not
@@ -926,7 +902,7 @@ class MyTardisUploader:
         os.chdir(self.root_dir)
         required_keys = ['schema_namespace',
                          'dataset_id',
-                         'file_name',
+                         'filename',
                          'remote_path',
                          'mimetype',
                          'size',
@@ -936,83 +912,23 @@ class MyTardisUploader:
         if not check[0]:
             logger.error(f'The datafile dictionary is incomplete. Missing keys: {", ".join(check[1])}')
             return (False, None)
-        else:
-            mytardis = {}
-            dataset_id = datafile_dict.pop('dataset_id')
-            uri = self.__get_dataset_uri(dataset_id)
-            if uri == -1:
-                logger.critcal(f'Dataset ID {dataset_id} is not unique in the database.')
-                return (False, {})
-            elif not uri:
-                logger.warning(f'Dataset ID {dataset_id} not found in the database, skipping.')
-                return (False, {})
-            else:
-                dataset_uri = uri
-            schema_name = datafile_dict.pop('schema_namespace')
-            uri = self.__get_schema_by_name(schema_name)
-            if uri == -1:
-                logger.error(f'Unable to uniquley identify schema {schema_name}. Please check database')
-                return (False, {})
-            elif not uri:
-                logger.warning(f'Schema {schema_name} not found in the database, skipping.')
-                return (False, {})
-            else:
-                schema_uri = uri
-            file_name = datafile_dict.pop('file_name')
-            if in_store:
-                s3_path = datafile_dict.pop('s3_path')
-                bucket = datafile_dict.pop('bucket')
-                rel_path = datafile_dict.pop('rel_path')
-            else:
-                rel_path = datafile_dict.pop('rel_path')                
-            params = {}
-            parameter_list = []
-            for key in datafile_dict.keys():
-                params[key] = datafile_dict[key]
-            for pkey in params.keys():
-                parameter_list.append({u'name': pkey,
-                                       u'value': params[pkey]})
-            parameter_set = {'schema': schema_uri,
-                             'parameters': parameter_list}
-            parameter_sets = [parameter_set]
-            filename = os.path.join(rel_path, file_name)
-            md5_checksum = self.__md5_file_calc(filename)
-            try:
-                md5_checksum = md5_checksum.decode('utf8')
-            except AttributeError:
-                pass
-            if in_store:
-                logger.debug(f'Pushing {file_name} to myTardis by location')
-                uri = self.__add_datafile_by_location(file_name, rel_path, s3_path, dataset_uri, bucket, parameter_sets, md5_checksum)
-                return uri
-            else:
-                logger.debug(f'Pushing {file_name} through MyTardis')
-                uri = self.__push_datafile(file_name,
-                                           file_path,
-                                           dataset_uri,
-                                           parameter_sets_list=parameter_sets,
-                                           md5_checksum=md5_checksum)
-
-                return uri
-                def __add_datafile_by_location(self,
-                                   file_name,
-                                   rel_path,
-                                   s3_path,
-                                   dataset_uri,
-                                   bucket = None,
-                                   parameter_sets_list=None,
-                                   md5_checksum=None):        
-        data = hlp.dict_to_json(file_dict)
-        headers = self.__json_request_headers()
+        try:
+            mytardis = self.__build_datafile_dictionaries(datafile_dict,
+                                                          required_keys)
+        except Exception as err:
+            logger.error(f'Encountered error: {err} when building datafile dictionaries')
+            return (False, None)
+        mytardis_json = dict_to_json(mytardis)
         try:
             response = self.do_post_request('dataset_file',
-                                            data,
-                                            extra_headers=headers)
+                                            mytardis_json)
             response.raise_for_status()
         except Exception as err:
-            logger.error(f'Error occurred when creating datafile {filename}. Error: {err}')
-            return False
-        return True
+            logger.error(f'Error: {err} eccountered when creating dataset_file {mytardis["filename"]}')
+            return (False, None)
+        response = json.loads(response)
+        uri = response['resource_uri']
+        return (True, uri)
     
 class TastyPieAuth(AuthBase):
     """
