@@ -247,9 +247,8 @@ class MyTardisUploader:
                 mytardis[key] = defaults[key]
         for key in expt_dict.keys():
             if key == 'schema_namespace': # This is a special case where the URI is needed
-                schema = expt_dict.pop(key)
                 try:
-                    paramset['schema'] = self.__get_schema_uri(schema)
+                    paramset['schema'] = self.__get_schema_uri(expt_dict.pop(key))
                 except Exception as err:
                     raise err
             else:
@@ -378,6 +377,7 @@ class MyTardisUploader:
         try:
             uri = self.__get_experiment_uri(expt_dict['internal_id'])
         except Exception as err:
+            logger.error(f'Encountered error: {err}, when looking for experiment')
             return (False, None)
         if uri:
             return (False, uri)
@@ -386,11 +386,12 @@ class MyTardisUploader:
                 mytardis, paramset, users, groups = self.__build_experiment_dictionaries(expt_dict,
                                                                                          required_keys)
             except Exception as err:
+                logger.error(f'Encountered error: {err} when building experiment dictionaries')
                 return (False, None)
             mytardis_json = dict_to_json(mytardis)
             try:
                 response = self.do_post_request('experiment',
-                                                expt_json)
+                                                mytardis_json)
                 response.raise_for_status()
             except Exception as err:
                 logger.error(f'Error occurred when creating experiment {mytardis["title"]}. Error: {err}')
@@ -401,7 +402,7 @@ class MyTardisUploader:
             paramset_json = dict_to_json(paramset)
             try:
                 response = self.do_post_request('experimentparameterset',
-                                                parameter_set_json)
+                                                paramset_json)
                 response.raise_for_status()
             except Exception as err:
                 logger.error(f'Error occurred when attaching metadata to experiment {mytardis["title"]}. Error: {err}')
@@ -601,6 +602,199 @@ class MyTardisUploader:
                 obj = resp_dict['objects'][0]
                 logger.debug(obj)
                 return obj['resource_uri']
+
+    def __build_dataset_dictionaries(self,
+                                     dataset_dict,
+                                     required_keys):
+        '''Read in a dataset dictionary and build the mytardis and params dictionary needed to create
+        the dataset in mytardis
+        
+        Inputs:
+        =================================
+        dataset_dict: A dictionary containing the definintion of the dataset and its metadata
+        
+        The dataset_dict must contain the following key/value pairs
+        
+        Key / Value:
+        =================================
+        internal_id / An internal unique identifier for the experiment the dataset is associated with
+        schema_namespace / the schema defining the dataset metadata
+        description / The name of the dataset. This should be unique
+        dataset_id / An internal unique identifer for the dataset
+
+        Returns:
+        =================================
+        mytardis: A dictionary containing the details necessary to create an experiment in myTardis
+        paramset: A dictionary containing metadata to be attached to the experiment
+        '''
+        from datetime import datetime
+        mytardis = {}
+        params = {}
+        paramset = {}
+        defaults = {'instrument': None,
+                    'created_time': datetime.utcnow()}
+        for key in defaults.keys():
+            if key in dataset_dict.keys():
+                mytardis[key] = dataset_dict.pop(key)
+            else:
+                mytardis[key] = defaults[key]
+        for key in dataset_dict.keys():
+            if key == 'schema_namespace': # This is a special case where the URI is needed
+                try:
+                    paramset['schema'] = self.__get_schema_uri(expt_dict.pop(key))
+                except Exception as err:
+                    raise err
+            elif key == 'internal_id':
+                try:
+                    uri = self.__get_experiment_uri(expt_dict['internal_id'])
+                except Exception as err:
+                    raise
+                else:
+                    if not uri:
+                        logger.error(f'Experiment ID {dataset_dict["internal_id"]} not found in the database, skipping.')
+                        raise Exception(f'Experiment ID {dataset_dict["internal_id"]} not found in the database, skipping.')
+            else:
+                if key in required_keys:
+                    mytardis[key] = dataset_dict.pop(key)
+                else:
+                    params[key] = dataset_dict.pop(key)
+        if 'instrument' in params[key]:
+            instrument = params.pop('instrument')
+            if 'facility' in params[key]:
+                facility = params.pop('facility')
+            else:
+                facility = None
+            instrument_uri = self.__get_instrument_uri(instrument,
+                                                       facility)
+            if instrument_uri:
+                mytardis['instrument'] = instrument_uri   
+        parameter_list = []
+        for key in params.keys():
+            parameter_list.append({u'name': key,
+                                   u'value': params[key]})
+        paramset['parameters'] = parameter_list
+        return (mytardis, paramset)
+
+    def __get_instrument_uri(self, name, facility=None):
+        '''Read database for instruments and return resource_uri for an
+        instrument by name and facility
+        
+        Inputs:
+        =================================
+        name: Instrument name
+        facility: The host facility for the instrument, defaults to None
+
+        Returns:
+        =================================
+        False if the instrument is not present or if it cannot be uniquely identified
+        URI of the instrument if it can be uniquely identified
+        '''
+        query_params = {u'name': name}
+        if facility is not None:
+            query_params['facility__name'] = facility
+        try:
+            response = self.do_get_request("instrument",
+                                           params=query_params)
+            response.raise_for_status()
+        except Exception as err:
+            logger.error(f'Error occurred when finding instrument {name}. Error: {err}')
+            return False        
+        instrument_dict = json.loads(response.text)
+        if instrument_dict['objects'] == []:
+            logger.warning(
+                f'Instrument: {name} not found in list of instruments')
+            return False
+        elif len(instrument_dict['objects']) > 1:
+            logger.warning(
+                f'Cannot uniquely identify {name} in the list of instruments')
+            return False
+        else:
+            logger.debug(f'Instrument {name} indentified')
+            obj = instrument_dict['objects'][0]
+            return obj['resource_uri']
+    
+    @backoff.on_exception(backoff.expo,
+                          requests.exceptions.RequestException,
+                          max_tries=8)
+    def create_dataset(self, dataset_dict):
+        '''Read in a dataset dictionary. Check against the myTardis database to see
+        if an experiment with the same RAID exists. If it does, create the dataset using POST.
+        
+        Inputs:
+        =================================
+        dataset_dict: A dictionary containing the definintion of the dataset and its metadata
+        
+        The dataset_dict must contain the following key/value pairs
+        
+        Key / Value:
+        =================================
+        internal_id / An internal unique identifier for the experiment the dataset is associated with
+        schema_namespace / the schema defining the dataset metadata
+        description / The name of the dataset. This should be unique
+        dataset_id / An internal unique identifer for the dataset
+
+        Returns:
+        =================================
+        True and the URI if the dataset is created successfully
+        False and the URI if the dataset already exists in the database as determined from dataset_id
+        False and None if creation fails.
+        '''
+        os.chdir(self.root_dir)
+        from datetime import datetime
+        required_keys = ['internal_id',
+                         'schema_namespace',
+                         'description',
+                         'dataset_id']
+        check = check_dictionary(dataset_dict,
+                                 required_keys)
+        if not check[0]:
+            logger.error(f'The dataset dictionary is incomplete. Missing keys: {", ".join(check[1])}')
+            return (False, None)
+        try:
+            dataset_uri = self.__get_dataset_uri(dataset_dict['dataset_id'])
+        except Exception as err:
+            logger.error(f'Encountered error: {err}, when looking for dataset: {dataset_dict["description"]')
+            return (False, None)
+        if dataset_uri:
+            return (False, dataset_uri)
+        else:
+            try:
+                expt = dataset_dict['internal_id']
+                expt_uri = self.__get_experiment_uri(expt)
+            except Exception as err:
+                logger.error(f'Encountered error: {err} when looking for experiment: {expt}')
+                return (False, None)
+            if not expt_uri:
+                logger.error(f'Unable to locate experiment: {expt} in database')
+                return (False, None)
+            else:
+                try:
+                    mytardis, paramset = self.__build_dataset_dictionaries(dataset_dict,
+                                                                           required_keys)
+                except Exception as err:
+                    logger.error(f'Encountered error: {err} when building dataset dictionaries')
+                    return (False, None)
+                mytardis_json = dict_to_json(mytardis)
+                try:
+                    response = self.do_post_request('dataset',
+                                                    mytardis_json)
+                    response.raise_for_status()
+                except Exception as err:
+                    logger.error(f'Error: {err} when creating dataset {mytardis["description"]}')
+                    return (False, None)
+                response = json.loads(response.text)
+                uri = response['resource_uri']
+                paramset['dataset'] = uri
+                paramset_json = dict_to_json(paramset)
+                try:
+                    response = self.do_post_request('experimentparameterset',
+                                                    paramset_json)
+                    response.raise_for_status()
+                except Exception as err:
+                    logger.error(f'Error occurred when attaching metadata to experiment {mytardis["title"]}. Error: {err}')
+        os.chdir(self.cwd)
+        return (True, uri)
+
     
 class TastyPieAuth(AuthBase):
     """
