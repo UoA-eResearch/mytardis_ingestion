@@ -616,6 +616,38 @@ class MyTardisUploader:
                 logger.debug(obj)
                 return obj['resource_uri']
 
+    def __get_dataset_uri(self, dataset_id):
+        '''Uses REST API GET with an dataset_id filter. Raises an error if multiple
+        instances of the same dataset_id are located as this should never happen given
+        the database restrictions.
+
+        Inputs:
+        =================================
+        dataset_id: unique identifier for dataset
+
+        Returns:
+        =================================
+        False if the id is not found in the database
+        URI of the dataset if a single instance of the id is found in the database
+        '''
+        query_params = {u'dataset_id': internal_id}
+        try:
+            response = self.do_get_request('dataset',
+                                           params=query_params)
+        except Exception as err:
+            raise err
+        else:
+            resp_dict = json.loads(response.text)
+            if resp_dict['objects'] == []:
+                return False
+            elif len(resp_dict['objects']) > 1:
+                logger.error(f'More than one dataset with dataset_id = {dataset_id} exist in the database. Please investigate uniqueness of dataset_id field')
+                raise Exception(f'More than one dataset with dataset_id = {dataset_id} exist in the database. Please investigate uniqueness of dataset_id field')
+            else:
+                obj = resp_dict['objects'][0]
+                logger.debug(obj)
+                return obj['resource_uri']
+
     def __build_dataset_dictionaries(self,
                                      dataset_dict,
                                      required_keys):

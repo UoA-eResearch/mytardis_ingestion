@@ -57,34 +57,7 @@ class Harvester(ABC):
     def parser(self,
                config_dict):
         pass
-
-    def __build_dictionaries(self):
-        return self.parser.parse_inputs()
-
-    def __create_experiments(self,
-                             expts_dicts):
-        experiments = []
-        for expt_list in expt_dicts:
-            for expt in expt_list:
-                experiments.append(self.mytardis.create_experiment(expt))
-        return experiments
-
-    def __create_datasets(self,
-                          dataset_dicts):
-        datasets = []
-        for dataset_list in dataset_dicts:
-            for dataset in dataset_list:
-                datasets.append(self.mytardis.create_dataset(dataset))
-        return datasets
-
-    def __create_datafiles(self,
-                           datafile_dicts):
-        datafiles = []
-        for datafile_list in datafile_dicts:
-            for datafile in datafile_list:
-                datafiles.append(self.mytardis.create_datafile(datafile))
-        return datafiles
-
-    def __upload_file(self,
-                      file_dict):
-        return self.fileuploader.upload_file(file_dict)
+    
+    @abstractmethod
+    def harvest(self):
+        pass
