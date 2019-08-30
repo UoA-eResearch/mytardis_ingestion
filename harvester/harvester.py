@@ -56,6 +56,8 @@ class Harvester(ABC):
     @abstractmethod
     def parser(self,
                config_dict):
+        # Add needed values to the parser_config dictionary before handing it off
+        # For example completed files/csvs
         pass
     
     @abstractmethod
