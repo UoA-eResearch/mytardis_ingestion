@@ -1,6 +1,6 @@
 from . import CSVParser
 import csv
-from helper import helper as hlp
+from ..helper import helper as hlp
 import os
 import glob
 
