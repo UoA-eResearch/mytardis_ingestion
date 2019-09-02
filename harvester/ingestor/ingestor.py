@@ -12,6 +12,7 @@ import backoff
 import requests
 import os
 from urllib.parse import urljoin, urlparse
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -244,24 +245,26 @@ class MyTardisUploader:
                     'created_time': datetime.utcnow()}
         for key in defaults.keys():
             if key in expt_dict.keys():
-                mytardis[key] = expt_dict.pop(key)
+                mytardis[key] = expt_dict[key]
             else:
                 mytardis[key] = defaults[key]
         for key in expt_dict.keys():
             if key == 'schema_namespace': # This is a special case where the URI is needed
                 try:
-                    paramset['schema'] = self.__get_schema_uri(expt_dict.pop(key))
+                    paramset['schema'] = self.__get_schema_uri(expt_dict[key])
                 except Exception as err:
                     raise err
             else:
                 if key in required_keys:
-                    mytardis[key] = expt_dict.pop(key)
+                    mytardis[key] = expt_dict[key]
+                elif key in defaults.keys() or key =='schema_namespace':
+                    continue
                 elif key == 'users':
-                    users = expt_dict.pop(key)
+                    users = expt_dict[key]
                 elif key == 'groups':
-                    groups = expt_dict.pop(key)
+                    groups = expt_dict[key]
                 else:
-                    params[key] = expt_dict.pop(key)
+                    params[key] = expt_dict[key]
         parameter_list = []
         for key in params.keys():
             for value in params[key]:
@@ -286,13 +289,14 @@ class MyTardisUploader:
         '''
         query_params = {'namespace': namespace}
         try:
-            response = self.do_get_request('schema',
+            response = self.__do_get_request('schema',
                                            params=query_params)
         except Exception as err:
             raise err
         else:
             schema_dict = json.loads(response.text)
-            if schems_dict == []:
+            logger.debug(schema_dict)
+            if schema_dict == [] or schema_dict['objects'] == []:
                 logger.warning(
                     f'Schema {namespace} cannot be found in the database.')
                 raise Exception(f'Schema {namespace} was not found in the database')
@@ -321,7 +325,7 @@ class MyTardisUploader:
         '''
         query_params = {u'internal_id': internal_id}
         try:
-            response = self.do_get_request('experiment',
+            response = self.__do_get_request('experiment',
                                            params=query_params)
         except Exception as err:
             raise err
@@ -334,7 +338,6 @@ class MyTardisUploader:
                 raise Exception(f'More than one experiment with internal_id = {internal_id} exist in the database. Please investigate uniqueness of internal_id field')
             else:
                 obj = resp_dict['objects'][0]
-                logger.debug(obj)
                 return obj['resource_uri']
 
     def create_experiment(self,
@@ -393,7 +396,7 @@ class MyTardisUploader:
                 return (False, None)
             mytardis_json = dict_to_json(mytardis)
             try:
-                response = self.do_post_request('experiment',
+                response = self.__do_post_request('experiment',
                                                 mytardis_json)
                 response.raise_for_status()
             except Exception as err:
@@ -404,7 +407,7 @@ class MyTardisUploader:
             paramset['experiment'] = uri
             paramset_json = dict_to_json(paramset)
             try:
-                response = self.do_post_request('experimentparameterset',
+                response = self.__do_post_request('experimentparameterset',
                                                 paramset_json)
                 response.raise_for_status()
             except Exception as err:
@@ -486,7 +489,7 @@ class MyTardisUploader:
             u'effectiveDate': None,
             u'expiryDate': None
         }
-        response = self.do_post_request('objectacl',
+        response = self.__do_post_request('objectacl',
                                         dict_to_json(data))
         return response
 
@@ -568,7 +571,7 @@ class MyTardisUploader:
         '''
         query_params = {u'name': group}
         try:
-            response = self.do_get_request('group',
+            response = self.__do_get_request('group',
                                            params=query_params)
         except Exception as err:
             raise err
@@ -601,7 +604,7 @@ class MyTardisUploader:
         '''
         query_params = {'username': username}
         try:
-            response = self.do_get_request('user',
+            response = self.__do_get_request('user',
                                            params=query_params)
         except Exception as err:
             raise err
@@ -632,15 +635,16 @@ class MyTardisUploader:
         False if the id is not found in the database
         URI of the dataset if a single instance of the id is found in the database
         '''
-        query_params = {u'dataset_id': internal_id}
+        query_params = {u'dataset_id': dataset_id}
         try:
-            response = self.do_get_request('dataset',
+            response = self.__do_get_request('dataset',
                                            params=query_params)
         except Exception as err:
             raise err
         else:
             resp_dict = json.loads(response.text)
             if resp_dict['objects'] == []:
+                logger.debug('No dataset found')
                 return False
             elif len(resp_dict['objects']) > 1:
                 logger.error(f'More than one dataset with dataset_id = {dataset_id} exist in the database. Please investigate uniqueness of dataset_id field')
@@ -682,33 +686,37 @@ class MyTardisUploader:
                     'created_time': datetime.utcnow()}
         for key in defaults.keys():
             if key in dataset_dict.keys():
-                mytardis[key] = dataset_dict.pop(key)
+                mytardis[key] = dataset_dict[key]
             else:
                 mytardis[key] = defaults[key]
         for key in dataset_dict.keys():
             if key == 'schema_namespace': # This is a special case where the URI is needed
                 try:
-                    paramset['schema'] = self.__get_schema_uri(expt_dict.pop(key))
+                    paramset['schema'] = self.__get_schema_uri(dataset_dict[key])
                 except Exception as err:
                     raise err
             elif key == 'internal_id':
                 try:
-                    uri = self.__get_experiment_uri(expt_dict['internal_id'])
+                    uri = self.__get_experiment_uri(dataset_dict['internal_id'])
                 except Exception as err:
                     raise
                 else:
                     if not uri:
                         logger.error(f'Experiment ID {dataset_dict["internal_id"]} not found in the database, skipping.')
                         raise Exception(f'Experiment ID {dataset_dict["internal_id"]} not found in the database, skipping.')
+                    else:
+                        mytardis['experiments'] = [uri]
             else:
-                if key in required_keys:
-                    mytardis[key] = dataset_dict.pop(key)
+                if key in required_keys and key != 'schema_namespace':
+                    mytardis[key] = dataset_dict[key]
+                elif key in defaults.keys():
+                    continue
                 else:
-                    params[key] = dataset_dict.pop(key)
+                    params[key] = dataset_dict[key]
         if 'instrument' in params[key]:
-            instrument = params.pop('instrument')
+            instrument = params['instrument']
             if 'facility' in params[key]:
-                facility = params.pop('facility')
+                facility = params['facility']
             else:
                 facility = None
             instrument_uri = self.__get_instrument_uri(instrument,
@@ -717,6 +725,8 @@ class MyTardisUploader:
                 mytardis['instrument'] = instrument_uri   
         parameter_list = []
         for key in params.keys():
+            if key == 'instrument' or key == 'facility':
+                continue
             for value in params[key]:
                 parameter_list.append({u'name': key,
                                        u'value': value})
@@ -741,7 +751,7 @@ class MyTardisUploader:
         if facility is not None:
             query_params['facility__name'] = facility
         try:
-            response = self.do_get_request("instrument",
+            response = self.__do_get_request("instrument",
                                            params=query_params)
             response.raise_for_status()
         except Exception as err:
@@ -809,6 +819,7 @@ class MyTardisUploader:
             try:
                 expt = dataset_dict['internal_id']
                 expt_uri = self.__get_experiment_uri(expt)
+                logger.debug(expt_uri)
             except Exception as err:
                 logger.error(f'Encountered error: {err} when looking for experiment: {expt}')
                 return (False, None)
@@ -824,19 +835,23 @@ class MyTardisUploader:
                     return (False, None)
                 mytardis_json = dict_to_json(mytardis)
                 try:
-                    response = self.do_post_request('dataset',
+                    response = self.__do_post_request('dataset',
                                                     mytardis_json)
+                    logger.debug(response.text)
                     response.raise_for_status()
                 except Exception as err:
                     logger.error(f'Error: {err} when creating dataset {mytardis["description"]}')
                     return (False, None)
                 response = json.loads(response.text)
                 uri = response['resource_uri']
+                logger.debug(uri)
                 paramset['dataset'] = uri
                 paramset_json = dict_to_json(paramset)
+                logger.debug(paramset_json)
                 try:
-                    response = self.do_post_request('datasetparameterset',
+                    response = self.__do_post_request('datasetparameterset',
                                                     paramset_json)
+                    logger.debug(response.text)
                     response.raise_for_status()
                 except Exception as err:
                     logger.error(f'Error occurred when attaching metadata to experiment {mytardis["title"]}. Error: {err}')
@@ -956,7 +971,7 @@ class MyTardisUploader:
             return (False, None)
         mytardis_json = dict_to_json(mytardis)
         try:
-            response = self.do_post_request('dataset_file',
+            response = self.__do_post_request('dataset_file',
                                             mytardis_json)
             response.raise_for_status()
         except Exception as err:

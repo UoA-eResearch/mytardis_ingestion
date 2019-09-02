@@ -249,6 +249,7 @@ class CSVParser(Parser):
             raise Exception(error_message)
         expt_dict['title'] = row[expt_inds['experiment_title'][0]]
         expt_dict['internal_id'] = row[expt_inds['internal_id'][0]]
+        expt_dict['schema_namespace'] = self.schema_dict['experiment']
         if expt_inds['meta'] != {}:
             for key in expt_inds['meta'].keys():
                 expt_dict[key] = row[expt_inds['meta'][key][0]]
@@ -266,6 +267,7 @@ class CSVParser(Parser):
         dataset_dict['description'] = row[dataset_inds['dataset_description'][0]]
         dataset_dict['internal_id'] = row[dataset_inds['internal_id'][0]]
         dataset_dict['dataset_id'] = row[dataset_inds['dataset_id'][0]]
+        dataset_dict['schema_namespace'] = self.schema_dict['dataset']
         if dataset_inds['meta'] != {}:
             for key in dataset_inds['meta'].keys():
                 dataset_dict[key] = row[dataset_inds['meta'][key][0]]
@@ -358,7 +360,6 @@ class CSVParser(Parser):
         with open(csvfile, newline='') as f:
             reader = csv.reader(f, delimiter=self.delimiter, quotechar='"')
             header = next(reader)
-            print(header)
             try:
                 expt_inds = self.__build_experiment_index_dict(header)
             except Exception as err:
