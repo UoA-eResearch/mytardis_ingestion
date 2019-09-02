@@ -151,8 +151,9 @@ class CSVParser(Parser):
         expt_inds = {}
         expt_meta = {}
         if 'experiment_title' in self.headers:
-            expt_inds['experiment_title'] = self.__get_column_indices(self.headers['experiment_title'],
-                                                                      columns)
+            expt_inds['experiment_title'] =\
+                self.__get_column_indices(self.headers['experiment_title'],
+                                          columns)
         else:
             # Here be dragons!
             # Because the experiment must have a title in order to be properly formed
@@ -162,8 +163,9 @@ class CSVParser(Parser):
             # This can be done with relative safety since the data is stored in lists and thus has
             # a predefined ordering.
             self.headers['experiment_title'] = self.headers['experiment_headers'][0]
-            expt_inds['experiment_title'] = self.__get_column_indices(self.headers['experiment_headers'].pop(0),
-                                                                      columns)
+            expt_inds['experiment_title'] =\
+                self.__get_column_indices(self.headers['experiment_headers'].pop(0),
+                                          columns)
         if 'internal_id' in self.headers:
             expt_inds['internal_id'] = self.__get_column_indices(self.headers['internal_id'],
                                                                  columns)
@@ -176,8 +178,9 @@ class CSVParser(Parser):
             expt_inds['internal_id'] = self.__get_column_indices(expt_inds['experiment_title'],
                                                                  columns)
         for key in self.headers['experiment_headers']:
-            expt_meta[f'Experiment_{str(key).lower().replace(" ", "_")}'] = self.__get_column_indices(key,
-                                                                                                      columns)
+            expt_meta[f'Experiment_{str(key).lower().replace(" ", "_")}'] =\
+                self.__get_column_indices(key,
+                                          columns)
         expt_inds['meta'] = expt_meta
         return expt_inds
 
@@ -187,8 +190,9 @@ class CSVParser(Parser):
         dataset_inds = {}
         dataset_meta = {}
         if 'dataset_description' in self.headers:
-            dataset_inds['dataset_description'] = self.__get_column_indices(self.headers['dataset_description'],
-                                                                            columns)
+            dataset_inds['dataset_description'] =\
+                self.__get_column_indices(self.headers['dataset_description'],
+                                          columns)
         else:
             # Here be dragons!
             # Because the dataset must have a description in order to be properly formed
@@ -198,11 +202,13 @@ class CSVParser(Parser):
             # This can be done with relative safety since the data is stored in lists and thus has
             # a predefined ordering.
             self.headers['dataset_description'] = self.headers['dataset_headers'][0]
-            dataset_inds['dataset_description'] = self.__get_column_indices(self.headers['dataset_headers'].pop(0),
-                                                                         columns)
+            dataset_inds['dataset_description'] =\
+                self.__get_column_indices(self.headers['dataset_headers'].pop(0),
+                                          columns)
         if 'dataset_id' in self.headers:
-            dataset_inds['dataset_id'] = self.__get_column_indices(self.headers['dataset_id'],
-                                                                 columns)
+            dataset_inds['dataset_id'] =\
+                self.__get_column_indices(self.headers['dataset_id'],
+                                          columns)
         else:
             # More dragons here and arguably bigger and scarier ones than above!
             # Datasets must also have an dataset_id in order to be properly formed.
@@ -210,8 +216,22 @@ class CSVParser(Parser):
             # dataset_description can be used, but this relies on every experiment/dataset
             # being uniquely named, which will inevitably fall over at some point.
             # Use this approach as a means of last resort.
-            dataset_inds['dataset_id'] = self.__get_column_indices(expt_inds['dataset_description'],
-                                                                   columns)
+            dataset_inds['dataset_id'] =\
+                self.__get_column_indices(expt_inds['dataset_description'],
+                                          columns)
+        if 'internal_id' in self.headers:
+            dataset_inds['internal_id'] =\
+                self.__get_column_indices(self.headers['internal_id'],
+                                          columns)
+        else:
+            # More dragons here and arguably bigger and scarier ones than above!
+            # Experiments must also have an internal_id in order to be properly formed.
+            # A default value of the experiment_title can be used, but this relies on every experiment
+            # being uniquely named, which will inevitably fall over at some point.
+            # Use this approach as a means of last resort.
+            dataset_inds['internal_id'] =\
+                self.__get_column_indices(self.headers['experiment_title'],
+                                          columns)
         for key in self.headers['dataset_headers']:
             dataset_meta[f'Dataset_{str(key).lower().replace(" ", "_")}'] = self.__get_column_indices(key,
                                                                                                       columns)
@@ -243,8 +263,9 @@ class CSVParser(Parser):
             error_message = f'Malformed dataset_description list'
             logger.warning(error_message)
             raise Exception(error_message)
-        dataset_dict['title'] = row[dataset_inds['experiment_title'][0]]
+        dataset_dict['description'] = row[dataset_inds['dataset_description'][0]]
         dataset_dict['internal_id'] = row[dataset_inds['internal_id'][0]]
+        dataset_dict['dataset_id'] = row[dataset_inds['dataset_id'][0]]
         if dataset_inds['meta'] != {}:
             for key in dataset_inds['meta'].keys():
                 dataset_dict[key] = row[dataset_inds['meta'][key][0]]
@@ -270,6 +291,67 @@ class CSVParser(Parser):
         if self.datafiles == [] or force is True:
             processed = self.process_file(csvfile)
         return self.datafiles
+
+    def __compile_experiment_metadata(self,
+                                      experiment_list):
+        internal_ids = []
+        return_list = []
+        for expt in experiment_list:
+            if expt['internal_id'] in internal_ids:
+                index = internal_ids.index(expt['internal_id'])
+                compiled_dict = return_list[index]
+                if expt['title'] != compiled_dict['title']:
+                    logger.warning(f'Two different experiment titles {compiled_dict["title"]} and {expt["title"]} have been found for the same internal_id, {expt["internal_id"]}. Using {compiled_dict["title"]}.')
+                for key in expt.keys():
+                    if key == 'title' or key == 'internal_id':
+                        continue # do nothing since these have already been handled
+                    else:
+                        if key in compiled_dict.keys():
+                            if expt[key] not in compiled_dict[key]:
+                                compiled_dict[key].append(expt[key])
+                        else:
+                            compiled_dict[key] = [expt[key]]
+            else:
+                internal_ids.append(expt['internal_id'])
+                compiled_dict = {}
+                for key in expt.keys():
+                    if key == 'title' or key == 'internal_id':
+                        compiled_dict[key] = expt[key]
+                    else:
+                        compiled_dict[key] = [expt[key]]
+            return_list.append(compiled_dict)
+        return return_list
+    
+    def __compile_dataset_metadata(self,
+                                   dataset_list):
+        dataset_composite_ids = []
+        return_list = []
+        for dataset in dataset_list:
+            composite_id = f'{dataset["internal_id"]}-{dataset["dataset_id"]}'
+            if composite_id in dataset_composite_ids:
+                index = dataset_composite_ids.index(composite_id)
+                compiled_dict = return_list[index]
+                if dataset['description'] != compiled_dict['description']:
+                    logger.warning(f'Two different dataset descriptions {compiled_dict["description"]} and {dataset["description"]} have been found for the same composite_id, {composite_id}. Using {compiled_dict["description"]}.')
+                for key in dataset.keys():
+                    if key == 'description' or key == 'internal_id' or key == 'dataset_id':
+                        continue # do nothing since these have already been handled
+                    else:
+                        if key in compiled_dict.keys():
+                            if dataset[key] not in compiled_dict[key]:
+                                compiled_dict[key].append(dataset[key])
+                        else:
+                            compiled_dict[key] = [dataset[key]]
+            else:
+                dataset_composite_ids.append(composite_id)
+                compiled_dict = {}
+                for key in dataset.keys():
+                    if key == 'description' or key == 'internal_id' or key == 'dataset_id':
+                        compiled_dict[key] = dataset[key]
+                    else:
+                        compiled_dict[key] = [dataset[key]]
+            return_list.append(compiled_dict)
+        return return_list    
     
     def process_file(self,
                      csvfile):
@@ -289,7 +371,16 @@ class CSVParser(Parser):
                 error_message = f'Unable to build the dataset index dictionary due to error, {err}'
                 logger.error(error_message)
                 raise err
-        self.experiments.append(expt_inds)
-        self.datasets.append(dataset_inds)
+            for row in reader:
+                expt = self.__build_experiment_dictionary(row,
+                                                          expt_inds)
+                if expt not in self.experiments:
+                    self.experiments.append(expt)
+                dataset = self.__build_dataset_dictionary(row,
+                                                          dataset_inds)
+                if dataset not in self.datasets:
+                    self.datasets.append(dataset)
+        self.experiments = self.__compile_experiment_metadata(self.experiments)
+        self.datasets = self.__compile_dataset_metadata(self.datasets)
         self.datafiles = [{"Test": "Test"}]
         return True

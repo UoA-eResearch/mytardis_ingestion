@@ -264,8 +264,9 @@ class MyTardisUploader:
                     params[key] = expt_dict.pop(key)
         parameter_list = []
         for key in params.keys():
-            parameter_list.append({u'name': key,
-                                   u'value': params[key]})
+            for value in params[key]:
+                parameter_list.append({u'name': key,
+                                       u'value': value})
         paramset['parameters'] = parameter_list
         return (mytardis, paramset, users, groups)
 
@@ -716,8 +717,9 @@ class MyTardisUploader:
                 mytardis['instrument'] = instrument_uri   
         parameter_list = []
         for key in params.keys():
-            parameter_list.append({u'name': key,
-                                   u'value': params[key]})
+            for value in params[key]:
+                parameter_list.append({u'name': key,
+                                       u'value': value})
         paramset['parameters'] = parameter_list
         return (mytardis, paramset)
 
@@ -900,8 +902,9 @@ class MyTardisUploader:
         mytardis['replicas'] = [store_loc]
         parameter_list = []
         for key in params.keys():
-            parameter_list.append({u'name': key,
-                                   u'value': params[key]})
+            for value in params[key]:
+                parameter_list.append({u'name': key,
+                                       u'value': value})
         paramset['parameters'] = parameter_list
         mytardis['parameter_sets'] = paramset   
         return mytardis
