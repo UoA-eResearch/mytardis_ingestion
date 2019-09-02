@@ -1,6 +1,14 @@
 # Common helper functions
 
+import os
+import hashlib
+import subprocess
 import logging
+
+kB = 1024
+MB = kB ** 2
+GB = MB ** 3
+TB = kB ** 4
 
 def readJSON(json_file, logger=None):
     '''Function to parse a JSON formatted file
@@ -118,3 +126,66 @@ def dict_to_json(dictionary):
         else None
     )
     return json.dumps(dictionary, default=date_handler)
+
+def calculate_checksum(file_dir,
+                       file_name,
+                       md5sum_executable = '/usr/bin/md5sum',
+                       subprocess_size_threshold = 100*MB,
+                       blocksize = 128): # yes this is the size in bytes - MD5 sum uses 128 byte chunks
+    file_path = os.path.join(file_dir, file_name)
+    if os.path.getsize(file_path) > subprocess_size_threshold and \
+       os.path.exists(md5sum_executable) and \
+       os.access(md5sum_executable, os.X_OK):
+        try:
+            md5sum = md5_subprocess(file_path,
+                                    md5sum_executable=md5sum_executable)
+        except ValueError:
+            md5sum = md5_python(file_path, blocksize=blocksize)
+        except Exception as err:
+            logger.error(f'Error: {err} arose when determining MD5 checksum for file {file_name}')
+            raise
+    else:
+        try:
+            md5sum = md5_python(file_path, blocksize=blocksize)
+        except Exception as err:
+            logger.error(f'Error: {err} arose when determining MD5 checksum for file {file_name}')
+            raise
+    return md5sum
+
+def md5_python(file_path, blocksize=None):
+    """
+    Calculates the MD5 checksum of a file, returns the hex digest as a
+    string. Streams the file in chunks of 'blocksize' to prevent running
+    out of memory when working with large files.
+    #
+    :type file_path: string
+    :type blocksize: int
+    :return: The hex encoded MD5 checksum.
+    :rtype: str"""
+    if not blocksize:
+        blocksize = 128
+    md5 = hashlib.md5()
+    with open(file_path, 'rb') as f:
+        while True:
+            chunk = f.read(blocksize)
+            if not chunk:
+                break
+            md5.update(chunk)
+    return md5.hexdigest()
+
+def md5_subprocess(file_path,
+                   md5sum_executable='/usr/bin/md5sum'):
+    """
+    Calculates the MD5 checksum of a file, returns the hex digest as a
+    string. Streams the file in chunks of 'blocksize' to prevent running
+    out of memory when working with large files.
+    #
+    :type file_path: string
+    :return: The hex encoded MD5 checksum.
+    :rtype: str"""
+    out = subprocess.check_output([md5sum_executable, file_path])
+    checksum = out.split()[0]
+    if len(checksum) == 32:
+        return checksum
+    else:
+        raise ValueError('md5sum failed: %s', out)

@@ -11,6 +11,7 @@ from ..helper import check_dictionary, dict_to_json
 import backoff
 import requests
 import os
+from urllib.parse import urljoin, urlparse
 
 logger = logging.getLogger(__name__)
 

@@ -3,8 +3,8 @@
 # Written by Chris Seal <c.seal@auckland.ac.nz>
 #
 from abc import ABC, abstractmethod
-from ingestor import MyTardisUploader
-from helper import readJSON
+from .ingestor import MyTardisUploader
+from .helper import readJSON
 import logging
 import os
 import sys
@@ -34,22 +34,22 @@ class Harvester(ABC):
         os.chdir(config_dir)
         mytardis_config = readJSON('mytardis.json')
         parser_config = readJSON('parser.json')
-        fileuploader_config = readJSON('uploader.json')
+        filehandler_config = readJSON('filehandler.json')
         self.mytardis = self.mytardis(mytardis_config)
         self.parser = self.parser(parser_config)
-        self.fileuploader = self.fileuploader(fileuploader_config)
+        self.filehandler = self.filehandler(filehandler_config)
 
     def mytardis(self,
                  config_dict):
         try:
             ingestor = MyTardisUploader(config_dict)
         except Exception as err:
-            logger.critical('Shutting down harvester')
+            logger.critical(f'Shutting down harvester while initialising MyTardis, Error: {err}')
             sys.exit()
         return ingestor
             
     @abstractmethod
-    def fileuploader(self,
+    def filehandler(self,
                      config_dict):
         pass
 

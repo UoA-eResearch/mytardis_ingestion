@@ -2,6 +2,7 @@ from . import Parser
 import csv
 import logging
 from ..helper import check_dictionary
+from ..helper import calculate_checksum, md5_python, md5_subprocess
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +23,9 @@ class CSVParser(Parser):
         Key / Value:
         =================================
         root_dir / the root directory with respect to the relative file paths in the csv file
-        file_header / either the header or the index of the column associated with the file 
-        location relative to the root_dir
+        file_header / either the header or the index of the column associated with the file name
+        local_dir /  either the header or the index of the column associated with the file location relative
+        to the root_dir
         experiment_headers / a list of headers or of indices to columns associated with experiment 
         data/metadata
         dataset_headers / a list of headers or of indices to columns associated with dataset 
@@ -61,9 +63,11 @@ class CSVParser(Parser):
         self.datasets = []
         self.experiments = []
         self.use_headers = True
+        self.delimiter = ','
         required_keys = ['root_dir',
                          'file_header',
-                         'experiment_headers'
+                         'local_dir',
+                         'experiment_headers',
                          'dataset_headers',
                          'datafile_headers',
                          'schema_dict']
@@ -77,14 +81,17 @@ class CSVParser(Parser):
                 self.use_headers = config_dict.pop('use_headers')
             self.root_dir = config_dict['root_dir']
             self.headers = {'file': config_dict['file_header'],
-                            'experiment': config_dict['experiment_headers'],
-                            'dataset': config_dict['dataset_headers'],
-                            'datafile': config_dict['datafile_headers']}
+                            'local_dir': config_dict['local_dir'],
+                            'experiment_headers': config_dict['experiment_headers'],
+                            'dataset_headers': config_dict['dataset_headers'],
+                            'datafile_headers': config_dict['datafile_headers']}
             self.schema_dict = config_dict['schema_dict']
             if 'processed_csvs' in config_dict.keys():
                 self.processed_csvs = config_dict['processed_csvs']
             if 'processed_files' in config_dict.keys():
                 self.processed_files = config_dict['processed_files']
+            if 'delimiter' in config_dict.keys():
+                self.delimiter = config_dict['delimiter']
             optional_keys = ['experiment_title',
                              'internal_id',
                              'dataset_description',
@@ -97,9 +104,10 @@ class CSVParser(Parser):
                              headers,
                              columns):
         '''TODO document this'''
+        logger.debug(columns)
         if isinstance(headers, str):
             if not self.use_headers:
-                error_message = f'The config for this parser does not read a header line and all columns must be indexed by integer. Please check config file')
+                error_message = f'The config for this parser does not read a header line and all columns must be indexed by integer. Please check config file'
                 logger.error(error_message)
                 raise Exception(error_message)
             else:
@@ -111,7 +119,7 @@ class CSVParser(Parser):
                 return headers
             else:
                 if not self.use_headers:
-                    error_message = f'The config for this parser does not read a header line and all columns must be indexed by integer. Please check config file')
+                    error_message = f'The config for this parser does not read a header line and all columns must be indexed by integer. Please check config file'
                     logger.error(error_message)
                     raise Exception(error_message)
                 else:
@@ -122,7 +130,8 @@ class CSVParser(Parser):
                         else:
                             header = str(header).lower() # Make it case insensitive by forcing lowercase
                             flg = False
-                            for column in colums:
+                            for column in columns:
+                                logger.debug(column.lower().strip() == header.strip())
                                 if column.lower().strip() == header.strip():
                                     if flg:
                                         error_message = f'Cannot determine column indices from header due to duplicate entries' 
@@ -138,6 +147,7 @@ class CSVParser(Parser):
 
     def __build_experiment_index_dict(self,
                                       columns):
+        '''TODO Document this'''
         expt_inds = {}
         expt_meta = {}
         if 'experiment_title' in self.headers:
@@ -152,7 +162,7 @@ class CSVParser(Parser):
             # This can be done with relative safety since the data is stored in lists and thus has
             # a predefined ordering.
             self.headers['experiment_title'] = self.headers['experiment_headers'][0]
-            expt_inds['experiment_title'] = self.__get_column_indices(self.headers['experiment_headers']pop(0),
+            expt_inds['experiment_title'] = self.__get_column_indices(self.headers['experiment_headers'].pop(0),
                                                                       columns)
         if 'internal_id' in self.headers:
             expt_inds['internal_id'] = self.__get_column_indices(self.headers['internal_id'],
@@ -165,11 +175,48 @@ class CSVParser(Parser):
             # Use this approach as a means of last resort.
             expt_inds['internal_id'] = self.__get_column_indices(expt_inds['experiment_title'],
                                                                  columns)
-        for key in headers['experiment_headers']:
+        for key in self.headers['experiment_headers']:
             expt_meta[f'Experiment_{str(key).lower().replace(" ", "_")}'] = self.__get_column_indices(key,
                                                                                                       columns)
         expt_inds['meta'] = expt_meta
         return expt_inds
+
+    def __build_dataset_index_dict(self,
+                                   columns):
+        '''TODO Document this'''
+        dataset_inds = {}
+        dataset_meta = {}
+        if 'dataset_description' in self.headers:
+            dataset_inds['dataset_description'] = self.__get_column_indices(self.headers['dataset_description'],
+                                                                            columns)
+        else:
+            # Here be dragons!
+            # Because the dataset must have a description in order to be properly formed
+            # a default of the first item in the dataset header listing will be used.
+            # This will have obvious consequences should the first item be metadata rather than
+            # the dataset description, but does serve a short cut for carefully constructed config files.
+            # This can be done with relative safety since the data is stored in lists and thus has
+            # a predefined ordering.
+            self.headers['dataset_description'] = self.headers['dataset_headers'][0]
+            dataset_inds['dataset_description'] = self.__get_column_indices(self.headers['dataset_headers'].pop(0),
+                                                                         columns)
+        if 'dataset_id' in self.headers:
+            dataset_inds['dataset_id'] = self.__get_column_indices(self.headers['dataset_id'],
+                                                                 columns)
+        else:
+            # More dragons here and arguably bigger and scarier ones than above!
+            # Datasets must also have an dataset_id in order to be properly formed.
+            # A default value of a composite based on the experiment_titile and there
+            # dataset_description can be used, but this relies on every experiment/dataset
+            # being uniquely named, which will inevitably fall over at some point.
+            # Use this approach as a means of last resort.
+            dataset_inds['dataset_id'] = self.__get_column_indices(expt_inds['dataset_description'],
+                                                                   columns)
+        for key in self.headers['dataset_headers']:
+            dataset_meta[f'Dataset_{str(key).lower().replace(" ", "_")}'] = self.__get_column_indices(key,
+                                                                                                      columns)
+        dataset_inds['meta'] = dataset_meta
+        return dataset_inds
             
     def __build_experiment_dictionary(self,
                                       row,
@@ -182,17 +229,67 @@ class CSVParser(Parser):
             raise Exception(error_message)
         expt_dict['title'] = row[expt_inds['experiment_title'][0]]
         expt_dict['internal_id'] = row[expt_inds['internal_id'][0]]
-        if expt_inds['meta'] not {}:
+        if expt_inds['meta'] != {}:
             for key in expt_inds['meta'].keys():
                 expt_dict[key] = row[expt_inds['meta'][key][0]]
         return expt_dict
-            
 
+    def __build_dataset_dictionary(self,
+                                      row,
+                                      dataset_inds):
+        '''TODO Document this'''
+        dataset_dict = {}
+        if len(dataset_inds['dataset_description']) != 1 or len(dataset_inds['dataset_id']) != 1:
+            error_message = f'Malformed dataset_description list'
+            logger.warning(error_message)
+            raise Exception(error_message)
+        dataset_dict['title'] = row[dataset_inds['experiment_title'][0]]
+        dataset_dict['internal_id'] = row[dataset_inds['internal_id'][0]]
+        if dataset_inds['meta'] != {}:
+            for key in dataset_inds['meta'].keys():
+                dataset_dict[key] = row[dataset_inds['meta'][key][0]]
+        return dataset_dict            
+
+    def create_experiment_dicts(self,
+                               csvfile,
+                               force = False):
+        if self.experiments == [] or force is True:
+            processed = self.process_file(csvfile)
+        return self.experiments
+
+    def create_dataset_dicts(self,
+                             csvfile,
+                             force = False):
+        if self.datasets == [] or force is True:
+            processed = self.process_file(csvfile)
+        return self.datasets
+
+    def create_datafile_dicts(self,
+                              csvfile,
+                              force = False):
+        if self.datafiles == [] or force is True:
+            processed = self.process_file(csvfile)
+        return self.datafiles
+    
     def process_file(self,
                      csvfile):
         with open(csvfile, newline='') as f:
-            reader = csv.reader(csvfile, delimiter=self.delimiter, quotechar='"')
+            reader = csv.reader(f, delimiter=self.delimiter, quotechar='"')
             header = next(reader)
+            print(header)
             try:
                 expt_inds = self.__build_experiment_index_dict(header)
-            
+            except Exception as err:
+                error_message = f'Unable to build the experiment index dictionary due to error, {err}'
+                logger.error(error_message)
+                raise err
+            try:
+                dataset_inds = self.__build_dataset_index_dict(header)
+            except Exception as err:
+                error_message = f'Unable to build the dataset index dictionary due to error, {err}'
+                logger.error(error_message)
+                raise err
+        self.experiments.append(expt_inds)
+        self.datasets.append(dataset_inds)
+        self.datafiles = [{"Test": "Test"}]
+        return True
