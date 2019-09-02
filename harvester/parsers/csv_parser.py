@@ -95,7 +95,8 @@ class CSVParser(Parser):
             optional_keys = ['experiment_title',
                              'internal_id',
                              'dataset_description',
-                             'dataset_id']
+                             'dataset_id',
+                             'remote_dir']
             for key in optional_keys:
                 if key in config_dict.keys():
                     self.headers[key] = config_dict[key]
@@ -233,11 +234,38 @@ class CSVParser(Parser):
                 self.__get_column_indices(self.headers['experiment_title'],
                                           columns)
         for key in self.headers['dataset_headers']:
-            dataset_meta[f'Dataset_{str(key).lower().replace(" ", "_")}'] = self.__get_column_indices(key,
-                                                                                                      columns)
+            dataset_meta[f'Dataset_{str(key).lower().replace(" ", "_")}'] =\
+                self.__get_column_indices(key,
+                                          columns)
         dataset_inds['meta'] = dataset_meta
         return dataset_inds
-            
+
+    def __build_datafile_index_dict(self,
+                                    columns):
+        datafile_inds = {}
+        datafile_meta = {}
+        datafile_inds['file'] =\
+            self.__get_column_indices(self.headers['file'],
+                                      columns)
+        # This should have been defined eariler as it is not possible to attach the data file to a non-existant
+        # dataset
+        datafile_inds['dataset_id'] =\
+            self.__get_column_indices(self.headers['dataset_id'],
+                                      columns)
+        datafile_inds['local_dir'] =\
+            self.__get_column_indices(self.headers['local_dir'],
+                                      columns)
+        if 'remote_dir' in self.headers.keys():
+            datafile_inds['remote_dir'] =\
+                self.__get_column_indices(self.headers['remote_dir'],
+                                          columns)
+        for key in self.headers['datafile_headers']:
+            datafile_meta[f'Datafile_{str(key).lower().replace(" ", "_")}'] =\
+                self.__get_column_indices(key,
+                                          columns)
+        datafile_inds['meta'] = datafile_meta
+        return datafile_inds
+
     def __build_experiment_dictionary(self,
                                       row,
                                       expt_inds):
@@ -256,8 +284,8 @@ class CSVParser(Parser):
         return expt_dict
 
     def __build_dataset_dictionary(self,
-                                      row,
-                                      dataset_inds):
+                                   row,
+                                   dataset_inds):
         '''TODO Document this'''
         dataset_dict = {}
         if len(dataset_inds['dataset_description']) != 1 or len(dataset_inds['dataset_id']) != 1:
@@ -271,8 +299,27 @@ class CSVParser(Parser):
         if dataset_inds['meta'] != {}:
             for key in dataset_inds['meta'].keys():
                 dataset_dict[key] = row[dataset_inds['meta'][key][0]]
-        return dataset_dict            
+        return dataset_dict
 
+    def __build_datafile_dictionary(self,
+                                    row,
+                                    datafile_inds):
+        datafile_dict = {}
+        if len(datafile_inds['file']) != 1 or len(datafile_inds['dataset_id']) != 1\
+           or len (datafile_inds['local_dir']) != 1:
+            error_message = f'Malformed datafile_ind dictionary'
+            logger.warning(error_message)
+            raise Exception(error_message)
+        datafile_dict['file'] = row[datafile_inds['file'][0]]
+        datafile_dict['local_dir'] = row[datafile_inds['local_dir'][0]]
+        datafile_dict['dataset_id'] = row[datafile_inds['dataset_id'][0]]
+        if 'remote_dir' in datafile_inds.keys():
+            datafile_dict['remote_dir'] = row[datafile_inds['remote_dir'][0]]
+        if datafile_inds['meta'] != {}:
+            for key in datafile_inds['meta'].keys():
+                datafile_dict[key] = row[datafile_inds['meta'][key][0]]
+        return datafile_dict
+    
     def create_experiment_dicts(self,
                                csvfile,
                                force = False):
@@ -372,6 +419,12 @@ class CSVParser(Parser):
                 error_message = f'Unable to build the dataset index dictionary due to error, {err}'
                 logger.error(error_message)
                 raise err
+            try:
+                datafile_inds = self.__build_datafile_index_dict(header)
+            except Exception as err:
+                error_message = f'Unable to build the datafile index dictionary due to error, {err}'
+                logger.error(error_message)
+                raise err
             for row in reader:
                 expt = self.__build_experiment_dictionary(row,
                                                           expt_inds)
@@ -381,7 +434,10 @@ class CSVParser(Parser):
                                                           dataset_inds)
                 if dataset not in self.datasets:
                     self.datasets.append(dataset)
+                datafile = self.__build_datafile_dictionary(row,
+                                                            datafile_inds)
+                if datafile not in self.datafiles:
+                    self.datafiles.append(datafile)
         self.experiments = self.__compile_experiment_metadata(self.experiments)
         self.datasets = self.__compile_dataset_metadata(self.datasets)
-        self.datafiles = [{"Test": "Test"}]
         return True
