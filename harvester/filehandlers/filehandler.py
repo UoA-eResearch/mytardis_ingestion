@@ -3,6 +3,8 @@
 # Written by Chris Seal <c.seal@auckland.ac.nz>
 #
 
+__author__ = 'Chris Seal <c.seal@auckland.ac.nz>'
+
 from abc import ABC, abstractmethod
 from ..helper import calculate_checksum, md5_python, md5_subprocess
 from ..helper import constants as CONST 

@@ -14,11 +14,11 @@ import os
 import sys
 import hashlib
 import logging
+from ..helper import initialise_constants
 
 # Global constants:
-KB = 1024
-MB = KB ** 2
-GB = KB ** 3
+initialise_constants()
+
 
 DEBUG = False
 logger = logging.getLogger(__name__)
