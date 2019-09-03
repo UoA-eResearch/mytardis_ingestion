@@ -5,6 +5,7 @@
 
 from abc import ABC, abstractmethod
 from ..helper import calculate_checksum, md5_python, md5_subprocess
+from ..helper import constants as CONST 
 import logging
 
 logger = logging.getLogger(__name__)
@@ -15,7 +16,7 @@ class FileHandler(ABC):
     def __init__(self,
                  config_dict):
         self.md5sum_executable = '/usr/bin/md5sum'
-        self.subprocess_size_threshold = 10*1024*1024
+        self.subprocess_size_threshold = 100*CONST.MB
         self.blocksize = 128
         pass
 
