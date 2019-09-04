@@ -315,6 +315,8 @@ class CSVParser(Parser):
         datafile_dict['dataset_id'] = row[datafile_inds['dataset_id'][0]]
         if 'remote_dir' in datafile_inds.keys():
             datafile_dict['remote_dir'] = row[datafile_inds['remote_dir'][0]]
+        else: # Mirror local directory structure unless otherwise informed
+            datafile_dict['remote_dir'] = row[datafile_inds['local_dir'][0]]
         if datafile_inds['meta'] != {}:
             for key in datafile_inds['meta'].keys():
                 datafile_dict[key] = row[datafile_inds['meta'][key][0]]

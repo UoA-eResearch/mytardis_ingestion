@@ -3,6 +3,8 @@
 # Written by Chris Seal <c.seal@auckland.ac.nz>
 #
 
+__author__ = "Chris Seal <c.seal@auckland.ac.nz>"
+
 from abc import ABC, abstractmethod
 import logging
 

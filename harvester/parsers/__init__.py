@@ -3,4 +3,5 @@ __version__ = '0.10'
 from .parser import Parser
 from .csv_parser import *
 from .genomics_print import *
-from .testCSVparser import *
+from .dir_parser import *
+from .solarix_parser import *
