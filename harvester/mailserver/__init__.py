@@ -1,4 +1,3 @@
-__version__ = '0.70'
+__version__ = 0.10
 __author__ = 'Chris Seal <c.seal@auckland.ac.nz>'
-from .harvester import *
-
+from .mailserver import *

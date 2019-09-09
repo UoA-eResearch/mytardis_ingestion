@@ -12,12 +12,21 @@ from . import DirParser
 import logging
 import os
 from xml.etree import ElementTree
+import re
+import requests
+import json
+
+def get_immediate_subdirectories(parent_dir):
+    return [name for name in os.listdir(parent_dir)
+            if os.path.isdir(os.path.join(parent_dir, name))]
 
 class SolarixParser(DirParser):
 
     def __init__(self,
                  config_dict):
         super().__init__(config_dict)
+        self.project_db_key = config_dict['project_db_key']
+        #TODO put proxies stuff here
 
     def create_datafile_dicts(self):
         pass
@@ -28,6 +37,14 @@ class SolarixParser(DirParser):
     def create_experiment_dicts(self):
         pass
 
+    def check_project_db(self,
+                         res_code):
+        auth_code = f'Basic {self.project_db_key}'
+        headers = {"Authorization": auth_code}
+        url = f'https://projects.cer.auckland.ac.nz/projectdb/rest/projects/{res_code}'
+        response = requests.get(url, headers=headers)
+        return response
+        
     def walk_directory(self):
         '''Use os.walk to get the subdirectories under the root directory
         and use these to locate data and metadata files'''
@@ -36,6 +53,14 @@ class SolarixParser(DirParser):
         for path, directory, filename in os.walk(self.root_dir):
             if 'apexAcquisition.method' in filename:
                 m_dirs.append(path)
+            cur_dirname = os.path.split(path)[-1]
+            if cur_dirname.startswith('res'):
+                # This is probably a research project code so look up the project db
+                res_code = cur_dirname.split('-')[0]
+                if re.match(r'res[a-z]{3}20[0-9]{6,}', res_code):
+                    response = self.check_project_db(res_code)
+                    project_dict = json.loads(response.text)
+                    print(project_dict['project']['name'])
         print(m_dirs)
         key_list = ['API_Polarity',
                     'MW_low',
@@ -50,6 +75,12 @@ class SolarixParser(DirParser):
                     'Q1_Frag_Energy',
                     'ECD']
         param_dict = {}
+        for m_dir in m_dirs:
+            print(m_dir)
+            if re.match(r'[a-z,A-Z,0-9,/]*res[a-z]{3}20[0-9]{6,}', m_dir):
+                print('Match')
+            else:
+                print(':(')
         for m_dir in m_dirs:
             tree = ElementTree.parse(os.path.join(m_dir,'apexAcquisition.method'))
             root = tree.getroot()
@@ -121,6 +152,18 @@ class SolarixParser(DirParser):
                 meta['ECD'] = 'No'
             elif param_dict['ECD'] =='1':
                 meta['ECD'] = 'Yes'
-                
+
+            if meta['Ion Source'] == 'MALDI Imaging':
+                # Need to collect the images here
+                pass
+            else:
+                datefield = None
+                grandparent_dir = os.path.dirname(os.path.dirname(m_dir))
+                parent_dirs = get_immediate_subdirectories(grandparent_dir)
+                grandparent_dirname = os.path.split(grandparent_dir)[-1]
+                if grandparent_dirname.isdigit(): # Then it is a date field so step up further
+                    datefield = grandparent_dir
+                    grandparent_dir = os.path.dirname(grandparent_dir)
+                print(grandparent_dirname.isdigit())
             print(meta)
                          

@@ -1,4 +1,5 @@
 __version__ = '0.10'
+__author__ = 'Chris Seal <c.seal@auckland.ac.nz>'
 # helper to minimise confusion with loading parsers
 from .parser import Parser
 from .csv_parser import *
