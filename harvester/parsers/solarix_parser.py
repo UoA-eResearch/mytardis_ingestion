@@ -60,6 +60,8 @@ class SolarixParser(DirParser):
                 if re.match(r'res[a-z]{3}20[0-9]{6,}', res_code):
                     response = self.check_project_db(res_code)
                     project_dict = json.loads(response.text)
+                    print(project_dict)
+                    print(project_dict['project'])
                     print(project_dict['project']['name'])
         print(m_dirs)
         key_list = ['API_Polarity',
@@ -84,6 +86,10 @@ class SolarixParser(DirParser):
         for m_dir in m_dirs:
             tree = ElementTree.parse(os.path.join(m_dir,'apexAcquisition.method'))
             root = tree.getroot()
+            method = root.find('methodmetadata')
+            primary = method.find('primarykey')
+            samplenotes = primary.find('samplename')
+            comments = primary.find('sampledescription')
             paramlist = root.find('paramlist')
             #for parameter in paramlist:
             params = paramlist.iterfind('param')
@@ -92,6 +98,8 @@ class SolarixParser(DirParser):
                     value = param.find('value')    
                     param_dict[param.attrib['name']] = value.text
             meta = {}
+            meta['Sample Notes'] = samplenotes.text
+            meta['Comments'] = comments.text
             if param_dict['API_Polarity'] == '0':
                 meta['Polarity'] = 'Positive'
             elif param_dict['API_Polarity'] == '1':

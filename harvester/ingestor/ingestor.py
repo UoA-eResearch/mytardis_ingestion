@@ -141,6 +141,7 @@ class MyTardisUploader:
             # 502 Bad Gateway triggers retries, since the proxy web
             # server (eg Nginx or Apache) in front of MyTardis could be
             # temporarily restarting
+            print(response.text)
             if response.status_code == 502:
                 self.__raise_request_exception(response)
             else:
@@ -153,7 +154,7 @@ class MyTardisUploader:
             raise err
         return response
             
-    def __do_post_request(self, action, data, extra_headers=None):
+    def do_post_request(self, action, data, extra_headers=None):
         '''Wrapper around self.__do_rest_api_request to handle POST requests
 
         Inputs:
