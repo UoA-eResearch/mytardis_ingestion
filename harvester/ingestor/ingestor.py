@@ -443,11 +443,12 @@ class MyTardisUploader:
             return (True, uri)
 
     def __share_experiment(self,
-                          content_object,
-                          plugin_id,
-                          entity_object,
-                          content_type=u'experiment',
-                          acl_ownership_type=u'Owner-owned'):
+                           content_object,
+                           plugin_id,
+                           entity_object,
+                           isOwner=False,
+                           content_type=u'experiment',
+                           acl_ownership_type=u'Owner-owned'):
         """
         Executes an HTTP request to share an MyTardis object with a user or
         group, via updating the ObjectACL.
@@ -483,9 +484,9 @@ class MyTardisUploader:
             u'content_type': str(content_type),
             u'object_id': str(object_id),
             u'aclOwnershipType': acl_ownership_type,
-            u'isOwner': True,
+            u'isOwner': isOwner,
             u'canRead': True,
-            u'canWrite': True,
+            u'canWrite': isOwner,
             u'canDelete': False,
             u'effectiveDate': None,
             u'expiryDate': None
@@ -532,12 +533,18 @@ class MyTardisUploader:
         A requests Response object
         """
         return self.__share_experiment(experiment_uri,
-                                      'django_group',
-                                      group_uri,
-                                      *args,
-                                      **kwargs)
+                                       'django_group',
+                                       group_uri,
+                                       isOwner=False,
+                                       *args,
+                                       **kwargs)
 
-    def share_experiment_with_user(self, experiment, user_uri, *args, **kwargs):
+    def share_experiment_with_user(self,
+                                   experiment,
+                                   user_uri,
+                                   isOwner=False,
+                                   *args,
+                                   **kwargs):
         """
         Executes an HTTP request to share an experiment with a user,
         via updating the ObjectACL.
@@ -552,10 +559,11 @@ class MyTardisUploader:
         A requests Response object
         """
         return self.__share_experiment(experiment,
-                                      'django_user',
-                                      user_uri,
-                                      *args,
-                                      **kwargs)
+                                       'django_user',
+                                       user_uri,
+                                       isOwner,
+                                       *args,
+                                       **kwargs)
 
     def __get_group_uri(self, group):
         '''Use the user api in myTardis to search on groups

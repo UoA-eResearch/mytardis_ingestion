@@ -173,5 +173,7 @@ class SolarixParser(DirParser):
                     datefield = grandparent_dir
                     grandparent_dir = os.path.dirname(grandparent_dir)
                 print(grandparent_dirname.isdigit())
+                print(grandparent_dir)
+                print(parent_dirs)
             print(meta)
                          
