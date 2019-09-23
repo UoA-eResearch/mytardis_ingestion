@@ -12,6 +12,7 @@ from .parser import Parser
 from abc import ABC, abstractmethod
 import logging
 import os
+from pathlib import Path
 
 logger = logging.getLogger
 
@@ -34,5 +35,11 @@ class DirParser(Parser, ABC):
     def create_experiment_dicts(self):
         pass
 
-    
-#TODO abstract out some of the core functionality of the DIR parser here
+    #TODO abstract out some of the core functionality of the DIR parser here
+
+    def build_dir_list(self):
+        subdirectories = []
+        for dirname, subdirs, files in os.walk(self.root_dir):
+            cur_path = Path(dirname)
+            subdirectories.append(cur_path)
+        return subdirectories
