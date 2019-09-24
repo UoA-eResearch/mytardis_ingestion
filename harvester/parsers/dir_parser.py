@@ -37,9 +37,12 @@ class DirParser(Parser, ABC):
 
     #TODO abstract out some of the core functionality of the DIR parser here
 
-    def build_dir_list(self):
+    def build_dir_list(self,
+                       directory = None):
+        if not directory:
+            directory = self.root_dir
         subdirectories = []
-        for dirname, subdirs, files in os.walk(self.root_dir):
+        for dirname, subdirs, files in os.walk(directory):
             cur_path = Path(dirname)
             subdirectories.append(cur_path)
         return subdirectories
