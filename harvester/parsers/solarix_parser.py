@@ -192,15 +192,33 @@ class SolarixParser(DirParser):
                         if response.status_code < 300:
                             users = self.get_users_from_project(response)
                             project = self.get_name_and_abstract_from_project(response)
+                            project['internal_id'] = rescode
                             print(users)
                             print(project)
                 elif re.match(r'\d{8}', part):
                     # it might be a date
                     print(part)
-                    date = datetime.datetime.strptime(part, '%Y%m%d')
-                    print(date)
-                    #except Exception as err:
-                    #    pass
+                    try:
+                        date = datetime.datetime.strptime(part, '%Y%m%d')
+                        print(date)
+                    except ValueError as err:
+                        pass
+                    except Exception as err:
+                        pass
+                elif re.match(r'\d{6}', part):
+                    print(part)
+                    try:
+                        date = datetime.datetime.strptime(part, "%d%m%y")
+                        print(date)
+                    except ValueError as err:
+                        pass
+                    except Exception as err:
+                        pass
+                elif re.match(r'[a-z,A-Z]{4}\d{3}-FTICRMS', part):
+                    users = [part.split('-')[0]]
+                    project = {"name": part,
+                               "description": "No description",
+                               "internal_id": part}
             projects[directory] = [users, project, date]
         return projects
                             

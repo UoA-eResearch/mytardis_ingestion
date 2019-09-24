@@ -434,7 +434,11 @@ class MyTardisUploader:
                         logger.error(f'Error: {err} occured when searching for group {group}')
                     else:
                         try:
-                            response = self.share_experiment_with_user(uri,
+                            if users.index(user) == 0:
+                                response = self.share_experiment_with_owner(uri,
+                                                                            user_uri)
+                            else:
+                                response = self.share_experiment_with_user(uri,
                                                                        user_uri)
                             response.raise_for_status()
                         except Exception as err:
@@ -547,6 +551,32 @@ class MyTardisUploader:
                                    **kwargs):
         """
         Executes an HTTP request to share an experiment with a user,
+        via updating the ObjectACL.
+
+        Inputs:
+        =================================
+        experiment_uri: The integer ID or URL path to the Experiment
+        user_uri: The integer ID or URL of the User to share with.
+        
+        Returns:
+        =================================
+        A requests Response object
+        """
+        return self.__share_experiment(experiment,
+                                       'django_user',
+                                       user_uri,
+                                       isOwner,
+                                       *args,
+                                       **kwargs)
+
+    def share_experiment_with_owner(self,
+                                    experiment,
+                                    user_uri,
+                                    isOwner=True,
+                                    *args,
+                                    **kwargs):
+        """
+        Executes an HTTP request to share an experiment with the project owner,
         via updating the ObjectACL.
 
         Inputs:
