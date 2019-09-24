@@ -35,7 +35,6 @@ class SolarixParser(DirParser):
         self.ldap_admin_password = config_dict['ldap_admin_password']
         self.ldap_user_attr_map = config_dict['ldap_user_attr_map']
         self.ldap_user_base = config_dict['ldap_user_base']
-        #self.ldap_user_login_attr = config_dict['ldap_user_login_attr']
         #TODO put proxies stuff here
 
     def create_datafile_dicts(self):
@@ -73,6 +72,13 @@ class SolarixParser(DirParser):
                 users.append(r[self.ldap_user_attr_map["upi"]][0].decode('utf-8'))
         l.unbind_s()
         return users
+
+    def get_name_and_abstract_from_project(self,
+                                           response):
+        resp_dict = json.loads(response.text)
+        ret_dict = {"name": resp_dict['project']['name'],
+                    "description": resp_dict['project']['description']}
+        return ret_dict
 
     def extract_metadata(self,
                          file_path):
@@ -166,7 +172,30 @@ class SolarixParser(DirParser):
             meta['ECD'] = 'Yes'
         return meta
 
-    
+    def find_projects(self,
+                      directories=None):
+        if not directories:
+            directories = self.sub_dirs
+        projects = {}
+        for directory in directories:
+            users = []
+            project = {}
+            for part in directory.parts:
+                print(part)
+                if part.startswith('res'):
+                    rescode = part.split('-')[0]
+                    print(rescode)
+                    if re.match(r'res[a-z]{3}20[0-9]{6,}', rescode):
+                        response = self.check_project_db(rescode)
+                        if response.status_code < 300:
+                            users = self.get_users_from_project(response)
+                            project = self.get_name_and_abstract_from_project(response)
+                            print(users)
+                            print(project)
+            projects[directory] = [users, project]
+        return projects
+                            
+        
         
     '''def walk_directory(self):
         Use os.walk to get the subdirectories under the root directory
