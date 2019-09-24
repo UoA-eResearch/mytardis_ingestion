@@ -17,6 +17,7 @@ import requests
 import json
 from pathlib import Path
 import ldap
+import datetime
 
 def get_immediate_subdirectories(parent_dir):
     return [name for name in os.listdir(parent_dir)
@@ -178,6 +179,7 @@ class SolarixParser(DirParser):
             directories = self.sub_dirs
         projects = {}
         for directory in directories:
+            date = None
             users = []
             project = {}
             for part in directory.parts:
@@ -192,7 +194,14 @@ class SolarixParser(DirParser):
                             project = self.get_name_and_abstract_from_project(response)
                             print(users)
                             print(project)
-            projects[directory] = [users, project]
+                elif re.match(r'\d{8}', part):
+                    # it might be a date
+                    print(part)
+                    date = datetime.datetime.strptime(part, '%Y%m%d')
+                    print(date)
+                    #except Exception as err:
+                    #    pass
+            projects[directory] = [users, project, date]
         return projects
                             
         
