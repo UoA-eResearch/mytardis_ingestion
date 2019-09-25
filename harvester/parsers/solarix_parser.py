@@ -173,7 +173,7 @@ class SolarixParser(DirParser):
             meta['ECD'] = 'Yes'
         return meta
 
-    def find_projects(self,
+    def find_data(self,
                       directories=None):
         if not directories:
             directories = self.sub_dirs
@@ -181,26 +181,25 @@ class SolarixParser(DirParser):
         for directory in directories:
             date = None
             users = []
-            project = {}
+            project = {'project_id': "No_Project"}
+            expt = {}
+            dataset = {}
+            meta = {}
+            data = False
+            metadata = False
             for part in directory.parts:
-                print(part)
                 if part.startswith('res'):
                     rescode = part.split('-')[0]
-                    print(rescode)
                     if re.match(r'res[a-z]{3}20[0-9]{6,}', rescode):
                         response = self.check_project_db(rescode)
                         if response.status_code < 300:
                             users = self.get_users_from_project(response)
                             project = self.get_name_and_abstract_from_project(response)
-                            project['internal_id'] = rescode
-                            print(users)
-                            print(project)
+                            project['project_id'] = rescode
                 elif re.match(r'\d{8}', part):
                     # it might be a date
-                    print(part)
                     try:
                         date = datetime.datetime.strptime(part, '%Y%m%d')
-                        print(date)
                     except ValueError as err:
                         pass
                     except Exception as err:
@@ -209,7 +208,6 @@ class SolarixParser(DirParser):
                     print(part)
                     try:
                         date = datetime.datetime.strptime(part, "%d%m%y")
-                        print(date)
                     except ValueError as err:
                         pass
                     except Exception as err:
@@ -218,12 +216,42 @@ class SolarixParser(DirParser):
                     users = [part.split('-')[0]]
                     project = {"name": part,
                                "description": "No description",
-                               "internal_id": part}
-            projects[directory] = [users, project, date]
+                               "project_id": part}
+                elif re.match(r'\w*_\d{6}.d', part):
+                    part_list = part.split('_')
+                    del part_list[-1]
+                    name = '_'
+                    expt = {"name": name.join(part_list)}
+                    dataset = {"name": part[:-2]}
+                elif part[-2:] == ".d":
+                    expt = {"name": part[:-2]}
+                    dataset = {"name": part[:-2]}
+                elif part[-2:] == ".m":
+                    file_path = directory.joinpath("apexAcquisition.method")
+                    meta = self.extract_metadata(file_path)
+            try:
+                expt_name = expt["name"]
+                expt['internal_id'] = f'{project["project_id"]}-{expt_name}'
+            except Exception as err:
+                pass
+            try:
+                dataset_name = dataset["name"]
+                dataset['datset_id'] = f'{expt["internal_id"]}-{dataset_name}'
+            except Exception as err:
+                pass
+            if directory.suffix == ".d":
+                data = True
+            elif directory.suffix == ".m":
+                data = True
+                metadata = True
+            projects[directory] = [users, project, expt, dataset, meta, data, metadata, date]
         return projects
+
+    def sort_dictionaries(self,
+                          projects_dict):
+        expts = {}
+        datasets = {}
                             
-        
-        
     '''def walk_directory(self):
         Use os.walk to get the subdirectories under the root directory
         and use these to locate data and metadata files

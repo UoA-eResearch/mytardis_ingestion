@@ -240,7 +240,9 @@ class MyTardisUploader:
         users = None
         groups = None
         paramset = {}
-        defaults = {'project_id':'No Project',
+        defaults = {'project_name': 'No Project',
+                    'project_id':'No Project ID',
+                    'project_description': 'No description',
                     'institution_name':'University of Auckland',
                     'description': 'No description',
                     'created_time': datetime.utcnow()}
