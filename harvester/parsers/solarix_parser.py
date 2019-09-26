@@ -64,8 +64,6 @@ class SolarixParser(DirParser):
                                                    user_email))
             for e, r in result:
                 if user['researcherRoleId'] == 1:
-                    upi = r[self.ldap_user_attr_map["upi"]][0].decode("utf-8")
-                    print(f'{upi} is a project owner')
                     users.insert(0,r[self.ldap_user_attr_map["upi"]][0].decode('utf-8'))
                 else:
                     users.append(r[self.ldap_user_attr_map["upi"]][0].decode('utf-8'))
@@ -250,7 +248,40 @@ class SolarixParser(DirParser):
                 
 
     def create_datafile_dicts(self):
-        pass
+        datafiles = []
+        for key in self.projects.keys():
+            current_path = self.projects[key]
+            if current_path[6]:
+                datafile_dict = {}
+                # This is metadata
+                datafile_dict["file"] = current_path[2]["name"] + "_method.tar"
+                datafile_dict["local_dir"] = key.relative_to(self.root_dir)
+                datafile_dict["remote_dir"] = datafile_dict["local_dir"].parent
+                datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
+                datafiles.append(datafile_dict)
+            elif current_path[5]:
+                for child in key.iterdir():
+                    if child.is_file():
+                        datafile_dict = {}
+                        datafile_dict["file"] = child.name
+                        datafile_dict["local_dir"] = key.relative_to(self.root_dir)
+                        datafile_dict["remote_dir"] = datafile_dict["local_dir"]
+                        datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
+                        datafiles.append(datafile_dict)
+            if 'Ion Source' in current_path[4].keys():
+                if current_path[4]['Ion Source'] == 'MALDI Imaging':
+                    for child in key.parent.parent.iterdir():
+                        print(child)
+                        if child.is_file():
+                            datafile_dict = {}
+                            datafile_dict["file"] = child.name
+                            datafile_dict["local_dir"] = key.parent.relative_to(self.root_dir)
+                            datafile_dict["remote_dir"] = datafile_dict["local_dir"]
+                            datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
+                            if datafile_dict not in datafiles:
+                                datafiles.append(datafile_dict)
+                    
+        return datafiles
 
     def create_dataset_dicts(self):
         datasets = {}
@@ -306,50 +337,4 @@ class SolarixParser(DirParser):
                     'project_id': current_path[1]['project_id'],
                     'project_name': current_path[1]['name'],
                     'project_description': current_path[1]['description']}
-        return experiments
-                
-    '''def walk_directory(self):
-        Use os.walk to get the subdirectories under the root directory
-        and use these to locate data and metadata files
-
-        m_dirs = []
-        for path, directory, filename in os.walk(self.root_dir):
-            if 'apexAcquisition.method' in filename:
-                m_dirs.append(path)
-            cur_dirname = os.path.split(path)[-1]
-            if cur_dirname.startswith('res'):
-                # This is probably a research project code so look up the project db
-                res_code = cur_dirname.split('-')[0]
-                if re.match(r'res[a-z]{3}20[0-9]{6,}', res_code):
-                    response = self.check_project_db(res_code)
-                    project_dict = json.loads(response.text)
-                    print(project_dict)
-                    print(project_dict['project'])
-                    print(project_dict['project']['name'])
-        print(m_dirs)
-        
-        for m_dir in m_dirs:
-            print(m_dir)
-            if re.match(r'[a-z,A-Z,0-9,/]*res[a-z]{3}20[0-9]{6,}', m_dir):
-                print('Match')
-            else:
-                print(':(')
-        for m_dir in m_dirs:
-            
-
-            if meta['Ion Source'] == 'MALDI Imaging':
-                # Need to collect the images here
-                pass
-            else:
-                datefield = None
-                grandparent_dir = os.path.dirname(os.path.dirname(m_dir))
-                parent_dirs = get_immediate_subdirectories(grandparent_dir)
-                grandparent_dirname = os.path.split(grandparent_dir)[-1]
-                if grandparent_dirname.isdigit(): # Then it is a date field so step up further
-                    datefield = grandparent_dir
-                    grandparent_dir = os.path.dirname(grandparent_dir)
-                print(grandparent_dirname.isdigit())
-                print(grandparent_dir)
-                print(parent_dirs)
-            print(meta)'''
-                         
+        return experiments                         
