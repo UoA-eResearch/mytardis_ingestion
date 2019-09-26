@@ -36,16 +36,9 @@ class SolarixParser(DirParser):
         self.ldap_admin_password = config_dict['ldap_admin_password']
         self.ldap_user_attr_map = config_dict['ldap_user_attr_map']
         self.ldap_user_base = config_dict['ldap_user_base']
+        self.projects = self.find_data(self.sub_dirs)
+        self.default_user = config_dict['default_user']
         #TODO put proxies stuff here
-
-    def create_datafile_dicts(self):
-        pass
-
-    def create_dataset_dicts(self):
-        pass
-
-    def create_experiment_dicts(self):
-        pass
 
     def check_project_db(self,
                          res_code):
@@ -70,7 +63,12 @@ class SolarixParser(DirParser):
                                 "({0}={1})".format(self.ldap_user_attr_map['email'],
                                                    user_email))
             for e, r in result:
-                users.append(r[self.ldap_user_attr_map["upi"]][0].decode('utf-8'))
+                if user['researcherRoleId'] == 1:
+                    upi = r[self.ldap_user_attr_map["upi"]][0].decode("utf-8")
+                    print(f'{upi} is a project owner')
+                    users.insert(0,r[self.ldap_user_attr_map["upi"]][0].decode('utf-8'))
+                else:
+                    users.append(r[self.ldap_user_attr_map["upi"]][0].decode('utf-8'))
         l.unbind_s()
         return users
 
@@ -174,14 +172,16 @@ class SolarixParser(DirParser):
         return meta
 
     def find_data(self,
-                      directories=None):
+                  directories=None):
         if not directories:
             directories = self.sub_dirs
         projects = {}
         for directory in directories:
             date = None
             users = []
-            project = {'project_id': "No_Project"}
+            project = {'project_id': "No_Project",
+                       'name': 'No_Project',
+                       'description': 'No description'}
             expt = {}
             dataset = {}
             meta = {}
@@ -228,7 +228,8 @@ class SolarixParser(DirParser):
                     dataset = {"name": part[:-2]}
                 elif part[-2:] == ".m":
                     file_path = directory.joinpath("apexAcquisition.method")
-                    meta = self.extract_metadata(file_path)
+                    if os.path.isfile(file_path):
+                        meta = self.extract_metadata(file_path)
             try:
                 expt_name = expt["name"]
                 expt['internal_id'] = f'{project["project_id"]}-{expt_name}'
@@ -236,7 +237,7 @@ class SolarixParser(DirParser):
                 pass
             try:
                 dataset_name = dataset["name"]
-                dataset['datset_id'] = f'{expt["internal_id"]}-{dataset_name}'
+                dataset['dataset_id'] = f'{expt["internal_id"]}-{dataset_name}'
             except Exception as err:
                 pass
             if directory.suffix == ".d":
@@ -246,12 +247,67 @@ class SolarixParser(DirParser):
                 metadata = True
             projects[directory] = [users, project, expt, dataset, meta, data, metadata, date]
         return projects
+                
 
-    def sort_dictionaries(self,
-                          projects_dict):
-        expts = {}
+    def create_datafile_dicts(self):
+        pass
+
+    def create_dataset_dicts(self):
         datasets = {}
-                            
+        for key in self.projects.keys():
+            current_path = self.projects[key]
+            if current_path[5] and not current_path[6]: # This has data but not metadata
+                if current_path[3]['dataset_id'] not in datasets.keys():
+                    datasets[current_path[3]['dataset_id']] = {
+                        'internal_id':current_path[2]['internal_id'],
+                        'dataset_id':current_path[3]['dataset_id'],
+                        'description': current_path[3]['name']}
+                elif 'dataset_id' not in datasets[current_path[3]['dataset_id']].keys():
+                    datasets[current_path[3]['dataset_id']]['internal_id'] = current_path[2]['internal_id']
+                    datasets[current_path[3]['dataset_id']]['dataset_id'] = current_path[3]['dataset_id']
+                    datasets[current_path[3]['dataset_id']]['description'] = current_path[3]['name']
+                else:
+                    # Log and error as we have a double up
+                    pass
+            elif current_path[6]:
+                # This is metadata
+                if current_path[3]['dataset_id'] not in datasets.keys():
+                    datasets[current_path[3]['dataset_id']] = {}
+                datasets[current_path[3]['dataset_id']].update(current_path[4])
+        return datasets
+
+    def create_experiment_dicts(self):
+        experiments = {}
+        for key in self.projects.keys():
+            current_path = self.projects[key]
+            if current_path[2] == {}:
+                continue
+            if current_path[2]['internal_id'] not in experiments.keys():
+                if self.default_user[0] not in current_path[0]:
+                    users = current_path[0]
+                    if users:
+                        owners = self.default_user + [users.pop(0)]
+                    else:
+                        owners = self.default_user
+                else:
+                    if current_path[0].index(self.default_user[0]) == 0:
+                        owners = self.default_user
+                    else:
+                        owners = self.default_user + [current_path[0].pop(0)]
+                    current_path[0].remove(self.default_user[0])
+                    users = current_path[0]
+                if not users:
+                    users = None
+                experiments[current_path[2]['internal_id']] = {
+                    'internal_id': current_path[2]['internal_id'],
+                    'title': current_path[2]['name'],
+                    'owners': owners,
+                    'users': users,
+                    'project_id': current_path[1]['project_id'],
+                    'project_name': current_path[1]['name'],
+                    'project_description': current_path[1]['description']}
+        return experiments
+                
     '''def walk_directory(self):
         Use os.walk to get the subdirectories under the root directory
         and use these to locate data and metadata files

@@ -94,8 +94,7 @@ class MyTardisUploader:
                               data=None,
                               params=None,
                               extra_headers=None,
-                              api_url_template=None,
-                              proxies=None):
+                              api_url_template=None):
         '''Function to handle the REST API calls
         
         Inputs:
@@ -121,7 +120,7 @@ class MyTardisUploader:
             headers = {**headers, **extra_headers}
         logger.debug(url)
         try:
-            if proxies:
+            if self.proxies:
                 response = requests.request(method,
                                             url,
                                             data=data,
@@ -129,7 +128,7 @@ class MyTardisUploader:
                                             headers=headers,
                                             auth=self.auth,
                                             verify=self.verify_certificate,
-                                            proxies=proxies)
+                                            proxies=self.proxies)
             else:
                 response = requests.request(method,
                                             url,
@@ -220,7 +219,6 @@ class MyTardisUploader:
         description / Defaults to No description
         users / list of MyTardis users who should have access to the experiment, defaults to None
         groups / list of MyTardis groups who should have access to the experiment, defaults to None
-        proxies / http and https proxies if needed to pass through the firewall
 
         Returns:
         =================================
@@ -239,6 +237,7 @@ class MyTardisUploader:
         params = {}
         users = None
         groups = None
+        default_user = None
         paramset = {}
         defaults = {'project_name': 'No Project',
                     'project_id':'No Project ID',
@@ -264,6 +263,8 @@ class MyTardisUploader:
                     continue
                 elif key == 'users':
                     users = expt_dict[key]
+                elif key == 'default_user':
+                    default_user = expt_dict[key]
                 elif key == 'groups':
                     groups = expt_dict[key]
                 else:
@@ -274,7 +275,7 @@ class MyTardisUploader:
                 parameter_list.append({u'name': key,
                                        u'value': value})
         paramset['parameters'] = parameter_list
-        return (mytardis, paramset, users, groups)
+        return (mytardis, paramset, users, default_user, groups)
 
     def __get_schema_uri(self,
                          namespace):
@@ -366,7 +367,6 @@ class MyTardisUploader:
         description / Defaults to No description
         users / list of MyTardis users who should have access to the experiment, defaults to None
         groups / list of MyTardis groups who should have access to the experiment, defaults to None
-        proxies / http and https proxies if needed to pass through the firewall
         
         Returns:
         =================================
@@ -392,8 +392,9 @@ class MyTardisUploader:
             return (False, uri)
         else:
             try:
-                mytardis, paramset, users, groups = self.__build_experiment_dictionaries(expt_dict,
-                                                                                         required_keys)
+                mytardis, paramset, users, default_user, groups = \
+                    self.__build_experiment_dictionaries(expt_dict,
+                                                         required_keys)
             except Exception as err:
                 logger.error(f'Encountered error: {err} when building experiment dictionaries')
                 return (False, None)
@@ -433,7 +434,7 @@ class MyTardisUploader:
                     try:
                         user_uri = self.__get_user_uri(user)
                     except Exception as err:
-                        logger.error(f'Error: {err} occured when searching for group {group}')
+                        logger.error(f'Error: {err} occured when searching for user {user}')
                     else:
                         try:
                             if users.index(user) == 0:
@@ -445,6 +446,19 @@ class MyTardisUploader:
                             response.raise_for_status()
                         except Exception as err:
                             logger.error(f'Error: {err} occured when allocating user {user} access to experiment: {mytardis["title"]}')
+            if owners:
+                for user in owners:
+                    try:
+                        user_uri = self.__get_user_uri(user)
+                    except Exception as err:
+                        logger.error(f'Error: {err} occured when searching for user {user}')
+                    else:
+                        try:
+                            response = self.share_experiment_with_owner(uri,
+                                                                        user_uri)
+                            response.raise_for_status()
+                        except Exception as err:
+                            logger.error(f'Error: {err} occured when allocating default user {user} access to experiment: {mytardis["title"]}')
             os.chdir(self.cwd)
             return (True, uri)
 
