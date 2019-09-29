@@ -14,7 +14,9 @@ import os
 import sys
 import hashlib
 import logging
+import subprocess
 from ..helper import constants as CONST
+from ..helper import helper as hlp
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +27,7 @@ class S3FileHandler(FileHandler):
         super().__init__(config_dict)
         self.s3_root_dir = config_dict['s3_root_dir']
         self.local_root_dir = config_dict['local_root_dir']
+        self.staging_dir = config_dict['staging_dir']
         self.bucket = config_dict['bucket']
         endpoint_url = config_dict['endpoint_url']
         if 'threshold' in config_dict.keys():
@@ -38,6 +41,24 @@ class S3FileHandler(FileHandler):
         self.cwd = os.getcwd()
         self.s3_client = boto3.client('s3',
                                       endpoint_url = endpoint_url)
+
+    def __move_file_to_staging(self
+                               local_location_path,
+                               file_name):
+        '''Copy a file from the research drive to staging prior to uploading'''
+        staging_path = os.path.join(self.staging_dir, local_loction_path, file_name)
+        local_path = os.path.join(self.local_root_dir, local_location_path, file_name)
+        local_md5sum = hlp.calculate_checksum(os.path.join(self.local_root_dir, local_location_path),
+                                              file_name)
+        subprocess.call(['cp',
+                         local_path,
+                         staging_path])
+        staging_md5sum = hlp.calculate_checksum(os.path.join(self.staging_dir, local_location_path),
+                                                file_name)
+        if local_md5sum == staging_md5sum:
+            return True
+        else:
+            return False
 
     def __multipart_upload(self,
                            local_location_path,
@@ -60,7 +81,7 @@ class S3FileHandler(FileHandler):
         False if the file does not upload or if the ETag differs from that calculated
         '''
         s3_location_path = os.path.join(self.s3_root_dir, s3_location_path)
-        file_path = os.join(self.local_root_dir, local_location_path, file_name)
+        file_path = os.join(self.local_staging_dir, local_location_path, file_name)
         from boto3.s3.transfer import TransferConfig
         config = TransferConfig(multipart_threshold=self.threshold,
                                 multipart_chunksize=self.blocksize,
@@ -180,9 +201,15 @@ class S3FileHandler(FileHandler):
                     file_dict):
         '''Wrapper around self.__multipart_upload function'''
         s3_location_path = file_dict['remote_dir']
-        local_location_path = os.path.join(self.local_root_dir, file_dict['local_dir'])
+        #local_location_path = os.path.join(self.local_root_dir, file_dict['local_dir'])
+        staging_location_path = os.path.join(self.staging_dir, file_dict['local_dir'])
         file_name = file_dict['file_name']
-        response = self.__multipart_upload(local_location_path,
+        response = self.__move_file_to_staging(local_location_path,
+                                               file_name)
+        if not response:
+            logger.error(f'File {file_name} was not successfully staged for uploading')
+            raise FileNotFoundError(f'File {file_name} was not successfully staged for uploading')
+        response = self.__multipart_upload(staging_location_path,
                                            file_name,
                                            s3_location_path)
         if not response:

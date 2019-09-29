@@ -21,7 +21,7 @@ class DirParser(Parser, ABC):
     @abstractmethod
     def __init__(self,
                  config_dict):
-        self.root_dir = config_dict['root_dir']
+        self.root_dir = Path(config_dict['root_dir'])
 
     @abstractmethod
     def create_datafile_dicts(self):

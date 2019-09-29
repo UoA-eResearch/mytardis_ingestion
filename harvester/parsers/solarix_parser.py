@@ -185,6 +185,7 @@ class SolarixParser(DirParser):
             meta = {}
             data = False
             metadata = False
+            m_dirs = []
             for part in directory.parts:
                 if part.startswith('res'):
                     rescode = part.split('-')[0]
@@ -225,6 +226,7 @@ class SolarixParser(DirParser):
                     expt = {"name": part[:-2]}
                     dataset = {"name": part[:-2]}
                 elif part[-2:] == ".m":
+                    m_dirs.append(directory)
                     file_path = directory.joinpath("apexAcquisition.method")
                     if os.path.isfile(file_path):
                         meta = self.extract_metadata(file_path)
@@ -243,7 +245,7 @@ class SolarixParser(DirParser):
             elif directory.suffix == ".m":
                 data = True
                 metadata = True
-            projects[directory] = [users, project, expt, dataset, meta, data, metadata, date]
+            projects[directory] = [users, project, expt, dataset, meta, data, metadata, date, m_dirs]
         return projects
                 
 
@@ -254,7 +256,7 @@ class SolarixParser(DirParser):
             if current_path[6]:
                 datafile_dict = {}
                 # This is metadata
-                datafile_dict["file"] = current_path[2]["name"] + "_method.tar"
+                datafile_dict["file"] = current_path[2]["name"] + "_method.tar.gz"
                 datafile_dict["local_dir"] = key.relative_to(self.root_dir)
                 datafile_dict["remote_dir"] = datafile_dict["local_dir"].parent
                 datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
