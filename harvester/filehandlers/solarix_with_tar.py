@@ -21,8 +21,10 @@ class SolarixFileHandler(S3FileHandler):
 
     def create_method_tar_file(self,
                                m_dir):
-        parent = m_dir.parent
-        tar_file = parent / (parent.name[:-2] + "_method.tar.gz")
+        local_parent = m_dir.parent
+        rel_parent = local_parent.relative_to(self.root_dir)
+        staging_parent = self.staging_dir / rel_parent
+        tar_file = staging_parent / (staging_parent.name[:-2] + "_method.tar.gz")
         tf = tarfile.open(tar_file, mode='w:gz')
         cwd = os.getcwd()
         os.chdir(m_dir)
