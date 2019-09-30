@@ -13,6 +13,7 @@ import requests
 import os
 from urllib.parse import urljoin, urlparse
 import json
+import ldap
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,11 @@ class MyTardisUploader:
             # Not sure that we want to force this but lets see if it breaks
             self.verify_certificate = True
             self.storage_box = config_dict['storage_box']
+            self.ldap_url = config_dict['ldap_url']
+            self.ldap_admin_user = config_dict['ldap_admin_user']
+            self.ldap_admin_password = config_dict['ldap_admin_password']
+            self.ldap_user_attr_map = config_dict['ldap_user_attr_map']
+            self.ldap_user_base = config_dict['ldap_user_base']
 
     def __raise_request_exception(self, response):
         e = requests.exceptions.RequestException(response=response)
@@ -152,6 +158,14 @@ class MyTardisUploader:
             logger.error(f'Error, {err.message}, occurred when attempting to call api request {url}')
             raise err
         return response
+
+    def gen_random_password(self):
+        import random
+        random.seed()
+        characters = 'abcdefghijklmnopqrstuvwxyzABCDFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()?'
+        passlen = 16
+        password = "".join(random.sample(characters,passlen))
+        return password
             
     def do_post_request(self, action, data, extra_headers=None):
         '''Wrapper around self.__do_rest_api_request to handle POST requests
@@ -313,6 +327,27 @@ class MyTardisUploader:
                 logger.debug(f'schema: {schema} found in the database.')
                 return schema['resource_uri']
 
+    def __create_user(self,
+                      upi):
+        l = ldap.initialize(self.ldap_url)
+        l.protocol_version = ldap.VERSION3
+        l.simple_bind_s(self.ldap_admin_user,
+                        self.ldap_admin_password)
+        result = l.search_s(self.ldap_user_base,
+                            ldap.SCOPE_SUBTREE,
+                            "({0}={1})".format(self.ldap_user_attr_map['upi'],
+                                               upi))
+        for e, r in result:
+            username = r[self.ldap_user_attr_map['upi']]
+            first_name = r[self.ldap_user_attr_map['first_name']]
+            last_name = r[self.ldap_user_attr_map['last_name']]
+            email = r[self.ldap_user_attr_map['email']]
+            password = self.gen_random_password()
+            if not self.__get_user_uri(upi):
+                # Create the user using the API
+                
+            
+
     def __get_experiment_uri(self, internal_id):
         '''Uses REST API GET with an internal_id filter. Raises an error if multiple
         instances of the same internal_id are located as this should never happen given
@@ -434,14 +469,11 @@ class MyTardisUploader:
                     try:
                         user_uri = self.__get_user_uri(user)
                     except Exception as err:
+                        
                         logger.error(f'Error: {err} occured when searching for user {user}')
                     else:
                         try:
-                            if users.index(user) == 0:
-                                response = self.share_experiment_with_owner(uri,
-                                                                            user_uri)
-                            else:
-                                response = self.share_experiment_with_user(uri,
+                            response = self.share_experiment_with_user(uri,
                                                                        user_uri)
                             response.raise_for_status()
                         except Exception as err:
@@ -666,7 +698,7 @@ class MyTardisUploader:
         else:
             resp_dict = json.loads(response.text)
             if resp_dict['objects'] == []:
-                logger.warning(f'UPI: {username} has not been added to the user database and the user cannot add or make changes.')
+                logger.info(f'UPI: {username} is not in the user database.')
                 return False
             elif len(resp_dict['objects']) > 1:
                 logger.error(f'Multiple instances of UPI: {upi} found in user database. Please verify and clean up.')
