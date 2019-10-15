@@ -37,7 +37,6 @@ class SolarixParser(DirParser):
         self.ldap_user_attr_map = config_dict['ldap_user_attr_map']
         self.ldap_user_base = config_dict['ldap_user_base']
         self.projects = self.find_data(self.sub_dirs)
-        self.default_user = config_dict['default_user']
         #TODO put proxies stuff here
 
     def check_project_db(self,

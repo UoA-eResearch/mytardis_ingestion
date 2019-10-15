@@ -56,7 +56,14 @@ class MyTardisUploader:
         required_keys = ['server',
                          'username',
                          'api_key',
-                         'root_dir']
+                         'root_dir',
+                         'storage_box',
+                         'ldap_url'
+                         'ldap_admin_user',
+                         'ldap_admin_password',
+                         'ldap_user_base',
+                         'projectdb_user',
+                         'projectdb_api']
         check = check_dictionary(config_dict,
                                  required_keys)
         if not check[0]:
@@ -146,7 +153,6 @@ class MyTardisUploader:
             # 502 Bad Gateway triggers retries, since the proxy web
             # server (eg Nginx or Apache) in front of MyTardis could be
             # temporarily restarting
-            print(response.text)
             if response.status_code == 502:
                 self.__raise_request_exception(response)
             else:
@@ -158,16 +164,8 @@ class MyTardisUploader:
             logger.error(f'Error, {err.message}, occurred when attempting to call api request {url}')
             raise err
         return response
-
-    def gen_random_password(self):
-        import random
-        random.seed()
-        characters = 'abcdefghijklmnopqrstuvwxyzABCDFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()?'
-        passlen = 16
-        password = "".join(random.sample(characters,passlen))
-        return password
             
-    def do_post_request(self, action, data, extra_headers=None):
+    def __do_post_request(self, action, data, extra_headers=None):
         '''Wrapper around self.__do_rest_api_request to handle POST requests
 
         Inputs:
@@ -327,7 +325,7 @@ class MyTardisUploader:
                 logger.debug(f'schema: {schema} found in the database.')
                 return schema['resource_uri']
 
-    def __create_user(self,
+    def __get_or_create_user(self,
                       upi):
         l = ldap.initialize(self.ldap_url)
         l.protocol_version = ldap.VERSION3
@@ -342,12 +340,59 @@ class MyTardisUploader:
             first_name = r[self.ldap_user_attr_map['first_name']]
             last_name = r[self.ldap_user_attr_map['last_name']]
             email = r[self.ldap_user_attr_map['email']]
-            password = self.gen_random_password()
-            if not self.__get_user_uri(upi):
+            uri = self.__get_user_uri(upi)
+            if uri:
+                return (False, uri)
+            else:
                 # Create the user using the API
-                
-            
-
+                mytardis = {'username': username,
+                            'first_name': first_name,
+                            'last_name': last_name,
+                            'email': email}
+                mytardis_json = dict_to_json(mytardis)
+                try:
+                    response = self.__do_post_request('user',
+                                                      mytardis_json)
+                    response.raise_for_status()
+                except Exception as err:
+                    logger.error(f'Error occurred when creating user {username}. Error: {err}')
+                    return (False, None)
+                response = json.loads(response.text)
+                uri = response['resource_uri']
+                user_id = self.__resource_uri_to_id(uri)
+                query_params = {u'user': user_id}
+                try:
+                    response = self.__do_get_request('userprofile',
+                                                     query_params)
+                    response.raise_for_status()
+                except Exception as err:
+                    logger.error(f'Error: {err} occured when looking up the user profile of user {username}')
+                    raise err
+                else:
+                    resp_dict = json.loads(response.text)
+                    if resp_dict['objects'] == []:
+                        return False
+                    elif len(resp_dict['objects']) > 1:
+                        logger.error(f'More than one user profile found for user {username}')
+                        raise Exception(f'More than one user profile found for user {username}')
+                    else:
+                        obj = resp_dict['objects'][0]
+                user_uri = obj['resource_uri']
+                user_profile = {'resource_uri': user_uri,
+                                'user': uri}
+                mytardis = {'username': username,
+                            'user_id' : user_id,
+                            'userProfile': user_profile}
+                mytardis_json = dict_to_json(mytardis)
+                try:
+                    response = self.__do_post_request('userauthentication',
+                                                      mytardis_json)
+                    response.raise_for_status()
+                except Exception as err:
+                    logger.error(f'Error occurred when creating user {username} LDAP authentication. Error: {err}')
+                    return (False, None)
+        return (True, uri)
+                    
     def __get_experiment_uri(self, internal_id):
         '''Uses REST API GET with an internal_id filter. Raises an error if multiple
         instances of the same internal_id are located as this should never happen given
@@ -467,9 +512,8 @@ class MyTardisUploader:
             if users:
                 for user in users:
                     try:
-                        user_uri = self.__get_user_uri(user)
+                        flg, user_uri = self.__get_or_create_user(user)
                     except Exception as err:
-                        
                         logger.error(f'Error: {err} occured when searching for user {user}')
                     else:
                         try:
@@ -481,7 +525,7 @@ class MyTardisUploader:
             if owners:
                 for user in owners:
                     try:
-                        user_uri = self.__get_user_uri(user)
+                        user_uri = self.__get_or_create_user(user)
                     except Exception as err:
                         logger.error(f'Error: {err} occured when searching for user {user}')
                     else:
