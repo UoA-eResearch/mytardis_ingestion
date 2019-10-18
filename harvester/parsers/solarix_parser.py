@@ -26,8 +26,9 @@ def get_immediate_subdirectories(parent_dir):
 class SolarixParser(DirParser):
 
     def __init__(self,
-                 config_dict):
-        super().__init__(config_dict)
+                 config_dict,
+                 harvester):
+        super().__init__(config_dict, harvester)
         self.project_db_key = config_dict['project_db_key']
         self.sub_dirs = self.build_dir_list(self.root_dir)
         self.default_user = config_dict['default_user']

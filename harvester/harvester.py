@@ -4,15 +4,16 @@
 #
 from abc import ABC, abstractmethod
 from .ingestor import MyTardisUploader
-from .helper import readJSON
 import logging
 import os
 import sys
+import hashlib
+import subprocess
 
 logger = logging.getLogger(__name__)
 
 class Harvester(ABC):
-
+    
     def __init__(self,
                  config_dir):
         '''
@@ -31,18 +32,42 @@ class Harvester(ABC):
         self.fileuploader: An instance of a specific file uploader
         self.mytardis: An instance of the myTardis uploader.
         '''
+        ldap_keys = ['ldap_url'
+                     'ldap_admin_user',
+                     'ldap_admin_password',
+                     'ldap_user_base']
+        project_db_keys = ['projectdb_user',
+                           'projectdb_api']
+        harvester_keys = ['root_dir']
         os.chdir(config_dir)
+        config_dict = readJSON('harvester.json')
+        ldap_dict = readJSON('../ldap.json')
+        project_db_dict = readJSON('../cerproject.json')
         mytardis_config = readJSON('mytardis.json')
         parser_config = readJSON('parser.json')
         filehandler_config = readJSON('filehandler.json')
-        self.mytardis = self.mytardis(mytardis_config)
-        self.parser = self.parser(parser_config)
-        self.filehandler = self.filehandler(filehandler_config)
+        self.ldap_url = ldap_dict['ldap_url']
+        self.ldap_admin_user = ldap_dict['ldap_admin_user']
+        self.ldap_admin_password = ldap_dict['ldap_admin_password']
+        self.ldap_user_attr_map = ldap_dict['ldap_user_attr_map']
+        self.ldap_user_base = ldap_dict['ldap_user_base']
+        self.project_db_user = project_db_dict['projectdb_user']
+        self.project_db_url = project_db_dict['projectdb_url']
+        self.project_db_api = project_db_dict['project_api']
+        if 'proxies' in config_dict.keys():
+            self.proxies = config_dict['proxies']
+        else:
+            self.proxies = None
+
+        self.mytardis = self.mytardis(mytardis_config, self)
+        self.parser = self.parser(parser_config, self)
+        self.filehandler = self.filehandler(filehandler_config, self)
 
     def mytardis(self,
-                 config_dict):
+                 config_dict,
+                 harvester):
         try:
-            ingestor = MyTardisUploader(config_dict)
+            ingestor = MyTardisUploader(config_dict,harvester)
         except Exception as err:
             logger.critical(f'Shutting down harvester while initialising MyTardis, Error: {err}')
             sys.exit()
