@@ -37,8 +37,7 @@ class Harvester(ABC):
                      'ldap_admin_user',
                      'ldap_admin_password',
                      'ldap_user_base']
-        project_db_keys = ['projectdb_user',
-                           'projectdb_api',
+        project_db_keys = ['projectdb_api',
                            'projectdb_url']
         harvester_keys = ['root_dir']
         os.chdir(config_dir)
@@ -53,7 +52,6 @@ class Harvester(ABC):
         self.ldap_admin_password = ldap_dict['ldap_admin_password']
         self.ldap_user_attr_map = ldap_dict['ldap_user_attr_map']
         self.ldap_user_base = ldap_dict['ldap_user_base']
-        self.project_db_user = project_db_dict['projectdb_user']
         self.project_db_url = project_db_dict['projectdb_url']
         self.project_db_api = project_db_dict['projectdb_api']
         if 'proxies' in config_dict.keys():
