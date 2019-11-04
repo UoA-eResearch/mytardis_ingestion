@@ -16,7 +16,7 @@ from pathlib import Path
 
 logger = logging.getLogger
 
-class DirParser(Parser, ABC):
+class DirectoryParser(Parser, ABC):
 
     @abstractmethod
     def __init__(self,
@@ -38,7 +38,7 @@ class DirParser(Parser, ABC):
 
     #TODO abstract out some of the core functionality of the DIR parser here
 
-    def build_dir_list(self,
+    def _build_dir_list(self,
                        directory = None):
         if not directory:
             directory = self.root_dir

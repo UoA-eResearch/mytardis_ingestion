@@ -9,6 +9,7 @@ import os
 import sys
 import hashlib
 import subprocess
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,8 @@ class Harvester(ABC):
                      'ldap_admin_password',
                      'ldap_user_base']
         project_db_keys = ['projectdb_user',
-                           'projectdb_api']
+                           'projectdb_api',
+                           'projectdb_url']
         harvester_keys = ['root_dir']
         os.chdir(config_dir)
         config_dict = readJSON('harvester.json')
@@ -53,12 +55,12 @@ class Harvester(ABC):
         self.ldap_user_base = ldap_dict['ldap_user_base']
         self.project_db_user = project_db_dict['projectdb_user']
         self.project_db_url = project_db_dict['projectdb_url']
-        self.project_db_api = project_db_dict['project_api']
+        self.project_db_api = project_db_dict['projectdb_api']
         if 'proxies' in config_dict.keys():
             self.proxies = config_dict['proxies']
         else:
             self.proxies = None
-
+        self.root_dir = Path(config_dict['root_dir'])
         self.mytardis = self.mytardis(mytardis_config, self)
         self.parser = self.parser(parser_config, self)
         self.filehandler = self.filehandler(filehandler_config, self)

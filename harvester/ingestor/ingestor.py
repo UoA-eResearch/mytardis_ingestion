@@ -834,8 +834,11 @@ class MyTardisUploader:
             os.sep).split(os.sep).pop())
         return resource_id
 
-    def share_experiment_with_group(self, experiment_uri, group_uri,
-                                    *args, **kwargs):
+    def share_experiment_with_group(self,
+                                    experiment_uri,
+                                    group_uri,
+                                    *args,
+                                    **kwargs):
         """
         Executes an HTTP request to share an experiment with a group,
         via updating the ObjectACL.
@@ -857,9 +860,8 @@ class MyTardisUploader:
                                        **kwargs)
 
     def share_experiment_with_user(self,
-                                   experiment,
+                                   experiment_uri,
                                    user_uri,
-                                   isOwner=False,
                                    *args,
                                    **kwargs):
         """
@@ -875,17 +877,16 @@ class MyTardisUploader:
         =================================
         A requests Response object
         """
-        return self._share_experiment(experiment,
+        return self._share_experiment(experiment_uri,
                                        'django_user',
                                        user_uri,
-                                       isOwner,
+                                       isOwner=False,
                                        *args,
                                        **kwargs)
 
     def share_experiment_with_owner(self,
-                                    experiment,
+                                    experiment_uri,
                                     user_uri,
-                                    isOwner=True,
                                     *args,
                                     **kwargs):
         """
@@ -901,10 +902,10 @@ class MyTardisUploader:
         =================================
         A requests Response object
         """
-        return self._share_experiment(experiment,
+        return self._share_experiment(experiment_uri,
                                        'django_user',
                                        user_uri,
-                                       isOwner,
+                                       isOwner=True,
                                        *args,
                                        **kwargs)
 

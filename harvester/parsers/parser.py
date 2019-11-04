@@ -14,7 +14,9 @@ class Parser(ABC):
 
     @abstractmethod
     def  __init__(self,
-                  config_dict):
+                  config_dict,
+                  harvester):
+        self.harvester = harvester
         pass
 
     @abstractmethod

@@ -19,32 +19,22 @@ from pathlib import Path
 import ldap
 import datetime
 
-def get_immediate_subdirectories(parent_dir):
-    return [name for name in os.listdir(parent_dir)
-            if os.path.isdir(os.path.join(parent_dir, name))]
-
 class SolarixParser(DirParser):
 
     def __init__(self,
                  config_dict,
                  harvester):
         super().__init__(config_dict, harvester)
-        self.project_db_key = config_dict['project_db_key']
         self.sub_dirs = self.build_dir_list(self.root_dir)
         self.default_user = config_dict['default_user']
-        self.ldap_url = config_dict['ldap_url']
-        self.ldap_admin_user = config_dict['ldap_admin_user']
-        self.ldap_admin_password = config_dict['ldap_admin_password']
-        self.ldap_user_attr_map = config_dict['ldap_user_attr_map']
-        self.ldap_user_base = config_dict['ldap_user_base']
         self.projects = self.find_data(self.sub_dirs)
         #TODO put proxies stuff here
 
     def check_project_db(self,
                          res_code):
-        auth_code = f'Basic {self.project_db_key}'
+        auth_code = f'Basic {self.harvester.project_db_key}'
         headers = {"Authorization": auth_code}
-        url = f'https://projects.cer.auckland.ac.nz/projectdb/rest/projects/{res_code}'
+        url = f'{self.harvester.project_db_url}{res_code}'
         response = requests.get(url, headers=headers)
         return response
 
@@ -52,21 +42,21 @@ class SolarixParser(DirParser):
                                response):
         users = []
         resp_dict = json.loads(response.text)
-        l = ldap.initialize(self.ldap_url)
+        l = ldap.initialize(self.harvester.ldap_url)
         l.protocol_version = ldap.VERSION3
-        l.simple_bind_s(self.ldap_admin_user,
-                        self.ldap_admin_password)
+        l.simple_bind_s(self.harvester.ldap_admin_user,
+                        self.harvester.ldap_admin_password)
         for user in resp_dict['rpLinks']:
             user_email = user['researcher']['email']
-            result = l.search_s(self.ldap_user_base,
+            result = l.search_s(self.harvester.ldap_user_base,
                                 ldap.SCOPE_SUBTREE,
-                                "({0}={1})".format(self.ldap_user_attr_map['email'],
+                                "({0}={1})".format(self.harvester.ldap_user_attr_map['email'],
                                                    user_email))
             for e, r in result:
                 if user['researcherRoleId'] == 1:
-                    users.insert(0,r[self.ldap_user_attr_map["upi"]][0].decode('utf-8'))
+                    users.insert(0,r[self.harvester.ldap_user_attr_map["upi"]][0].decode('utf-8'))
                 else:
-                    users.append(r[self.ldap_user_attr_map["upi"]][0].decode('utf-8'))
+                    users.append(r[self.harvester.ldap_user_attr_map["upi"]][0].decode('utf-8'))
         l.unbind_s()
         return users
 

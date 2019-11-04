@@ -15,10 +15,11 @@ class FileHandler(ABC):
 
     @abstractmethod
     def __init__(self,
-                 config_dict):
-        self.md5sum_executable = confing_dict['md5sum_executable']
+                 config_dict,
+                 harvester):
+        self.md5sum_executable = config_dict['md5sum_executable']
         self.subprocess_size_threshold = 100*CONST.MB
-        self.blocksize = 128
+        self.harvester = harvester
         pass
 
     @abstractmethod

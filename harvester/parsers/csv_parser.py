@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 class CSVParser(Parser):
 
     def __init__(self,
-                 config_dict):
+                 config_dict,
+                 harvester):
         '''Initialise a CSV parser.
 
         Inputs:
@@ -59,13 +60,13 @@ class CSVParser(Parser):
         self.schema_dict: the dictionary of schemas to be used to define the objects in mytardis
         self.use_headers: a boolean flag to allow csv files without headers to be used.
         '''
+        super.__init__(config_dict, harvester)
         self.datafiles = []
         self.datasets = []
         self.experiments = []
         self.use_headers = True
         self.delimiter = ','
-        required_keys = ['root_dir',
-                         'file_header',
+        required_keys = ['file_header',
                          'local_dir',
                          'experiment_headers',
                          'dataset_headers',
