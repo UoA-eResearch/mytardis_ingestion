@@ -4,5 +4,5 @@ __author__ = 'Chris Seal <c.seal@auckland.ac.nz>'
 from .parser import Parser
 from .csv_parser import *
 from .genomics_print import *
-from .dir_parser import *
+#from .dir_parser import *
 from .solarix_parser import *
