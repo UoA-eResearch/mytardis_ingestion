@@ -69,13 +69,14 @@ class SolarixParser(Parser):
             search_filter = f'({self.harvester.ldap_user_attr_map["email"]}={user_email})'
             connection.search(self.harvester.ldap_user_base,
                               search_filter,
-                              attributes=['*'])
+                              attributes=['*'])#self.harvester.ldap_user_attr_map)
             person = connection.entries[0]
-            if user['researchRoleId'] == 1:
+            if user['researcherRoleId'] == 1:
                 users.insert(0,person[self.harvester.ldap_user_attr_map['upi']][0])
             else:
                 users.append(person[self.harvester.ldap_user_attr_map['upi']][0])
         connection.unbind()
+        print(users)
         return users
 
     def get_name_and_abstract_from_project(self,
@@ -263,11 +264,12 @@ class SolarixParser(Parser):
         datafiles = []
         for key in self.projects.keys():
             current_path = self.projects[key]
+            print(current_path)
             if current_path[6]:
                 datafile_dict = {}
                 # This is metadata
                 datafile_dict["file"] = current_path[2]["name"] + "_method.tar.gz"
-                datafile_dict["local_dir"] = key.relative_to(self.root_dir)
+                datafile_dict["local_dir"] = key.relative_to(self.harvester.root_dir)
                 datafile_dict["remote_dir"] = datafile_dict["local_dir"].parent
                 datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
                 datafiles.append(datafile_dict)
@@ -276,26 +278,27 @@ class SolarixParser(Parser):
                     if child.is_file():
                         datafile_dict = {}
                         datafile_dict["file"] = child.name
-                        datafile_dict["local_dir"] = key.relative_to(self.root_dir)
+                        datafile_dict["local_dir"] = key.relative_to(self.harvester.root_dir)
                         datafile_dict["remote_dir"] = datafile_dict["local_dir"]
                         datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
                         datafiles.append(datafile_dict)
             if 'Ion Source' in current_path[4].keys():
                 if current_path[4]['Ion Source'] == 'MALDI Imaging':
                     for child in key.parent.parent.iterdir():
-                        print(child)
                         if child.is_file():
                             datafile_dict = {}
                             datafile_dict["file"] = child.name
-                            datafile_dict["local_dir"] = key.parent.relative_to(self.root_dir)
+                            datafile_dict["local_dir"] = key.parent.relative_to(self.harvester.root_dir)
                             datafile_dict["remote_dir"] = datafile_dict["local_dir"]
                             datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
                             if datafile_dict not in datafiles:
                                 datafiles.append(datafile_dict)
         for datafile in datafiles:
-            if datafile['local_dir'] not in self.harvester.file_dict.keys():
-                self.harvester.file_dict[datafile['local_dir']] = []
-            self.harvester.file_dict[datafile['local_dir']].append(datafile_dict['file'])
+            print(datafile)
+            if datafile['local_dir'] not in self.harvester.files_dict.keys():
+                self.harvester.files_dict[datafile['local_dir']] = []
+            self.harvester.files_dict[datafile['local_dir']].append(datafile['file'])
+        
         return datafiles
 
     def create_dataset_dicts(self):
