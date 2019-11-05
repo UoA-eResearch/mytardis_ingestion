@@ -33,3 +33,27 @@ class SolarixFileHandler(S3FileHandler):
             if child.is_file():
                 tf.add(child.name)
         tf.close()
+        
+    def upload_file(self,
+                    file_dict):
+        '''Wrapper around self.__multipart_upload function'''
+        s3_location_path = file_dict['remote_dir']
+        #local_location_path = os.path.join(self.local_root_dir, file_dict['local_dir'])
+        staging_location_path = os.path.join(self.staging_dir, file_dict['local_dir'])
+        file_name = file_dict['file_name']
+        print(file_dict['local_dir'])
+        if file_dict['local_dir'] in self.harvester.files_dict.keys():
+            print(self.harvester.files_dict[file_dict['local_dir']])
+        '''response = self.__move_file_to_staging(local_location_path,
+                                               file_name)
+        if not response:
+            logger.error(f'File {file_name} was not successfully staged for uploading')
+            raise FileNotFoundError(f'File {file_name} was not successfully staged for uploading')
+        response = self.__multipart_upload(staging_location_path,
+                                           file_name,
+                                           s3_location_path)
+        if not response:
+            logger.error(f'File {file_name} was not successfully uploaded into s3 object store. Please check this log for further details.')
+            # TODO: add email warning to logger
+        return response'''
+        return False
