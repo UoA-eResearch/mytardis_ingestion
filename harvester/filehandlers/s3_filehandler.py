@@ -23,8 +23,9 @@ logger = logging.getLogger(__name__)
 class S3FileHandler(FileHandler):
 
     def __init__(self,
-                 config_dict):
-        super().__init__(config_dict)
+                 config_dict,
+                 harvester):
+        super().__init__(config_dict, harvester)
         self.s3_root_dir = config_dict['s3_root_dir']
         self.local_root_dir = config_dict['local_root_dir']
         self.staging_dir = config_dict['staging_dir']

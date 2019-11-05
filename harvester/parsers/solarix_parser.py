@@ -165,6 +165,8 @@ class SolarixParser(DirParser):
             directories = self.sub_dirs
         projects = {}
         for directory in directories:
+            if directory in self.harvester.processed_list:
+                continue
             date = None
             users = []
             project = {'project_id': "No_Project",
@@ -272,7 +274,10 @@ class SolarixParser(DirParser):
                             datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
                             if datafile_dict not in datafiles:
                                 datafiles.append(datafile_dict)
-                    
+        for datafile in datafiles:
+            if datafile['local_dir'] not in self.harvester.file_dict.keys():
+                self.harvester.file_dict[datafile['local_dir']] = []
+            self.harvester.file_dict[datafile['local_dir']].append(datafile_dict['file'])
         return datafiles
 
     def create_dataset_dicts(self):

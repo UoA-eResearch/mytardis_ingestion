@@ -16,8 +16,9 @@ import tarfile
 class SolarixFileHandler(S3FileHandler):
 
     def __init__(self,
-                 config_dict):
-        super().__init__(config_dict)
+                 config_dict,
+                 harvester):
+        super().__init__(config_dict, harvester)
 
     def create_method_tar_file(self,
                                m_dir):
