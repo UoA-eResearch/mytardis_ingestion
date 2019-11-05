@@ -13,7 +13,7 @@ import requests
 import os
 from urllib.parse import urljoin, urlparse
 import json
-import ldap3 as ldap
+import ldap3
 
 logger = logging.getLogger(__name__)
 
@@ -512,7 +512,14 @@ class MyTardisUploader:
 
     def _get_or_create_user(self,
                             upi):
-        l = ldap.initialize(self.harvester.ldap_url)
+
+        # =================================
+        #
+        # TODO: Update to ldap3
+        #
+        # =================================
+        
+        '''l = ldap.initialize(self.harvester.ldap_url)
         l.protocol_version = ldap.VERSION3
         l.simple_bind_s(self.harvester.ldap_admin_user,
                         self.harvester.ldap_admin_password)
@@ -522,61 +529,73 @@ class MyTardisUploader:
                                                upi))
         for e, r in result:
             username = r[self.harvester.ldap_user_attr_map['upi']]
-            first_name = r[self.harvester.ldap_user_attr_map['first_name']]
-            last_name = r[self.harvester.ldap_user_attr_map['last_name']]
-            email = r[self.harvester.ldap_user_attr_map['email']]
-            uri = self._get_user_uri(upi)
-            if uri:
-                return (False, uri)
+            '''
+        server = ldap3.Server(self.harvester.ldap_url)
+        search_filter = f'({self.harvester.ldap_user_attr_map["upi"]}={upi})'
+        with ldap3.Connection(server,
+                              auto_bind=True,
+                              user=self.harvester.ldap_admin_user,
+                              password=self.harvester.ldap_admin_password) as connection:
+            connection.search(self.harvester.ldap_user_base,
+                              search_filter,
+                              attributes=['*'])
+        person = connection.entries[0]
+        username = person[self.harvester.ldap_user_attr_map['upi']]
+        first_name = person[self.harvester.ldap_user_attr_map['first_name']]
+        last_name = person[self.harvester.ldap_user_attr_map['last_name']]
+        email = person[self.harvester.ldap_user_attr_map['email']]
+        uri = self._get_user_uri(upi)
+        if uri:
+            return (False, uri)
+        else:
+            # Create the user using the API
+            # todo: check if the user is in LDAP
+            mytardis = {'username': username,
+                        'first_name': first_name,
+                        'last_name': last_name,
+                        'email': email}
+            mytardis_json = dict_to_json(mytardis)
+            try:
+                response = self._do_post_request('user',
+                                                 mytardis_json)
+                response.raise_for_status()
+            except Exception as err:
+                logger.error(f'Error occurred when creating user {username}. Error: {err}')
+                return (False, None)
+            response = json.loads(response.text)
+            uri = response['resource_uri']
+            user_id = self._resource_uri_to_id(uri)
+            query_params = {u'user': user_id}
+            try:
+                response = self._do_get_request('userprofile',
+                                                query_params)
+                response.raise_for_status()
+            except Exception as err:
+                logger.error(f'Error: {err} occured when looking up the user profile of user {username}')
+                raise err
             else:
-                # Create the user using the API
-                # todo: check if the user is in LDAP
-                mytardis = {'username': username,
-                            'first_name': first_name,
-                            'last_name': last_name,
-                            'email': email}
-                mytardis_json = dict_to_json(mytardis)
-                try:
-                    response = self._do_post_request('user',
-                                                      mytardis_json)
-                    response.raise_for_status()
-                except Exception as err:
-                    logger.error(f'Error occurred when creating user {username}. Error: {err}')
-                    return (False, None)
-                response = json.loads(response.text)
-                uri = response['resource_uri']
-                user_id = self._resource_uri_to_id(uri)
-                query_params = {u'user': user_id}
-                try:
-                    response = self._do_get_request('userprofile',
-                                                     query_params)
-                    response.raise_for_status()
-                except Exception as err:
-                    logger.error(f'Error: {err} occured when looking up the user profile of user {username}')
-                    raise err
+                resp_dict = json.loads(response.text)
+                if resp_dict['objects'] == []:
+                    return False
+                elif len(resp_dict['objects']) > 1:
+                    logger.error(f'More than one user profile found for user {username}')
+                    raise Exception(f'More than one user profile found for user {username}')
                 else:
-                    resp_dict = json.loads(response.text)
-                    if resp_dict['objects'] == []:
-                        return False
-                    elif len(resp_dict['objects']) > 1:
-                        logger.error(f'More than one user profile found for user {username}')
-                        raise Exception(f'More than one user profile found for user {username}')
-                    else:
-                        obj = resp_dict['objects'][0]
-                user_uri = obj['resource_uri']
-                user_profile = {'resource_uri': user_uri,
-                                'user': uri}
-                mytardis = {'username': username,
-                            'user_id' : user_id,
-                            'userProfile': user_profile}
-                mytardis_json = dict_to_json(mytardis)
-                try:
-                    response = self._do_post_request('userauthentication',
-                                                      mytardis_json)
-                    response.raise_for_status()
-                except Exception as err:
-                    logger.error(f'Error occurred when creating user {username} LDAP authentication. Error: {err}')
-                    return (False, None)
+                    obj = resp_dict['objects'][0]
+            user_uri = obj['resource_uri']
+            user_profile = {'resource_uri': user_uri,
+                            'user': uri}
+            mytardis = {'username': username,
+                        'user_id' : user_id,
+                        'userProfile': user_profile}
+            mytardis_json = dict_to_json(mytardis)
+            try:
+                response = self._do_post_request('userauthentication',
+                                                 mytardis_json)
+                response.raise_for_status()
+            except Exception as err:
+                logger.error(f'Error occurred when creating user {username} LDAP authentication. Error: {err}')
+                return (False, None)
         return (True, uri)
 
     def _get_ownership_int(self, ownership_type):

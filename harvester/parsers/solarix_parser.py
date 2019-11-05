@@ -16,7 +16,7 @@ import re
 import requests
 import json
 from pathlib import Path
-import ldap3 as ldap
+import ldap3
 import datetime
 
 class SolarixParser(Parser):
@@ -51,22 +51,31 @@ class SolarixParser(Parser):
                                response):
         users = []
         resp_dict = json.loads(response.text)
-        l = ldap.initialize(self.harvester.ldap_url)
-        l.protocol_version = ldap.VERSION3
-        l.simple_bind_s(self.harvester.ldap_admin_user,
-                        self.harvester.ldap_admin_password)
+
+        # =================================
+        #
+        # TODO: Update to ldap3
+        #
+        # =================================
+
+        server = ldap3.Server(self.harvester.ldap_url)
+        
+        connection = ldap3.Connection(server,
+                                      auto_bind=True,
+                                      user=self.harvester.ldap_admin_user,
+                                      password=self.harvester.ldap_admin_password)
         for user in resp_dict['rpLinks']:
             user_email = user['researcher']['email']
-            result = l.search_s(self.harvester.ldap_user_base,
-                                ldap.SCOPE_SUBTREE,
-                                "({0}={1})".format(self.harvester.ldap_user_attr_map['email'],
-                                                   user_email))
-            for e, r in result:
-                if user['researcherRoleId'] == 1:
-                    users.insert(0,r[self.harvester.ldap_user_attr_map["upi"]][0].decode('utf-8'))
-                else:
-                    users.append(r[self.harvester.ldap_user_attr_map["upi"]][0].decode('utf-8'))
-        l.unbind_s()
+            search_filter = f'({self.harvester.ldap_user_attr_map["email"]}={user_email})'
+            connection.search(self.harvester.ldap_user_base,
+                              search_filter,
+                              attributes=['*'])
+            person = connection.entries[0]
+            if user['researchRoleId'] == 1:
+                users.insert(0,person[self.harvester.ldap_user_attr_map['upi']][0])
+            else:
+                users.append(person[self.harvester.ldap_user_attr_map['upi']][0])
+        connection.unbind()
         return users
 
     def get_name_and_abstract_from_project(self,
