@@ -1,7 +1,7 @@
 from . import Harvester
 import logging
 from .parsers import SolarixParser
-from .filehanders import SolarixFileHandler
+from .filehandlers import SolarixFileHandler
 import os
 import sys
 from pathlib import Path
@@ -13,30 +13,35 @@ class SolarixHarvester(Harvester):
     def __init__(self,
                  config_dir,
                  filepath):
-        super().__init__(config_dir)
         self.processed_list = self.read_processed_file_list(filepath)
+        print(self.processed_list)
+        super().__init__(config_dir)
         self.files_dict = {}
         
     def read_processed_file_list(self,
                                  filepath):
-        with open(filepath, 'r') as f:
-            for line in f:
-                processed_list.append(Path(line))
+        processed_list = []
+        if os.path.isfile(filepath):
+            with open(filepath, 'r') as f:
+                for line in f:
+                    processed_list.append(Path(line))
         return processed_list
         
     def parser(self,
-               config_dict):
+               config_dict,
+               harvester):
         try:
-            parser = SolarixParser(config_dict, self)
+            parser = SolarixParser(config_dict, harvester)
         except Exception as err:
             logger.critical(f'Shutting down harvester while initialising Parser, Error {err}')
             sys.exit()
         return parser
 
     def filehandler(self,
-                    config_dict):
+                    config_dict,
+                    harvester):
         try:
-            filehandler = SolarixFileHandler(config_dict, self)
+            filehandler = SolarixFileHandler(config_dict, harvester)
         except Exception as err:
             logger.critical(f'Shutting down harvester while initialising File handler, Error {err}')
             sys.exit()

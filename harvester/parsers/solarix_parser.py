@@ -8,7 +8,7 @@
 
 __author__ = "Chris Seal <c.seal@auckland.ac.nz>"
 
-from .dir_parser import DirParser
+from .parser import Parser
 import logging
 import os
 from xml.etree import ElementTree
@@ -16,25 +16,34 @@ import re
 import requests
 import json
 from pathlib import Path
-import ldap
+import ldap3 as ldap
 import datetime
 
-class SolarixParser(DirParser):
+class SolarixParser(Parser):
 
     def __init__(self,
                  config_dict,
                  harvester):
         super().__init__(config_dict, harvester)
-        self.sub_dirs = self.build_dir_list(self.root_dir)
+        self.sub_dirs = self.build_dir_list(self.harvester.root_dir)
         self.default_user = config_dict['default_user']
         self.projects = self.find_data(self.sub_dirs)
-        #TODO put proxies stuff here
+
+    def build_dir_list(self,
+                       directory = None):
+        if not directory:
+            directory = self.harvester.root_dir
+        subdirectories = []
+        for dirname, subdirs, files in os.walk(directory):
+            cur_path = Path(dirname)
+            subdirectories.append(cur_path)
+        return subdirectories
 
     def check_project_db(self,
                          res_code):
-        auth_code = f'Basic {self.harvester.project_db_key}'
+        auth_code = f'Basic {self.harvester.projectdb_key}'
         headers = {"Authorization": auth_code}
-        url = f'{self.harvester.project_db_url}{res_code}'
+        url = f'{self.harvester.projectdb_url}{res_code}'
         response = requests.get(url, headers=headers)
         return response
 

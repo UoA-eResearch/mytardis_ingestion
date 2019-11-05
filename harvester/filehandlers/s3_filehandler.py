@@ -43,7 +43,7 @@ class S3FileHandler(FileHandler):
         self.s3_client = boto3.client('s3',
                                       endpoint_url = endpoint_url)
 
-    def __move_file_to_staging(self
+    def __move_file_to_staging(self,
                                local_location_path,
                                file_name):
         '''Copy a file from the research drive to staging prior to uploading'''

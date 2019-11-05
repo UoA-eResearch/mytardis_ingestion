@@ -4,6 +4,7 @@
 #
 from abc import ABC, abstractmethod
 from .ingestor import MyTardisUploader
+from .helper import readJSON
 import logging
 import os
 import sys
@@ -52,16 +53,18 @@ class Harvester(ABC):
         self.ldap_admin_password = ldap_dict['ldap_admin_password']
         self.ldap_user_attr_map = ldap_dict['ldap_user_attr_map']
         self.ldap_user_base = ldap_dict['ldap_user_base']
-        self.project_db_url = project_db_dict['projectdb_url']
-        self.project_db_api = project_db_dict['projectdb_api']
+        self.projectdb_url = project_db_dict['projectdb_url']
+        self.projectdb_key = project_db_dict['projectdb_api']
+        print(self.projectdb_url)
         if 'proxies' in config_dict.keys():
             self.proxies = config_dict['proxies']
         else:
             self.proxies = None
         self.root_dir = Path(config_dict['root_dir'])
-        self.mytardis = self.mytardis(mytardis_config, self)
-        self.parser = self.parser(parser_config, self)
-        self.filehandler = self.filehandler(filehandler_config, self)
+        harvester = self
+        self.mytardis = self.mytardis(mytardis_config, harvester)
+        self.parser = self.parser(parser_config, harvester)
+        self.filehandler = self.filehandler(filehandler_config, harvester)
 
     def mytardis(self,
                  config_dict,
@@ -75,12 +78,14 @@ class Harvester(ABC):
             
     @abstractmethod
     def filehandler(self,
-                     config_dict):
+                    config_dict,
+                    harvester):
         pass
 
     @abstractmethod
     def parser(self,
-               config_dict):
+               config_dict,
+               harvester):
         # Add needed values to the parser_config dictionary before handing it off
         # For example completed files/csvs
         pass
