@@ -8,7 +8,7 @@
 
 __author__ = "Chris Seal <c.seal@auckland.ac.nz>"
 
-from . import DirParser
+from .dir_parser import DirParser
 import logging
 import os
 from xml.etree import ElementTree

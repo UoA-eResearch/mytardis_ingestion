@@ -13,7 +13,7 @@ import requests
 import os
 from urllib.parse import urljoin, urlparse
 import json
-import ldap
+import ldap3 as ldap
 
 logger = logging.getLogger(__name__)
 
