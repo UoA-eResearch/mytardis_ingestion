@@ -8,11 +8,11 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-class SolarixHarvester(Harvester,
-                       filepath):
+class SolarixHarvester(Harvester):
 
     def __init__(self,
-                 config_dir):
+                 config_dir,
+                 filepath):
         super().__init__(config_dir)
         self.processed_list = self.read_processed_file_list(filepath)
         self.files_dict = {}
