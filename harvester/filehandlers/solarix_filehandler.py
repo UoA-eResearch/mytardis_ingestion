@@ -40,7 +40,7 @@ class SolarixFileHandler(S3FileHandler):
         s3_location_path = file_dict['remote_dir']
         #local_location_path = os.path.join(self.local_root_dir, file_dict['local_dir'])
         staging_location_path = os.path.join(self.staging_dir, file_dict['local_dir'])
-        file_name = file_dict['file_name']
+        file_name = file_dict['file']
         print(file_dict['local_dir'])
         if file_dict['local_dir'] in self.harvester.files_dict.keys():
             print(self.harvester.files_dict[file_dict['local_dir']])

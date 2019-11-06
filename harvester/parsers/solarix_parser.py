@@ -76,7 +76,6 @@ class SolarixParser(Parser):
             else:
                 users.append(person[self.harvester.ldap_user_attr_map['upi']][0])
         connection.unbind()
-        print(users)
         return users
 
     def get_name_and_abstract_from_project(self,
@@ -294,7 +293,6 @@ class SolarixParser(Parser):
                             if datafile_dict not in datafiles:
                                 datafiles.append(datafile_dict)
         for datafile in datafiles:
-            print(datafile)
             if datafile['local_dir'] not in self.harvester.files_dict.keys():
                 self.harvester.files_dict[datafile['local_dir']] = []
             self.harvester.files_dict[datafile['local_dir']].append(datafile['file'])
