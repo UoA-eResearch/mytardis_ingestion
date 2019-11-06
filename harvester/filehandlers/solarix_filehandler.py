@@ -43,7 +43,7 @@ class SolarixFileHandler(S3FileHandler):
         file_name = file_dict['file']
         print(file_dict['local_dir'])
         if file_dict['local_dir'] in self.harvester.files_dict.keys():
-            print(self.harvester.files_dict[file_dict['local_dir']])
+            print('Found: ', self.harvester.files_dict[file_dict['local_dir']])
         '''response = self.__move_file_to_staging(local_location_path,
                                                file_name)
         if not response:
