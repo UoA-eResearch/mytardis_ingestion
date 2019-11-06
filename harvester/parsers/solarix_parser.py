@@ -183,7 +183,9 @@ class SolarixParser(Parser):
             directories = self.sub_dirs
         projects = {}
         for directory in directories:
+            print(directory)
             if directory in self.harvester.processed_list:
+                print(f'Skipping: {directory}')
                 continue
             date = None
             users = []

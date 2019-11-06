@@ -17,6 +17,7 @@ class SolarixHarvester(Harvester):
         print(self.processed_list)
         super().__init__(config_dir)
         self.files_dict = {}
+        self.processed_file_path = filepath
         
     def read_processed_file_list(self,
                                  filepath):
@@ -24,7 +25,7 @@ class SolarixHarvester(Harvester):
         if os.path.isfile(filepath):
             with open(filepath, 'r') as f:
                 for line in f:
-                    processed_list.append(Path(line))
+                    processed_list.append(Path(line.strip('\n')))
         return processed_list
         
     def parser(self,
