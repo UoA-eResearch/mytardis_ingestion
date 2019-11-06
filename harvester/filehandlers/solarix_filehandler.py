@@ -44,11 +44,6 @@ class SolarixFileHandler(S3FileHandler):
         if file_dict['local_dir'] in self.harvester.files_dict.keys():
             print('Found: ', self.harvester.files_dict[file_dict['local_dir']])
             self.harvester.files_dict[file_dict['local_dir']].remove(file_name)
-        open_file = open(self.harvester.processed_file_path, 'w')
-        for key in self.harvester.files_dict.keys():
-            if self.harvester.files_dict[key] == []:
-                open_file.write(f'{self.harvester.root_dir}/{key}\n')
-        open_file.close()
         '''response = self.__move_file_to_staging(local_location_path,
                                                file_name)
         if not response:
@@ -60,5 +55,11 @@ class SolarixFileHandler(S3FileHandler):
         if not response:
             logger.error(f'File {file_name} was not successfully uploaded into s3 object store. Please check this log for further details.')
             # TODO: add email warning to logger
+        else:
+            open_file = open(self.harvester.processed_file_path, 'w')
+            for key in self.harvester.files_dict.keys():
+                if self.harvester.files_dict[key] == []:
+                    open_file.write(f'{self.harvester.root_dir}/{key}\n')
+            open_file.close()
         return response'''
         return False
