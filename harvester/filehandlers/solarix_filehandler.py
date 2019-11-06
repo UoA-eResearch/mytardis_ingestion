@@ -23,7 +23,7 @@ class SolarixFileHandler(S3FileHandler):
     def create_method_tar_file(self,
                                m_dir):
         local_parent = m_dir.parent
-        rel_parent = local_parent.relative_to(self.root_dir)
+        rel_parent = local_parent.relative_to(self.harvester.root_dir)
         staging_parent = self.staging_dir / rel_parent
         tar_file = staging_parent / (staging_parent.name[:-2] + "_method.tar.gz")
         tf = tarfile.open(tar_file, mode='w:gz')
@@ -41,9 +41,9 @@ class SolarixFileHandler(S3FileHandler):
         #local_location_path = os.path.join(self.local_root_dir, file_dict['local_dir'])
         staging_location_path = os.path.join(self.staging_dir, file_dict['local_dir'])
         file_name = file_dict['file']
-        print(file_dict['local_dir'])
         if file_dict['local_dir'] in self.harvester.files_dict.keys():
             print('Found: ', self.harvester.files_dict[file_dict['local_dir']])
+            self.harvester.files_dict[file_dict['local_dir']].pop(file_name)
         '''response = self.__move_file_to_staging(local_location_path,
                                                file_name)
         if not response:
