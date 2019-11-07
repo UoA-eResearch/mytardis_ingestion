@@ -14,7 +14,6 @@ class SolarixHarvester(Harvester):
                  config_dir,
                  filepath):
         self.processed_list = self.read_processed_file_list(filepath)
-        print(self.processed_list)
         super().__init__(config_dir)
         self.files_dict = {}
         self.processed_file_path = filepath

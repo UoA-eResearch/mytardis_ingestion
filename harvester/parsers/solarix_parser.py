@@ -183,7 +183,6 @@ class SolarixParser(Parser):
             directories = self.sub_dirs
         projects = {}
         for directory in directories:
-            print(directory)
             if directory in self.harvester.processed_list:
                 print(f'Skipping: {directory}')
                 continue
@@ -265,9 +264,10 @@ class SolarixParser(Parser):
         datafiles = []
         for key in self.projects.keys():
             current_path = self.projects[key]
-            print(current_path)
+            print(current_path[4])
             if current_path[6]:
                 datafile_dict = {}
+                datafile_dict['schema_namespace'] = self.datafile_schema
                 # This is metadata
                 datafile_dict["file"] = current_path[2]["name"] + "_method.tar.gz"
                 datafile_dict["local_dir"] = key.relative_to(self.harvester.root_dir)
@@ -278,22 +278,34 @@ class SolarixParser(Parser):
                 for child in key.iterdir():
                     if child.is_file():
                         datafile_dict = {}
+                        datafile_dict['schema_namespace'] = self.datafile_schema
                         datafile_dict["file"] = child.name
                         datafile_dict["local_dir"] = key.relative_to(self.harvester.root_dir)
                         datafile_dict["remote_dir"] = datafile_dict["local_dir"]
                         datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
                         datafiles.append(datafile_dict)
             if 'Ion Source' in current_path[4].keys():
+                print(current_path[4]['Ion Source'])
                 if current_path[4]['Ion Source'] == 'MALDI Imaging':
+                    print("MALDI Imaging")
+                    for child in key.iterdir():
+                        datafile_dict = {}
+                        datafile_dict['schema_namespace'] = self.datafile_schema
+                        if child.is_file():
+                            datafile_dict["file"] = child.name
+                            datafile_dict["local_dir"] = key.relative_to(self.harvester.root_dir)
+                            datafile_dict["remote_dir"] = datafile_dict["local_dir"]
+                            datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
+                            datafiles.append(datafile_dict)
                     for child in key.parent.parent.iterdir():
                         if child.is_file():
                             datafile_dict = {}
                             datafile_dict["file"] = child.name
-                            datafile_dict["local_dir"] = key.parent.relative_to(self.harvester.root_dir)
+                            datafile_dict["local_dir"] = key.parent.parent.relative_to(self.harvester.root_dir)
                             datafile_dict["remote_dir"] = datafile_dict["local_dir"]
                             datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
-                            if datafile_dict not in datafiles:
-                                datafiles.append(datafile_dict)
+                        if datafile_dict not in datafiles:
+                            datafiles.append(datafile_dict)
         for datafile in datafiles:
             if datafile['local_dir'] not in self.harvester.files_dict.keys():
                 self.harvester.files_dict[datafile['local_dir']] = []
@@ -323,6 +335,7 @@ class SolarixParser(Parser):
                 if current_path[3]['dataset_id'] not in datasets.keys():
                     datasets[current_path[3]['dataset_id']] = {}
                 datasets[current_path[3]['dataset_id']].update(current_path[4])
+                datasets[current_path[3]['dataset_id']]['schema_namespace'] = self.dataset_schema
         return datasets
 
     def create_experiment_dicts(self):
@@ -354,5 +367,6 @@ class SolarixParser(Parser):
                     'users': users,
                     'project_id': current_path[1]['project_id'],
                     'project_name': current_path[1]['name'],
-                    'project_description': current_path[1]['description']}
+                    'project_description': current_path[1]['description'],
+                    'schema_namespace': self.expt_schema}
         return experiments                         

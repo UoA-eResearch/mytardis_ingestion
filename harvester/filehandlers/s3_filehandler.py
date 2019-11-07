@@ -17,6 +17,7 @@ import logging
 import subprocess
 from ..helper import constants as CONST
 from ..helper import helper as hlp
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +26,9 @@ class S3FileHandler(FileHandler):
     def __init__(self,
                  config_dict,
                  harvester):
-        super().__init__(config_dict, harvester)
+        super(S3FileHandler, self).__init__(config_dict, harvester)
         self.s3_root_dir = config_dict['s3_root_dir']
-        self.local_root_dir = config_dict['local_root_dir']
+        #self.local_root_dir = config_dict['local_root_dir']
         self.staging_dir = config_dict['staging_dir']
         self.bucket = config_dict['bucket']
         endpoint_url = config_dict['endpoint_url']
@@ -47,10 +48,12 @@ class S3FileHandler(FileHandler):
                                local_location_path,
                                file_name):
         '''Copy a file from the research drive to staging prior to uploading'''
-        staging_path = os.path.join(self.staging_dir, local_loction_path, file_name)
-        local_path = os.path.join(self.local_root_dir, local_location_path, file_name)
-        local_md5sum = hlp.calculate_checksum(os.path.join(self.local_root_dir, local_location_path),
+        staging_path = Path(os.path.join(self.staging_dir, local_location_path, file_name))
+        local_path = os.path.join(self.harvester.root_dir, local_location_path, file_name)
+        local_md5sum = hlp.calculate_checksum(os.path.join(self.harvester.root_dir, local_location_path),
                                               file_name)
+
+        staging_path.parent.mkdir(parents=True, exist_ok=True)
         subprocess.call(['cp',
                          local_path,
                          staging_path])

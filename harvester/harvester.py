@@ -55,14 +55,13 @@ class Harvester(ABC):
         self.ldap_user_base = ldap_dict['ldap_user_base']
         self.projectdb_url = project_db_dict['projectdb_url']
         self.projectdb_key = project_db_dict['projectdb_api']
-        print(self.projectdb_url)
         if 'proxies' in config_dict.keys():
             self.proxies = config_dict['proxies']
         else:
             self.proxies = None
         self.root_dir = Path(config_dict['root_dir'])
         harvester = self
-        self.mytardis = self.mytardis(mytardis_config, harvester)
+        self.ingestor = self.mytardis(mytardis_config, harvester)
         self.parser = self.parser(parser_config, harvester)
         self.filehandler = self.filehandler(filehandler_config, harvester)
 

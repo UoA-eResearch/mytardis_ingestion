@@ -206,6 +206,7 @@ class MyTardisUploader:
         for key in dataset_dict.keys():
             if key == 'schema_namespace': # This is a special case where the URI is needed
                 try:
+                    print(f'Getting Schema: {dataset_dict[key]}')
                     paramset['schema'] = self._get_schema_uri(dataset_dict[key])
                 except Exception as err:
                     raise err
@@ -227,8 +228,13 @@ class MyTardisUploader:
                     continue
                 else:
                     params[key] = dataset_dict[key]
-        if 'instrument' in params[key]:
+        print(mytardis)
+        print(params)
+        print('Check instrument')
+        if 'instrument' in params.keys():
+            print('Line 1')
             instrument = params['instrument']
+            print('Line 2')
             if 'facility' in params[key]:
                 facility = params['facility']
             else:
@@ -236,15 +242,17 @@ class MyTardisUploader:
             instrument_uri = self._get_instrument_uri(instrument,
                                                        facility)
             if instrument_uri:
-                mytardis['instrument'] = instrument_uri   
+                mytardis['instrument'] = instrument_uri
+        print('Outside Instrument check')
         parameter_list = []
+        print(paramset)
         for key in params.keys():
             if key == 'instrument' or key == 'facility':
                 continue
-            for value in params[key]:
-                parameter_list.append({u'name': key,
-                                       u'value': value})
+            parameter_list.append({u'name': key,
+                                   u'value': params[key]})
         paramset['parameters'] = parameter_list
+        print(paramset)
         return (mytardis, paramset)
 
     def _build_experiment_dictionaries(self,
@@ -288,7 +296,7 @@ class MyTardisUploader:
         params = {}
         users = None
         groups = None
-        default_user = None
+        owners = None
         paramset = {}
         defaults = {'project_id':'No Project ID',
                     'institution_name':'University of Auckland',
@@ -312,19 +320,19 @@ class MyTardisUploader:
                     continue
                 elif key == 'users':
                     users = expt_dict[key]
-                elif key == 'default_user':
-                    default_user = expt_dict[key]
                 elif key == 'groups':
                     groups = expt_dict[key]
+                elif key == 'owners':
+                    owners = expt_dict[key]
                 else:
                     params[key] = expt_dict[key]
         parameter_list = []
         for key in params.keys():
-            for value in params[key]:
-                parameter_list.append({u'name': key,
-                                       u'value': value})
+            #for value in params[key]:
+            parameter_list.append({u'name': key,
+                                   u'value': params[key]})
         paramset['parameters'] = parameter_list
-        return (mytardis, paramset, users, default_user, groups)
+        return (mytardis, paramset, owners, users, groups)
             
     def _do_get_request(self,
                         action,
@@ -341,6 +349,7 @@ class MyTardisUploader:
         Returns:
         =================================
         A Python requests module response object'''
+        print('Calling __do_get_request')
         try:
             response = self._do_rest_api_request('GET',
                                                   action,
@@ -512,24 +521,6 @@ class MyTardisUploader:
 
     def _get_or_create_user(self,
                             upi):
-
-        # =================================
-        #
-        # TODO: Update to ldap3
-        #
-        # =================================
-        
-        '''l = ldap.initialize(self.harvester.ldap_url)
-        l.protocol_version = ldap.VERSION3
-        l.simple_bind_s(self.harvester.ldap_admin_user,
-                        self.harvester.ldap_admin_password)
-        result = l.search_s(self.harvester.ldap_user_base,
-                            ldap.SCOPE_SUBTREE,
-                            "({0}={1})".format(self.harvester.ldap_user_attr_map['upi'],
-                                               upi))
-        for e, r in result:
-            username = r[self.harvester.ldap_user_attr_map['upi']]
-            '''
         server = ldap3.Server(self.harvester.ldap_url)
         search_filter = f'({self.harvester.ldap_user_attr_map["upi"]}={upi})'
         with ldap3.Connection(server,
@@ -540,22 +531,26 @@ class MyTardisUploader:
                               search_filter,
                               attributes=['*'])
         person = connection.entries[0]
-        username = person[self.harvester.ldap_user_attr_map['upi']]
-        first_name = person[self.harvester.ldap_user_attr_map['first_name']]
-        last_name = person[self.harvester.ldap_user_attr_map['last_name']]
-        email = person[self.harvester.ldap_user_attr_map['email']]
+
+        username = person[self.harvester.ldap_user_attr_map['upi']].value
+        first_name = person[self.harvester.ldap_user_attr_map['first_name']].value
+        last_name = person[self.harvester.ldap_user_attr_map['last_name']].value
+        email = person[self.harvester.ldap_user_attr_map['email']].value
+        mytardis = {'username': username,
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'email': email}
+        print(mytardis)
         uri = self._get_user_uri(upi)
         if uri:
             return (False, uri)
         else:
             # Create the user using the API
             # todo: check if the user is in LDAP
-            mytardis = {'username': username,
-                        'first_name': first_name,
-                        'last_name': last_name,
-                        'email': email}
+            
             mytardis_json = dict_to_json(mytardis)
             try:
+                print(f'Trying to create user {mytardis["username"]}')
                 response = self._do_post_request('user',
                                                  mytardis_json)
                 response.raise_for_status()
@@ -624,6 +619,7 @@ class MyTardisUploader:
         URI if one schema with the search namespace.
         '''
         query_params = {'namespace': namespace}
+        print(self._get_uri('schema', query_params))
         return self._get_uri('schema', query_params)
     
     
@@ -648,7 +644,7 @@ class MyTardisUploader:
         =================================
         URI if one object with the search name exists'''
         try:
-            reponse = self._do_get_request(action,
+            response = self._do_get_request(action,
                                            params = query_params)
         except Exception as err:
             raise err
@@ -656,10 +652,8 @@ class MyTardisUploader:
             response_dict = json.loads(response.text)
             logger.debug(response_dict)
             if response_dict == [] or response_dict['objects'] == []:
-                logger.warning(
-                    f'{action} {query_params} cannot be found in the database.')
-                raise Exception(f'{action} {query_params} was not found in the database')
-            elif len(schema_dict['objects']) > 1:
+                return False
+            elif len(response_dict['objects']) > 1:
                 logger.error(
                     f'Multiple instances of {action} {query_params} found in the database. Please verify and clean up.')
                 raise Exception(f'Multiple instances of {action} {query_params} found in the database. Please verify and clean up.')
@@ -714,6 +708,7 @@ class MyTardisUploader:
             return (False, None)
         try:
             uri = self._get_experiment_uri(expt_dict['internal_id'])
+            print(uri)
         except Exception as err:
             logger.error(f'Encountered error: {err}, when looking for experiment')
             return (False, None)
@@ -721,7 +716,7 @@ class MyTardisUploader:
             return (False, uri)
         else:
             try:
-                mytardis, paramset, users, default_user, groups = \
+                mytardis, paramset, owners, users, groups = \
                     self._build_experiment_dictionaries(expt_dict,
                                                          required_keys)
             except Exception as err:
@@ -1028,6 +1023,8 @@ class MyTardisUploader:
                 try:
                     mytardis, paramset = self._build_dataset_dictionaries(dataset_dict,
                                                                            required_keys)
+                    print(mytardis)
+                    print(paramset)
                 except Exception as err:
                     logger.error(f'Encountered error: {err} when building dataset dictionaries')
                     return (False, None)
