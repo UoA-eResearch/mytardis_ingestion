@@ -48,4 +48,15 @@ class SolarixHarvester(Harvester):
         return filehandler
 
     def harvest(self):
-        pass
+        for key in self.parser.projects.keys():
+            if self.parser.projects[key][8] != []:
+                self.filehandler.create_method_tar_file(self.parser.projects[key][8][0])
+        experiments = self.parser.create_experiment_dicts()
+        datasets = self.parser.create_dataset_dicts()
+        datafiles = self.parser.create_datafile_dicts()
+        for experiment in experiments:
+            self.ingestor.create_experiment(experiments[experiment])
+        for dataset in datasets:
+            self.ingestor.create_dataset(datasets[dataset])
+        for datafile in datafiles:
+            self.ingestor.create_datafile(datafile)

@@ -128,11 +128,13 @@ class MyTardisUploader:
         mytardis: A dictionary containing the details necessary to create the datafile in myTardis
         '''
         from datetime import datetime
+        print(required_keys)
+        print(datafile_dict)
         mytardis = {}
         params = {}
         paramset = {}
         try:
-            paramset['schema'] = self._get_schema_uri(expt_dict.pop(key))
+            paramset['schema'] = self._get_schema_uri(datafile_dict.pop('schema_namespace'))
         except Exception as err:
             raise err
         try:
@@ -145,9 +147,9 @@ class MyTardisUploader:
                 raise Exception(f'Dataset ID {datafile_dict["dataset_id"]} not found in the database, skipping.')
             else:
                 mytardis['dataset'] = uri
-        filename = datafile_dict.pop('filename')
+        filename = datafile_dict.pop('file')
         mytardis['filename'] = filename
-        remote_path = datafile_dict.pop('remote_path')
+        remote_path = datafile_dict.pop('remote_dir')
         mytardis['directory'] = remote_path
         for key in datafile_dict:
             if key in required_keys:
@@ -160,11 +162,10 @@ class MyTardisUploader:
         mytardis['replicas'] = [store_loc]
         parameter_list = []
         for key in params.keys():
-            for value in params[key]:
-                parameter_list.append({u'name': key,
-                                       u'value': value})
+            parameter_list.append({u'name': key,
+                                   u'value': params[key]})
         paramset['parameters'] = parameter_list
-        mytardis['parameter_sets'] = paramset   
+        mytardis['parameter_sets'] = paramset
         return mytardis
 
 
@@ -228,9 +229,6 @@ class MyTardisUploader:
                     continue
                 else:
                     params[key] = dataset_dict[key]
-        print(mytardis)
-        print(params)
-        print('Check instrument')
         if 'instrument' in params.keys():
             print('Line 1')
             instrument = params['instrument']
@@ -349,7 +347,6 @@ class MyTardisUploader:
         Returns:
         =================================
         A Python requests module response object'''
-        print('Calling __do_get_request')
         try:
             response = self._do_rest_api_request('GET',
                                                   action,
@@ -708,7 +705,6 @@ class MyTardisUploader:
             return (False, None)
         try:
             uri = self._get_experiment_uri(expt_dict['internal_id'])
-            print(uri)
         except Exception as err:
             logger.error(f'Encountered error: {err}, when looking for experiment')
             return (False, None)
@@ -1084,13 +1080,13 @@ class MyTardisUploader:
         os.chdir(self.harvester.root_dir)
         required_keys = ['schema_namespace',
                          'dataset_id',
-                         'filename',
-                         'remote_path',
+                         'file',
+                         'remote_dir',
                          'mimetype',
                          'size',
                          'md5sum']
-        check = hlp.check_dictionary(datafile_dict,
-                                     required_keys)
+        check = check_dictionary(datafile_dict,
+                                 required_keys)
         if not check[0]:
             logger.error(f'The datafile dictionary is incomplete. Missing keys: {", ".join(check[1])}')
             return (False, None)
@@ -1104,6 +1100,7 @@ class MyTardisUploader:
         try:
             response = self._do_post_request('dataset_file',
                                             mytardis_json)
+            print(response.text)
             response.raise_for_status()
         except Exception as err:
             logger.error(f'Error: {err} eccountered when creating dataset_file {mytardis["filename"]}')

@@ -18,6 +18,8 @@ import json
 from pathlib import Path
 import ldap3
 import datetime
+import mimetypes
+from ..helper import calculate_checksum
 
 class SolarixParser(Parser):
 
@@ -51,15 +53,7 @@ class SolarixParser(Parser):
                                response):
         users = []
         resp_dict = json.loads(response.text)
-
-        # =================================
-        #
-        # TODO: Update to ldap3
-        #
-        # =================================
-
-        server = ldap3.Server(self.harvester.ldap_url)
-        
+        server = ldap3.Server(self.harvester.ldap_url)    
         connection = ldap3.Connection(server,
                                       auto_bind=True,
                                       user=self.harvester.ldap_admin_user,
@@ -184,7 +178,7 @@ class SolarixParser(Parser):
         projects = {}
         for directory in directories:
             if directory in self.harvester.processed_list:
-                print(f'Skipping: {directory}')
+                print('Skipping:', directory)
                 continue
             date = None
             users = []
@@ -215,7 +209,6 @@ class SolarixParser(Parser):
                     except Exception as err:
                         pass
                 elif re.match(r'\d{6}', part):
-                    print(part)
                     try:
                         date = datetime.datetime.strptime(part, "%d%m%y")
                     except ValueError as err:
@@ -264,53 +257,80 @@ class SolarixParser(Parser):
         datafiles = []
         for key in self.projects.keys():
             current_path = self.projects[key]
-            print(current_path[4])
             if current_path[6]:
                 datafile_dict = {}
                 datafile_dict['schema_namespace'] = self.datafile_schema
                 # This is metadata
+                print(current_path[2]["name"])
                 datafile_dict["file"] = current_path[2]["name"] + "_method.tar.gz"
                 datafile_dict["local_dir"] = key.relative_to(self.harvester.root_dir)
                 datafile_dict["remote_dir"] = datafile_dict["local_dir"].parent
                 datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
+                datafile_dict['md5sum'] = calculate_checksum(os.path.join(self.harvester.filehandler.staging_dir, datafile_dict['remote_dir']),
+                                                             datafile_dict["file"],
+                                                             md5sum_executable = self.harvester.md5sum_executable,
+                                                             subprocess_size_threshold = self.harvester.subprocess_size_threshold)
+                datafile_dict['mimetype'] = mimetypes.guess_type(child.name)[0]
+                datafile_dict['size'] = os.path.getsize(os.path.join(self.harvester.filehandler.staging_dir,
+                                                                     datafile_dict['remote_dir'],
+                                                                     datafile_dict["file"]))
                 datafiles.append(datafile_dict)
             elif current_path[5]:
                 for child in key.iterdir():
                     if child.is_file():
+                        print(child.name)
                         datafile_dict = {}
                         datafile_dict['schema_namespace'] = self.datafile_schema
                         datafile_dict["file"] = child.name
                         datafile_dict["local_dir"] = key.relative_to(self.harvester.root_dir)
                         datafile_dict["remote_dir"] = datafile_dict["local_dir"]
                         datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
+                        datafile_dict['md5sum'] = calculate_checksum(key,
+                                                                     datafile_dict["file"],
+                                                                     md5sum_executable = self.harvester.md5sum_executable,
+                                                                     subprocess_size_threshold = self.harvester.subprocess_size_threshold)
+                        datafile_dict['mimetype'] = mimetypes.guess_type(child.name)[0]
+                        datafile_dict['size'] = os.path.getsize(os.path.join(key,datafile_dict["file"]))
                         datafiles.append(datafile_dict)
             if 'Ion Source' in current_path[4].keys():
-                print(current_path[4]['Ion Source'])
                 if current_path[4]['Ion Source'] == 'MALDI Imaging':
-                    print("MALDI Imaging")
                     for child in key.iterdir():
                         datafile_dict = {}
                         datafile_dict['schema_namespace'] = self.datafile_schema
                         if child.is_file():
+                            print(child.name)
                             datafile_dict["file"] = child.name
                             datafile_dict["local_dir"] = key.relative_to(self.harvester.root_dir)
                             datafile_dict["remote_dir"] = datafile_dict["local_dir"]
                             datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
+                            datafile_dict['md5sum'] = calculate_checksum(key,
+                                                                     datafile_dict["file"],
+                                                                     md5sum_executable = self.harvester.md5sum_executable,
+                                                                     subprocess_size_threshold = self.harvester.subprocess_size_threshold)
+                            datafile_dict['mimetype'] = mimetypes.guess_type(child.name)[0]
+                            datafile_dict['size'] = os.path.getsize(os.path.join(key,datafile_dict["file"]))
                             datafiles.append(datafile_dict)
                     for child in key.parent.parent.iterdir():
                         if child.is_file():
+                            print(child.name)
+                            print(key.parent.parent)
                             datafile_dict = {}
                             datafile_dict["file"] = child.name
                             datafile_dict["local_dir"] = key.parent.parent.relative_to(self.harvester.root_dir)
                             datafile_dict["remote_dir"] = datafile_dict["local_dir"]
                             datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
+                            datafile_dict['md5sum'] = calculate_checksum(key.parent.parent,
+                                                                         child.name,
+                                                                         md5sum_executable = self.harvester.md5sum_executable,
+                                                                         subprocess_size_threshold = self.harvester.subprocess_size_threshold)
+                            datafile_dict['mimetype'] = mimetypes.guess_type(child.name)[0]
+                            datafile_dict['size'] = os.path.getsize(os.path.join(key.parent.parent,datafile_dict["file"]))
                         if datafile_dict not in datafiles:
                             datafiles.append(datafile_dict)
         for datafile in datafiles:
             if datafile['local_dir'] not in self.harvester.files_dict.keys():
                 self.harvester.files_dict[datafile['local_dir']] = []
             self.harvester.files_dict[datafile['local_dir']].append(datafile['file'])
-        
         return datafiles
 
     def create_dataset_dicts(self):

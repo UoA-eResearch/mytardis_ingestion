@@ -5,6 +5,7 @@
 from abc import ABC, abstractmethod
 from .ingestor import MyTardisUploader
 from .helper import readJSON
+from .helper import constants as CONST
 import logging
 import os
 import sys
@@ -61,6 +62,8 @@ class Harvester(ABC):
             self.proxies = None
         self.root_dir = Path(config_dict['root_dir'])
         harvester = self
+        self.md5sum_executable = config_dict['md5sum_executable']
+        self.subprocess_size_threshold = 100*CONST.MB
         self.ingestor = self.mytardis(mytardis_config, harvester)
         self.parser = self.parser(parser_config, harvester)
         self.filehandler = self.filehandler(filehandler_config, harvester)

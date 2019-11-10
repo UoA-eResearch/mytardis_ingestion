@@ -12,6 +12,7 @@ from . import S3FileHandler
 import boto3
 import os
 import tarfile
+import re
 
 class SolarixFileHandler(S3FileHandler):
 
@@ -25,7 +26,18 @@ class SolarixFileHandler(S3FileHandler):
         local_parent = m_dir.parent
         rel_parent = local_parent.relative_to(self.harvester.root_dir)
         staging_parent = self.staging_dir / rel_parent
-        tar_file = staging_parent / (staging_parent.name[:-2] + "_method.tar.gz")
+        print(staging_parent)
+        tar_name = '_'
+        for part in staging_parent.parts:
+            if re.match(r'\w*_\d{6}.d', part):
+                part_list = part.split('_')
+                del part_list[-1]
+                tar_name = tar_name.join(part_list)
+        if tar_name == '_':
+            tar_name = staging_parent.name[:-2]
+        tar_file = staging_parent / (tar_name + "_method.tar.gz")
+        print(tar_file)
+        tar_file.parent.mkdir(parents=True, exist_ok=True)
         tf = tarfile.open(tar_file, mode='w:gz')
         cwd = os.getcwd()
         os.chdir(m_dir)
@@ -42,6 +54,7 @@ class SolarixFileHandler(S3FileHandler):
         staging_location_path = os.path.join(self.staging_dir, file_dict['local_dir'])
         file_name = file_dict['file']
         if file_name[-14:] != '_method.tar.gz':
+            print('Moving:', file_name)
             response = self._S3FileHandler__move_file_to_staging(file_dict['local_dir'],
                                              file_name)
             if not response:

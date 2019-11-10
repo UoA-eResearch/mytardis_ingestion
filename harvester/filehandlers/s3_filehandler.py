@@ -51,14 +51,19 @@ class S3FileHandler(FileHandler):
         staging_path = Path(os.path.join(self.staging_dir, local_location_path, file_name))
         local_path = os.path.join(self.harvester.root_dir, local_location_path, file_name)
         local_md5sum = hlp.calculate_checksum(os.path.join(self.harvester.root_dir, local_location_path),
-                                              file_name)
+                                              file_name,
+                                              md5sum_executable = self.harvester.md5sum_executable,
+                                              subprocess_size_threshold = self.harvester.subprocess_size_threshold)
 
         staging_path.parent.mkdir(parents=True, exist_ok=True)
         subprocess.call(['cp',
                          local_path,
                          staging_path])
         staging_md5sum = hlp.calculate_checksum(os.path.join(self.staging_dir, local_location_path),
-                                                file_name)
+                                                file_name,
+                                                md5sum_executable = self.harvester.md5sum_executable,
+                                                subprocess_size_threshold = self.harvester.subprocess_size_threshold
+        )
         if local_md5sum == staging_md5sum:
             return True
         else:

@@ -5,8 +5,7 @@
 
 __author__ = 'Chris Seal <c.seal@auckland.ac.nz>'
 
-from abc import ABC, abstractmethod
-from ..helper import constants as CONST 
+from abc import ABC, abstractmethod 
 import logging
 
 logger = logging.getLogger(__name__)
@@ -17,8 +16,6 @@ class FileHandler(ABC):
     def __init__(self,
                  config_dict,
                  harvester):
-        self.md5sum_executable = config_dict['md5sum_executable']
-        self.subprocess_size_threshold = 100*CONST.MB
         self.harvester = harvester
         pass
 
