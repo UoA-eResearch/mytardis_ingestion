@@ -28,7 +28,8 @@ class S3FileHandler(FileHandler):
                  harvester):
         super(S3FileHandler, self).__init__(config_dict, harvester)
         self.s3_root_dir = config_dict['s3_root_dir']
-        #self.local_root_dir = config_dict['local_root_dir']
+        self.s3_root_dir = os.path.join(self.harvester.ingestor.storage_box,
+                                        self.s3_root_dir)
         self.staging_dir = config_dict['staging_dir']
         self.bucket = config_dict['bucket']
         endpoint_url = config_dict['endpoint_url']
@@ -89,8 +90,8 @@ class S3FileHandler(FileHandler):
         True if file is uploaded correctly,
         False if the file does not upload or if the ETag differs from that calculated
         '''
-        s3_location_path = os.path.join(self.s3_root_dir, s3_location_path)
-        file_path = os.join(self.local_staging_dir, local_location_path, file_name)
+        file_path = os.path.join(self.staging_dir, local_location_path, file_name)
+        s3_location_path = os.path.join(self.s3_root_dir, s3_location_path, file_name)
         from boto3.s3.transfer import TransferConfig
         config = TransferConfig(multipart_threshold=self.threshold,
                                 multipart_chunksize=self.blocksize,
@@ -100,11 +101,10 @@ class S3FileHandler(FileHandler):
                                    s3_location_path,
                                    Config=config)
         try:
-            s3_header = self.__get_file_header(s3_location_path,
-                                               bucket)
+            s3_header = self.__get_file_header(s3_location_path)
             if s3_header:
                 etag = self.__checkETag(file_path,
-                                      test_etag = s3_header['ETag'])
+                                        test_etag = s3_header['ETag'])
             else:
                 error_message = f'Upload of {file_path} to {s3_location_path} did not complete successfully'
                 logger.warning(error_message)
@@ -115,7 +115,7 @@ class S3FileHandler(FileHandler):
             logger.warning(f'S3 ETags do not match. Check that file {file_path} has correctly uploaded to {s3_location_path}')
             return False
         except Exception as e:
-            logger.error(traceback.format_exc())
+            logger.error(e)
             return False
         return True
 
@@ -135,7 +135,6 @@ class S3FileHandler(FileHandler):
         False if the file does not exist
         s3_header: Dictionary containg the file header if the file is found
         '''
-        s3_location_path = os.path.join(self.s3_root_dir, s3_location_path)
         logger.debug(f'Looking for file in {s3_location_path}')
         response = self.s3_client.list_objects_v2(Bucket=self.bucket,
                                                   Prefix=s3_location_path)

@@ -59,4 +59,5 @@ class SolarixHarvester(Harvester):
         for dataset in datasets:
             self.ingestor.create_dataset(datasets[dataset])
         for datafile in datafiles:
+            self.filehandler.upload_file(datafile)
             self.ingestor.create_datafile(datafile)

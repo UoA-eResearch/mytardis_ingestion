@@ -13,6 +13,9 @@ import boto3
 import os
 import tarfile
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 class SolarixFileHandler(S3FileHandler):
 
@@ -26,7 +29,6 @@ class SolarixFileHandler(S3FileHandler):
         local_parent = m_dir.parent
         rel_parent = local_parent.relative_to(self.harvester.root_dir)
         staging_parent = self.staging_dir / rel_parent
-        print(staging_parent)
         tar_name = '_'
         for part in staging_parent.parts:
             if re.match(r'\w*_\d{6}.d', part):
@@ -36,7 +38,6 @@ class SolarixFileHandler(S3FileHandler):
         if tar_name == '_':
             tar_name = staging_parent.name[:-2]
         tar_file = staging_parent / (tar_name + "_method.tar.gz")
-        print(tar_file)
         tar_file.parent.mkdir(parents=True, exist_ok=True)
         tf = tarfile.open(tar_file, mode='w:gz')
         cwd = os.getcwd()
@@ -54,22 +55,19 @@ class SolarixFileHandler(S3FileHandler):
         staging_location_path = os.path.join(self.staging_dir, file_dict['local_dir'])
         file_name = file_dict['file']
         if file_name[-14:] != '_method.tar.gz':
-            print('Moving:', file_name)
             response = self._S3FileHandler__move_file_to_staging(file_dict['local_dir'],
                                              file_name)
             if not response:
                 logger.error(f'File {file_name} was not successfully staged for uploading')
                 raise FileNotFoundError(f'File {file_name} was not successfully staged for uploading')
+        else:
+            staging_location_path = os.path.join(self.staging_dir, file_dict['local_dir'].parent)
         if file_dict['local_dir'] in self.harvester.files_dict.keys():
             self.harvester.files_dict[file_dict['local_dir']].remove(file_name)
-        '''response = self.__move_file_to_staging(local_location_path,
-                                               file_name)
-        if not response:
-            logger.error(f'File {file_name} was not successfully staged for uploading')
-            raise FileNotFoundError(f'File {file_name} was not successfully staged for uploading')
-        response = self.__multipart_upload(staging_location_path,
-                                           file_name,
-                                           s3_location_path)
+        
+        response = self._S3FileHandler__multipart_upload(staging_location_path,
+                                                         file_name,
+                                                         s3_location_path)
         if not response:
             logger.error(f'File {file_name} was not successfully uploaded into s3 object store. Please check this log for further details.')
             # TODO: add email warning to logger
@@ -79,5 +77,4 @@ class SolarixFileHandler(S3FileHandler):
                 if self.harvester.files_dict[key] == []:
                     open_file.write(f'{self.harvester.root_dir}/{key}\n')
             open_file.close()
-        return response'''
-        return True
+        return response

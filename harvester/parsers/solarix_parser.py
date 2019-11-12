@@ -178,7 +178,6 @@ class SolarixParser(Parser):
         projects = {}
         for directory in directories:
             if directory in self.harvester.processed_list:
-                print('Skipping:', directory)
                 continue
             date = None
             users = []
@@ -261,7 +260,6 @@ class SolarixParser(Parser):
                 datafile_dict = {}
                 datafile_dict['schema_namespace'] = self.datafile_schema
                 # This is metadata
-                print(current_path[2]["name"])
                 datafile_dict["file"] = current_path[2]["name"] + "_method.tar.gz"
                 datafile_dict["local_dir"] = key.relative_to(self.harvester.root_dir)
                 datafile_dict["remote_dir"] = datafile_dict["local_dir"].parent
@@ -278,7 +276,6 @@ class SolarixParser(Parser):
             elif current_path[5]:
                 for child in key.iterdir():
                     if child.is_file():
-                        print(child.name)
                         datafile_dict = {}
                         datafile_dict['schema_namespace'] = self.datafile_schema
                         datafile_dict["file"] = child.name
@@ -298,7 +295,6 @@ class SolarixParser(Parser):
                         datafile_dict = {}
                         datafile_dict['schema_namespace'] = self.datafile_schema
                         if child.is_file():
-                            print(child.name)
                             datafile_dict["file"] = child.name
                             datafile_dict["local_dir"] = key.relative_to(self.harvester.root_dir)
                             datafile_dict["remote_dir"] = datafile_dict["local_dir"]
@@ -312,8 +308,6 @@ class SolarixParser(Parser):
                             datafiles.append(datafile_dict)
                     for child in key.parent.parent.iterdir():
                         if child.is_file():
-                            print(child.name)
-                            print(key.parent.parent)
                             datafile_dict = {}
                             datafile_dict["file"] = child.name
                             datafile_dict["local_dir"] = key.parent.parent.relative_to(self.harvester.root_dir)

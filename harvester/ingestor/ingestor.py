@@ -74,7 +74,7 @@ class MyTardisUploader:
                                               '1.0',
                                               MyTardisUploader.user_agent_url)
             # Not sure that we want to force this but lets see if it breaks
-            self.verify_certificate = True
+            self.verify_certificate = False # changed to avoid SSLError - need to revist
             self.storage_box = config_dict['storage_box']
 
     # =================================
@@ -128,8 +128,6 @@ class MyTardisUploader:
         mytardis: A dictionary containing the details necessary to create the datafile in myTardis
         '''
         from datetime import datetime
-        print(required_keys)
-        print(datafile_dict)
         mytardis = {}
         params = {}
         paramset = {}
@@ -150,22 +148,25 @@ class MyTardisUploader:
         filename = datafile_dict.pop('file')
         mytardis['filename'] = filename
         remote_path = datafile_dict.pop('remote_dir')
-        mytardis['directory'] = remote_path
+        mytardis['directory'] = os.path.join('Solarix', remote_path)
         for key in datafile_dict:
             if key in required_keys:
                 mytardis[key] = datafile_dict[key]
+            elif key == 'local_dir':
+                continue
             else:
                 params[key] = datafile_dict[key]            
-        store_loc = {'uri': os.path.join(remote_path, filename),
-                     'location': self.storage_box,
-                     'protocol': 'file'}
+        store_loc = {u'uri': os.path.join(self.harvester.filehandler.s3_root_dir, remote_path, filename),
+                     u'location': self.storage_box,
+                     u'protocol': u'file'}
         mytardis['replicas'] = [store_loc]
         parameter_list = []
         for key in params.keys():
             parameter_list.append({u'name': key,
                                    u'value': params[key]})
-        paramset['parameters'] = parameter_list
-        mytardis['parameter_sets'] = paramset
+        if parameter_list != []:
+            paramset['parameters'] = parameter_list
+            mytardis['parameter_sets'] = paramset
         return mytardis
 
 
@@ -207,7 +208,6 @@ class MyTardisUploader:
         for key in dataset_dict.keys():
             if key == 'schema_namespace': # This is a special case where the URI is needed
                 try:
-                    print(f'Getting Schema: {dataset_dict[key]}')
                     paramset['schema'] = self._get_schema_uri(dataset_dict[key])
                 except Exception as err:
                     raise err
@@ -230,9 +230,7 @@ class MyTardisUploader:
                 else:
                     params[key] = dataset_dict[key]
         if 'instrument' in params.keys():
-            print('Line 1')
             instrument = params['instrument']
-            print('Line 2')
             if 'facility' in params[key]:
                 facility = params['facility']
             else:
@@ -241,16 +239,13 @@ class MyTardisUploader:
                                                        facility)
             if instrument_uri:
                 mytardis['instrument'] = instrument_uri
-        print('Outside Instrument check')
         parameter_list = []
-        print(paramset)
         for key in params.keys():
             if key == 'instrument' or key == 'facility':
                 continue
             parameter_list.append({u'name': key,
                                    u'value': params[key]})
         paramset['parameters'] = parameter_list
-        print(paramset)
         return (mytardis, paramset)
 
     def _build_experiment_dictionaries(self,
@@ -537,7 +532,6 @@ class MyTardisUploader:
                     'first_name': first_name,
                     'last_name': last_name,
                     'email': email}
-        print(mytardis)
         uri = self._get_user_uri(upi)
         if uri:
             return (False, uri)
@@ -547,7 +541,6 @@ class MyTardisUploader:
             
             mytardis_json = dict_to_json(mytardis)
             try:
-                print(f'Trying to create user {mytardis["username"]}')
                 response = self._do_post_request('user',
                                                  mytardis_json)
                 response.raise_for_status()
@@ -616,7 +609,6 @@ class MyTardisUploader:
         URI if one schema with the search namespace.
         '''
         query_params = {'namespace': namespace}
-        print(self._get_uri('schema', query_params))
         return self._get_uri('schema', query_params)
     
     
@@ -1019,8 +1011,6 @@ class MyTardisUploader:
                 try:
                     mytardis, paramset = self._build_dataset_dictionaries(dataset_dict,
                                                                            required_keys)
-                    print(mytardis)
-                    print(paramset)
                 except Exception as err:
                     logger.error(f'Encountered error: {err} when building dataset dictionaries')
                     return (False, None)
@@ -1100,14 +1090,11 @@ class MyTardisUploader:
         try:
             response = self._do_post_request('dataset_file',
                                             mytardis_json)
-            print(response.text)
             response.raise_for_status()
         except Exception as err:
             logger.error(f'Error: {err} eccountered when creating dataset_file {mytardis["filename"]}')
             return (False, None)
-        response = json.loads(response)
-        uri = response['resource_uri']
-        return (True, uri)
+        return (True, None)
     
 class TastyPieAuth(AuthBase):
     """
