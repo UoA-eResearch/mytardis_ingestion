@@ -23,6 +23,10 @@ class Parser(ABC):
         pass
 
     @abstractmethod
+    def get_file_list(self):
+        pass
+    
+    @abstractmethod
     def create_datafile_dicts(self):
         pass
 

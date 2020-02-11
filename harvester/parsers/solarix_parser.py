@@ -27,19 +27,25 @@ class SolarixParser(Parser):
                  config_dict,
                  harvester):
         super().__init__(config_dict, harvester)
-        self.sub_dirs = self.build_dir_list(self.harvester.root_dir)
+        self.sub_dirs, self.files = self.walk_dir_tree(self.harvester.root_dir)
         self.default_user = config_dict['default_user']
         self.projects = self.find_data(self.sub_dirs)
 
-    def build_dir_list(self,
-                       directory = None):
+    def get_file_list(self):
+        return self.files
+        
+    def walk_dir_tree(self,
+                      directory = None):
         if not directory:
             directory = self.harvester.root_dir
         subdirectories = []
+        files_list = []
         for dirname, subdirs, files in os.walk(directory):
             cur_path = Path(dirname)
             subdirectories.append(cur_path)
-        return subdirectories
+            for f in files:
+                files_list.append(Path(dirname / f))
+        return (subdirectories, files_list)
 
     def check_project_db(self,
                          res_code):
