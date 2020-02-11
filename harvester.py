@@ -27,6 +27,9 @@ def harvest(harvester_json):
     except Exception as error:
         # The function logs the error so raise to stop processing.
         raise
+    # =================================
+    # Define required keys for sanity checking
+    # =================================
     required_keys = ['ldap',
                      'project_db',
                      'ingestor',
@@ -73,8 +76,10 @@ def harvest(harvester_json):
                                          error_msg,
                                          reciever = default_reciever)
         raise Exception(error_msg)
+    # =================================
     # If we have gotten to this point then there should at least be a file_path
     # to all of the relevant json files - load them in and do basic sanity checks
+    # =================================
     try:
         ldap_dict = readJSON(file_paths['ldap'])
     except Exception as error:
@@ -110,6 +115,10 @@ def harvest(harvester_json):
         # The function logs the error so raise to stop processing.
         raise
     parser_check = check_dictionary(parser_dict, parser_keys)
+    # =================================
+    # Check for errors in the error dictionary previously defined and
+    # report them.
+    # =================================
     errors = {}
     if not ldap_check[0]:
         errors['ldap'] = ldap_check[1]
@@ -144,9 +153,20 @@ def harvest(harvester_json):
                                          'MyTardis Harvest Error',
                                          error_msg)
         raise Exception(error_msg)
+    # =================================
+    #
     # If we get to here then basic sanity checking has been done on all of the
     # loaded dictionaries - create class objects
+    #
+    # =================================
+    # Initialise Mailhandler
+    # =================================
     mailhandler = MailHander(mailhandler_dict)
+    # =================================
+    # Initialise Ingestor
+    # =================================
+    ingestor_dict.update(ldap_dict)
+    ingestor_dict.update(project_db_dict)
     try:
         ingestor = MyTardisUploader(ingestor_dict)
     except Exception as error:
@@ -154,6 +174,9 @@ def harvest(harvester_json):
                                  error.msg)
         # The function logs the error so raise to stop processing.
         raise
+    # =================================
+    # Initialise Filehandler
+    # =================================
     filehandler_module = filehandler_dict['module']
     filehandler_class = filehandler_dict['class_name']
     try:
@@ -173,6 +196,9 @@ def harvest(harvester_json):
         # The function logs the error so raise to stop processing.
         logger.error(error.msg)
         raise
+    # =================================
+    # Initialise Parser
+    # =================================
     parser_module = parser_dict['module']
     parser_class = parser_dict['class_name']
     try:
@@ -182,6 +208,12 @@ def harvest(harvester_json):
                                  error.msg)
         # The function logs the error so raise to stop processing.
         raise
+    Wif 'ldap' in parser_dict.keys():
+        if parser_dict['ldap'] not False:
+            parser_config.update(ldap_dict)
+    if 'project_db' in parser_dict.keys():
+        if parser_dict['project_db'] not False:
+            parser_config.update(project_db_dict)
     try:
         module = importlib.import_module(parser_module)
         class_ = getattr(module, parser_class)
@@ -192,10 +224,14 @@ def harvest(harvester_json):
         # The function logs the error so raise to stop processing.
         logger.error(error.msg)
         raise
+    # =================================
+    #
     # Everything is initialised - begin parsing files
+    #
+    # =================================
     experiments = parser.create_experiment_dicts()
     datasets = parser.create_dataset_dicts()
-    datafiles = parser.create_datafile_dicts()
+    datafiles, checksum_digest = parser.create_datafile_dicts()
     # Use the ingestor to create the experiments
     for experiment in experiments:
         ingested_expts = ingestor.create_experiment(experiment)
@@ -206,7 +242,7 @@ def harvest(harvester_json):
     #TODO validation here
     # Upload the files into storage and ingest
     for datafile in datafiles:
-        upload = filehandler.upload_file(datafile)
+        upload = filehandler.upload_file(datafile, checksum_digest)
         ingested_datafiles = ingestor.create_datafile(datafile)
     #TODO Post ingestion stuff here
     
