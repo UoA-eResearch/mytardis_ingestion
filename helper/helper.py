@@ -123,7 +123,7 @@ def dict_to_json(dictionary):
     )
     return json.dumps(dictionary, default=date_handler)
 
-def calculate_checksum(file_dir,
+'''def calculate_checksum(file_dir,
                        file_name=None,
                        s3_flag = False,
                        sha512_flag = False,
@@ -161,4 +161,23 @@ def calculate_checksum(file_dir,
     elif sha512_flag:
         return (md5.hexdigest(), sha512.hexdigest())
     else:
-        return (md5.hexdigest(),)
+        return (md5.hexdigest(),)'''
+
+def calculate_etag(file_path,
+                   blocksize):
+    md5s = []
+    with open(file_path, 'rb') as f:
+        while True:
+            chunk = f.read(blocksize)
+            if not chunk:
+                break
+            md5s.append(hashlib.md5(chunk))
+    if len(md5s) > 1:
+        digests = b"".join(m.digest() for m in md5s)
+        new_md5 = hashlib.md5(digests)
+        etag = new_md5.hexdigest() + '-' + str(len(md5s))
+    elif len(md5s) == 1:
+        etag = md5.hexdigest()
+    else:
+        etag = '""'
+    return etag
