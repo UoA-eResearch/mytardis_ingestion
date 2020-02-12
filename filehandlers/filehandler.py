@@ -24,7 +24,3 @@ class FileHandler(ABC):
                     checksum_digest):
         pass
 
-    @abstractmethod
-    def get_file_location(self,
-                          datafile):
-        pass

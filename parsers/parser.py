@@ -14,12 +14,7 @@ class Parser(ABC):
 
     @abstractmethod
     def  __init__(self,
-                  config_dict,
-                  harvester):
-        self.harvester = harvester
-        self.expt_schema = config_dict['expt_schema']
-        self.dataset_schema = config_dict['dataset_schema']
-        self.datafile_schema = config_dict['datafile_schema']
+                  config_dict):
         pass
 
     @abstractmethod

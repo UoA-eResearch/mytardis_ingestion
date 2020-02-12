@@ -206,7 +206,7 @@ class Harvester(ABC):
             else:
                 try:
                     checksums = calculate_checksum(file_name,
-                                                   s3_flag = s2,
+                                                   s3_flag = s3,
                                                    sha512_flag = sha512,
                                                    blocksize = self.blocksize)
                 except Exception as error:
