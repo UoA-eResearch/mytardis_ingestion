@@ -208,7 +208,7 @@ def harvest(harvester_json):
                                  error.msg)
         # The function logs the error so raise to stop processing.
         raise
-    Wif 'ldap' in parser_dict.keys():
+    if 'ldap' in parser_dict.keys():
         if parser_dict['ldap'] not False:
             parser_config.update(ldap_dict)
     if 'project_db' in parser_dict.keys():

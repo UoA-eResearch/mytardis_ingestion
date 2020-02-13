@@ -7,27 +7,48 @@
 
 import logging
 from requests.auth import AuthBase
-from ..helper import check_dictionary, dict_to_json
+from ..helper import check_dictionary, dict_to_json, get_user_from_upi
 import backoff
 import requests
 import os
 from urllib.parse import urljoin, urlparse
 import json
 import ldap3
+from decouple import Config, RepositoryEnv
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+class TastyPieAuth(AuthBase):
+    """
+    Attaches HTTP headers for Tastypie API key Authentication to the given
+    Request object.
+    #
+    Because this ingestion script will sit inside the private network and
+    will act as the primary source for uploading to myTardis, authentication
+    via a username and api key is used.
+    """
+    def __init__(self, username, api_key):
+        self.username = username
+        self.api_key = api_key
+    def __call__(self, r):
+        r.headers['Authorization'] = 'ApiKey %s:%s' % (self.username,
+                                                       self.api_key)
+        return r
 
 class MyTardisUploader:
     user_agent_name = __name__
     user_agent_url = 'https://github.com/UoA-eResearch/mytardis_ingestion.git'
 
-    def __init__(self, config_dict, harvester):
+    def __init__(self,
+                 global_config_file_path,
+                 local_config_file_path):
         '''Initialise uploader.
 
         Inputs:
         =================================
-        config_dict: A dictionary containing the configuration details for the uploader
-        
+        config_file_path: A Path object pointing to an environment file that defines the ingestor behvaiour.'''
+        '''
         Details of config_dict:
         =================================
         The config_dict must contain the following key/value pairs:
@@ -52,7 +73,7 @@ class MyTardisUploader:
         self.auth: TastyPie authorisation for the username/API combination
         self.user_agent: User agent for the REST API calls
         self.verify_certificate: Flag telling MyTardis to verify the security certificate
-        '''
+        
         required_keys = ['server',
                          'username',
                          'api_key',
@@ -68,39 +89,613 @@ class MyTardisUploader:
                                    '/api/v1/%s/')
             self.harvester = harvester
             self.cwd = os.getcwd()
-            self.auth = TastyPieAuth(config_dict['username'],
-                                     config_dict['api_key'])
-            self.user_agent = '%s/%s (%s)' % (MyTardisUploader.user_agent_name,
-                                              '1.0',
-                                              MyTardisUploader.user_agent_url)
+            
+            
             # Not sure that we want to force this but lets see if it breaks
             self.verify_certificate = False # changed to avoid SSLError - need to revist
             self.storage_box = config_dict['storage_box']
+        '''
+        # global_config holds environment variables that don't change often such as LDAP parameters and project_db stuff
+        global_config = Config(RepositoryEnv(global_config_file_path))
+        # local_config holds the details about how this particular set of data should be handled
+        local_config = Config(RepositoryEnv(local_config_file_path))
+        self.server = local_config('MYTARDIS_URL')
+        self.ingest_user = local_config('MYTARDIS_INGEST_USER')
+        self.ingest_api_key = local_config('MYTARDIS_INGEST_API_KEY')
+        self.verify_certificate = local_config('MYTARDIS_VERIFY_CERT',
+                                               default=True,
+                                               cast=bool)
+        self.experiment_schema = local_config('MYTARDIS_EXPT_SCHEMA')
+        self.dataset_schema = local_config('MYTARDIS_DATASET_SCHEMA')
+        self.datafile_schema = local_config('MYTARDIS_DATAFILE_SCHEMA')
+        self.proxies = global_config('PROXIES',
+                                     default=None)
+        self.ldap_dict = {}
+        self.ldap_dict['url'] = global_config('LDAP_URL')
+        self.ldap_dict['user_attr_map'] = global_config('LDAP_USER_ATTR_MAP')
+        self.ldap_dict['admin_user'] = global_config('LDAP_ADMIN_USER')
+        self.ldap_dict['admin_password'] = global_config('LDAP_ADMIN_PASSWORD')
+        self.ldap_dict['user_base'] = global_config('LDAP_USER_BASE')
+        self.api_url = urljoin(self.server,
+                               '/api/v1/%s/')
+        self.user_agent = '%s/%s (%s)' % (MyTardisUploader.user_agent_name,
+                                          '1.1',
+                                          MyTardisUploader.user_agent_url)
+        self.auth = TastyPieAuth(self.ingest_user,
+                                 self.ingest_api_key)
+
+    def __resource_uri_to_id(self, uri):
+        """
+        Takes resource URI like: http://example.org/api/v1/experiment/998
+        and returns just the id value (998).
+        #
+        :type uri: str
+        :rtype: int"""
+        resource_id = int(urlparse(uri).path.rstrip(
+            os.sep).split(os.sep).pop())
+        return resource_id
+    
+    # =================================
+    #
+    # Functions to access the API
+    #
+    # __rest_api_call
+    # __get_request
+    # __post_request
+    #
+    # =================================
+
+    @backoff.on_exception(backoff.expo,
+                          requests.exceptions.RequestException,
+                          max_tries=8)
+    def __rest_api_request(self,
+                           method,  # REST api method
+                           action,  # action here refers to experiment, dataset or datafile
+                           data=None,
+                           params=None,
+                           extra_headers=None,
+                           api_url_template=None):
+        '''Function to handle the REST API calls
+        
+        Inputs:
+        =================================
+        method: The REST API method, POST, GET etc.
+        action: The object type to call REST API on, e.g. experiment, dataset
+        data: A JSON string containing data for generating an object via POST/PUT
+        params: A JSON string of parameters to be passed in the URL
+        extra_headers: Extra headers (META) to be passed to the API call
+        api_url_template: Over-ride for the default API URL
+        
+        Returns:
+        =================================
+        A Python Requests library repsonse object
+        '''
+        if api_url_template is None:
+            api_url_template = self.api_url
+        url = api_url_template % action
+        headers = {'Accept': 'application/json',
+                   'Content-Type': 'application/json',
+                   'User-Agent': self.user_agent}
+        if extra_headers:
+            headers = {**headers, **extra_headers}
+        logger.debug(url)
+        try:
+            if self.proxies:
+                response = requests.request(method,
+                                            url,
+                                            data=data,
+                                            params=params,
+                                            headers=headers,
+                                            auth=self.auth,
+                                            verify=self.verify_certificate,
+                                            proxies=self.proxies)
+            else:
+                response = requests.request(method,
+                                            url,
+                                            data=data,
+                                            params=params,
+                                            headers=headers,
+                                            auth=self.auth,
+                                            verify=self.verify_certificate)
+            # 502 Bad Gateway triggers retries, since the proxy web
+            # server (eg Nginx or Apache) in front of MyTardis could be
+            # temporarily restarting
+            if response.status_code == 502:
+                self._raise_request_exception(response)
+            else:
+                response.raise_for_status()
+        except requests.exceptions.RequestException as err:
+            logger.error("Request failed : %s : %s", err.message, url)
+            raise err
+        except Exception as err:
+            logger.error(f'Error, {err.message}, occurred when attempting to call api request {url}')
+            raise err
+        return response
+    
+        def __get_request(self,
+                        action,
+                        params,
+                        extra_headers=None):
+        '''Wrapper around self._do_rest_api_request to handle GET requests
+
+        Inputs:
+        =================================
+        action: the type of object, (e.g. experiment, dataset) to GET
+        params: parameters to pass to filter the request return
+        extra_headers: any additional information needed in the header (META) for the object being created
+        
+        Returns:
+        =================================
+        A Python requests module response object'''
+        try:
+            response = self.__rest_api_request('GET',
+                                                  action,
+                                                  params=params,
+                                                  extra_headers=extra_headers)
+        except Exception as err:
+            raise err
+        return response
+
+    def __post_request(self,
+                         action,
+                         data,
+                         extra_headers=None):
+        '''Wrapper around self._do_rest_api_request to handle POST requests
+
+        Inputs:
+        =================================
+        action: the type of object, (e.g. experiment, dataset) to POST
+        data: a JSON string holding the data to generate the object
+        extra_headers: any additional information needed in the header (META) for the object being created
+        
+        Returns:
+        =================================
+        A Python requests module response object'''
+        try:
+            response = self.__rest_api_request('POST',
+                                                  action,
+                                                  data=data,
+                                                  extra_headers=extra_headers)
+        except Exception as err:
+            raise err
+        return response
 
     # =================================
     #
-    # Private Methods
-    #
-    # _build_datafile_dictionaries
-    # _build_dataset_dictionaries
-    # _build_experiment_dictionaries
-    # _do_get_request
-    # _do_post_request
-    # _do_rest_api_request
-    # _get_dataset_uri
-    # _get_experiment_uri
-    # _get_group_uri
-    # _get_instrument_uri
-    # _get_or_create_user
-    # _get_ownership_int
-    # _get_schema_uri
-    # _get_uri
-    # _raise_request_exception
-    # _resource_uri_to_id
-    # _share_experiment
+    # End of API call functions
     #
     # =================================
 
+
+    # =================================
+    #
+    # Functions to get URIs out of MyTardis
+    #
+    # =================================
+
+    def __get_uri(self,
+                  action,
+                  query_params):
+        '''General solution for finding resource uri's from the 
+        database.
+
+        Inputs:
+        =================================
+        action: the object being retrieved
+        query_params: search parameters
+
+        Returns:
+        =================================
+        URI if one object with the search name exists'''
+        try:
+            response = self.__get_request(action,
+                                          params = query_params)
+        except Exception as error:
+            logger.error(error.message)
+            raise error
+        else:
+            response_dict = json.loads(response.text)
+            logger.debug(response_dict)
+            if response_dict == [] or response_dict['objects'] == []:
+                return False
+            elif len(response_dict['objects']) > 1:
+                logger.error(
+                    f'Multiple instances of {action} {query_params} found in the database. Please verify and clean up.')
+                raise Exception(f'Multiple instances of {action} {query_params} found in the database. Please verify and clean up.')
+            else:
+                obj = response_dict['objects'][0]
+                logger.debug(f'{action}: {obj} found in the database.')
+                return obj['resource_uri']
+
+    def __get_dataset_uri(self, dataset_id):
+        '''Uses REST API GET with an dataset_id filter. Raises an error if multiple
+        instances of the same dataset_id are located as this should never happen given
+        the database restrictions.
+
+        Inputs:
+        =================================
+        dataset_id: unique identifier for dataset
+
+        Returns:
+        =================================
+        False if the id is not found in the database
+        URI of the dataset if a single instance of the id is found in the database
+        '''
+        query_params = {u'dataset_id': dataset_id}
+        try:
+            response = self.__get_uri('dataset', query_params)
+        except Exception as error:
+            raise
+        return response
+
+    def __get_experiment_uri(self, internal_id):
+        '''Uses REST API GET with an internal_id filter. Raises an error if multiple
+        instances of the same internal_id are located as this should never happen given
+        the database restrictions.
+
+        Inputs:
+        =================================
+        internal_id: unique identifier for experiment
+
+        Returns:
+        =================================
+        False if the id is not found in the database
+        URI of the experiment if a single instance of the id is found in the database
+        '''
+        query_params = {u'internal_id': internal_id}
+        try:
+            response = self.__get_uri('experiment', query_params)
+        except Exception as error:
+            raise
+        return response
+
+    def __get_group_uri(self, group):
+        '''Use the user api in myTardis to search on groups
+
+        Inputs:
+        =================================
+        group: The group name
+
+        Returns:
+        =================================
+        False if group is not in the database
+        -1 if more than one group with the same name exists. 
+        URI to the goup id if exactly one group with the name is found.
+        '''
+        query_params = {u'name': group}
+        try:
+            response = self.__get_uri('group', query_params)
+        except Exception as error:
+            raise
+        return response
+    
+    def __get_instrument_uri(self, name, facility=None):
+        '''Read database for instruments and return resource_uri for an
+        instrument by name and facility
+        
+        Inputs:
+        =================================
+        name: Instrument name
+        facility: The host facility for the instrument, defaults to None
+
+        Returns:
+        =================================
+        False if the instrument is not present or if it cannot be uniquely identified
+        URI of the instrument if it can be uniquely identified
+        '''
+        query_params = {u'name': name}
+        if facility is not None:
+            query_params['facility__name'] = facility
+        try:
+            response = self.__get_uri('instrument', query_params)
+        except Exception as error:
+            raise
+        return response
+
+    def __get_schema_uri(self,
+                         namespace):
+        '''Reads the database for schema and returns a resource_uri for one by name
+        Raises an execption if no schema can be found, or if there are multiple with the
+        same namespace
+
+        Inputs:
+        =================================
+        namespace: the schema namespace
+
+        Returns:
+        =================================
+        URI if one schema with the search namespace.
+        '''
+        query_params = {'namespace': namespace}
+        try:
+            response = self.__get_uri('schema', query_params)
+        except Exception as error:
+            raise
+        return response
+
+    def __get_user_uri(self, username):
+        '''Use the user api in myTardis to search on the username (should be UoA UPI).
+        
+        Inputs:
+        =================================
+        username: The user name to look up. Should be a UoA UPI
+
+        Returns:
+        =================================
+        False if user name is not in the database: ToDo: If this is the case look up the UoA LDAP
+            and add a user if they exist within the university.
+        -1 if more than one user with the same name exists.
+        URI to the user if exactly one group with the name is found.
+        '''
+        query_params = {'username': username}
+        try:
+            response = self.__get_request('user',
+                                           params=query_params)
+        except Exception as error:
+            logger.error(error.message)
+            raise error
+        else:
+            resp_dict = json.loads(response.text)
+            if resp_dict['objects'] == []:
+                logger.info(f'UPI: {username} is not in the user database.')
+                return False
+            elif len(resp_dict['objects']) > 1:
+                logger.error(f'Multiple instances of UPI: {upi} found in user database. Please verify and clean up.')
+                raise Exception(f'Multiple instances of UPI: {upi} found in user database. Please verify and clean up.')
+            else:
+                obj = resp_dict['objects'][0]
+                logger.debug(obj)
+                return obj['resource_uri']
+
+    def __get_user_profile(self,
+                           user_id):
+        '''
+
+        '''
+        query_params = {u'user': user_id}
+        try:
+            response = self._do_get_request('userprofile',
+                                            query_params)
+            response.raise_for_status()
+        except Exception as error:
+            logger.error(error.message)
+            raise error
+        resp_dict = json.loads(response.text)
+        if resp_dict['objects'] == []:
+            return False
+        elif len(resp_dict['objects']) > 1:
+            logger.error(f'More than one user profile found for user {username}')
+            raise Exception(f'More than one user profile found for user {username}')
+        else:
+            obj = resp_dict['objects'][0]
+        user_uri = obj['resource_uri']
+        return user_uri
+
+    # =================================
+    #
+    # End of MyTardis Get functions
+    #
+    # =================================
+
+    # =================================
+    #
+    # MyTardis User functions - create and assign access
+    #
+    # =================================
+    
+    def __get_or_create_user(self,
+                            upi):
+        uri = self.__get_user_uri(upi)
+        if uri:
+            return (False, uri)
+        else:
+            try:
+                person = get_user_from_upi(self.ldap_dict,
+                                                   upi)
+            except Exception as error:
+                raise
+            if not person:
+                return (False, None)
+            person_json = dict_to_json(person)
+            try:
+                response = self.__do_post_request('user',
+                                                  person_json)
+                response.raise_for_status()
+            except Exception as err:
+                logger.error(f'Error occurred when creating user {username}. Error: {err}')
+                return (False, None)
+            response = json.loads(response.text)
+            uri = response['resource_uri']
+            user_id = self.__resource_uri_to_id(uri)
+            user_profile_uri = self.__get_user_profile(user_id)
+            user_profile = {'resource_uri': user_profile_uri,
+                            'user': uri}
+            mytardis = {'username': username,
+                        'user_id' : user_id,
+                        'userProfile': user_profile}
+            mytardis_json = dict_to_json(mytardis)
+            try:
+                response = self.__do_post_request('userauthentication',
+                                                  mytardis_json)
+                response.raise_for_status()
+            except Exception as error:
+                logger.error(error.message)
+                return (False, None)
+        return (True, uri)
+
+    def __get_ownership_int(self, ownership_type):
+        ownership_type_mappings = {
+            u'Owner-owned': 1,
+            u'System-owned': 2,
+        }
+        v = ownership_type_mappings.get(ownership_type, None)
+        if v is None:
+            raise ValueError("Valid values of acl_ownership_type are %s" %
+                             ' or '.join(ownership_type_mappings.keys()))
+        return v
+
+    def share_experiment_with_group(self,
+                                    experiment_uri,
+                                    group_uri,
+                                    *args,
+                                    **kwargs):
+        """
+        Executes an HTTP request to share an experiment with a group,
+        via updating the ObjectACL.
+
+        Inputs:
+        =================================
+        experiment_uri: The integer ID or URL path to the Experiment.
+        group_uri: The integer ID or URL of the group we with share with.
+        
+        Returns:
+        =================================
+        A requests Response object
+        """
+        return self.__share_experiment(experiment_uri,
+                                       'django_group',
+                                       group_uri,
+                                       isOwner=False,
+                                       *args,
+                                       **kwargs)
+
+    def share_experiment_with_user(self,
+                                   experiment_uri,
+                                   user_uri,
+                                   *args,
+                                   **kwargs):
+        """
+        Executes an HTTP request to share an experiment with a user,
+        via updating the ObjectACL.
+
+        Inputs:
+        =================================
+        experiment_uri: The integer ID or URL path to the Experiment
+        user_uri: The integer ID or URL of the User to share with.
+        
+        Returns:
+        =================================
+        A requests Response object
+        """
+        return self.__share_experiment(experiment_uri,
+                                       'django_user',
+                                       user_uri,
+                                       isOwner=False,
+                                       *args,
+                                       **kwargs)
+
+    def share_experiment_with_owner(self,
+                                    experiment_uri,
+                                    user_uri,
+                                    *args,
+                                    **kwargs):
+        """
+        Executes an HTTP request to share an experiment with the project owner,
+        via updating the ObjectACL.
+
+        Inputs:
+        =================================
+        experiment_uri: The integer ID or URL path to the Experiment
+        user_uri: The integer ID or URL of the User to share with.
+        
+        Returns:
+        =================================
+        A requests Response object
+        """
+        return self.__share_experiment(experiment_uri,
+                                       'django_user',
+                                       user_uri,
+                                       isOwner=True,
+                                       *args,
+                                       **kwargs)
+
+    def __share_experiment(self,
+                           content_object,
+                           plugin_id,
+                           entity_object,
+                           isOwner=False,
+                           content_type=u'experiment',
+                           acl_ownership_type=u'Owner-owned'):
+        """
+        Executes an HTTP request to share an MyTardis object with a user or
+        group, via updating the ObjectACL.
+        #
+        :param content_object: The integer ID or URL path to the Experiment,
+                               Dataset or DataFile to update.
+        :param plugin_id: django_user or django_group
+        :param content_type: Django ContentType for the target object, usually
+                             'experiment', 'dataset' or 'datafile'
+        :type content_object: union(str, int)
+        :type plugin_id: str
+        :type content_type: basestring
+        :return: A requests Response object
+        :rtype: Response
+        """
+        # TODO Refactor to remove six
+        import six
+        if isinstance(content_object, six.string_types):
+            object_id = self._resource_uri_to_id(content_object)
+        elif isinstance(content_object, int):
+            object_id = content_object
+        else:
+            raise TypeError("'content_object' must be a URL string or int ID")
+        if isinstance(entity_object, six.string_types):
+            entity_id = self._resource_uri_to_id(entity_object)
+        elif isinstance(entity_object, int):
+            entity_id = enitity_object
+        else:
+            raise TypeError("'entity_object' must be a URL string or int ID")
+        acl_ownership_type = self._get_ownership_int(acl_ownership_type)
+        data = {
+            u'pluginId': plugin_id,
+            u'entityId': str(entity_id),
+            u'content_type': str(content_type),
+            u'object_id': str(object_id),
+            u'aclOwnershipType': acl_ownership_type,
+            u'isOwner': isOwner,
+            u'canRead': True,
+            u'canWrite': isOwner,
+            u'canDelete': False,
+            u'effectiveDate': None,
+            u'expiryDate': None
+        }
+        response = self.__do_post_request('objectacl',
+                                          dict_to_json(data))
+        return response
+    
+    # =================================
+    #
+    # End of MyTardis User functions
+    #
+    # =================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+    
     def _build_datafile_dictionaries(self,
                                      datafile_dict,
                                      required_keys):
@@ -327,289 +922,15 @@ class MyTardisUploader:
         paramset['parameters'] = parameter_list
         return (mytardis, paramset, owners, users, groups)
             
-    def _do_get_request(self,
-                        action,
-                        params,
-                        extra_headers=None):
-        '''Wrapper around self._do_rest_api_request to handle GET requests
 
-        Inputs:
-        =================================
-        action: the type of object, (e.g. experiment, dataset) to GET
-        params: parameters to pass to filter the request return
-        extra_headers: any additional information needed in the header (META) for the object being created
-        
-        Returns:
-        =================================
-        A Python requests module response object'''
-        try:
-            response = self._do_rest_api_request('GET',
-                                                  action,
-                                                  params=params,
-                                                  extra_headers=extra_headers)
-        except Exception as err:
-            raise err
-        return response
 
-    def _do_post_request(self,
-                         action,
-                         data,
-                         extra_headers=None):
-        '''Wrapper around self._do_rest_api_request to handle POST requests
 
-        Inputs:
-        =================================
-        action: the type of object, (e.g. experiment, dataset) to POST
-        data: a JSON string holding the data to generate the object
-        extra_headers: any additional information needed in the header (META) for the object being created
-        
-        Returns:
-        =================================
-        A Python requests module response object'''
-        try:
-            response = self._do_rest_api_request('POST',
-                                                  action,
-                                                  data=data,
-                                                  extra_headers=extra_headers)
-        except Exception as err:
-            raise err
-        return response
 
-    @backoff.on_exception(backoff.expo,
-                          requests.exceptions.RequestException,
-                          max_tries=8)
-    def _do_rest_api_request(self,
-                              method,  # REST api method
-                              action,  # action here refers to experiment, dataset or datafile
-                              data=None,
-                              params=None,
-                              extra_headers=None,
-                              api_url_template=None):
-        '''Function to handle the REST API calls
-        
-        Inputs:
-        =================================
-        method: The REST API method, POST, GET etc.
-        action: The object type to call REST API on, e.g. experiment, dataset
-        data: A JSON string containing data for generating an object via POST/PUT
-        params: A JSON string of parameters to be passed in the URL
-        extra_headers: Extra headers (META) to be passed to the API call
-        api_url_template: Over-ride for the default API URL
-        
-        Returns:
-        =================================
-        A Python Requests library repsonse object
-        '''
-        if api_url_template is None:
-            api_url_template = self.api_url
-        url = api_url_template % action
-        headers = {'Accept': 'application/json',
-                   'Content-Type': 'application/json',
-                   'User-Agent': self.user_agent}
-        if extra_headers:
-            headers = {**headers, **extra_headers}
-        logger.debug(url)
-        try:
-            if self.harvester.proxies:
-                response = requests.request(method,
-                                            url,
-                                            data=data,
-                                            params=params,
-                                            headers=headers,
-                                            auth=self.auth,
-                                            verify=self.verify_certificate,
-                                            proxies=self.harvester.proxies)
-            else:
-                response = requests.request(method,
-                                            url,
-                                            data=data,
-                                            params=params,
-                                            headers=headers,
-                                            auth=self.auth,
-                                            verify=self.verify_certificate)
-            # 502 Bad Gateway triggers retries, since the proxy web
-            # server (eg Nginx or Apache) in front of MyTardis could be
-            # temporarily restarting
-            if response.status_code == 502:
-                self._raise_request_exception(response)
-            else:
-                response.raise_for_status()
-        except requests.exceptions.RequestException as err:
-            logger.error("Request failed : %s : %s", err.message, url)
-            raise err
-        except Exception as err:
-            logger.error(f'Error, {err.message}, occurred when attempting to call api request {url}')
-            raise err
-        return response
 
-    def _get_dataset_uri(self, dataset_id):
-        '''Uses REST API GET with an dataset_id filter. Raises an error if multiple
-        instances of the same dataset_id are located as this should never happen given
-        the database restrictions.
 
-        Inputs:
-        =================================
-        dataset_id: unique identifier for dataset
-
-        Returns:
-        =================================
-        False if the id is not found in the database
-        URI of the dataset if a single instance of the id is found in the database
-        '''
-        query_params = {u'dataset_id': dataset_id}
-        return self._get_uri('dataset', query_params)
-
-    def _get_experiment_uri(self, internal_id):
-        '''Uses REST API GET with an internal_id filter. Raises an error if multiple
-        instances of the same internal_id are located as this should never happen given
-        the database restrictions.
-
-        Inputs:
-        =================================
-        internal_id: unique identifier for experiment
-
-        Returns:
-        =================================
-        False if the id is not found in the database
-        URI of the experiment if a single instance of the id is found in the database
-        '''
-        query_params = {u'internal_id': internal_id}
-        return self._get_uri('experiment', query_params)
-
-    def _get_group_uri(self, group):
-        '''Use the user api in myTardis to search on groups
-
-        Inputs:
-        =================================
-        group: The group name
-
-        Returns:
-        =================================
-        False if group is not in the database
-        -1 if more than one group with the same name exists. 
-        URI to the goup id if exactly one group with the name is found.
-        '''
-        query_params = {u'name': group}
-        return self._get_uri('group', query_params)
     
-    def _get_instrument_uri(self, name, facility=None):
-        '''Read database for instruments and return resource_uri for an
-        instrument by name and facility
-        
-        Inputs:
-        =================================
-        name: Instrument name
-        facility: The host facility for the instrument, defaults to None
-
-        Returns:
-        =================================
-        False if the instrument is not present or if it cannot be uniquely identified
-        URI of the instrument if it can be uniquely identified
-        '''
-        query_params = {u'name': name}
-        if facility is not None:
-            query_params['facility__name'] = facility
-        return self._get_uri("instrument", query_params)
-
-    def _get_or_create_user(self,
-                            upi):
-        server = ldap3.Server(self.harvester.ldap_url)
-        search_filter = f'({self.harvester.ldap_user_attr_map["upi"]}={upi})'
-        with ldap3.Connection(server,
-                              auto_bind=True,
-                              user=self.harvester.ldap_admin_user,
-                              password=self.harvester.ldap_admin_password) as connection:
-            connection.search(self.harvester.ldap_user_base,
-                              search_filter,
-                              attributes=['*'])
-        person = connection.entries[0]
-
-        username = person[self.harvester.ldap_user_attr_map['upi']].value
-        first_name = person[self.harvester.ldap_user_attr_map['first_name']].value
-        last_name = person[self.harvester.ldap_user_attr_map['last_name']].value
-        email = person[self.harvester.ldap_user_attr_map['email']].value
-        mytardis = {'username': username,
-                    'first_name': first_name,
-                    'last_name': last_name,
-                    'email': email}
-        uri = self._get_user_uri(upi)
-        if uri:
-            return (False, uri)
-        else:
-            # Create the user using the API
-            # todo: check if the user is in LDAP
-            
-            mytardis_json = dict_to_json(mytardis)
-            try:
-                response = self._do_post_request('user',
-                                                 mytardis_json)
-                response.raise_for_status()
-            except Exception as err:
-                logger.error(f'Error occurred when creating user {username}. Error: {err}')
-                return (False, None)
-            response = json.loads(response.text)
-            uri = response['resource_uri']
-            user_id = self._resource_uri_to_id(uri)
-            query_params = {u'user': user_id}
-            try:
-                response = self._do_get_request('userprofile',
-                                                query_params)
-                response.raise_for_status()
-            except Exception as err:
-                logger.error(f'Error: {err} occured when looking up the user profile of user {username}')
-                raise err
-            else:
-                resp_dict = json.loads(response.text)
-                if resp_dict['objects'] == []:
-                    return False
-                elif len(resp_dict['objects']) > 1:
-                    logger.error(f'More than one user profile found for user {username}')
-                    raise Exception(f'More than one user profile found for user {username}')
-                else:
-                    obj = resp_dict['objects'][0]
-            user_uri = obj['resource_uri']
-            user_profile = {'resource_uri': user_uri,
-                            'user': uri}
-            mytardis = {'username': username,
-                        'user_id' : user_id,
-                        'userProfile': user_profile}
-            mytardis_json = dict_to_json(mytardis)
-            try:
-                response = self._do_post_request('userauthentication',
-                                                 mytardis_json)
-                response.raise_for_status()
-            except Exception as err:
-                logger.error(f'Error occurred when creating user {username} LDAP authentication. Error: {err}')
-                return (False, None)
-        return (True, uri)
-
-    def _get_ownership_int(self, ownership_type):
-        ownership_type_mappings = {
-            u'Owner-owned': 1,
-            u'System-owned': 2,
-        }
-        v = ownership_type_mappings.get(ownership_type, None)
-        if v is None:
-            raise ValueError("Valid values of acl_ownership_type are %s" %
-                             ' or '.join(ownership_type_mappings.keys()))
-        return v
     
-    def _get_schema_uri(self,
-                         namespace):
-        '''Reads the database for schema and returns a resource_uri for one by name
-        Raises an execption if no schema can be found, or if there are multiple with the
-        same namespace
 
-        Inputs:
-        =================================
-        namespace: the schema namespace
-
-        Returns:
-        =================================
-        URI if one schema with the search namespace.
-        '''
-        query_params = {'namespace': namespace}
-        return self._get_uri('schema', query_params)
     
     
     def _raise_request_exception(self, response):
@@ -618,38 +939,7 @@ class MyTardisUploader:
         raise e
 
     
-    def _get_uri(self,
-                 action,
-                 query_params):
-        '''General solution for finding resource uri's from the 
-        database.
-
-        Inputs:
-        =================================
-        action: the object being retrieved
-        query_params: search parameters
-
-        Returns:
-        =================================
-        URI if one object with the search name exists'''
-        try:
-            response = self._do_get_request(action,
-                                           params = query_params)
-        except Exception as err:
-            raise err
-        else:
-            response_dict = json.loads(response.text)
-            logger.debug(response_dict)
-            if response_dict == [] or response_dict['objects'] == []:
-                return False
-            elif len(response_dict['objects']) > 1:
-                logger.error(
-                    f'Multiple instances of {action} {query_params} found in the database. Please verify and clean up.')
-                raise Exception(f'Multiple instances of {action} {query_params} found in the database. Please verify and clean up.')
-            else:
-                obj = response_dict['objects'][0]
-                logger.debug(f'{action}: {obj} found in the database.')
-                return obj['resource_uri']
+    
     
 
     
@@ -770,188 +1060,6 @@ class MyTardisUploader:
             os.chdir(self.cwd)
             return (True, uri)
 
-    def _share_experiment(self,
-                           content_object,
-                           plugin_id,
-                           entity_object,
-                           isOwner=False,
-                           content_type=u'experiment',
-                           acl_ownership_type=u'Owner-owned'):
-        """
-        Executes an HTTP request to share an MyTardis object with a user or
-        group, via updating the ObjectACL.
-        #
-        :param content_object: The integer ID or URL path to the Experiment,
-                               Dataset or DataFile to update.
-        :param plugin_id: django_user or django_group
-        :param content_type: Django ContentType for the target object, usually
-                             'experiment', 'dataset' or 'datafile'
-        :type content_object: union(str, int)
-        :type plugin_id: str
-        :type content_type: basestring
-        :return: A requests Response object
-        :rtype: Response
-        """
-        import six
-        if isinstance(content_object, six.string_types):
-            object_id = self._resource_uri_to_id(content_object)
-        elif isinstance(content_object, int):
-            object_id = content_object
-        else:
-            raise TypeError("'content_object' must be a URL string or int ID")
-        if isinstance(entity_object, six.string_types):
-            entity_id = self._resource_uri_to_id(entity_object)
-        elif isinstance(entity_object, int):
-            entity_id = enitity_object
-        else:
-            raise TypeError("'entity_object' must be a URL string or int ID")
-        acl_ownership_type = self._get_ownership_int(acl_ownership_type)
-        data = {
-            u'pluginId': plugin_id,
-            u'entityId': str(entity_id),
-            u'content_type': str(content_type),
-            u'object_id': str(object_id),
-            u'aclOwnershipType': acl_ownership_type,
-            u'isOwner': isOwner,
-            u'canRead': True,
-            u'canWrite': isOwner,
-            u'canDelete': False,
-            u'effectiveDate': None,
-            u'expiryDate': None
-        }
-        response = self._do_post_request('objectacl',
-                                        dict_to_json(data))
-        return response
-
-
-
-    def _resource_uri_to_id(self, uri):
-        """
-        Takes resource URI like: http://example.org/api/v1/experiment/998
-        and returns just the id value (998).
-        #
-        :type uri: str
-        :rtype: int"""
-        resource_id = int(urlparse(uri).path.rstrip(
-            os.sep).split(os.sep).pop())
-        return resource_id
-
-    def share_experiment_with_group(self,
-                                    experiment_uri,
-                                    group_uri,
-                                    *args,
-                                    **kwargs):
-        """
-        Executes an HTTP request to share an experiment with a group,
-        via updating the ObjectACL.
-
-        Inputs:
-        =================================
-        experiment_uri: The integer ID or URL path to the Experiment.
-        group_uri: The integer ID or URL of the group we with share with.
-        
-        Returns:
-        =================================
-        A requests Response object
-        """
-        return self._share_experiment(experiment_uri,
-                                       'django_group',
-                                       group_uri,
-                                       isOwner=False,
-                                       *args,
-                                       **kwargs)
-
-    def share_experiment_with_user(self,
-                                   experiment_uri,
-                                   user_uri,
-                                   *args,
-                                   **kwargs):
-        """
-        Executes an HTTP request to share an experiment with a user,
-        via updating the ObjectACL.
-
-        Inputs:
-        =================================
-        experiment_uri: The integer ID or URL path to the Experiment
-        user_uri: The integer ID or URL of the User to share with.
-        
-        Returns:
-        =================================
-        A requests Response object
-        """
-        return self._share_experiment(experiment_uri,
-                                       'django_user',
-                                       user_uri,
-                                       isOwner=False,
-                                       *args,
-                                       **kwargs)
-
-    def share_experiment_with_owner(self,
-                                    experiment_uri,
-                                    user_uri,
-                                    *args,
-                                    **kwargs):
-        """
-        Executes an HTTP request to share an experiment with the project owner,
-        via updating the ObjectACL.
-
-        Inputs:
-        =================================
-        experiment_uri: The integer ID or URL path to the Experiment
-        user_uri: The integer ID or URL of the User to share with.
-        
-        Returns:
-        =================================
-        A requests Response object
-        """
-        return self._share_experiment(experiment_uri,
-                                       'django_user',
-                                       user_uri,
-                                       isOwner=True,
-                                       *args,
-                                       **kwargs)
-
-    
-
-    def _get_user_uri(self, username):
-        '''Use the user api in myTardis to search on the username (should be UoA UPI).
-        
-        Inputs:
-        =================================
-        username: The user name to look up. Should be a UoA UPI
-
-        Returns:
-        =================================
-        False if user name is not in the database: ToDo: If this is the case look up the UoA LDAP
-            and add a user if they exist within the university.
-        -1 if more than one user with the same name exists.
-        URI to the user if exactly one group with the name is found.
-        '''
-        query_params = {'username': username}
-        try:
-            response = self._do_get_request('user',
-                                           params=query_params)
-        except Exception as err:
-            raise err
-        else:
-            resp_dict = json.loads(response.text)
-            if resp_dict['objects'] == []:
-                logger.info(f'UPI: {username} is not in the user database.')
-                return False
-            elif len(resp_dict['objects']) > 1:
-                logger.error(f'Multiple instances of UPI: {upi} found in user database. Please verify and clean up.')
-                raise Exception(f'Multiple instances of UPI: {upi} found in user database. Please verify and clean up.')
-            else:
-                obj = resp_dict['objects'][0]
-                logger.debug(obj)
-                return obj['resource_uri']
-
-    
-
-    
-
-    
-    
     @backoff.on_exception(backoff.expo,
                           requests.exceptions.RequestException,
                           max_tries=8)
@@ -1095,20 +1203,3 @@ class MyTardisUploader:
             logger.error(f'Error: {err} eccountered when creating dataset_file {mytardis["filename"]}')
             return (False, None)
         return (True, None)
-    
-class TastyPieAuth(AuthBase):
-    """
-    Attaches HTTP headers for Tastypie API key Authentication to the given
-    Request object.
-    #
-    Because this ingestion script will sit inside the private network and
-    will act as the primary source for uploading to myTardis, authentication
-    via a username and api key is used.
-    """
-    def __init__(self, username, api_key):
-        self.username = username
-        self.api_key = api_key
-    def __call__(self, r):
-        r.headers['Authorization'] = 'ApiKey %s:%s' % (self.username,
-                                                       self.api_key)
-        return r
