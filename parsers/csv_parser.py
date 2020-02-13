@@ -2,7 +2,7 @@ from . import Parser
 import csv
 import logging
 from ..helper import check_dictionary
-from ..helper import calculate_checksum, md5_python, md5_subprocess
+from ..helper import calculate_checksum #, md5_python, md5_subprocess
 
 logger = logging.getLogger(__name__)
 
@@ -16,22 +16,22 @@ class CSVParser(Parser):
         Inputs:
         =================================
         config_dict: A dictionary containing the configuration details for the uploader
-        
+
         Details of config_dict:
         =================================
         The config_dict must contain the following key/value pairs:
-        
+
         Key / Value:
         =================================
         root_dir / the root directory with respect to the relative file paths in the csv file
         file_header / either the header or the index of the column associated with the file name
         local_dir /  either the header or the index of the column associated with the file location relative
         to the root_dir
-        experiment_headers / a list of headers or of indices to columns associated with experiment 
+        experiment_headers / a list of headers or of indices to columns associated with experiment
         data/metadata
-        dataset_headers / a list of headers or of indices to columns associated with dataset 
+        dataset_headers / a list of headers or of indices to columns associated with dataset
         data/metadata
-        datafile_headers / a list of headers or of indices to columns associated with datafiles 
+        datafile_headers / a list of headers or of indices to columns associated with datafiles
         data/metadata
         schema_dict / a dictionary of schema for the associated experiments/datasets/datafiles
         processed_csvs / completed csv files to be ignored if they are present in the config directory (Optional)
@@ -44,7 +44,7 @@ class CSVParser(Parser):
         - see caveats)
         dataset_id / the header or index of the columns associated with the dataset_id (Optional - see caveats)
         use_headers / True or False - defines if a header row should be used to identify columns
-        
+
         Returns:
         =================================
         Nil
@@ -136,7 +136,7 @@ class CSVParser(Parser):
                                 logger.debug(column.lower().strip() == header.strip())
                                 if column.lower().strip() == header.strip():
                                     if flg:
-                                        error_message = f'Cannot determine column indices from header due to duplicate entries' 
+                                        error_message = f'Cannot determine column indices from header due to duplicate entries'
                                         logger.error(error_message)
                                         raise Exception(error_message)
                                     else:
@@ -322,7 +322,7 @@ class CSVParser(Parser):
             for key in datafile_inds['meta'].keys():
                 datafile_dict[key] = row[datafile_inds['meta'][key][0]]
         return datafile_dict
-    
+
     def create_experiment_dicts(self,
                                csvfile,
                                force = False):
@@ -373,7 +373,7 @@ class CSVParser(Parser):
                         compiled_dict[key] = [expt[key]]
             return_list.append(compiled_dict)
         return return_list
-    
+
     def __compile_dataset_metadata(self,
                                    dataset_list):
         dataset_composite_ids = []
@@ -403,8 +403,8 @@ class CSVParser(Parser):
                     else:
                         compiled_dict[key] = [dataset[key]]
             return_list.append(compiled_dict)
-        return return_list    
-    
+        return return_list
+
     def process_file(self,
                      csvfile):
         with open(csvfile, newline='') as f:
