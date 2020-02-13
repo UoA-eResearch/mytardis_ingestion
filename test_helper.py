@@ -46,7 +46,12 @@ dictionary = { "office":
 class TestHelperFunctions(unittest.TestCase):
     """
     Unittest for helper functions in helper.helper
-    TODO - EXPAND THIS
+    TODO - EXPAND COMMENTS
+         - add helper unittests for:
+         - EXPAND test_readJSON & test_writeJSON to test coded exceptions
+           check_dictionary
+           dict_to_json
+           calculate_etag
     """
 
     def test_readJSON(self):
