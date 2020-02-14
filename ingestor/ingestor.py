@@ -102,12 +102,13 @@ class MyTardisUploader:
         self.server = local_config('MYTARDIS_URL')
         self.ingest_user = local_config('MYTARDIS_INGEST_USER')
         self.ingest_api_key = local_config('MYTARDIS_INGEST_API_KEY')
+        self.facility_manager = local_config('MYTARDIS_FACILITY_MANAGER')
         self.verify_certificate = local_config('MYTARDIS_VERIFY_CERT',
                                                default=True,
                                                cast=bool)
-        self.experiment_schema = local_config('MYTARDIS_EXPT_SCHEMA')
-        self.dataset_schema = local_config('MYTARDIS_DATASET_SCHEMA')
-        self.datafile_schema = local_config('MYTARDIS_DATAFILE_SCHEMA')
+        self.experiment_schema = local_config('MYTARDIS_EXPT_SCHEMA', cast=dict)
+        self.dataset_schema = local_config('MYTARDIS_DATASET_SCHEMA', cast=dict)
+        self.datafile_schema = local_config('MYTARDIS_DATAFILE_SCHEMA', cast=dict)
         self.proxies = {"http": global_config('PROXY_HTTP',
                                              default=None),
                         "https": global_config('PROXY_HTTPS',
@@ -678,27 +679,16 @@ class MyTardisUploader:
     #
     # =================================
 
-    def _build_datafile_dictionaries(self,
-                                     datafile_dict,
-                                     required_keys):
+    def __split_datafile_dictionaries(self,
+                                      datafile_dict,
+                                      schema_key='DEFAULT'):
         '''Read in a datafile dictionary and build the file dictionary needed to create
         the datafile in mytardis
         
         Inputs:
         =================================
         datafile_dict: A dictionary containing the definintion of the dataset and its metadata
-        
-        The dataset_dict must contain the following key/value pairs
-        
-        Key / Value:
-        =================================
-        schema_namespace / the schema defining the dataset metadata
-        dataset_id / An internal unique identifer for the dataset
-        file_name / The file name
-        remote_path / The relative path to the storage in the remote directory
-        mimetype / The MIME type of the file
-        size / The file size
-        md5sum / the md5 check sum for the file
+        schema_key: The key to the schema defined in the config file for cases where there are multiple schema that could be used.
 
         Returns:
         =================================
@@ -747,24 +737,25 @@ class MyTardisUploader:
         return mytardis
 
 
-    def _build_dataset_dictionaries(self,
+    def __split_dataset_dictionaries(self,
                                      dataset_dict,
-                                     required_keys):
+                                     schema_key='DEFAULT'):
         '''Read in a dataset dictionary and build the mytardis and params dictionary needed to create
         the dataset in mytardis
         
         Inputs:
         =================================
         dataset_dict: A dictionary containing the definintion of the dataset and its metadata
+        schema_key: The key to the schema defined in the config file for cases where there are multiple schema that could be used.
         
         The dataset_dict must contain the following key/value pairs
         
         Key / Value:
         =================================
         internal_id / An internal unique identifier for the experiment the dataset is associated with
-        schema_namespace / the schema defining the dataset metadata
         description / The name of the dataset. This should be unique
         dataset_id / An internal unique identifer for the dataset
+        instrument_id / An identifier that links to an instrument
 
         Returns:
         =================================
@@ -827,7 +818,7 @@ class MyTardisUploader:
 
     def _build_experiment_dictionaries(self,
                                        expt_dict,
-                                       required_keys):
+                                       schema_key='DEFAULT'):
         '''Read in an experiment dictionary and build the mytardis and params dictionary needed to create
         the experiment in mytardis
         

@@ -62,7 +62,7 @@ Two sets of environment files are used by the ingestor.
 * MYTARDIS_INGEST_API_KEY: the api key associated with this service account
 * MYTARDIS_FACILITY_MANAGER: a default user to associate the experiment with - a backstop to allow facility managers to assign experiments to users
 * MYTARDIS_VERIFY_CERT: a boolean that enforces SSL certificate verification when ingesting
-* MYTARDIS_EXPERIMENT_SCHEMA: the experiment schema to use with this ingestion
+* MYTARDIS_EXPERIMENT_SCHEMA: the experiment schema to use with this ingestion - Note the schema configs should contain a dictionary with at least one 'DEFAULT' key linking to the default schema for this object. Additional keys are available to allow for multiple schema in a given object. For example, one for a raw data dataset and another for a processed data dataset.
 * MYTARDIS_DATASET_SCHEMA: the dataset schema to use with this ingestion
 * MYTARDIS_DATAFILE_SCHEMA: the datafile schema to use with this ingestion
 * FILEHANDLER_S3_BUCKET: the S3 bucket to create objects in when moving from 'local' storage
