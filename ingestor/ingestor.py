@@ -108,8 +108,12 @@ class MyTardisUploader:
         self.experiment_schema = local_config('MYTARDIS_EXPT_SCHEMA')
         self.dataset_schema = local_config('MYTARDIS_DATASET_SCHEMA')
         self.datafile_schema = local_config('MYTARDIS_DATAFILE_SCHEMA')
-        self.proxies = global_config('PROXIES',
-                                     default=None)
+        self.proxies = {"http": global_config('PROXY_HTTP',
+                                             default=None),
+                        "https": global_config('PROXY_HTTPS',
+                                             default=None)}
+        if self.proxies['http'] == None and self.proxies['https'] == None:
+            self.proxies = None
         self.ldap_dict = {}
         self.ldap_dict['url'] = global_config('LDAP_URL')
         self.ldap_dict['user_attr_map'] = global_config('LDAP_USER_ATTR_MAP')
@@ -145,6 +149,11 @@ class MyTardisUploader:
     #
     # =================================
 
+    def __raise_request_exception(self, response):
+        e = requests.exceptions.RequestException(response=response)
+        e.message = "%s %s" % (response.status_code, response.reason)
+        raise e
+    
     @backoff.on_exception(backoff.expo,
                           requests.exceptions.RequestException,
                           max_tries=8)
@@ -201,7 +210,7 @@ class MyTardisUploader:
             # server (eg Nginx or Apache) in front of MyTardis could be
             # temporarily restarting
             if response.status_code == 502:
-                self._raise_request_exception(response)
+                self.__raise_request_exception(response)
             else:
                 response.raise_for_status()
         except requests.exceptions.RequestException as err:
@@ -491,7 +500,7 @@ class MyTardisUploader:
         else:
             try:
                 person = get_user_from_upi(self.ldap_dict,
-                                                   upi)
+                                           upi)
             except Exception as error:
                 raise
             if not person:
@@ -669,33 +678,6 @@ class MyTardisUploader:
     #
     # =================================
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-    
     def _build_datafile_dictionaries(self,
                                      datafile_dict,
                                      required_keys):
@@ -933,10 +915,7 @@ class MyTardisUploader:
 
     
     
-    def _raise_request_exception(self, response):
-        e = requests.exceptions.RequestException(response=response)
-        e.message = "%s %s" % (response.status_code, response.reason)
-        raise e
+    
 
     
     
