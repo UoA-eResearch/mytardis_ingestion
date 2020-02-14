@@ -101,11 +101,11 @@ def dict_to_json(dictionary):
     """
     Serialize a dictionary to JSON, correctly handling datetime.datetime
     objects (to ISO 8601 dates, as strings).
-    
+
     Input:
     =================================
     dictionary: Dictionary to serialise
-        
+
     Returns:
     =================================
     JSON string
@@ -114,9 +114,9 @@ def dict_to_json(dictionary):
     import datetime
     if not isinstance(dictionary, dict):
         raise TypeError("Must be a dictionary")
-        
+
     def date_handler(obj): return (
-        obj.isoformat(' ')
+        obj.isoformat()
         if isinstance(obj, datetime.date)
         or isinstance(obj, datetime.datetime)
         else None
@@ -177,7 +177,7 @@ def calculate_etag(file_path,
         new_md5 = hashlib.md5(digests)
         etag = new_md5.hexdigest() + '-' + str(len(md5s))
     elif len(md5s) == 1:
-        etag = md5.hexdigest()
+        etag = md5s[0].hexdigest()
     else:
         etag = '""'
     return etag
