@@ -5,8 +5,11 @@ import hashlib
 import subprocess
 import logging
 from . import constants as CONST
+from pathlib import Path
 
-def readJSON(json_file, logger=None):
+logger = logging.getLogger(__name__)
+
+def readJSON(json_file):
     '''Function to parse a JSON formatted file
 
     Inputs:
@@ -36,7 +39,7 @@ def readJSON(json_file, logger=None):
             logger.debug(f'JSON file, {json_file}, sucessfully loaded')
         return json_dict
 
-def writeJSON(json_dict, json_file, logger=None):
+def writeJSON(json_dict, json_file):
     '''Function to write a JSON formatted file from a python dictionary
 
     Inputs:
@@ -123,46 +126,6 @@ def dict_to_json(dictionary):
     )
     return json.dumps(dictionary, default=date_handler)
 
-'''def calculate_checksum(file_dir,
-                       file_name=None,
-                       s3_flag = False,
-                       sha512_flag = False,
-                       blocksize = 1*CONST.GB): # yes this is the size in bytes - MD5 sum uses 128 byte chunks
-    if file_name:
-        file_path = os.path.join(file_dir, file_name)
-    else:
-        file_path = file_dir
-    md5 = hashlib.md5()
-    if s3_flag:
-        md5s = []
-    if sha512_flag:
-        sha512 = hashlib.sha512()
-    with open(file_path, 'rb') as f:
-        while True:
-            chunk = f.read(blocksize)
-            if not chunk:
-                break
-            md5.update(chunk)
-            if sha512_flag:
-                sha512.update(chunk)
-            if s3_flag:
-                md5s.append(hashlib.md5(chunk).digest())
-    if s3_flag:
-        if len(md5s) > 1:
-            digests = b"".join(m for m in md5s)
-            new_md5 = hashlib.md5(digests)
-            s3_etag = new_md5.hexdigest() + '-' + str(len(md5s))
-        else:
-            s3_etag = md5.hexdigest()
-        if sha512_flag:
-            return (md5.hexdigest(), s3_etag, sha512.hexdigest())
-        else:
-            return (md5.hexdigest(), s3_etag)
-    elif sha512_flag:
-        return (md5.hexdigest(), sha512.hexdigest())
-    else:
-        return (md5.hexdigest(),)'''
-
 def calculate_etag(file_path,
                    blocksize):
     md5s = []
@@ -181,3 +144,140 @@ def calculate_etag(file_path,
     else:
         etag = '""'
     return etag
+
+def calculate_md5sum(file_path,
+                     blocksize=None,
+                     subprocess_size_threshold=10*CONST.MB,
+                     md5sum_executable='/usr/bin/md5sum'):
+    """
+    Calculates the MD5 checksum of a file, returns the hex digest as a
+    string. Streams the file in chunks of 'blocksize' to prevent running
+    out of memory when working with large files.
+    If the file size is greater than subprocess_size_threshold and the
+    md5sum tool exists, spawn a subprocess and use 'md5sum', otherwise
+    use the native Python md5 method (~ 3x slower).
+    :type file_path: Path
+    :type blocksize: int
+    :param subprocess_size_threshold: Use the md5sum tool via a subprocess
+                                        for files larger than this. Otherwise
+                                        use Python native method.
+    :type subprocess_size_threshold: int
+    :return: The hex encoded MD5 checksum.
+    :rtype: str
+    """
+    if os.path.getsize(file_path) > subprocess_size_threshold and \
+       os.path.exists(md5sum_executable) and \
+       os.access(md5sum_executable, os.X_OK):
+        return md5_subprocess(file_path,
+                              md5sum_executable=md5sum_executable)
+    else:
+        return md5_python(file_path,
+                          blocksize=blocksize)
+    
+def md5_python(file_path,
+               blocksize=None):
+    """
+    Calculates the MD5 checksum of a file, returns the hex digest as a
+    string. Streams the file in chunks of 'blocksize' to prevent running
+    out of memory when working with large files.
+    :type file_path: Path
+    :type blocksize: int
+    :return: The hex encoded MD5 checksum.
+    :rtype: str
+    """
+    if not blocksize:
+        blocksize = 128
+
+    md5 = hashlib.md5()
+    with open(file_path, 'rb') as f:
+        while True:
+            chunk = f.read(blocksize)
+            if not chunk:
+                break
+            md5.update(chunk)
+    return md5.hexdigest()
+
+def md5_subprocess(file_path,
+                   md5sum_executable='/usr/bin/md5sum'):
+    """
+    Calculates the MD5 checksum of a file, returns the hex digest as a
+    string. Streams the file in chunks of 'blocksize' to prevent running
+    out of memory when working with large files.
+    :type file_path: Path
+    :return: The hex encoded MD5 checksum.
+    :rtype: str
+    """
+    out = subprocess.check_output([md5sum_executable, file_path])
+    checksum = out.split()[0]
+    if len(checksum) == 32:
+        return checksum
+    else:
+        raise ValueError('md5sum failed: %s', out)
+
+def build_checksum_digest(checksum_digest,
+                          file_path,
+                          s3=True,
+                          s3_blocksize=1*CONST.GB,
+                          md5_blocksize=None,
+                          subprocess_size_threshold=10*CONST.MB,
+                          md5sum_executable='/usr/bin/md5sum'):
+    """
+    Builds a tuple of md5, etag checksums for a given
+    data file and appends it to the checksum digest file for use
+    by the ingestion classes.file_path
+    
+    =================================
+    Inputs:
+    =================================
+    checksum_digest: a Path object to the file to append to
+    file_path: a Path object to the file to build the checksums force
+    s3: a boolean flag to indicate whether or not to calculate the ETag
+
+    =================================
+    Returns:
+    =================================
+    True: if checksums calculated and appended successfully
+    False: otherwise
+    """
+    try:
+        md5 = calculate_md5sum(file_path,
+                               blocksize,
+                               subprocess_size_threshold,
+                               md5sum_executable)
+    except FileNotFoundError as error:
+        logger.error(error.message)
+        return False
+    except Exception as error:
+        logger.error(error.message)
+        raise
+    if md5 == '':
+        return False
+    writestring = f'{file_path},{md5}'
+    if s3:
+        etag = calculate_etag(file_path,
+                              s3_blocksize)
+        writestring += f',{etag}'
+    writestring += f'\n'
+    try:
+        with open(checksum_digest, 'a') as filename:
+            filename.write(writestring)
+    except Exception as error:
+        logger.error(error.message)
+        return False
+    return True
+    
+def read_checksum_digest(checksum_digest):
+    ret_dict = {}
+    try:
+        with open(checksum_digest, 'r') as filename:
+            for line in filename:
+                data = line.split(',')
+                if len(data) < 2:
+                    logger.error(f'Malformed checksum digest file {checksum_digest}')
+                    return False
+                key = data.pop(0)
+                ret_dict[key] = data
+    except Exception as error:
+        logger.error(error.message)
+        raise
+    return ret_dict

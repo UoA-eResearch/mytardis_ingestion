@@ -3,3 +3,4 @@ __author__ = 'Chris Seal <c.seal@auckland.ac.nz>'
 from .helper import *
 from .constants import *
 from .ldap import *
+from .raid import *
