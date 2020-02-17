@@ -17,6 +17,7 @@ import logging
 import subprocess
 from ..helper import constants as CONST
 from ..helper import helper as hlp
+from decouple import Config, RepositoryEnv
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -24,21 +25,20 @@ logger = logging.getLogger(__name__)
 class S3FileHandler(FileHandler):
 
     def __init__(self,
-                 config_dict):
+                 global_config_file_path,
+                 local_config_file_path):
+        # global_config holds environment variables that don't change often such as LDAP parameters and project_db stuff
+        global_config = Config(RepositoryEnv(global_config_file_path))
+        # local_config holds the details about how this particular set of data should be handled
+        local_config = Config(RepositoryEnv(local_config_file_path))
         # s3_root_dir should be ProjectID/ExptID/DatasetID
-        self.s3_root_dir = config_dict['s3_root_dir']
+        self.s3_root_dir = Path(local_config('FILEHANDLER_REMOTE_ROOT'))
         # This is a temp solution to the streaming timeout problem
-        self.staging_dir = config_dict['staging_dir']
-        self.bucket = config_dict['bucket']
-        endpoint_url = config_dict['endpoint_url']
-        if 'threshold' in config_dict.keys():
-            self.threshold = config_dict['threshold']
-        else:
-            self.threshold = 1* CONST.GB
-        if 'blocksize' in config_dict.keys():
-            self.blocksize = config_dict['blocksize']
-        else:
-            self.blocksize = 1* CONST.GB
+        self.staging_dir = Path(local_config('FILEHANDLER_STAGING_ROOT'))
+        self.bucket = local_config('FILEHANDLER_S3_BUCKET')
+        endpoint_url = local_config('FILEHANDLER_S3_ENDPOINT_URL')
+        self.threshold = local_config('FILEHANDLER_S3_THRESHOLD')
+        self.blocksize = local_config('FILEHANDLER_BLOCKSIZE')
         self.cwd = os.getcwd()
         self.s3_client = boto3.client('s3',
                                       endpoint_url = endpoint_url)

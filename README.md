@@ -57,6 +57,10 @@ Two sets of environment files are used by the ingestor.
 
 *Local_env* contains specific configuration for the facility in question and includes:
 
+* HARVESTER_FILEHANDLER_MODULE: the filehandler module name to load for the specific filehandler used in this instance
+* HARVESTER_FILEHANDLER_CLASS: the class name of the specific filehandler class to be used in this instance
+* HARVESTER_PARSER_MODULE: the parser module name to load for this instance
+* HARVESTER_PARSER_CLASS: the class name of the specific parser class to be used in this instance.
 * MYTARDIS_URL: URL to the specific instance of MyTardis to ingest into
 * MYTARDIS_INGEST_USER: the service account the handles the ingestion
 * MYTARDIS_INGEST_API_KEY: the api key associated with this service account
@@ -65,7 +69,13 @@ Two sets of environment files are used by the ingestor.
 * MYTARDIS_EXPERIMENT_SCHEMA: the experiment schema to use with this ingestion - Note the schema configs should contain a dictionary with at least one 'DEFAULT' key linking to the default schema for this object. Additional keys are available to allow for multiple schema in a given object. For example, one for a raw data dataset and another for a processed data dataset.
 * MYTARDIS_DATASET_SCHEMA: the dataset schema to use with this ingestion
 * MYTARDIS_DATAFILE_SCHEMA: the datafile schema to use with this ingestion
+* MYTARDIS_STORAGE_BOX: the name of the storage box in MyTardis in which the datafiles are being stored
 * FILEHANDLER_S3_BUCKET: the S3 bucket to create objects in when moving from 'local' storage
+* FILEHANDLER_REMOTE_ROOT: the root directory which the relative file paths relate to in the object store
+* FILEHANDLER_STAGING_ROOT: the root directory on the staging server which the relative file paths relate to
+* FILEHANDLER_S3_ENDPOINT_URL: the endpoint URL
+* FILEHANDLER_S3_THRESHOLD: the file size above which multipart uploading will be used
+* FILEHANDLER_BLOCKSIZE: the chunk size for multipart uploading.
 
 # Dictionary formats for ingestion into MyTardis using the MyTardisUploader class
 
@@ -109,7 +119,8 @@ The bare minimum required to create an datafile as at 14/02/2020 is as follows:
 |---|---|
 |file_name: | The name of the data file being uploaded|
 |dataset_id: | The unique identifier to a dataset that exists. If the dataset_id cannot be found then creation will stop|
-|remote_path: | The path to the directory that the file will be stored in once transfered to the data centre. *Note:* this is the final storage location, file transfer is handled by the FileHandler class so the ingestor only needs to know where the ingested copy resides|
+|remote_path: | The path to the directory that the file will be stored in once transfered to the data centre. *Note:* this is the final storage location|
+|local_path: | The path to the local directory that the file was taken from. Used to uniquely identify file so that the checksum_digest can be used|
 |size: | The file size in bytes|
 |md5sum: | A suitable checksum for verification purposes|
 
