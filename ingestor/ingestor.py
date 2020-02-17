@@ -112,9 +112,9 @@ class MyTardisUploader:
         self.dataset_schema = local_config('MYTARDIS_DATASET_SCHEMA', cast=dict)
         self.datafile_schema = local_config('MYTARDIS_DATAFILE_SCHEMA', cast=dict)
         self.proxies = {"http": global_config('PROXY_HTTP',
-                                             default=None),
+                                              default=None),
                         "https": global_config('PROXY_HTTPS',
-                                             default=None)}
+                                               default=None)}
         if self.proxies['http'] == None and self.proxies['https'] == None:
             self.proxies = None
         self.ldap_dict = {}

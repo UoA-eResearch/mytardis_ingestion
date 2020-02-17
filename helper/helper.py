@@ -215,6 +215,7 @@ def md5_subprocess(file_path,
         raise ValueError('md5sum failed: %s', out)
 
 def build_checksum_digest(checksum_digest,
+                          root_dir,
                           file_path,
                           s3=True,
                           s3_blocksize=1*CONST.GB,
@@ -239,8 +240,9 @@ def build_checksum_digest(checksum_digest,
     True: if checksums calculated and appended successfully
     False: otherwise
     """
+    abs_file_path = root_dir / file_path
     try:
-        md5 = calculate_md5sum(file_path,
+        md5 = calculate_md5sum(abs_file_path,
                                blocksize,
                                subprocess_size_threshold,
                                md5sum_executable)
@@ -254,7 +256,7 @@ def build_checksum_digest(checksum_digest,
         return False
     writestring = f'{file_path},{md5}'
     if s3:
-        etag = calculate_etag(file_path,
+        etag = calculate_etag(abs_file_path,
                               s3_blocksize)
         writestring += f',{etag}'
     writestring += f'\n'
