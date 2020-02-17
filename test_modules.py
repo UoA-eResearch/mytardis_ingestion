@@ -1,13 +1,16 @@
-# Test suite for helper.py functions
+# Module testing for myTardis ingestion functions
 
 import os
 import unittest
 import tempfile
 import datetime
+from mock import patch, call
+
 from helper import helper
+from mailserver import mailserver
 
 # generic "JSON-style" dictionary for JSON-function testing
-dictionary = { "office":
+helper_dictionary = { "office":
     {"medical": [
       { "room-number": 100,
         "use": "reception",
@@ -44,7 +47,7 @@ dictionary = { "office":
 }
 
 
-class TestHelperFunctions(unittest.TestCase):
+class HelperFunctions(unittest.TestCase):
     """
     Unittests for helper functions in helper.helper
     """
@@ -55,7 +58,7 @@ class TestHelperFunctions(unittest.TestCase):
         """
         # test that json file can be correctly loaded into dictionary
         testread = helper.readJSON('./test_data/test_data_read.json')
-        self.assertEqual(testread, dictionary)
+        self.assertEqual(testread, helper_dictionary)
         # test that FileNotFoundError exception is raised as expected
         with self.assertRaises(FileNotFoundError):
             testread = helper.readJSON('./test_data/bad_filename')
@@ -71,7 +74,7 @@ class TestHelperFunctions(unittest.TestCase):
         output_path = tempfile.mkstemp()[1]
         try:
             # write dictionary to temporary json file
-            testwrite = helper.writeJSON(dictionary,output_path)
+            testwrite = helper.writeJSON(helper_dictionary,output_path)
             # store written file results
             with open(output_path) as f:
                 contents = f.read()
@@ -86,7 +89,7 @@ class TestHelperFunctions(unittest.TestCase):
         self.assertEqual(contents,answer)
         # test that any Exception is raised as expected
         with self.assertRaises(Exception):
-            testwrite = helper.writeJSON(dictionary,NOT_A_VARIABLE)
+            testwrite = helper.writeJSON(helper_dictionary,NOT_A_VARIABLE)
 
 
     def test_lowercase(self):
@@ -114,7 +117,7 @@ class TestHelperFunctions(unittest.TestCase):
         4) Test if dictionary sanity check correctly finds keys/returns missing keys
         """
         # add additional keys to test dictionary
-        longer_dictionary = {**dictionary, **{'office2':2,'office3':3}}
+        longer_dictionary = {**helper_dictionary, **{'office2':2,'office3':3}}
         # test that check_dictionary() finds all keys and returns True
         required_keys = ['office','office2','office3']
         result = helper.check_dictionary(longer_dictionary, required_keys)
@@ -176,6 +179,99 @@ class TestHelperFunctions(unittest.TestCase):
             # tidy up temporary json file file, results stored in memory above
             os.remove(output_path)
             os.remove(output_path_empty)
+
+
+
+
+mailserver_dictionary = { 'server': 'test_server',
+                          'port' : '465',
+                          'username' : 'test_user',
+                          'password' : 'test_password',
+                          'receivers' : ['test_receiver']
+                         }
+
+class MailServerFunctions(unittest.TestCase):
+    """
+    Unittests for Mailserver functions in mailserver.mailserver
+    """
+
+    @patch("smtplib.SMTP_SSL")
+    def test_MailHandler_single_send(self,mock_SMTP_SSL):
+        """
+        1) Tests that a email is sent properly to a single recipient, from a specified sender
+        """
+
+        # initialise mailhandler class
+        mail_test = mailserver.MailHandler(mailserver_dictionary)
+        # define a test subject, test message, and specified sender
+        subject = 'THIS IS A TEST'
+        message = 'Cryptic warning or pleasant upload notification'
+        test_sender = 'test_sender'
+
+        # send email from and to 'mock' server (in the form of a Mock class)
+        mail_test.send_message(subject,message,sender=test_sender)
+        # collect results from mock class
+        instance = mock_SMTP_SSL
+        # check that function was called exactly once (no one wants spam)
+        self.assertEqual(instance.call_count, 1)
+        # check that email went through correct server and port
+        self.assertEqual((instance.mock_calls[0][2]['host'],
+                          instance.mock_calls[0][2]['port']),
+                         (mailserver_dictionary['server'],
+                          mailserver_dictionary['port']))
+        # check that user and password handed across correctly
+        self.assertEqual(instance.mock_calls[2][1],
+                         (mailserver_dictionary['username'],
+                          mailserver_dictionary['password']))
+        # check that sender and receiver set correctly
+        self.assertEqual((instance.mock_calls[3][1][0],
+                          instance.mock_calls[3][1][1]),
+                         (test_sender, ', '.join(mailserver_dictionary['receivers'])))
+        # check the contents of the email are correct
+        self.assertTrue( ('Subject: ' + subject) in instance.mock_calls[3][1][2])
+        self.assertTrue( ('From: ' + test_sender) in instance.mock_calls[3][1][2])
+        self.assertTrue( ('To: ' + ', '.join(mailserver_dictionary['receivers'])) in instance.mock_calls[3][1][2])
+        self.assertTrue( (message) in instance.mock_calls[3][1][2])
+
+
+    @patch("smtplib.SMTP_SSL")
+    def test_MailHandler_multi_nosend(self,mock_SMTP_SSL):
+        """
+        2) Tests that a email is sent properly to multiple recipients, from the default sender
+        """
+
+        # add additional recipients to the dictionary
+        mailserver_dictionary['receivers'].extend(['test_receiver2','test_receiver3'])
+        # initialise mailhandler class
+        mail_test = mailserver.MailHandler(mailserver_dictionary)
+        # define a test subject and test message
+        subject = 'THIS IS A TEST'
+        message = 'Cryptic warning or pleasant upload notification'
+
+        # send email from and to 'mock' server (in the form of a Mock class)
+        mail_test.send_message(subject,message)
+        # collect results from mock class
+        instance = mock_SMTP_SSL
+        # check that function was called exactly once (no one wants spam)
+        self.assertEqual(instance.call_count, 1)
+        # check that email went through correct server and port
+        self.assertEqual((instance.mock_calls[0][2]['host'],
+                          instance.mock_calls[0][2]['port']),
+                         (mailserver_dictionary['server'],
+                          mailserver_dictionary['port']))
+        # check that user and password handed across correctly
+        self.assertEqual(instance.mock_calls[2][1],
+                         (mailserver_dictionary['username'],
+                          mailserver_dictionary['password']))
+        # check that sender and receiver set correctly
+        self.assertEqual((instance.mock_calls[3][1][0],
+                          instance.mock_calls[3][1][1]),
+                         ('myTardis_do_not_reply@auckland.ac.nz', ', '.join(mailserver_dictionary['receivers'])))
+        # check the contents of the email are correct
+        self.assertTrue( ('Subject: ' + subject) in instance.mock_calls[3][1][2])
+        self.assertTrue( ('From: ' + 'myTardis_do_not_reply@auckland.ac.nz') in instance.mock_calls[3][1][2])
+        self.assertTrue( ('To: ' + ', '.join(mailserver_dictionary['receivers'])) in instance.mock_calls[3][1][2])
+        self.assertTrue( (message) in instance.mock_calls[3][1][2])
 
 if __name__ == "__main__":
     unittest.main()

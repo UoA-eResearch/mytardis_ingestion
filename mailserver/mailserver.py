@@ -16,10 +16,10 @@ class MailHandler():
         self.port = config_dict['port']
         self.username = config_dict['username']
         self.password = config_dict['password']
-        if recievers in config_dict.keys():
-            self.recievers = config_dict['recievers']
+        if 'receivers' in config_dict.keys():
+            self.receivers = config_dict['receivers']
         else:
-            self.recievers = ['c.seal@auckland.ac.nz']
+            self.receivers = ['c.seal@auckland.ac.nz']
         self.sender = f'myTardis_do_not_reply@auckland.ac.nz'
 
     def send_message(self,
@@ -29,8 +29,8 @@ class MailHandler():
                      sender = None):
         if not sender:
             sender = self.sender
-        if not reciever:
-            reciever = ', '.join(self.recievers)
+        if not receiver:
+            receiver = ', '.join(self.receivers)
         context = ssl.create_default_context()
         with smtplib.SMTP_SSL(host=self.server,
                               port = self.port,
@@ -43,6 +43,9 @@ class MailHandler():
             mime_message['To'] = receiver
             text = MIMEText(message, "plain")
             mime_message.attach(text)
-            server.sendmail(sender,
+            result = server.sendmail(sender,
                             receiver,
                             mime_message.as_string())
+            server.quit()
+
+            return result
