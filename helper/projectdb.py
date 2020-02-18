@@ -1,4 +1,4 @@
-# Functions to create RaIDs and to update them as necessary (once it is working)
+# Functions to read/write from the project database as necessary (once it is working)
 
 import logging
 import requests
@@ -10,7 +10,7 @@ from .helper import dict_to_json
 
 logger = logging.getLogger(__name__)
 
-class RaIDAuth(AuthBase):
+class ProjectDBAuth(AuthBase):
 
     def __init__(self,
                  api_key):
@@ -18,26 +18,26 @@ class RaIDAuth(AuthBase):
 
     def __call__(self,
                  request):
-        request.headers['Authorization'] = f'Bearer {self.api_key}'
+        request.headers['apikey'] = f'{self.api_key}'
         print(request.headers)
         return request
 
-class RaIDFactory():
+class ProjectDBFactory():
 
     def __init__(self,
                  global_config_file_path):
         # global_config holds environment variables that don't change often such as LDAP parameters and project_db stuff
         global_config = Config(RepositoryEnv(global_config_file_path))
-        self.api_key = global_config('RAID_API_KEY')
-        self.url_base = global_config('RAID_URL')
-        self.auth = RaIDAuth(self.api_key)
+        self.api_key = global_config('PROJECT_DB_API_KEY')
+        self.url_base = global_config('PROJECT_DB_URL')
+        self.auth = ProjectDBAuth(self.api_key)
         self.proxies = {"http": global_config('PROXY_HTTP',
                                               default=None),
                         "https": global_config('PROXY_HTTPS',
                                                default=None)}
         if self.proxies['http'] == None and self.proxies['https'] == None:
             self.proxies = None
-        self.verify_certificate = global_config('RAID_VERIFY_CERT',
+        self.verify_certificate = global_config('PROJECT_DB_VERIFY_CERT',
                                                 default=True,
                                                 cast=bool)
 
@@ -67,9 +67,13 @@ class RaIDFactory():
         '''
         url = self.url_base + f'/{action}'
         print(url)
-        headers = {'Accept': 'application/json'}
+        headers = {'Accept': 'application/json',
+                   'Content-Type': 'application/json'}
         if extra_headers:
             headers = {**headers, **extra_headers}
+        print(headers)
+        print(self.auth)
+        print(data)
         try:
             if self.proxies:
                 response = requests.request(method,
@@ -102,33 +106,22 @@ class RaIDFactory():
             logger.error(f'Error, {err.msg}, occurred when attempting to call api request {url}')
             raise err
         return response
-        
-    def mint_project_raid(self,
-                          project_url,
-                          project_metadata=None,
-                          project_startdate=None):
-        # TODO CODE TO MINT PROJECT RAID
-        from datetime import datetime
-        raid_dict = {}
-        raid_dict['contentPath'] = project_url
-        if project_startdate:
-            raid_dict['startDate'] = project_startdate
-        if project_metadata:
-            for key in project_metadata.keys():
-                if not 'meta' in raid_dict.keys():
-                    raid_dict['meta'] = {}
-                raid_dict['meta'][key] = project_metadata[key]
-        raid_json = dict_to_json(raid_dict)
-        response = self.__rest_api_call('POST',
-                                        'RAiD',
-                                        data=raid_json)
-        return response
 
-    def get_project_raid(self,
-                         raid_handle):        
-        url_safe_raid_handle = quote(raid_handle, safe='')
+    def get_mytardis_id(self,
+                        mytardis_id):
         response = self.__rest_api_call('GET',
-                                        f'RAiD/{url_safe_raid_handle}')
+                                        f'mytardis/{mytardis_id}')
+        print(response.json())
         return response
 
-
+    def post_mytardis_experiment(self,
+                                 mytardis_url,
+                                 expt_raid):
+        data_dict = {'mytardis_code':expt_raid,
+                     'url':mytardis_url}
+        data_json = dict_to_json(data_dict)
+        response = self.__rest_api_call('POST',
+                                        'mytardis',
+                                        data=data_json)
+        return response
+        
