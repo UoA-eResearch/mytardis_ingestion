@@ -50,9 +50,14 @@ helper_dictionary = { "office":
 class HelperFunctions(unittest.TestCase):
     """
     Unittests for helper functions in helper.helper
+
+    Loggers have been funneled into Mock objects, but can be retrieved by declaring
+    an instance of the Mock object and using the .mock_calls function to access the
+    structures therein.
     """
 
-    def test_readJSON(self):
+    @patch("helper.helper.logger")
+    def test_readJSON(self, mock_logger):
         """
         1) Test if JSON can be read correctly from file to python dictionary
         """
@@ -64,9 +69,11 @@ class HelperFunctions(unittest.TestCase):
             testread = helper.readJSON('./test_data/bad_filename')
         # test that any Exception is raised as expected
         with self.assertRaises(Exception):
-            testread = helper.readJSON(NOT_A_VARIABLE)
+            testread = helper.readJSON(PermissionError)
 
-    def test_writeJSON(self):
+
+    @patch("helper.helper.logger")
+    def test_writeJSON(self, mock_logger):
         """
         2) Test if JSON can be written correctly from python dictionary to file
         """
@@ -89,7 +96,7 @@ class HelperFunctions(unittest.TestCase):
         self.assertEqual(contents,answer)
         # test that any Exception is raised as expected
         with self.assertRaises(Exception):
-            testwrite = helper.writeJSON(helper_dictionary,NOT_A_VARIABLE)
+            testwrite = helper.writeJSON(helper_dictionary,PermissionError)
 
 
     def test_lowercase(self):
