@@ -124,4 +124,7 @@ class ProjectDBFactory():
                                         'mytardis',
                                         data=data_json)
         return response
+
+    def get_project_from_resdrive_code(self,
+                                       resdrive_code):
         

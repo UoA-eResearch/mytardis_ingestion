@@ -24,12 +24,106 @@ from ..helper import calculate_checksum
 class SolarixParser(Parser):
 
     def __init__(self,
-                 config_dict,
-                 harvester):
-        super().__init__(config_dict, harvester)
+                 global_config_file_path,
+                 local_config_file_path):
         self.sub_dirs, self.files = self.walk_dir_tree(self.harvester.root_dir)
         self.default_user = config_dict['default_user']
         self.projects = self.find_data(self.sub_dirs)
+
+
+
+    def extract_metadata(self,
+                         file_path):
+        key_list = ['API_Polarity',
+                    'MW_low',
+                    'MW_high',
+                    'AZURA_Enable',
+                    'LC_mode',
+                    'API_SourceType',
+                    'Q1DC',
+                    'Q1Mass',
+                    'Q1Res',
+                    'Q1CID',
+                    'Q1_Frag_Energy',
+                    'ECD']
+        param_dict = {}
+        tree = ElementTree.parse(file_path)
+        root = tree.getroot()
+        method = root.find('methodmetadata')
+        primary = method.find('primarykey')
+        samplenotes = primary.find('samplename')
+        comments = primary.find('sampledescription')
+        paramlist = root.find('paramlist')
+        params = paramlist.iterfind('param')
+        for param in params:
+            if param.attrib['name'] in key_list:
+                value = param.find('value')    
+                param_dict[param.attrib['name']] = value.text
+        meta = {}
+        meta['Sample Notes'] = samplenotes.text
+        meta['Comments'] = comments.text
+        if param_dict['API_Polarity'] == '0':
+            meta['Polarity'] = 'Positive'
+        elif param_dict['API_Polarity'] == '1':
+            meta['Polarity'] = 'Negative'
+        else:
+            logger.warning(f'Unable to find Polarity for {file_path}')
+        if 'MW_low' in param_dict.keys() and 'MW_high' in param_dict.keys():
+            low = int(round(float(param_dict['MW_low']),0)) #TODO Error handling
+            high = int(round(float(param_dict['MW_high']),0))
+            mz_range = f'{low} - {high}'
+            meta['m/z Range'] = mz_range
+        if param_dict['AZURA_Enable'] == '1':
+            if param_dict['LC_mode'] == '0':
+                meta['Ion Source'] = 'MALDI'
+            elif param_dict['LC_mode'] == '6':
+                meta['Ion Source'] = 'MALDI Imaging'
+            else:
+                #log an issue and move on
+                pass
+        elif param_dict['AZURA_Enable'] == '0':
+            if param_dict['API_SourceType'] == '1':
+                meta['Ion Source'] = 'ESI'
+            elif param_dict['API_SourceType'] == '2':
+                meta['Ion Source'] = 'APCI'
+            elif param_dict['API_SourceType'] == '3':
+                meta['Ion Source'] = 'NanoESI'
+            elif param_dict['API_SourceType'] == '4':
+                meta['Ion Source'] = 'NanoESI'
+            elif param_dict['API_SourceType'] == '5':
+                meta['Ion Source'] = 'APPI'
+            elif param_dict['API_SourceType'] == '11':
+                meta['Ion Source'] = 'CaptiveSpray'
+            else:
+                # something is wrong - log it
+                pass
+        else:
+            # Ahhhh more errors - log them
+            pass
+        if param_dict['Q1DC'] == '0':
+            meta['Isolate'] = 'No'
+        elif param_dict['Q1DC'] == '1':
+            meta['Isolate'] = 'Yes'
+            meta['Isolation Mass'] = param_dict['Q1Mass']
+            meta['Isolation Window'] = param_dict['Q1Res']
+        else:
+            # errors so log
+            pass
+        if param_dict['Q1CID'] == '0':
+            meta['CID'] = 'No'
+        elif param_dict['Q1CID'] == '1':
+            meta['CID'] = 'Yes'
+            meta['CID Energy'] = param_dict['Q1_Frag_Energy']
+        else:
+            # Its broken you know what to do
+            pass
+        if param_dict['ECD'] == '0':
+            meta['ECD'] = 'No'
+        elif param_dict['ECD'] =='1':
+            meta['ECD'] = 'Yes'
+        return meta
+        
+
 
     def get_file_list(self):
         return self.files
@@ -85,100 +179,10 @@ class SolarixParser(Parser):
                     "description": resp_dict['project']['description']}
         return ret_dict
 
-    def extract_metadata(self,
-                         file_path):
-        key_list = ['API_Polarity',
-                    'MW_low',
-                    'MW_high',
-                    'AZURA_Enable',
-                    'LC_mode',
-                    'API_SourceType',
-                    'Q1DC',
-                    'Q1Mass',
-                    'Q1Res',
-                    'Q1CID',
-                    'Q1_Frag_Energy',
-                    'ECD']
-        param_dict = {}
-        tree = ElementTree.parse(file_path)
-        root = tree.getroot()
-        method = root.find('methodmetadata')
-        primary = method.find('primarykey')
-        samplenotes = primary.find('samplename')
-        comments = primary.find('sampledescription')
-        paramlist = root.find('paramlist')
-        params = paramlist.iterfind('param')
-        for param in params:
-            if param.attrib['name'] in key_list:
-                value = param.find('value')    
-                param_dict[param.attrib['name']] = value.text
-        meta = {}
-        meta['Sample Notes'] = samplenotes.text
-        meta['Comments'] = comments.text
-        if param_dict['API_Polarity'] == '0':
-            meta['Polarity'] = 'Positive'
-        elif param_dict['API_Polarity'] == '1':
-            meta['Polarity'] = 'Negative'
-        else:
-            # The world is broken log a failure
-            pass
-        if 'MW_low' in param_dict.keys() and 'MW_high' in param_dict.keys():
-            low = int(round(float(param_dict['MW_low']),0)) #TODO Error handling
-            high = int(round(float(param_dict['MW_high']),0))
-            mz_range = f'{low} - {high}'
-            meta['m/z Range'] = mz_range
-        if param_dict['AZURA_Enable'] == '1':
-            if param_dict['LC_mode'] == '0':
-                meta['Ion Source'] = 'MALDI'
-            elif param_dict['LC_mode'] == '6':
-                meta['Ion Source'] = 'MALDI Imaging'
-            else:
-                #log an issue and move on
-                pass
-        elif param_dict['AZURA_Enable'] == '0':
-            if param_dict['API_SourceType'] == '1':
-                meta['Ion Source'] = 'ESI'
-            elif param_dict['API_SourceType'] == '2':
-                meta['Ion Source'] = 'APCI'
-            elif param_dict['API_SourceType'] == '3':
-                meta['Ion Source'] = 'NanoESI'
-            elif param_dict['API_SourceType'] == '4':
-                meta['Ion Source'] = 'NanoESI'
-            elif param_dict['API_SourceType'] == '5':
-                meta['Ion Source'] = 'APPI'
-            elif param_dict['API_SourceType'] == '11':
-                meta['Ion Source'] = 'CaptiveSpray'
-            else:
-                # something is wrong - log it
-                pass
-        else:
-            # Ahhhh more errors - log them
-            pass
-        if param_dict['Q1DC'] == '0':
-            meta['Isolate'] = 'No'
-        elif param_dict['Q1DC'] == '1':
-            meta['Isolate'] = 'Yes'
-            meta['Isolation Mass'] = param_dict['Q1Mass']
-            meta['Isolation Window'] = param_dict['Q1Res']
-        else:
-            # errors so log
-            pass
-        if param_dict['Q1CID'] == '0':
-            meta['CID'] = 'No'
-        elif param_dict['Q1CID'] == '1':
-            meta['CID'] = 'Yes'
-            meta['CID Energy'] = param_dict['Q1_Frag_Energy']
-        else:
-            # Its broken you know what to do
-            pass
-        if param_dict['ECD'] == '0':
-            meta['ECD'] = 'No'
-        elif param_dict['ECD'] =='1':
-            meta['ECD'] = 'Yes'
-        return meta
+    
 
     def find_data(self,
-                  directories=None):
+                  directories=None): # Too complex - simplify
         if not directories:
             directories = self.sub_dirs
         projects = {}
