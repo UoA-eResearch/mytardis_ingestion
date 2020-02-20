@@ -10,7 +10,7 @@ from .helper import dict_to_json
 
 logger = logging.getLogger(__name__)
 
-class RaIDAuth(AuthBase):
+class RAiDAuth(AuthBase):
 
     def __init__(self,
                  api_key):
@@ -22,7 +22,7 @@ class RaIDAuth(AuthBase):
         print(request.headers)
         return request
 
-class RaIDFactory():
+class RAiDFactory():
 
     def __init__(self,
                  global_config_file_path):
@@ -30,7 +30,7 @@ class RaIDFactory():
         global_config = Config(RepositoryEnv(global_config_file_path))
         self.api_key = global_config('RAID_API_KEY')
         self.url_base = global_config('RAID_URL')
-        self.auth = RaIDAuth(self.api_key)
+        self.auth = RAiDAuth(self.api_key)
         self.proxies = {"http": global_config('PROXY_HTTP',
                                               default=None),
                         "https": global_config('PROXY_HTTPS',
@@ -42,7 +42,8 @@ class RaIDFactory():
                                                 cast=bool)
 
     @backoff.on_exception(backoff.expo,
-                          requests.exceptions.RequestException,
+                          (requests.exceptions.Timeout,
+                           requests.exceptions.ConnectionError),
                           max_tries=8)
     def __rest_api_call(self,
                         method,  # REST api method
@@ -105,18 +106,19 @@ class RaIDFactory():
         
     def mint_project_raid(self,
                           project_url,
+                          project_name,
+                          project_description,
                           project_metadata=None,
                           project_startdate=None):
-        # TODO CODE TO MINT PROJECT RAID
         from datetime import datetime
         raid_dict = {}
         raid_dict['contentPath'] = project_url
         if project_startdate:
             raid_dict['startDate'] = project_startdate
+        raid_dict['meta'] = {'name': project_name,
+                             'description': project_description}
         if project_metadata:
             for key in project_metadata.keys():
-                if not 'meta' in raid_dict.keys():
-                    raid_dict['meta'] = {}
                 raid_dict['meta'][key] = project_metadata[key]
         raid_json = dict_to_json(raid_dict)
         response = self.__rest_api_call('POST',
@@ -129,6 +131,76 @@ class RaIDFactory():
         url_safe_raid_handle = quote(raid_handle, safe='')
         response = self.__rest_api_call('GET',
                                         f'RAiD/{url_safe_raid_handle}')
+        return response
+
+    def __mint_raid(self,
+                    name,
+                    description,
+                    url,
+                    metadata,
+                    startdate):
+        from datetime import datetime
+        raid_dict = {}
+        raid_dict['contentPath'] = url
+        if startdate:
+            raid_dict['startDate'] = startdate
+        raid_dict['meta'] = {'name': name,
+                             'description': description}
+        if metadata:
+            for key in metadata.keys():
+                if not 'meta' in raid_dict.keys():
+                    raid_dict['meta'] = {}
+                raid_dict['meta'][key] = metadata[key]
+        raid_json = dict_to_json(raid_dict)
+        response = self.__rest_api_call('POST',
+                                        'RAiD',
+                                        data=raid_json)
+        return response
+
+    def mint_experiment_raid(self,
+                             experiment_name,
+                             experiment_description,
+                             experiment_url='https://mytardis.nectar.auckland.ac.nz/experiment',
+                             experiment_metadata=None,
+                             experiment_startdate=None):
+        try:
+            resp = self.__mint_raid(experiment_name,
+                                    experiment_description,
+                                    experiment_url,
+                                    experiment_metadata,
+                                    experiment_startdate)
+        except Exception as error:
+            raise
+        return resp
+           
+    def mint_dataset_raid(self,
+                          dataset_description,
+                          dataset_url,
+                          dataset_metadata=None,
+                          dataset_startdate=None):
+        try:
+            resp = self.__mint_raid(dataset_description,
+                                    'UoA MyTardis Dataset',
+                                    dataset_url,
+                                    dataset_metadata,
+                                    datset_startdate)
+        except Exception as error:
+            raise
+        return resp     
+
+    def update_raid(self,
+                    url,
+                    name,
+                    description,
+                    raid_handle):
+        raid_dict = {'contentPath': url,
+                     'name': name,
+                     'description': description}
+        raid_json = dict_to_json(raid_dict)
+        url_safe_raid_handle = quote(raid_handle, safe='')
+        response = self.__rest_api_call('PUT',
+                                        f'RAiD/{url_safe_raid_handle}',
+                                        data=raid_json)
         return response
 
 

@@ -8,6 +8,7 @@
 import logging
 from requests.auth import AuthBase
 from ..helper import check_dictionary, dict_to_json, get_user_from_upi, read_checksum_digest, calculate_md5sum
+from ..helper import RAiDFactory, ProjectDBFactory
 import backoff
 import requests
 import os
@@ -16,6 +17,9 @@ import json
 import ldap3
 from decouple import Config, RepositoryEnv
 from pathlib import Path
+
+MINT_RAIDS = False
+MINT_PROJECT_DBS = False
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +137,8 @@ class MyTardisUploader:
         self.storage_box = local_config('MYTARDIS_STORAGE_BOX')
         self.remote_root = Path(local_config('FILEHANDLER_REMOTE_ROOT'))
         self.checksums = read_checksum_digest(checksum_digest)
+        self.raid_factory = RAiDFactory(global_config)
+        self.project_db_factory = ProjectDBFactory(global_config)
 
     def __resource_uri_to_id(self, uri):
         """
@@ -252,9 +258,9 @@ class MyTardisUploader:
         return response
 
     def __post_request(self,
-                         action,
-                         data,
-                         extra_headers=None):
+                       action,
+                       data,
+                       extra_headers=None):
         '''Wrapper around self._do_rest_api_request to handle POST requests
 
         Inputs:
@@ -268,9 +274,9 @@ class MyTardisUploader:
         A Python requests module response object'''
         try:
             response = self.__rest_api_request('POST',
-                                                  action,
-                                                  data=data,
-                                                  extra_headers=extra_headers)
+                                               action,
+                                               data=data,
+                                               extra_headers=extra_headers)
         except Exception as err:
             raise err
         return response
@@ -945,7 +951,7 @@ class MyTardisUploader:
             logger.error(f'The experiment dictionary is incomplete. Missing keys: {", ".join(check[1])}')
             return (False, None)
         try:
-            uri = self.__get_experiment_uri(expt_dict['internal_id'])
+            uri = self.__get_experiment_uri(internal_id)
         except Exception as error:
             logger.error(f'Encountered error: {error.message}, when looking for experiment')
             return (False, None)
@@ -969,6 +975,23 @@ class MyTardisUploader:
                 return (False, None)
             response = json.loads(response.text)
             uri = response['resource_uri']
+            tardis_id = self.__resource_uri_to_id(uri)
+            url = urljoin(urljoin(self.server,
+                                  '/experiment/view/'),
+                          f'{tardis_id}')
+            try:
+                raid = self.raidfactory.get_project_raid(mytardis['internal_id'])
+            except Exception as error:
+                error_msg = f'Invalid RAid used for internal_id. Please check and fix'
+                logger.error(error_msg)
+                raise
+            else:
+                self.raidfactory.update_raid(url,
+                                             mytardis['title'],
+                                             mytardis['description'],
+                                             mytardis['internal_id'])
+                self.project_db_factory.post_mytardis_experiment(url,
+                                                                 mytardis['internal_id'])
             paramset['experiment'] = uri
             paramset_json = dict_to_json(paramset)
             try:
@@ -1092,6 +1115,21 @@ class MyTardisUploader:
                     return (False, None)
                 response = json.loads(response.text)
                 uri = response['resource_uri']
+                tardis_id = self.__resource_uri_to_id(uri)
+                url = urljoin(urljoin(self.server,
+                                      '/dataset/view/'),
+                              f'{tardis_id}')
+                try:
+                    raid = self.raidfactory.get_project_raid(mytardis['dataset_id'])
+                except Exception as error:
+                    error_msg = f'Invalid RAid used for internal_id. Please check and fix'
+                    logger.error(error_msg)
+                    raise
+                else:
+                    self.raidfactory.update_raid(url,
+                                                 mytardis['description'],
+                                                 'UoA MyTardis Dataset',
+                                                 mytardis['dataset_id'])
                 paramset['dataset'] = uri
                 paramset_json = dict_to_json(paramset)
                 try:
@@ -1099,7 +1137,7 @@ class MyTardisUploader:
                                                       paramset_json)
                     response.raise_for_status()
                 except Exception as error:
-                    logger.error(f'Error occurred when attaching metadata to experiment {mytardis["title"]}. Error: {error.message}')
+                    logger.error(f'Error occurred when attaching metadata to dataset {mytardis["description"]}. Error: {error.message}')
         return (True, uri)
 
     def create_datafile(self,
