@@ -13,8 +13,7 @@ logger = logging.getLogger(__name__)
 class Parser(ABC):
 
     @abstractmethod
-    def  __init__(self,
-                  config_dict):
+    def  __init__(self):
         pass
 
     @abstractmethod

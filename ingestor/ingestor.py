@@ -123,7 +123,10 @@ class MyTardisUploader:
             self.proxies = None
         self.ldap_dict = {}
         self.ldap_dict['url'] = global_config('LDAP_URL')
-        self.ldap_dict['user_attr_map'] = global_config('LDAP_USER_ATTR_MAP')
+        self.ldap_dict['user_attr_map'] = {'first_name': global_config('LDAP_USER_ATTR_MAP_FIRST_NAME'),
+                                           'last_name': global_config('LDAP_USER_ATTR_MAP_LAST_NAME'),
+                                           'email': global_config('LDAP_USER_ATTR_MAP_EMAIL'),
+                                           'upi': global_config('LDAP_USER_ATTR_MAP_UPI')}
         self.ldap_dict['admin_user'] = global_config('LDAP_ADMIN_USER')
         self.ldap_dict['admin_password'] = global_config('LDAP_ADMIN_PASSWORD')
         self.ldap_dict['user_base'] = global_config('LDAP_USER_BASE')
@@ -137,8 +140,8 @@ class MyTardisUploader:
         self.storage_box = local_config('MYTARDIS_STORAGE_BOX')
         self.remote_root = Path(local_config('FILEHANDLER_REMOTE_ROOT'))
         self.checksums = read_checksum_digest(checksum_digest)
-        self.raid_factory = RAiDFactory(global_config)
-        self.project_db_factory = ProjectDBFactory(global_config)
+        self.raid_factory = RAiDFactory(global_config_file_path)
+        self.project_db_factory = ProjectDBFactory(global_config_file_path)
 
     def __resource_uri_to_id(self, uri):
         """
@@ -250,9 +253,9 @@ class MyTardisUploader:
         A Python requests module response object'''
         try:
             response = self.__rest_api_request('GET',
-                                                  action,
-                                                  params=params,
-                                                  extra_headers=extra_headers)
+                                               action,
+                                               params=params,
+                                               extra_headers=extra_headers)
         except Exception as err:
             raise err
         return response

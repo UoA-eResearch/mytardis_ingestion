@@ -16,122 +16,46 @@ import re
 import requests
 import json
 from pathlib import Path
-import ldap3
 import datetime
 import mimetypes
 from ..helper import calculate_checksum
+from ..helper import ProjectDBFactory
+from ..helper import get_user_from_email
+from decouple import Config, RepositoryEnv
 
 class SolarixParser(Parser):
 
     def __init__(self,
                  global_config_file_path,
                  local_config_file_path):
-        self.sub_dirs, self.files = self.walk_dir_tree(self.harvester.root_dir)
-        self.default_user = config_dict['default_user']
-        self.projects = self.find_data(self.sub_dirs)
+        # global_config holds environment variables that don't change often such as LDAP parameters and project_db stuff
+        global_config = Config(RepositoryEnv(global_config_file_path))
+        # local_config holds the details about how this particular set of data should be handled
+        local_config = Config(RepositoryEnv(local_config_file_path))
+        self.staging_dir = Path(local_config('FILEHANDLER_STAGING_ROOT'))
+        self.project_db_factory = ProjectDBFactory(global_config)    
+        self.sub_dirs, self.files = self.walk_dir_tree(self.staging_dir)
+        self.default_user = local_config('MYTARDIS_FACILITY_MANAGER')
+        self.ldap_dict = {}
+        self.ldap_dict['url'] = global_config('LDAP_URL')
+        self.ldap_dict['user_attr_map'] = {'first_name': global_config('LDAP_USER_ATTR_MAP_FIRST_NAME'),
+                                           'last_name': global_config('LDAP_USER_ATTR_MAP_LAST_NAME'),
+                                           'email': global_config('LDAP_USER_ATTR_MAP_EMAIL'),
+                                           'upi': global_config('LDAP_USER_ATTR_MAP_UPI')}
+        self.ldap_dict['admin_user'] = global_config('LDAP_ADMIN_USER')
+        self.ldap_dict['admin_password'] = global_config('LDAP_ADMIN_PASSWORD')
+        self.ldap_dict['user_base'] = global_config('LDAP_USER_BASE')
+        self.project_db_factory = ProjectDBFactory(global_config_file_path)
 
-
-
-    def extract_metadata(self,
-                         file_path):
-        key_list = ['API_Polarity',
-                    'MW_low',
-                    'MW_high',
-                    'AZURA_Enable',
-                    'LC_mode',
-                    'API_SourceType',
-                    'Q1DC',
-                    'Q1Mass',
-                    'Q1Res',
-                    'Q1CID',
-                    'Q1_Frag_Energy',
-                    'ECD']
-        param_dict = {}
-        tree = ElementTree.parse(file_path)
-        root = tree.getroot()
-        method = root.find('methodmetadata')
-        primary = method.find('primarykey')
-        samplenotes = primary.find('samplename')
-        comments = primary.find('sampledescription')
-        paramlist = root.find('paramlist')
-        params = paramlist.iterfind('param')
-        for param in params:
-            if param.attrib['name'] in key_list:
-                value = param.find('value')    
-                param_dict[param.attrib['name']] = value.text
-        meta = {}
-        meta['Sample Notes'] = samplenotes.text
-        meta['Comments'] = comments.text
-        if param_dict['API_Polarity'] == '0':
-            meta['Polarity'] = 'Positive'
-        elif param_dict['API_Polarity'] == '1':
-            meta['Polarity'] = 'Negative'
-        else:
-            logger.warning(f'Unable to find Polarity for {file_path}')
-        if 'MW_low' in param_dict.keys() and 'MW_high' in param_dict.keys():
-            low = int(round(float(param_dict['MW_low']),0)) #TODO Error handling
-            high = int(round(float(param_dict['MW_high']),0))
-            mz_range = f'{low} - {high}'
-            meta['m/z Range'] = mz_range
-        if param_dict['AZURA_Enable'] == '1':
-            if param_dict['LC_mode'] == '0':
-                meta['Ion Source'] = 'MALDI'
-            elif param_dict['LC_mode'] == '6':
-                meta['Ion Source'] = 'MALDI Imaging'
-            else:
-                #log an issue and move on
-                pass
-        elif param_dict['AZURA_Enable'] == '0':
-            if param_dict['API_SourceType'] == '1':
-                meta['Ion Source'] = 'ESI'
-            elif param_dict['API_SourceType'] == '2':
-                meta['Ion Source'] = 'APCI'
-            elif param_dict['API_SourceType'] == '3':
-                meta['Ion Source'] = 'NanoESI'
-            elif param_dict['API_SourceType'] == '4':
-                meta['Ion Source'] = 'NanoESI'
-            elif param_dict['API_SourceType'] == '5':
-                meta['Ion Source'] = 'APPI'
-            elif param_dict['API_SourceType'] == '11':
-                meta['Ion Source'] = 'CaptiveSpray'
-            else:
-                # something is wrong - log it
-                pass
-        else:
-            # Ahhhh more errors - log them
-            pass
-        if param_dict['Q1DC'] == '0':
-            meta['Isolate'] = 'No'
-        elif param_dict['Q1DC'] == '1':
-            meta['Isolate'] = 'Yes'
-            meta['Isolation Mass'] = param_dict['Q1Mass']
-            meta['Isolation Window'] = param_dict['Q1Res']
-        else:
-            # errors so log
-            pass
-        if param_dict['Q1CID'] == '0':
-            meta['CID'] = 'No'
-        elif param_dict['Q1CID'] == '1':
-            meta['CID'] = 'Yes'
-            meta['CID Energy'] = param_dict['Q1_Frag_Energy']
-        else:
-            # Its broken you know what to do
-            pass
-        if param_dict['ECD'] == '0':
-            meta['ECD'] = 'No'
-        elif param_dict['ECD'] =='1':
-            meta['ECD'] = 'Yes'
-        return meta
-        
-
-
+        # TODO: Rework this self.projects = self.find_data(self.sub_dirs)
+    
     def get_file_list(self):
         return self.files
         
     def walk_dir_tree(self,
                       directory = None):
         if not directory:
-            directory = self.harvester.root_dir
+            directory = self.staging_dir
         subdirectories = []
         files_list = []
         for dirname, subdirs, files in os.walk(directory):
@@ -141,43 +65,21 @@ class SolarixParser(Parser):
                 files_list.append(Path(dirname / f))
         return (subdirectories, files_list)
 
-    def check_project_db(self,
-                         res_code):
-        auth_code = f'Basic {self.harvester.projectdb_key}'
-        headers = {"Authorization": auth_code}
-        url = f'{self.harvester.projectdb_url}{res_code}'
-        response = requests.get(url, headers=headers)
-        return response
+    def get_users_from_project_code(self,
+                                    code,
+                                    roles=['1','2','3']):
+        project_db_id = self.project_db_factory.get_project_id_from_code(code)
+        people_ids = self.project_db_factory.get_people_ids_from_project(project_db_id,
+                                                                         roles)
+        upis = []
+        for person in people_ids:
+            email = self.project_db_factory.get_email_from_person_project_db_id(person)
+            user = get_user_from_email(self.ldap_dict,
+                                       email)
+            upis.append(user['username'])
+        return upis
 
-    def get_users_from_project(self,
-                               response):
-        users = []
-        resp_dict = json.loads(response.text)
-        server = ldap3.Server(self.harvester.ldap_url)    
-        connection = ldap3.Connection(server,
-                                      auto_bind=True,
-                                      user=self.harvester.ldap_admin_user,
-                                      password=self.harvester.ldap_admin_password)
-        for user in resp_dict['rpLinks']:
-            user_email = user['researcher']['email']
-            search_filter = f'({self.harvester.ldap_user_attr_map["email"]}={user_email})'
-            connection.search(self.harvester.ldap_user_base,
-                              search_filter,
-                              attributes=['*'])#self.harvester.ldap_user_attr_map)
-            person = connection.entries[0]
-            if user['researcherRoleId'] == 1:
-                users.insert(0,person[self.harvester.ldap_user_attr_map['upi']][0])
-            else:
-                users.append(person[self.harvester.ldap_user_attr_map['upi']][0])
-        connection.unbind()
-        return users
-
-    def get_name_and_abstract_from_project(self,
-                                           response):
-        resp_dict = json.loads(response.text)
-        ret_dict = {"name": resp_dict['project']['name'],
-                    "description": resp_dict['project']['description']}
-        return ret_dict
+    
 
     
 
@@ -393,4 +295,98 @@ class SolarixParser(Parser):
                     'project_name': current_path[1]['name'],
                     'project_description': current_path[1]['description'],
                     'schema_namespace': self.expt_schema}
-        return experiments                         
+        return experiments
+
+
+
+
+    def __extract_metadata(self,
+                         file_path):
+        key_list = ['API_Polarity',
+                    'MW_low',
+                    'MW_high',
+                    'AZURA_Enable',
+                    'LC_mode',
+                    'API_SourceType',
+                    'Q1DC',
+                    'Q1Mass',
+                    'Q1Res',
+                    'Q1CID',
+                    'Q1_Frag_Energy',
+                    'ECD']
+        param_dict = {}
+        tree = ElementTree.parse(file_path)
+        root = tree.getroot()
+        method = root.find('methodmetadata')
+        primary = method.find('primarykey')
+        samplenotes = primary.find('samplename')
+        comments = primary.find('sampledescription')
+        paramlist = root.find('paramlist')
+        params = paramlist.iterfind('param')
+        for param in params:
+            if param.attrib['name'] in key_list:
+                value = param.find('value')    
+                param_dict[param.attrib['name']] = value.text
+        meta = {}
+        meta['Sample Notes'] = samplenotes.text
+        meta['Comments'] = comments.text
+        if param_dict['API_Polarity'] == '0':
+            meta['Polarity'] = 'Positive'
+        elif param_dict['API_Polarity'] == '1':
+            meta['Polarity'] = 'Negative'
+        else:
+            logger.warning(f'Unable to find Polarity for {file_path}')
+        if 'MW_low' in param_dict.keys() and 'MW_high' in param_dict.keys():
+            low = int(round(float(param_dict['MW_low']),0)) #TODO Error handling
+            high = int(round(float(param_dict['MW_high']),0))
+            mz_range = f'{low} - {high}'
+            meta['m/z Range'] = mz_range
+        if param_dict['AZURA_Enable'] == '1':
+            if param_dict['LC_mode'] == '0':
+                meta['Ion Source'] = 'MALDI'
+            elif param_dict['LC_mode'] == '6':
+                meta['Ion Source'] = 'MALDI Imaging'
+            else:
+                #log an issue and move on
+                pass
+        elif param_dict['AZURA_Enable'] == '0':
+            if param_dict['API_SourceType'] == '1':
+                meta['Ion Source'] = 'ESI'
+            elif param_dict['API_SourceType'] == '2':
+                meta['Ion Source'] = 'APCI'
+            elif param_dict['API_SourceType'] == '3':
+                meta['Ion Source'] = 'NanoESI'
+            elif param_dict['API_SourceType'] == '4':
+                meta['Ion Source'] = 'NanoESI'
+            elif param_dict['API_SourceType'] == '5':
+                meta['Ion Source'] = 'APPI'
+            elif param_dict['API_SourceType'] == '11':
+                meta['Ion Source'] = 'CaptiveSpray'
+            else:
+                # something is wrong - log it
+                pass
+        else:
+            # Ahhhh more errors - log them
+            pass
+        if param_dict['Q1DC'] == '0':
+            meta['Isolate'] = 'No'
+        elif param_dict['Q1DC'] == '1':
+            meta['Isolate'] = 'Yes'
+            meta['Isolation Mass'] = param_dict['Q1Mass']
+            meta['Isolation Window'] = param_dict['Q1Res']
+        else:
+            # errors so log
+            pass
+        if param_dict['Q1CID'] == '0':
+            meta['CID'] = 'No'
+        elif param_dict['Q1CID'] == '1':
+            meta['CID'] = 'Yes'
+            meta['CID Energy'] = param_dict['Q1_Frag_Energy']
+        else:
+            # Its broken you know what to do
+            pass
+        if param_dict['ECD'] == '0':
+            meta['ECD'] = 'No'
+        elif param_dict['ECD'] =='1':
+            meta['ECD'] = 'Yes'
+        return meta

@@ -7,6 +7,7 @@ from decouple import Config, RepositoryEnv
 from urllib.parse import urljoin, quote
 import backoff
 from .helper import dict_to_json
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -71,9 +72,6 @@ class ProjectDBFactory():
                    'Content-Type': 'application/json'}
         if extra_headers:
             headers = {**headers, **extra_headers}
-        print(headers)
-        print(self.auth)
-        print(data)
         try:
             if self.proxies:
                 response = requests.request(method,
@@ -111,7 +109,6 @@ class ProjectDBFactory():
                         mytardis_id):
         response = self.__rest_api_call('GET',
                                         f'mytardis/{mytardis_id}')
-        print(response.json())
         return response
 
     def post_mytardis_experiment(self,
@@ -125,6 +122,52 @@ class ProjectDBFactory():
                                         data=data_json)
         return response
 
-    def get_project_from_resdrive_code(self,
-                                       resdrive_code):
-        
+    def get_project_from_code(self,
+                              code):
+        response = self.__rest_api_call('GET',
+                                        f'project/findByCode/{code}')
+        return response
+
+    def get_people_from_project(self,
+                                project_db_id):
+        response = self.__rest_api_call('GET',
+                                        f'project/{project_db_id}/member')
+        return response
+
+    def get_email_from_person_project_db_id(self,
+                                            person_id):
+        response = self.__rest_api_call('GET',
+                                        f'person/{person_id}')
+        return response.json()['email']
+
+    def get_project_id_from_code(self,
+                                   code):
+        try:
+            response = self.get_project_from_code(code)
+        except Exception as error:
+            logger.error(error.message)
+            raise            
+        return response.json()['id']
+
+    def __get_person_id_from_uri(self,
+                                 uri):
+        data = uri.split('/')
+        return data[-1]
+
+    def get_people_ids_from_project(self,
+                                    project_db_id,
+                                    roles=None): # roles is a list of personrole numbers that will be
+                                                 # used to limit types of people returned
+        response = self.get_people_from_project(project_db_id)
+        resp = response.json()
+        ids = []
+        for person in resp:
+            current = person['person']['href']
+            if roles:
+                current_role = person['role']['href']
+                current_role_id = self.__get_person_id_from_uri(current_role)
+                if int(current_role_id) in roles or current_role_id in roles:
+                    ids.append(self.__get_person_id_from_uri(current))
+            else:
+                ids.append(self.__get_person_id_from_uri(current))
+        return ids

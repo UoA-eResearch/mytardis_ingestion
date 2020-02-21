@@ -2,33 +2,60 @@
 import ldap3
 import logging
 
+logger = logging.getLogger(__name__)
+
 def get_user_from_upi(ldap_dict,
-                      upi,logger=None):
-        server = ldap3.Server(ldap_dict['ldap_url'])
-        search_filter = f'({ldap_dict["ldap_user_attr_map"]["upi"]}={upi})'
+                      upi):
+        try:
+                details = __do_ldap_search(ldap_dict,
+                                           'upi',
+                                           upi)
+        except Exception as error:
+                raise
+        return details
+
+def get_user_from_email(ldap_dict,
+                       email):
+        try:
+                details = __do_ldap_search(ldap_dict,
+                                           'email',
+                                           email)
+        except Exception as error:
+                raise
+        return details
+
+def __do_ldap_search(ldap_dict,
+                     search_action,
+                     value):
+        if not search_action in ldap_dict['user_attr_map'].keys():
+                error_message = f'{search_action} is not a valid key in the LDAP user attribute map'
+                logger.error(error_message)
+                raise KeyError(error_message)
+        server = ldap3.Server(ldap_dict['url'])
+        search_filter = f'({ldap_dict["user_attr_map"][search_action]}={value})'
         with ldap3.Connection(server,
                               auto_bind=True,
-                              user=ldap_dict['ldap_admin_user'],
-                              password=ldap_dict['ldap_admin_password']) as connection:
-            connection.search(ldap_dict['ldap_user_base'],
+                              user=ldap_dict['admin_user'],
+                              password=ldap_dict['admin_password']) as connection:
+            connection.search(ldap_dict['user_base'],
                               search_filter,
                               attributes=['*'])
         if len(connection.entries) > 1:
-            error_message = f'More than one person with UPI: {upi} has been found in the LDAP'
+            error_message = f'More than one person with {search_action}: {value} has been found in the LDAP'
             if logger:
                 logger.error(error_message)
             raise Exception(error_message)
         elif len(connection.entries) == 0:
-            error_message = f'No one with UPI: {upi} has been found in the LDAP'
+            error_message = f'No one with {search_action}: {value} has been found in the LDAP'
             if logger:
-                logger.error(error_message)
+                logger.warning(error_message)
             return None
         else:
             person = connection.entries[0]
-        username = person[ldap_dict['ldap_user_attr_map']['upi']].value
-        first_name = person[ldap_dict['ldap_user_attr_map']['first_name']].value
-        last_name = person[ldap_dict['ldap_user_attr_map']['last_name']].value
-        email = person[ldap_dict['ldap_user_attr_map']['email']].value
+        username = person[ldap_dict['user_attr_map']['upi']].value
+        first_name = person[ldap_dict['user_attr_map']['first_name']].value
+        last_name = person[ldap_dict['user_attr_map']['last_name']].value
+        email = person[ldap_dict['user_attr_map']['email']].value
         details = {'username': username,
                    'first_name': first_name,
                    'last_name': last_name,
