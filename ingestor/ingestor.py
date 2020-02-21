@@ -112,9 +112,9 @@ class MyTardisUploader:
         self.verify_certificate = local_config('MYTARDIS_VERIFY_CERT',
                                                default=True,
                                                cast=bool)
-        self.experiment_schema = local_config('MYTARDIS_EXPT_SCHEMA', cast=dict)
-        self.dataset_schema = local_config('MYTARDIS_DATASET_SCHEMA', cast=dict)
-        self.datafile_schema = local_config('MYTARDIS_DATAFILE_SCHEMA', cast=dict)
+        self.experiment_schema = eval(local_config('MYTARDIS_EXPT_SCHEMA'))
+        self.dataset_schema = eval(local_config('MYTARDIS_DATASET_SCHEMA'))
+        self.datafile_schema = eval(local_config('MYTARDIS_DATAFILE_SCHEMA'))
         self.proxies = {"http": global_config('PROXY_HTTP',
                                               default=None),
                         "https": global_config('PROXY_HTTPS',
