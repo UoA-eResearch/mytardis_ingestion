@@ -171,3 +171,14 @@ class ProjectDBFactory():
             else:
                 ids.append(self.__get_person_id_from_uri(current))
         return ids
+
+    def get_name_and_description_by_project_id(self,
+                                               project_db_id):
+        try:
+            response = self.__rest_api_call('GET',
+                                            f'project/{project_db_id}')
+        except Exception as error:
+            logger.error(error.message)
+            raise
+        return (response.json()['title'], response.json()['description'], response.json()['creation_date'])
+        

@@ -186,7 +186,23 @@ class RAiDFactory():
                                     datset_startdate)
         except Exception as error:
             raise
-        return resp     
+        return resp
+
+    def mint_project_raid(self,
+                          project_name,
+                          project_description,
+                          project_url,
+                          project_metadata=None,
+                          project_startdate=None):
+        try:
+            resp = self.__mint_raid(project_name,
+                                    project_description,
+                                    project_url,
+                                    project_metadata,
+                                    project_startdate)
+        except Exception as error:
+            raise
+        return res
 
     def update_raid(self,
                     url,

@@ -985,7 +985,7 @@ class MyTardisUploader:
             try:
                 raid = self.raidfactory.get_project_raid(mytardis['internal_id'])
             except Exception as error:
-                error_msg = f'Invalid RAid used for internal_id. Please check and fix'
+                error_msg = f'Invalid RAiD used for internal_id. Please check and fix'
                 logger.error(error_msg)
                 raise
             else:
