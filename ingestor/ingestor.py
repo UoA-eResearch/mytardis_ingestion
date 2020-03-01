@@ -1102,7 +1102,7 @@ class MyTardisUploader:
                 return (False, None)
             else:
                 try:
-                    mytardis, paramset = self.__build_dataset_dictionaries(dataset_dict,
+                    mytardis, paramset = self.__split_dataset_dictionaries(dataset_dict,
                                                                            schema_key)
                 except Exception as error:
                     logger.error(f'Encountered error: {error.message} when building dataset dictionaries')
@@ -1183,7 +1183,7 @@ class MyTardisUploader:
             logger.error(f'The datafile dictionary is incomplete. Missing keys: {", ".join(check[1])}')
             return (False, None)
         try:
-            mytardis = self.__build_datafile_dictionaries(datafile_dict,
+            mytardis = self.__split_datafile_dictionaries(datafile_dict,
                                                           schema_key)
         except Exception as error:
             logger.error(f'Encountered error: {error.message} when building datafile dictionaries')

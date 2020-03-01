@@ -18,12 +18,13 @@ from pathlib import Path
 import datetime
 import pytz
 import mimetypes
-from ..helper import calculate_checksum, most_probable_date, research_code_from_string, readJSON
+from ..helper import calculate_checksum, most_probable_date, research_code_from_string, readJSON, writeJSON
 from ..helper import ProjectDBFactory, RAiDFactory
 from ..helper import get_user_from_email, get_user_from_upi
 from ..helper import zip_directory
 from decouple import Config, RepositoryEnv
 import dateutil.parser as dparse
+import mimetypes
 
 DEVELOPMENT = True
 
@@ -59,13 +60,13 @@ class SolarixParser(Parser):
         if self.expt_raid_list_file:
             self.expt_raid_list = readJSON(self.expt_raid_list_file)
         self.dset_raid_list_file = global_config('DEV_DSET_RAID_FILE', default=None)
-        if self.dset_raid_list_file:
-            self.dset_raid_list = readJSON(self.dset_raid_list_file)
+        if self.dataset_raid_list_file:
+            self.dataset_raid_list = readJSON(self.dataset_raid_list_file)
         # TODO: Rework this self.projects = self.find_data(self.sub_dirs)
         self.processed = self.__process_m_dirs(self.m_dirs)
         self.local_tz = pytz.timezone('Pacific/Auckland')
         self.utc = pytz.timezone('UTC')
-
+        self.m_dicts = self.__process_m_dirs(self.m_dirs)
 
     def get_users_from_project_code(self,
                                     code,
@@ -181,6 +182,8 @@ class SolarixParser(Parser):
             meta['ECD'] = 'No'
         elif param_dict['ECD'] =='1':
             meta['ECD'] = 'Yes'
+        serial_number = param_dict['ftmsSerialNumber']
+        meta['instrument_id'] = f'MaSH-{serial_number}'        
         return meta
 
     def __get_owners_and_users_from_project_code(self,
@@ -249,6 +252,7 @@ class SolarixParser(Parser):
 
     def __imaging_process(self,
                           m_directory):
+        # Include a dataset_description dictionary here - check if it exists otherwise use the sample name
         pass
     
     def __non_imaging_process(self,
@@ -256,6 +260,9 @@ class SolarixParser(Parser):
         # Look for a date stamp, upi and/or research code
         date, project_db_id, owners, users, d_directory, sample_name = self.__get_basic_info(m_directory)
         # project_db_id is kept for future proofing
+        # extract the metadata from the apexAcquisition.method file
+        method_file = m_directory / 'apexAcquisition.method'
+        meta = self.__extract_metadata(method_file)
         zip_name = sample_name + '.zip'
         zip_directory(d_directory,
                       zip_name)
@@ -264,8 +271,11 @@ class SolarixParser(Parser):
                     'owners': owners,
                     'users': users,
                     'd_directory': d_directory,
+                    'top_dir': d_directory,
                     'sample_name': sample_name,
-                    'zip_name': zip_name}
+                    'dataset_name' : sample_name,
+                    'zip_name': zip_name,
+                    'meta':meta}
         return ret_dict
         
     def walk_dir_tree(self,
@@ -315,218 +325,90 @@ class SolarixParser(Parser):
                     project_raid = response.json()['handle']
                     if DEVELOPMENT:
                         self.proj_raid_list[project_db_url] = project_raid
-                
-
-    def find_data(self,
-                  directories=None): # Too complex - simplify
-        if not directories:
-            directories = self.sub_dirs
-        projects = {}
-        for directory in directories:
-            if directory in self.harvester.processed_list:
-                continue
-            date = None
-            users = []
-            project = {'project_id': "No_Project",
-                       'name': 'No_Project',
-                       'description': 'No description'}
-            expt = {}
-            dataset = {}
-            meta = {}
-            data = False
-            metadata = False
-            m_dirs = []
-            for part in directory.parts:
-                
-                elif re.match(r'\d{8}', part):
-                    # it might be a date
-                    try:
-                        date = datetime.datetime.strptime(part, '%Y%m%d')
-                    except ValueError as err:
-                        pass
-                    except Exception as err:
-                        pass
-                elif re.match(r'\d{6}', part):
-                    try:
-                        date = datetime.datetime.strptime(part, "%d%m%y")
-                    except ValueError as err:
-                        pass
-                    except Exception as err:
-                        pass
-                elif re.match(r'[a-z,A-Z]{4}\d{3}-FTICRMS', part):
-                    users = [part.split('-')[0]]
-                    project = {"name": part,
-                               "description": "No description",
-                               "project_id": part}
-                elif re.match(r'\w*_\d{6}.d', part):
-                    part_list = part.split('_')
-                    del part_list[-1]
-                    name = '_'
-                    expt = {"name": name.join(part_list)}
-                    dataset = {"name": part[:-2]}
-                elif part[-2:] == ".d":
-                    expt = {"name": part[:-2]}
-                    dataset = {"name": part[:-2]}
-                elif part[-2:] == ".m":
-                    m_dirs.append(directory)
-                    file_path = directory.joinpath("apexAcquisition.method")
-                    if os.path.isfile(file_path):
-                        meta = self.extract_metadata(file_path)
-            try:
-                expt_name = expt["name"]
-                expt['internal_id'] = f'{project["project_id"]}-{expt_name}'
-            except Exception as err:
-                pass
-            try:
-                dataset_name = dataset["name"]
-                dataset['dataset_id'] = f'{expt["internal_id"]}-{dataset_name}'
-            except Exception as err:
-                pass
-            if directory.suffix == ".d":
-                data = True
-            elif directory.suffix == ".m":
-                data = True
-                metadata = True
-            projects[directory] = [users, project, expt, dataset, meta, data, metadata, date, m_dirs]
-        return projects
-
-
-    
-
-    def create_datafile_dicts(self):
-        datafiles = []
-        for key in self.projects.keys():
-            current_path = self.projects[key]
-            if current_path[6]:
-                datafile_dict = {}
-                datafile_dict['schema_namespace'] = self.datafile_schema
-                # This is metadata
-                datafile_dict["file"] = current_path[2]["name"] + "_method.tar.gz"
-                datafile_dict["local_dir"] = key.relative_to(self.harvester.root_dir)
-                datafile_dict["remote_dir"] = datafile_dict["local_dir"].parent
-                datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
-                datafile_dict['md5sum'] = calculate_checksum(os.path.join(self.harvester.filehandler.staging_dir, datafile_dict['remote_dir']),
-                                                             datafile_dict["file"],
-                                                             md5sum_executable = self.harvester.md5sum_executable,
-                                                             subprocess_size_threshold = self.harvester.subprocess_size_threshold)
-                datafile_dict['mimetype'] = mimetypes.guess_type(child.name)[0]
-                datafile_dict['size'] = os.path.getsize(os.path.join(self.harvester.filehandler.staging_dir,
-                                                                     datafile_dict['remote_dir'],
-                                                                     datafile_dict["file"]))
-                datafiles.append(datafile_dict)
-            elif current_path[5]:
-                for child in key.iterdir():
-                    if child.is_file():
-                        datafile_dict = {}
-                        datafile_dict['schema_namespace'] = self.datafile_schema
-                        datafile_dict["file"] = child.name
-                        datafile_dict["local_dir"] = key.relative_to(self.harvester.root_dir)
-                        datafile_dict["remote_dir"] = datafile_dict["local_dir"]
-                        datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
-                        datafile_dict['md5sum'] = calculate_checksum(key,
-                                                                     datafile_dict["file"],
-                                                                     md5sum_executable = self.harvester.md5sum_executable,
-                                                                     subprocess_size_threshold = self.harvester.subprocess_size_threshold)
-                        datafile_dict['mimetype'] = mimetypes.guess_type(child.name)[0]
-                        datafile_dict['size'] = os.path.getsize(os.path.join(key,datafile_dict["file"]))
-                        datafiles.append(datafile_dict)
-            if 'Ion Source' in current_path[4].keys():
-                if current_path[4]['Ion Source'] == 'MALDI Imaging':
-                    for child in key.iterdir():
-                        datafile_dict = {}
-                        datafile_dict['schema_namespace'] = self.datafile_schema
-                        if child.is_file():
-                            datafile_dict["file"] = child.name
-                            datafile_dict["local_dir"] = key.relative_to(self.harvester.root_dir)
-                            datafile_dict["remote_dir"] = datafile_dict["local_dir"]
-                            datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
-                            datafile_dict['md5sum'] = calculate_checksum(key,
-                                                                     datafile_dict["file"],
-                                                                     md5sum_executable = self.harvester.md5sum_executable,
-                                                                     subprocess_size_threshold = self.harvester.subprocess_size_threshold)
-                            datafile_dict['mimetype'] = mimetypes.guess_type(child.name)[0]
-                            datafile_dict['size'] = os.path.getsize(os.path.join(key,datafile_dict["file"]))
-                            datafiles.append(datafile_dict)
-                    for child in key.parent.parent.iterdir():
-                        if child.is_file():
-                            datafile_dict = {}
-                            datafile_dict["file"] = child.name
-                            datafile_dict["local_dir"] = key.parent.parent.relative_to(self.harvester.root_dir)
-                            datafile_dict["remote_dir"] = datafile_dict["local_dir"]
-                            datafile_dict["dataset_id"] = current_path[3]["dataset_id"]
-                            datafile_dict['md5sum'] = calculate_checksum(key.parent.parent,
-                                                                         child.name,
-                                                                         md5sum_executable = self.harvester.md5sum_executable,
-                                                                         subprocess_size_threshold = self.harvester.subprocess_size_threshold)
-                            datafile_dict['mimetype'] = mimetypes.guess_type(child.name)[0]
-                            datafile_dict['size'] = os.path.getsize(os.path.join(key.parent.parent,datafile_dict["file"]))
-                        if datafile_dict not in datafiles:
-                            datafiles.append(datafile_dict)
-        for datafile in datafiles:
-            if datafile['local_dir'] not in self.harvester.files_dict.keys():
-                self.harvester.files_dict[datafile['local_dir']] = []
-            self.harvester.files_dict[datafile['local_dir']].append(datafile['file'])
-        return datafiles
-
-    def create_dataset_dicts(self):
-        datasets = {}
-        for key in self.projects.keys():
-            current_path = self.projects[key]
-            if current_path[5] and not current_path[6]: # This has data but not metadata
-                if current_path[3]['dataset_id'] not in datasets.keys():
-                    datasets[current_path[3]['dataset_id']] = {
-                        'internal_id':current_path[2]['internal_id'],
-                        'dataset_id':current_path[3]['dataset_id'],
-                        'description': current_path[3]['name']}
-                elif 'dataset_id' not in datasets[current_path[3]['dataset_id']].keys():
-                    datasets[current_path[3]['dataset_id']]['internal_id'] = current_path[2]['internal_id']
-                    datasets[current_path[3]['dataset_id']]['dataset_id'] = current_path[3]['dataset_id']
-                    datasets[current_path[3]['dataset_id']]['description'] = current_path[3]['name']
-                else:
-                    # Log and error as we have a double up
-                    pass
-            elif current_path[6]:
-                # This is metadata
-                if current_path[3]['dataset_id'] not in datasets.keys():
-                    datasets[current_path[3]['dataset_id']] = {}
-                datasets[current_path[3]['dataset_id']].update(current_path[4])
-                datasets[current_path[3]['dataset_id']]['schema_namespace'] = self.dataset_schema
-        return datasets
+                processed_dict['project_raid'] = project_raid
+                top_dir = processed_dict['top_dir']
+                if 'dataset_ids' not in processed_dict.keys():
+                    processed_dict['dataset_ids'] = {m_dir: processed_dict['sample_name']}
+                self.m_dicts[top_dir] = processed_dict
+        writeJSON(self.proj_raid_list, self.proj_raid_list_file)
 
     def create_experiment_dicts(self):
         experiments = {}
-        for key in self.projects.keys():
-            current_path = self.projects[key]
-            if current_path[2] == {}:
-                continue
-            if current_path[2]['internal_id'] not in experiments.keys():
-                if self.default_user[0] not in current_path[0]:
-                    users = current_path[0]
-                    if users:
-                        owners = self.default_user + [users.pop(0)]
-                    else:
-                        owners = self.default_user
-                else:
-                    if current_path[0].index(self.default_user[0]) == 0:
-                        owners = self.default_user
-                    else:
-                        owners = self.default_user + [current_path[0].pop(0)]
-                    current_path[0].remove(self.default_user[0])
-                    users = current_path[0]
-                if not users:
-                    users = None
-                experiments[current_path[2]['internal_id']] = {
-                    'internal_id': current_path[2]['internal_id'],
-                    'title': current_path[2]['name'],
-                    'owners': owners,
-                    'users': users,
-                    'project_id': current_path[1]['project_id'],
-                    'project_name': current_path[1]['name'],
-                    'project_description': current_path[1]['description'],
-                    'schema_namespace': self.expt_schema}
-        return experiments
+        for key in self.m_dicts.keys():
+            processed_dict = self.m_dicts[key]
+            experiment_title = processed_dict['sample_name']
+            # Check if its this or the 'Comments' field
+            experiment_description = processed_dict['meta']['Sample Notes']
+            experiment_raid = None
+            experiment_date = processed_dict['date']
+            if not experiment_date:
+                experiment_date = datetime.datetime.now()
+            if DEVELOPMENT:
+                if experiment_title in self.expt_raid_list.keys():
+                    experiment_raid = self.expt_raid_list[experiment_title]
+            if not experiment_raid:
+                response = self.raid_factory.mint_experiment_raid(experiment_title,
+                                                                  experiment_description,
+                                                                  experiment_startdate = experiment_date)
+                experiment_raid = response.json()['handle']
+                if DEVELOPMENT:
+                    self.expt_raid_list[experiment_title] = experiment_raid
+            self.m_dicts[key]['internal_id'] = experiment_raid
+            experiments[experiment_raid] = {
+                'internal_id': experiment_raid,
+                'title': experiment_title,
+                'owners': processed_dict[owners],
+                'users': processed_dict[users],
+                'project_id': processed_dict[project_raid]}
+        writeJSON(self.expt_raid_list, self.expt_raid_list_file)
+        return  experiments
 
+    def create_dataset_dicts(self):
+        datasets = {}
+        for key in self.m_dicts.keys():
+            processed_dict = self.m_dicts[key]
+            dataset_description = processed_dict['dataset_name']
+            internal_id = processed_dict['internal_id']
+            dataset_date = processed_dict['date']
+            dataset_url = 'https://mytardis.nectar.auckland.ac.nz/dataset'
+            if not dataset_date:
+                dataset_date = datetime.datetime.now()
+            dataset_raid = None
+            if DEVELOPMENT:
+                if dataset_description in self.dataset_raid_list.keys():
+                    dataset_raid = self.dataset_raid_list[dataset_description]
+            if not dataset_raid:
+                response = self.raid_factory.mint_dataset_raid(dataset_description,
+                                                               dataset_url,
+                                                               dataset_startdate = dataset_date)
+                dataset_raid = response.json()['handle']
+                if DEVELOPMENT:
+                    self.dataset_raid_list[dataset_description] = dataset_raid
+            self.m_dicts[key]['dataset_id'] = dataset_raid
+            datasets[dataset_raid] = {
+                'internal_id': internal_id,
+                'description': dataset_description,
+                'created_time': dataset_date}
+            datasets[dataset_raid].update(processed_dict['meta'])
+        writeJSON(self.dataset_raid_list, self.dataset_raid_list_file)
+        return datasets
 
-
-
-    
+    def create_datafile_dicts(self):
+        datafiles = {}
+        for key in self.m_dicts.keys():
+            processed_dict = self.m_dicts[key]
+            file_name = processed_dict['zip_name']
+            dataset_id = processed_dict['dataset_id']
+            mimetype = mimetypes.types_map['.zip']
+            file_path = Path(processed_dict['d_directory'])
+            file_size = os.path.getsize(file_path / file_name)
+            local_path = file_path
+            remote_path = file_path.relative_to(self.staging_dir)
+            datafiles[file_name] = {
+                'dataset_id': dataset_id,
+                'file_name': file_name,
+                'remote_path': remote_path,
+                'local_path': local_path,
+                'size': file_size,
+                'mimetype': mimetype}
+        return datafiles
