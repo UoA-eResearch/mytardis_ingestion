@@ -62,7 +62,6 @@ class SolarixParser(Parser):
         self.dset_raid_list_file = global_config('DEV_DSET_RAID_FILE', default=None)
         if self.dataset_raid_list_file:
             self.dataset_raid_list = readJSON(self.dataset_raid_list_file)
-        # TODO: Rework this self.projects = self.find_data(self.sub_dirs)
         self.processed = self.__process_m_dirs(self.m_dirs)
         self.local_tz = pytz.timezone('Pacific/Auckland')
         self.utc = pytz.timezone('UTC')
