@@ -23,7 +23,7 @@ class SolarixFileHandler(S3FileHandler):
                  global_config_file_path,
                  local_config_file_path,
                  checksum_digest = None):
-        super(SolarixFileHandler, self).__init__(global_config_file_path,
+        super().__init__(global_config_file_path,
                                                  local_config_file_path,
                                                  checksum_digest)
         
