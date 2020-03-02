@@ -244,48 +244,17 @@ def build_checksum_digest(checksum_digest,
     False: otherwise
     """
     abs_file_path = root_dir / file_path
-    try:
-        md5 = calculate_md5sum(abs_file_path,
-                               blocksize,
-                               subprocess_size_threshold,
-                               md5sum_executable)
-    except FileNotFoundError as error:
-        logger.error(error.message)
-        return False
-    except Exception as error:
-        logger.error(error.message)
-        raise
-    if md5 == '':
-        return False
-    writestring = f'{file_path},{md5}'
+    checksum_dict = {}
+    if not os.path.isfile(checksum_digest):
+        checksum_dict = {}
+    else:
+        checksum_dict = readJSON(checksum_digest)
+    checksum_dict[file_path]['md5sum'] = calculate_md5sum(abs_file_path)
     if s3:
-        etag = calculate_etag(abs_file_path,
-                              s3_blocksize)
-        writestring += f',{etag}'
-    writestring += f'\n'
-    try:
-        with open(checksum_digest, 'a') as filename:
-            filename.write(writestring)
-    except Exception as error:
-        logger.error(error.message)
-        return False
-    return True
-    
-def read_checksum_digest(checksum_digest):
-    ret_dict = {}
-    try:
-        with open(checksum_digest, 'r') as filename:
-            for line in filename:
-                data = line.split(',')
-                if len(data) < 2:
-                    logger.error(f'Malformed checksum digest file {checksum_digest}')
-                    return False
-                key = data.pop(0)
-                ret_dict[key] = data
-    except Exception as error:
-        logger.error(error.message)
-        raise
-    return ret_dict
+        checksum_dict[file_path]['etag'] = calculated_etag(abs_file_path,
+                                                           s3_blocksize)
+    writeJSON(checksum_dict, checksum_digest)
+    return checksum_dict
 
 def most_probable_date(test_string):
     '''Function to try and parse a potential date string through a range of different

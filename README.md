@@ -122,6 +122,6 @@ The bare minimum required to create an datafile as at 14/02/2020 is as follows:
 |remote_path: | The path to the directory that the file will be stored in once transfered to the data centre. *Note:* this is the final storage location|
 |local_path: | The path to the local directory that the file was taken from. Used to uniquely identify file so that the checksum_digest can be used|
 |size: | The file size in bytes|
-|md5sum: | A suitable checksum for verification purposes|
+|mimetype: | The MIME type of the file|
 
 Any additional keys are added to a parameter set that is built with the datafile

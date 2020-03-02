@@ -18,7 +18,7 @@ from pathlib import Path
 import datetime
 import pytz
 import mimetypes
-from ..helper import calculate_checksum, most_probable_date, research_code_from_string, readJSON, writeJSON
+from ..helper import most_probable_date, research_code_from_string, readJSON, writeJSON
 from ..helper import ProjectDBFactory, RAiDFactory
 from ..helper import get_user_from_email, get_user_from_upi
 from ..helper import zip_directory

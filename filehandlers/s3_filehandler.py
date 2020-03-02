@@ -27,7 +27,8 @@ class S3FileHandler(FileHandler):
 
     def __init__(self,
                  global_config_file_path,
-                 local_config_file_path):
+                 local_config_file_path,
+                 checksum_digest=None):
         # global_config holds environment variables that don't change often such as LDAP parameters and project_db stuff
         global_config = Config(RepositoryEnv(global_config_file_path))
         # local_config holds the details about how this particular set of data should be handled
@@ -45,6 +46,10 @@ class S3FileHandler(FileHandler):
         self.cwd = os.getcwd()
         self.s3_client = boto3.client('s3',
                                       endpoint_url = endpoint_url)
+        self.checksums = {}
+        self.checksum_digest = checksum_digest
+        if self.checksum_digest:
+            self.checksums = readJSON(self.checksum_digest)
         self.move_to_staging(origin)
 
     # =================================
@@ -208,8 +213,7 @@ class S3FileHandler(FileHandler):
         return check
 
     def __get_checksum_from_digest(self,
-                                   rel_path,
-                                   checksum_digest):
+                                   rel_path):
         '''
         Function to read the checksum_digest (in memory as dictionary)
         and to extract the etag from the calculated checksums
@@ -217,32 +221,35 @@ class S3FileHandler(FileHandler):
         Inputs:
         =================================
         data_file_dict: A datafile dictionary.
-        checksum_digest: A dictionary of checksums keyed to relative file paths
 
         Returns:
         =================================
         checksum or None: a string containing the etag checksum or None if its not in the
             dictionary.
         '''
-        if rel_path in checksum_digest.keys():
-            return checksum_digest[rel_path]['etag']
+        if rel_path in self.checksums.keys():
+            if 'etag' in self.checksums[rel_path].keys():
+                return checksum[rel_path]['etag']
+            else:
+                etag = hlp.calculate_etag(rel_path)
+                self.checksums[relpath]['etag'] = etag
+                return etag
         else:
-            return None
+            self.checksums = hlp.build_checksum_digest(self.checksum_digest,
+                                                       self.staging_dir,
+                                                       rel_path,
+                                                       s3 = True,
+                                                       s3_blocksize = self.blocksize)
+            return self.checksums[rel_path]['etag']
 
     def upload_file(self,
-                    file_path,
-                    checksum_digest):
+                    file_path):
         '''Wrapper around self.__multipart_upload function'''
         rel_path = Path(file_path).relative_to(self.staging_dir)
-        etag = self.__get_checksum_from_digest(rel_path,
-                                               checksum_digest)
-        if not etag:
-            file_path = self.staging_dir / rel_file_path
-            checksum = hlp.calculate_etag(file_path,
-                                          self.blocksize)
+        etag = self.__get_checksum_from_digest(rel_path)
         try:
             response = self.__multipart_upload(rel_path,
-                                               checksum)
+                                               etag)
         except Exception as error:
             raise error
         return response

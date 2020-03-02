@@ -7,7 +7,7 @@
 
 import logging
 from requests.auth import AuthBase
-from ..helper import check_dictionary, dict_to_json, get_user_from_upi, read_checksum_digest, calculate_md5sum
+from ..helper import check_dictionary, dict_to_json, get_user_from_upi, calculate_md5sum
 from ..helper import RAiDFactory, ProjectDBFactory
 import backoff
 import requests
@@ -139,7 +139,10 @@ class MyTardisUploader:
                                  self.ingest_api_key)
         self.storage_box = local_config('MYTARDIS_STORAGE_BOX')
         self.remote_root = Path(local_config('FILEHANDLER_REMOTE_ROOT'))
-        self.checksums = read_checksum_digest(checksum_digest)
+        self.checksum_digest = checksum_digest
+        self.checksums = {}
+        if self.checksum_digest:
+            self.checksums = readJSON(self.checksum_digest)
         self.raid_factory = RAiDFactory(global_config_file_path)
         self.project_db_factory = ProjectDBFactory(global_config_file_path)
 
@@ -755,9 +758,11 @@ class MyTardisUploader:
         remote_path = Path(datafile_dict.pop('remote_path'))
         local_path = Path(datafile_dict.pop('local_path'))
         if (local_path / filename) in self.checksum_digest.keys():
-            mytardis['md5sum'] = self.checksum_digest[local_path / filename][0] # The digest format is md5, eTag
+            mytardis['md5sum'] = self.checksums[local_path / filename]['md5sum']
         else:
             mytardis['md5sum'] = calculate_md5sum(local_path / filename)
+            self.checksums[local_path / filename] = {}
+            self.checksums[local_path / filename]['md5sum'] = mytardis['md5sum']
         mytardis['directory'] = remote_path.as_posix()
         mytardis['mimetype'] = datafile_dict.pop('mimetype')
         mytardis['size'] = datafile_dict.pop('file_size')
@@ -1196,4 +1201,5 @@ class MyTardisUploader:
         except Exception as error:
             logger.error(f'Error: {error.message} eccountered when creating dataset_file {mytardis["filename"]}')
             return (False, None)
+        writeJSON(self.checksums, self.checksum_digest)
         return (True, None)

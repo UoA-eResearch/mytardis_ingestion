@@ -21,16 +21,16 @@ class SolarixFileHandler(S3FileHandler):
 
     def __init__(self,
                  global_config_file_path,
-                 local_config_file_path):
+                 local_config_file_path,
+                 checksum_digest = None):
         super(SolarixFileHandler, self).__init__(global_config_file_path,
-                                                 local_config_file_path)
+                                                 local_config_file_path,
+                                                 checksum_digest)
         
     def upload_dir(self,
-                   d_dir,
-                   checksum_digest):
+                   d_dir):
         for root, directories, files in os.walk(d_dir):
             for filename in files:
                 abs_filepath = Path(os.path.join(root, filename))
-                response = self.upload_file(abs_filepath,
-                                            checksum)
+                response = self.upload_file(abs_filepath)
         return response
