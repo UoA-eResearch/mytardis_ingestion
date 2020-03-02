@@ -19,6 +19,7 @@ from ..helper import constants as CONST
 from ..helper import helper as hlp
 from decouple import Config, RepositoryEnv
 from pathlib import Path
+import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,8 @@ class S3FileHandler(FileHandler):
         self.s3_root_dir = Path(local_config('FILEHANDLER_REMOTE_ROOT'))
         # This is a temp solution to the streaming timeout problem
         self.staging_dir = Path(local_config('FILEHANDLER_STAGING_ROOT'))
+        origin = Path(local_config('FILEHANDLER_ORIGIN_ROOT',
+                                   default=None))
         self.bucket = local_config('FILEHANDLER_S3_BUCKET')
         endpoint_url = local_config('FILEHANDLER_S3_ENDPOINT_URL')
         self.threshold = local_config('FILEHANDLER_S3_THRESHOLD')
@@ -42,6 +45,7 @@ class S3FileHandler(FileHandler):
         self.cwd = os.getcwd()
         self.s3_client = boto3.client('s3',
                                       endpoint_url = endpoint_url)
+        self.move_to_staging(origin)
 
     # =================================
     #
@@ -226,10 +230,10 @@ class S3FileHandler(FileHandler):
             return None
 
     def upload_file(self,
-                    datafile_dict,
+                    file_path,
                     checksum_digest):
         '''Wrapper around self.__multipart_upload function'''
-        rel_path = datafile_dict['rel_path']
+        rel_path = Path(file_path).relative_to(self.staging_dir)
         etag = self.__get_checksum_from_digest(rel_path,
                                                checksum_digest)
         if not etag:
@@ -242,3 +246,7 @@ class S3FileHandler(FileHandler):
         except Exception as error:
             raise error
         return response
+
+    def move_to_staging(self,
+                        origin):
+        shutil.copytree(origin, self.staging_dir)
