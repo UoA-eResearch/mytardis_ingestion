@@ -15,8 +15,8 @@ import sys
 import hashlib
 import logging
 import subprocess
-from ..helper import constants as CONST
-from ..helper import helper as hlp
+from helper import constants as CONST
+from helper import readJSON, build_checksum_digest, calculate_etag
 from decouple import Config, RepositoryEnv
 from pathlib import Path
 import shutil
@@ -49,8 +49,9 @@ class S3FileHandler(FileHandler):
         self.checksums = {}
         self.checksum_digest = checksum_digest
         if self.checksum_digest:
-            self.checksums = readJSON(self.checksum_digest)
-        self.move_to_staging(origin)
+            if os.path.isfile(self.checksum_digest):
+                self.checksums = readJSON(self.checksum_digest)
+        #self.move_to_staging(origin) -- Don't need to do this more than once in testing
 
     # =================================
     #
@@ -231,15 +232,15 @@ class S3FileHandler(FileHandler):
             if 'etag' in self.checksums[rel_path].keys():
                 return checksum[rel_path]['etag']
             else:
-                etag = hlp.calculate_etag(rel_path)
+                etag = calculate_etag(rel_path)
                 self.checksums[relpath]['etag'] = etag
                 return etag
         else:
-            self.checksums = hlp.build_checksum_digest(self.checksum_digest,
-                                                       self.staging_dir,
-                                                       rel_path,
-                                                       s3 = True,
-                                                       s3_blocksize = self.blocksize)
+            self.checksums = build_checksum_digest(self.checksum_digest,
+                                                   self.staging_dir,
+                                                   rel_path,
+                                                   s3 = True,
+                                                   s3_blocksize = self.blocksize)
             return self.checksums[rel_path]['etag']
 
     def upload_file(self,

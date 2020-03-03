@@ -152,6 +152,7 @@ class RAiDFactory():
                     raid_dict['meta'] = {}
                 raid_dict['meta'][key] = metadata[key]
         raid_json = dict_to_json(raid_dict)
+        print(raid_json)
         response = self.__rest_api_call('POST',
                                         'RAiD',
                                         data=raid_json)
@@ -183,7 +184,7 @@ class RAiDFactory():
                                     'UoA MyTardis Dataset',
                                     dataset_url,
                                     dataset_metadata,
-                                    datset_startdate)
+                                    dataset_startdate)
         except Exception as error:
             raise
         return resp
@@ -202,7 +203,7 @@ class RAiDFactory():
                                     project_startdate)
         except Exception as error:
             raise
-        return res
+        return resp
 
     def update_raid(self,
                     url,

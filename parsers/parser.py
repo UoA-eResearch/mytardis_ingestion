@@ -16,9 +16,9 @@ class Parser(ABC):
     def  __init__(self):
         pass
 
-    @abstractmethod
-    def get_file_list(self):
-        pass
+    #@abstractmethod
+    #def get_file_list(self):
+    #    pass
     
     @abstractmethod
     def create_datafile_dicts(self):

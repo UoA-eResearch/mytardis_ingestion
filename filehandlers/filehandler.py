@@ -6,7 +6,7 @@
 __author__ = 'Chris Seal <c.seal@auckland.ac.nz>'
 
 from abc import ABC, abstractmethod
-from ..helper import helper as hlp
+#from helper import helper as hlp
 import logging
 
 logger = logging.getLogger(__name__)

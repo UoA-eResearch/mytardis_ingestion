@@ -7,8 +7,9 @@
 
 import logging
 from requests.auth import AuthBase
-from ..helper import check_dictionary, dict_to_json, get_user_from_upi, calculate_md5sum
-from ..helper import RAiDFactory, ProjectDBFactory
+from helper import check_dictionary, dict_to_json, get_user_from_upi, calculate_md5sum
+from helper import readJSON, writeJSON
+from helper import RAiDFactory, ProjectDBFactory
 import backoff
 import requests
 import os
@@ -22,7 +23,6 @@ MINT_RAIDS = False
 MINT_PROJECT_DBS = False
 
 logger = logging.getLogger(__name__)
-
 class TastyPieAuth(AuthBase):
     """
     Attaches HTTP headers for Tastypie API key Authentication to the given
@@ -139,12 +139,14 @@ class MyTardisUploader:
                                  self.ingest_api_key)
         self.storage_box = local_config('MYTARDIS_STORAGE_BOX')
         self.remote_root = Path(local_config('FILEHANDLER_REMOTE_ROOT'))
+        self.local_root = Path(local_config('FILEHANDLER_STAGING_ROOT'))
         self.checksum_digest = checksum_digest
         self.checksums = {}
-        if self.checksum_digest:
+        if os.path.isfile(self.checksum_digest):
             self.checksums = readJSON(self.checksum_digest)
         self.raid_factory = RAiDFactory(global_config_file_path)
         self.project_db_factory = ProjectDBFactory(global_config_file_path)
+        self.cwd = os.getcwd()
 
     def __resource_uri_to_id(self, uri):
         """
@@ -239,21 +241,23 @@ class MyTardisUploader:
             raise err
         return response
     
-        def __get_request(self,
-                        action,
-                        params,
-                        extra_headers=None):
+    def __get_request(self,
+                      action,
+                      params,
+                      extra_headers=None):
         '''Wrapper around self._do_rest_api_request to handle GET requests
 
         Inputs:
         =================================
         action: the type of object, (e.g. experiment, dataset) to GET
         params: parameters to pass to filter the request return
-        extra_headers: any additional information needed in the header (META) for the object being created
+        extra_headers: any additional information needed in the header (META) for the 
+object being created
         
         Returns:
         =================================
-        A Python requests module response object'''
+        A Python requests module response object
+        '''
         try:
             response = self.__rest_api_request('GET',
                                                action,
@@ -531,26 +535,32 @@ class MyTardisUploader:
     
     def __get_or_create_user(self,
                             upi):
+        print('Making User')
         uri = self.__get_user_uri(upi)
         if uri:
             return (False, uri)
         else:
             try:
+                print(upi)
                 person = get_user_from_upi(self.ldap_dict,
                                            upi)
+                print(person)
             except Exception as error:
                 raise
             if not person:
                 return (False, None)
             person_json = dict_to_json(person)
+            print(person_json)
             try:
-                response = self.__do_post_request('user',
-                                                  person_json)
+                response = self.__post_request('user',
+                                               person_json)
+                print(response.text)
                 response.raise_for_status()
             except Exception as err:
                 logger.error(f'Error occurred when creating user {username}. Error: {err}')
                 return (False, None)
             response = json.loads(response.text)
+            print(response)
             uri = response['resource_uri']
             user_id = self.__resource_uri_to_id(uri)
             user_profile_uri = self.__get_user_profile(user_id)
@@ -561,8 +571,8 @@ class MyTardisUploader:
                         'userProfile': user_profile}
             mytardis_json = dict_to_json(mytardis)
             try:
-                response = self.__do_post_request('userauthentication',
-                                                  mytardis_json)
+                response = self.__post_request('userauthentication',
+                                               mytardis_json)
                 response.raise_for_status()
             except Exception as error:
                 logger.error(error.message)
@@ -680,13 +690,13 @@ class MyTardisUploader:
         # TODO Refactor to remove six
         import six
         if isinstance(content_object, six.string_types):
-            object_id = self._resource_uri_to_id(content_object)
+            object_id = self.__resource_uri_to_id(content_object)
         elif isinstance(content_object, int):
             object_id = content_object
         else:
             raise TypeError("'content_object' must be a URL string or int ID")
         if isinstance(entity_object, six.string_types):
-            entity_id = self._resource_uri_to_id(entity_object)
+            entity_id = self.__resource_uri_to_id(entity_object)
         elif isinstance(entity_object, int):
             entity_id = enitity_object
         else:
@@ -705,7 +715,7 @@ class MyTardisUploader:
             u'effectiveDate': None,
             u'expiryDate': None
         }
-        response = self.__do_post_request('objectacl',
+        response = self.__post_request('objectacl',
                                           dict_to_json(data))
         return response
     
@@ -950,16 +960,17 @@ class MyTardisUploader:
         False and the URI if the experiment already exists in the database as determined from internal_id
         False and None empty dictionary if creation fails.
         '''
-        os.chdir(self.harvester.root_dir)
+        os.chdir(self.local_root)
         required_keys = ['title',
                          'internal_id']
+        print(expt_dict)
         check = check_dictionary(expt_dict,
                                  required_keys)
         if not check[0]:
             logger.error(f'The experiment dictionary is incomplete. Missing keys: {", ".join(check[1])}')
             return (False, None)
         try:
-            uri = self.__get_experiment_uri(internal_id)
+            uri = self.__get_experiment_uri(expt_dict['internal_id'])
         except Exception as error:
             logger.error(f'Encountered error: {error.message}, when looking for experiment')
             return (False, None)
@@ -971,15 +982,15 @@ class MyTardisUploader:
                     self.__split_experiment_dictionaries(expt_dict,
                                                          schema_key)
             except Exception as error:
-                logger.error(f'Encountered error: {error.message} when building experiment dictionaries')
+                logger.error(f'Encountered error: {error} when building experiment dictionaries')
                 return (False, None)
             mytardis_json = dict_to_json(mytardis)
             try:
-                response = self.__do_post_request('experiment',
+                response = self.__post_request('experiment',
                                                   mytardis_json)
                 response.raise_for_status()
             except Exception as error:
-                logger.error(f'Error occurred when creating experiment {mytardis["title"]}. Error: {error.message}')
+                logger.error(f'Error occurred when creating experiment {mytardis["title"]}. Error: {error}')
                 return (False, None)
             response = json.loads(response.text)
             uri = response['resource_uri']
@@ -988,65 +999,65 @@ class MyTardisUploader:
                                   '/experiment/view/'),
                           f'{tardis_id}')
             try:
-                raid = self.raidfactory.get_project_raid(mytardis['internal_id'])
+                raid = self.raid_factory.get_project_raid(mytardis['internal_id'])
             except Exception as error:
                 error_msg = f'Invalid RAiD used for internal_id. Please check and fix'
                 logger.error(error_msg)
                 raise
             else:
-                self.raidfactory.update_raid(url,
+                self.raid_factory.update_raid(url,
                                              mytardis['title'],
                                              mytardis['description'],
                                              mytardis['internal_id'])
-                self.project_db_factory.post_mytardis_experiment(url,
-                                                                 mytardis['internal_id'])
+                #self.project_db_factory.post_mytardis_experiment(url,
+                #                                                 mytardis['internal_id'])
             paramset['experiment'] = uri
             paramset_json = dict_to_json(paramset)
             try:
-                response = self.__do_post_request('experimentparameterset',
+                response = self.__post_request('experimentparameterset',
                                                   paramset_json)
                 response.raise_for_status()
             except Exception as error:
-                logger.error(f'Error occurred when attaching metadata to experiment {mytardis["title"]}. Error: {error.message}')
+                logger.error(f'Error occurred when attaching metadata to experiment {mytardis["title"]}. Error: {error}')
             if groups:
                 for group in groups:
                     try:
                         group_uri = self.__get_group_uri(group)
                     except Exception as error:
-                        logger.error(f'Error: {error.message} occured when searching for group {group}')
+                        logger.error(f'Error: {error} occured when searching for group {group}')
                     else:
                         try:
                             response = self.share_experiment_with_group(uri,
                                                                         group_uri)
                             response.raise_for_status()
                         except Exception as error:
-                            logger.error(f'Error: {error.message} occured when allocating group {group} access to experiment: {mytardis["title"]}')
+                            logger.error(f'Error: {error} occured when allocating group {group} access to experiment: {mytardis["title"]}')
             if users:
                 for user in users:
                     try:
                         flg, user_uri = self.__get_or_create_user(user)
                     except Exception as error:
-                        logger.error(f'Error: {error.message} occured when searching for user {user}')
+                        logger.error(f'Error: {error} occured when searching for user {user}')
                     else:
                         try:
                             response = self.share_experiment_with_user(uri,
                                                                        user_uri)
                             response.raise_for_status()
                         except Exception as error:
-                            logger.error(f'Error: {error.message} occured when allocating user {user} access to experiment: {mytardis["title"]}')
+                            logger.error(f'Error: {error} occured when allocating user {user} access to experiment: {mytardis["title"]}')
             if owners:
                 for user in owners:
                     try:
-                        flg, user_uri = self.__doc__get_or_create_user(user)
+                        flg, user_uri = self.__get_or_create_user(user)
                     except Exception as error:
-                        logger.error(f'Error: {error.message} occured when searching for user {user}')
+                        logger.error(f'Error: {error} occured when searching for user {user}')
                     else:
                         try:
                             response = self.share_experiment_with_owner(uri,
                                                                         user_uri)
                             response.raise_for_status()
                         except Exception as error:
-                            logger.error(f'Error: {error.message} occured when allocating default user {user} access to experiment: {mytardis["title"]}')
+                            logger.error(f'Error: {error} occured when allocating default user {user} access to experiment: {mytardis["title"]}')
             os.chdir(self.cwd)
             return (True, uri)
 
@@ -1088,19 +1099,22 @@ class MyTardisUploader:
             logger.error(f'The dataset dictionary is incomplete. Missing keys: {", ".join(check[1])}')
             return (False, None)
         try:
+            print(dataset_dict['dataset_id'])
             dataset_uri = self.__get_dataset_uri(dataset_dict['dataset_id'])
         except Exception as error:
-            logger.error(f'Encountered error: {error.message}, when looking for dataset: {dataset_dict["description"]}')
+            logger.error(f'Encountered error: {error}, when looking for dataset: {dataset_dict["description"]}')
             return (False, None)
         if dataset_uri:
             return (False, dataset_uri)
         else:
             try:
                 expt = dataset_dict['internal_id']
+                print(expt)
                 expt_uri = self.__get_experiment_uri(expt)
+                print(expt_uri)
                 logger.debug(expt_uri)
             except Exception as error:
-                logger.error(f'Encountered error: {error.message} when looking for experiment: {expt}')
+                logger.error(f'Encountered error: {error} when looking for experiment: {expt}')
                 return (False, None)
             if not expt_uri:
                 logger.error(f'Unable to locate experiment: {expt} in database')
@@ -1110,16 +1124,16 @@ class MyTardisUploader:
                     mytardis, paramset = self.__split_dataset_dictionaries(dataset_dict,
                                                                            schema_key)
                 except Exception as error:
-                    logger.error(f'Encountered error: {error.message} when building dataset dictionaries')
+                    logger.error(f'Encountered error: {error} when building dataset dictionaries')
                     return (False, None)
                 mytardis_json = dict_to_json(mytardis)
                 try:
-                    response = self.__do_post_request('dataset',
-                                                      mytardis_json)
+                    response = self.__post_request('dataset',
+                                                   mytardis_json)
                     logger.debug(response.text)
                     response.raise_for_status()
                 except Exception as error:
-                    logger.error(f'Error: {error.message} when creating dataset {mytardis["description"]}')
+                    logger.error(f'Error: {error} when creating dataset {mytardis["description"]}')
                     return (False, None)
                 response = json.loads(response.text)
                 uri = response['resource_uri']
@@ -1128,24 +1142,24 @@ class MyTardisUploader:
                                       '/dataset/view/'),
                               f'{tardis_id}')
                 try:
-                    raid = self.raidfactory.get_project_raid(mytardis['dataset_id'])
+                    raid = self.raid_factory.get_project_raid(mytardis['dataset_id'])
                 except Exception as error:
                     error_msg = f'Invalid RAid used for internal_id. Please check and fix'
                     logger.error(error_msg)
                     raise
                 else:
-                    self.raidfactory.update_raid(url,
+                    self.raid_factory.update_raid(url,
                                                  mytardis['description'],
                                                  'UoA MyTardis Dataset',
                                                  mytardis['dataset_id'])
                 paramset['dataset'] = uri
                 paramset_json = dict_to_json(paramset)
                 try:
-                    response = self.__do_post_request('datasetparameterset',
+                    response = self.__post_request('datasetparameterset',
                                                       paramset_json)
                     response.raise_for_status()
                 except Exception as error:
-                    logger.error(f'Error occurred when attaching metadata to dataset {mytardis["description"]}. Error: {error.message}')
+                    logger.error(f'Error occurred when attaching metadata to dataset {mytardis["description"]}. Error: {error}')
         return (True, uri)
 
     def create_datafile(self,
@@ -1191,15 +1205,15 @@ class MyTardisUploader:
             mytardis = self.__split_datafile_dictionaries(datafile_dict,
                                                           schema_key)
         except Exception as error:
-            logger.error(f'Encountered error: {error.message} when building datafile dictionaries')
+            logger.error(f'Encountered error: {error} when building datafile dictionaries')
             return (False, None)
         mytardis_json = dict_to_json(mytardis)
         try:
-            response = self.__do_post_request('dataset_file',
+            response = self.__post_request('dataset_file',
                                               mytardis_json)
             response.raise_for_status()
         except Exception as error:
-            logger.error(f'Error: {error.message} eccountered when creating dataset_file {mytardis["filename"]}')
+            logger.error(f'Error: {error} eccountered when creating dataset_file {mytardis["filename"]}')
             return (False, None)
         writeJSON(self.checksums, self.checksum_digest)
         return (True, None)

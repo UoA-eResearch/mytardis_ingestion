@@ -18,10 +18,10 @@ from pathlib import Path
 import datetime
 import pytz
 import mimetypes
-from ..helper import most_probable_date, research_code_from_string, readJSON, writeJSON
-from ..helper import ProjectDBFactory, RAiDFactory
-from ..helper import get_user_from_email, get_user_from_upi
-from ..helper import zip_directory
+from helper import most_probable_date, research_code_from_string, readJSON, writeJSON
+from helper import ProjectDBFactory, RAiDFactory
+from helper import get_user_from_email, get_user_from_upi, upi_from_string
+from helper import zip_directory
 from decouple import Config, RepositoryEnv
 import dateutil.parser as dparse
 import mimetypes
@@ -50,23 +50,27 @@ class SolarixParser(Parser):
         self.ldap_dict['user_base'] = global_config('LDAP_USER_BASE')
         self.project_db_factory = ProjectDBFactory(global_config_file_path)
         self.raid_factory = RAiDFactory(global_config_file_path)
+        self.local_tz = pytz.timezone('Pacific/Auckland')
+        self.utc = pytz.timezone('UTC')
         self.m_dirs = self.walk_dir_tree()
         # Temporary file to hold minted raids so we don't end up hitting the minting service too often
         # during development.
         self.proj_raid_list_file = global_config('DEV_PROJ_RAID_FILE', default=None)
-        if self.proj_raid_list_file:
+        self.proj_raid_list = {}
+        self.expt_raid_list = {}
+        self.dataset_raid_list = {}
+        if os.path.isfile(self.proj_raid_list_file):
             self.proj_raid_list = readJSON(self.proj_raid_list_file)
         self.expt_raid_list_file = global_config('DEV_EXPT_RAID_FILE', default=None)
-        if self.expt_raid_list_file:
+        if os.path.isfile(self.expt_raid_list_file):
             self.expt_raid_list = readJSON(self.expt_raid_list_file)
-        self.dset_raid_list_file = global_config('DEV_DSET_RAID_FILE', default=None)
-        if self.dataset_raid_list_file:
+        self.dataset_raid_list_file = global_config('DEV_DSET_RAID_FILE', default=None)
+        if os.path.isfile(self.dataset_raid_list_file):
             self.dataset_raid_list = readJSON(self.dataset_raid_list_file)
         # TODO: Rework this self.projects = self.find_data(self.sub_dirs)
+        self.m_dicts = {}
         self.processed = self.__process_m_dirs(self.m_dirs)
-        self.local_tz = pytz.timezone('Pacific/Auckland')
-        self.utc = pytz.timezone('UTC')
-        self.m_dicts = self.__process_m_dirs(self.m_dirs)
+        #self.m_dicts = self.__process_m_dirs(self.m_dirs)
 
     def get_users_from_project_code(self,
                                     code,
@@ -106,7 +110,8 @@ class SolarixParser(Parser):
                     'Q1Res',
                     'Q1CID',
                     'Q1_Frag_Energy',
-                    'ECD']
+                    'ECD',
+                    'ftmsSerialNumber']
         param_dict = {}
         tree = ElementTree.parse(file_path)
         root = tree.getroot()
@@ -196,24 +201,24 @@ class SolarixParser(Parser):
             code = None
             pass # Bail out of adding users by project if we can't get the id
         else:
-            people_ids = self.project_db_factory.get_people_from_project(project_db_id,
+            people_ids = self.project_db_factory.get_people_ids_from_project(project_db_id,
                                                                          roles = [1,2])
             # Person role 1 & 2 are the project owner and supervisor so get ownership rights
             for person in people_ids:
                 email = self.project_db_factory.get_email_from_person_project_db_id(person)
                 upi = get_user_from_email(self.ldap_dict,
-                                          email)
+                                          email)['username']
                 if upi in owners:
                     continue # Only add new people
                 else:
                     owners.append(upi)
-            people_ids = self.project_db_factory.get_people_from_project(project_db_id,
+            people_ids = self.project_db_factory.get_people_ids_from_project(project_db_id,
                                                                          roles = [3])
             # Person role 3 is a project member and gets user rights
             for person in people_ids:
                 email = self.project_db_factory.get_email_from_person_project_db_id(person)
                 upi = get_user_from_email(self.ldap_dict,
-                                          email)
+                                          email)['username']
                 if upi in users:
                     continue # Only add new people
                 else:
@@ -243,7 +248,7 @@ class SolarixParser(Parser):
                 else:
                     owners[1] = upi # Ditto two previous - note this writes over the second position in the list
         d_directory = m_directory.parent
-        sample_name = d_directory[:-2]
+        sample_name = d_directory.parts[-1][:-2]
         if code:
             owners, users, project_db_id = self.__get_owners_and_users_from_project_code(code,
                                                                                          owners,
@@ -304,7 +309,7 @@ class SolarixParser(Parser):
                     project_db_url = f'https://not-currently-implemented/{processed_dict["project_db_id"]}'
                     project_title, project_description, project_creation_date = \
                         self.project_db_factory.get_name_and_description_by_project_id(processed_dict['project_db_id'])
-                    project_creation_date = datetime.datetime.strptime(project_creation_date, '%Y-%m%dT%H:%M:%SZ')
+                    project_creation_date = datetime.datetime.strptime(project_creation_date, '%Y-%m-%dT%H:%M:%SZ')
                     project_creation_date = self.utc.localize(project_creation_date)
                     project_creation_date = project_creation_date.astimezone(self.local_tz)
                 else:
@@ -314,8 +319,10 @@ class SolarixParser(Parser):
                     project_creation_date = datetime.datetime(2000, 1, 1)
                     project_creation_date = self.local_tz.localize(project_creation_date)
                 project_raid = None
+                project_creation_date = project_creation_date.strftime('%Y-%m-%d %H:%M:%S')
                 if DEVELOPMENT:
                     if project_db_url in self.proj_raid_list.keys():
+                        print('Not Minting')
                         project_raid = self.proj_raid_list[project_db_url]
                 if not project_raid:
                     response = self.raid_factory.mint_project_raid(project_title,
@@ -330,7 +337,9 @@ class SolarixParser(Parser):
                 if 'dataset_ids' not in processed_dict.keys():
                     processed_dict['dataset_ids'] = {m_dir: processed_dict['sample_name']}
                 self.m_dicts[top_dir] = processed_dict
-        writeJSON(self.proj_raid_list, self.proj_raid_list_file)
+                if self.proj_raid_list:
+                    print(self.proj_raid_list_file)
+                    writeJSON(self.proj_raid_list, self.proj_raid_list_file)
 
     def create_experiment_dicts(self):
         experiments = {}
@@ -342,7 +351,11 @@ class SolarixParser(Parser):
             experiment_raid = None
             experiment_date = processed_dict['date']
             if not experiment_date:
-                experiment_date = datetime.datetime.now()
+                experiment_date = datetime.datetime.utcnow()
+            else:
+                experiment_date = self.local_tz.localize(experiment_date)
+            experiment_date = experiment_date.astimezone(self.local_tz)
+            experiment_date = experiment_date.strftime('%Y-%m-%d %H:%M:%S')
             if DEVELOPMENT:
                 if experiment_title in self.expt_raid_list.keys():
                     experiment_raid = self.expt_raid_list[experiment_title]
@@ -357,11 +370,11 @@ class SolarixParser(Parser):
             experiments[experiment_raid] = {
                 'internal_id': experiment_raid,
                 'title': experiment_title,
-                'owners': processed_dict[owners],
-                'users': processed_dict[users],
-                'project_id': processed_dict[project_raid]}
-        writeJSON(self.expt_raid_list, self.expt_raid_list_file)
-        return  experiments
+                'owners': processed_dict['owners'],
+                'users': processed_dict['users'],
+                'project_id': processed_dict['project_raid']}
+            writeJSON(self.expt_raid_list, self.expt_raid_list_file)
+        return experiments
 
     def create_dataset_dicts(self):
         datasets = {}
@@ -372,7 +385,11 @@ class SolarixParser(Parser):
             dataset_date = processed_dict['date']
             dataset_url = 'https://mytardis.nectar.auckland.ac.nz/dataset'
             if not dataset_date:
-                dataset_date = datetime.datetime.now()
+                dataset_date = datetime.datetime.utcnow()
+            else:
+                dataset_date = self.local_tz.localize(dataset_date)
+            dataset_date = dataset_date.astimezone(self.local_tz)
+            dataset_date = dataset_date.strftime('%Y-%m-%d %H:%M:%S')
             dataset_raid = None
             if DEVELOPMENT:
                 if dataset_description in self.dataset_raid_list.keys():
@@ -386,11 +403,12 @@ class SolarixParser(Parser):
                     self.dataset_raid_list[dataset_description] = dataset_raid
             self.m_dicts[key]['dataset_id'] = dataset_raid
             datasets[dataset_raid] = {
+                'dataset_id': dataset_raid,
                 'internal_id': internal_id,
                 'description': dataset_description,
                 'created_time': dataset_date}
             datasets[dataset_raid].update(processed_dict['meta'])
-        writeJSON(self.dataset_raid_list, self.dataset_raid_list_file)
+            writeJSON(self.dataset_raid_list, self.dataset_raid_list_file)
         return datasets
 
     def create_datafile_dicts(self):

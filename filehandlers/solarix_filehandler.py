@@ -11,7 +11,7 @@ __author__ = 'Chris Seal <c.seal@auckland.ac.nz>'
 from . import S3FileHandler
 import boto3
 import os
-from ..helper import zip_directory
+from helper import zip_directory
 import re
 import logging
 

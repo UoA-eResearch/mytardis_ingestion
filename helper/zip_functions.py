@@ -25,6 +25,15 @@ def get_all_file_paths(directory):
 def zip_directory(root_dir,
                   zip_file_name):
     file_paths = get_all_file_paths(root_dir)
+    print(root_dir)
+    cwd = os.getcwd()
+    os.chdir(root_dir)
+    print(file_paths)
     with ZipFile(zip_file_name, 'w', compression=zipfile.ZIP_DEFLATED) as zip_file:
         for file_name in file_paths:
+            if str(file_name) == str(zip_file_name):
+                print('match')
+                continue
+            print(os.getcwd())
             zip_file.write(file_name)
+    os.chdir(cwd)

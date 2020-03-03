@@ -9,6 +9,7 @@ from pathlib import Path
 from datetime import datetime as dt
 import dateutil.relativedelta as ddelta
 import re
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -280,7 +281,7 @@ def most_probable_date(test_string):
         for dateformat in dateformats:
             frmt = dateformat.replace('-', delim)
             try:
-                dir_date = datetime.strptime(part, frmt)
+                dir_date = datetime.datetime.strptime(test_string, frmt)
             except ValueError:
                 continue
             else:
