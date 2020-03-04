@@ -20,6 +20,7 @@ from helper import readJSON, build_checksum_digest, calculate_etag
 from decouple import Config, RepositoryEnv
 from pathlib import Path
 import shutil
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +42,8 @@ class S3FileHandler(FileHandler):
                                    default=None))
         self.bucket = local_config('FILEHANDLER_S3_BUCKET')
         endpoint_url = local_config('FILEHANDLER_S3_ENDPOINT_URL')
-        self.threshold = local_config('FILEHANDLER_S3_THRESHOLD')
-        self.blocksize = local_config('FILEHANDLER_BLOCKSIZE')
+        self.threshold = local_config('FILEHANDLER_S3_THRESHOLD', cast=int)
+        self.blocksize = local_config('FILEHANDLER_BLOCKSIZE', cast=int)
         self.cwd = os.getcwd()
         self.s3_client = boto3.client('s3',
                                       endpoint_url = endpoint_url)
@@ -130,7 +131,7 @@ class S3FileHandler(FileHandler):
                   rel_file_path):
         s3_path = self.s3_root_dir / rel_file_path
         objs = []
-        for obj in self.__get_matching_s3_objects(s3_path):
+        for obj in self.__get_matching_s3_objects(s3_path.as_posix()):
             objs.append(obj)
         if len(objs) > 1:
             error_msg = f'Multiple files with the same name and file path found in object store'
@@ -160,7 +161,7 @@ class S3FileHandler(FileHandler):
     def __check_checksum_on_obj(self,
                                 obj,
                                 checksum):
-        etag = self.__get_etag(obj)
+        etag = self.__get_eTag(obj)
         if etag == checksum:
             return True
         else:
@@ -228,12 +229,13 @@ class S3FileHandler(FileHandler):
         checksum or None: a string containing the etag checksum or None if its not in the
             dictionary.
         '''
-        if rel_path in self.checksums.keys():
-            if 'etag' in self.checksums[rel_path].keys():
-                return checksum[rel_path]['etag']
+        if rel_path.as_posix() in self.checksums.keys():
+            if 'etag' in self.checksums[rel_path.as_posix()].keys():
+                return self.checksums[rel_path.as_posix()]['etag']
             else:
-                etag = calculate_etag(rel_path)
-                self.checksums[relpath]['etag'] = etag
+                etag = calculate_etag(rel_path,
+                                      self.blocksize)
+                self.checksums[relpath.as_posix()]['etag'] = etag
                 return etag
         else:
             self.checksums = build_checksum_digest(self.checksum_digest,
@@ -241,7 +243,7 @@ class S3FileHandler(FileHandler):
                                                    rel_path,
                                                    s3 = True,
                                                    s3_blocksize = self.blocksize)
-            return self.checksums[rel_path]['etag']
+            return self.checksums[rel_path.as_posix()]['etag']
 
     def upload_file(self,
                     file_path):

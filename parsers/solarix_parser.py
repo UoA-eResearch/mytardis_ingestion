@@ -59,6 +59,7 @@ class SolarixParser(Parser):
         self.proj_raid_list = {}
         self.expt_raid_list = {}
         self.dataset_raid_list = {}
+        self.projects_from_db = {}
         if os.path.isfile(self.proj_raid_list_file):
             self.proj_raid_list = readJSON(self.proj_raid_list_file)
         self.expt_raid_list_file = global_config('DEV_EXPT_RAID_FILE', default=None)
@@ -250,9 +251,13 @@ class SolarixParser(Parser):
         d_directory = m_directory.parent
         sample_name = d_directory.parts[-1][:-2]
         if code:
-            owners, users, project_db_id = self.__get_owners_and_users_from_project_code(code,
+            if code in self.projects_from_db.keys():
+                owners, users, project_db_id = self.projects_from_db[code]
+            else:
+                owners, users, project_db_id = self.__get_owners_and_users_from_project_code(code,
                                                                                          owners,
                                                                                          users)
+                self.projects_from_db[code] = (owners, users, project_db_id)
         return (date, project_db_id, owners, users, d_directory, sample_name)
 
     def __imaging_process(self,

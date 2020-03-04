@@ -132,6 +132,7 @@ def dict_to_json(dictionary):
 
 def calculate_etag(file_path,
                    blocksize):
+    logger.debug(blocksize)
     md5s = []
     with open(file_path, 'rb') as f:
         while True:
@@ -244,17 +245,23 @@ def build_checksum_digest(checksum_digest,
     True: if checksums calculated and appended successfully
     False: otherwise
     """
+    logger.debug('Building Checksum Digest\n============\n')
     abs_file_path = root_dir / file_path
+    logger.debug(abs_file_path)
     checksum_dict = {}
     if not os.path.isfile(checksum_digest):
         checksum_dict = {}
     else:
         checksum_dict = readJSON(checksum_digest)
-    checksum_dict[file_path]['md5sum'] = calculate_md5sum(abs_file_path)
+    logger.debug(checksum_dict)
+    if not file_path in checksum_dict.keys():
+        checksum_dict[file_path.as_posix()] = {}
+    checksum_dict[file_path.as_posix()]['md5sum'] = calculate_md5sum(abs_file_path)
     if s3:
-        checksum_dict[file_path]['etag'] = calculated_etag(abs_file_path,
-                                                           s3_blocksize)
+        checksum_dict[file_path.as_posix()]['etag'] = calculate_etag(abs_file_path,
+                                                                     s3_blocksize)
     writeJSON(checksum_dict, checksum_digest)
+    logger.debug(checksum_dict)
     return checksum_dict
 
 def most_probable_date(test_string):

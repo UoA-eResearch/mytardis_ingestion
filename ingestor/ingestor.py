@@ -322,7 +322,7 @@ object being created
             response = self.__get_request(action,
                                           params = query_params)
         except Exception as error:
-            logger.error(error.message)
+            logger.error(error)
             raise error
         else:
             response_dict = json.loads(response.text)
@@ -353,6 +353,7 @@ object being created
         URI of the dataset if a single instance of the id is found in the database
         '''
         query_params = {u'dataset_id': dataset_id}
+        logger.debug(query_params)
         try:
             response = self.__get_uri('dataset', query_params)
         except Exception as error:
@@ -415,7 +416,7 @@ object being created
         False if the instrument is not present or if it cannot be uniquely identified
         URI of the instrument if it can be uniquely identified
         '''
-        query_params = {u'instrument_id': name}
+        query_params = {u'instrument_id': instrument_id}
         try:
             response = self.__get_request('instrument',
                                           query_params)
@@ -433,7 +434,7 @@ object being created
                 raise Exception(error_msg)
             else:
                 obj = response_dict['objects'][0]
-                logger.debug(f'{action}: {obj} found in the database.')
+                logger.debug(f'Instrument: {obj} found in the database.')
                 facility_uri = None
                 instrument_uri = obj['resource_uri']
                 if 'facility' in obj.keys():
@@ -461,6 +462,7 @@ object being created
             response = self.__get_uri('schema', query_params)
         except Exception as error:
             raise
+        print(response)
         return response
 
     def __get_user_uri(self, username):
@@ -482,7 +484,7 @@ object being created
             response = self.__get_request('user',
                                            params=query_params)
         except Exception as error:
-            logger.error(error.message)
+            logger.error(error)
             raise error
         else:
             resp_dict = json.loads(response.text)
@@ -490,8 +492,8 @@ object being created
                 logger.info(f'UPI: {username} is not in the user database.')
                 return False
             elif len(resp_dict['objects']) > 1:
-                logger.error(f'Multiple instances of UPI: {upi} found in user database. Please verify and clean up.')
-                raise Exception(f'Multiple instances of UPI: {upi} found in user database. Please verify and clean up.')
+                logger.error(f'Multiple instances of UPI: {username} found in user database. Please verify and clean up.')
+                raise Exception(f'Multiple instances of UPI: {username} found in user database. Please verify and clean up.')
             else:
                 obj = resp_dict['objects'][0]
                 logger.debug(obj)
@@ -499,17 +501,15 @@ object being created
 
     def __get_user_profile(self,
                            user_id):
-        '''
-
-        '''
         query_params = {u'user': user_id}
         try:
-            response = self._do_get_request('userprofile',
+            response = self.__get_request('userprofile',
                                             query_params)
             response.raise_for_status()
         except Exception as error:
-            logger.error(error.message)
+            logger.error(error)
             raise error
+        logger.debug(response.text)
         resp_dict = json.loads(response.text)
         if resp_dict['objects'] == []:
             return False
@@ -541,41 +541,44 @@ object being created
             return (False, uri)
         else:
             try:
-                print(upi)
                 person = get_user_from_upi(self.ldap_dict,
                                            upi)
-                print(person)
             except Exception as error:
                 raise
             if not person:
                 return (False, None)
             person_json = dict_to_json(person)
-            print(person_json)
+            logger.debug(person_json)
             try:
                 response = self.__post_request('user',
                                                person_json)
-                print(response.text)
+                #logger.debug(response.json())
                 response.raise_for_status()
             except Exception as err:
-                logger.error(f'Error occurred when creating user {username}. Error: {err}')
+                logger.error(f'Error occurred when creating user {upi}. Error: {err}')
                 return (False, None)
-            response = json.loads(response.text)
-            print(response)
-            uri = response['resource_uri']
+            uri = self.__get_user_uri(upi)
+            logger.debug(uri)
             user_id = self.__resource_uri_to_id(uri)
+            logger.debug(user_id)
             user_profile_uri = self.__get_user_profile(user_id)
+            logger.debug(user_profile_uri)
             user_profile = {'resource_uri': user_profile_uri,
                             'user': uri}
-            mytardis = {'username': username,
+            mytardis = {'username': upi,
                         'user_id' : user_id,
                         'userProfile': user_profile}
+            logger.debug(mytardis)
+            logger.debug('asking for user authentication\n===============\n')
             mytardis_json = dict_to_json(mytardis)
+            logger.debug(mytardis_json)
             try:
                 response = self.__post_request('userauthentication',
                                                mytardis_json)
                 response.raise_for_status()
+                logger.debug(response.text)
             except Exception as error:
-                logger.error(error.message)
+                logger.error(error)
                 return (False, None)
         return (True, uri)
 
@@ -701,7 +704,7 @@ object being created
             entity_id = enitity_object
         else:
             raise TypeError("'entity_object' must be a URL string or int ID")
-        acl_ownership_type = self._get_ownership_int(acl_ownership_type)
+        acl_ownership_type = self.__get_ownership_int(acl_ownership_type)
         data = {
             u'pluginId': plugin_id,
             u'entityId': str(entity_id),
@@ -715,6 +718,7 @@ object being created
             u'effectiveDate': None,
             u'expiryDate': None
         }
+        logger.debug(data)
         response = self.__post_request('objectacl',
                                           dict_to_json(data))
         return response
@@ -742,6 +746,8 @@ object being created
         '''
         # TODO: When ACLs are devolved down to the dataset level we will need to push info about access with dataset dictionaries
         # Potentially this could default to the same as for the parent experiment.
+        logger.debug('Splitting Datafile Dictionaries\n============\n')
+        logger.debug(datafile_dict)
         from datetime import datetime
         if not schema_key in self.datafile_schema.keys():
             schema_key = 'DEFAULT'
@@ -764,21 +770,21 @@ object being created
             else:
                 mytardis['dataset'] = uri
         filename = Path(datafile_dict.pop('file_name'))
-        mytardis['filename'] = filename
+        mytardis['filename'] = filename.as_posix()
         remote_path = Path(datafile_dict.pop('remote_path'))
         local_path = Path(datafile_dict.pop('local_path'))
-        if (local_path / filename) in self.checksum_digest.keys():
-            mytardis['md5sum'] = self.checksums[local_path / filename]['md5sum']
+        if (local_path / filename).as_posix() in self.checksums.keys():
+            mytardis['md5sum'] = self.checksums[(local_path / filename).as_posix()]['md5sum']
         else:
             mytardis['md5sum'] = calculate_md5sum(local_path / filename)
-            self.checksums[local_path / filename] = {}
-            self.checksums[local_path / filename]['md5sum'] = mytardis['md5sum']
+            self.checksums[(local_path / filename).as_posix()] = {}
+            self.checksums[(local_path / filename).as_posix()]['md5sum'] = mytardis['md5sum']
         mytardis['directory'] = remote_path.as_posix()
         mytardis['mimetype'] = datafile_dict.pop('mimetype')
-        mytardis['size'] = datafile_dict.pop('file_size')
-        for key in datafile_dict:
+        mytardis['size'] = datafile_dict.pop('size')
+        for key in datafile_dict.keys():
             params[key] = datafile_dict[key]
-        full_storage_path = self.remote_root_dir / remote_path / filename
+        full_storage_path = self.remote_root / remote_path / filename
         store_loc = {u'uri': full_storage_path.as_posix(),
                      u'location': self.storage_box,
                      u'protocol': u'file'}
@@ -790,7 +796,8 @@ object being created
         if parameter_list != []:
             paramset['parameters'] = parameter_list
             mytardis['parameter_sets'] = paramset
-        return mytardis 
+        logger.debug(mytardis)
+        return mytardis
 
     def __split_dataset_dictionaries(self,
                                      dataset_dict,
@@ -817,6 +824,8 @@ object being created
         mytardis: A dictionary containing the details necessary to create a dataset in myTardis
         paramset: A dictionary containing metadata to be attached to the dataset
         '''
+        logger.debug('Splitting Dataset Dictionaries\n===========\n')
+        logger.debug(dataset_dict)
         from datetime import datetime
         if not schema_key in self.dataset_schema.keys():
             schema_key = 'DEFAULT'
@@ -824,7 +833,7 @@ object being created
         params = {}
         paramset = {}
         if 'created_time' in dataset_dict.keys():
-            mytardis['created_time'] = dataset_dict[key]
+            mytardis['created_time'] = dataset_dict.pop('created_time')
         else:
             mytardis['created_time'] = datetime.utcnow()
         try:
@@ -847,11 +856,15 @@ object being created
         instrument_id = dataset_dict.pop('instrument_id')
         instrument_uri, facility_uri = self.__get_instrument_uri(instrument_id)
         mytardis['instrument'] = instrument_uri
+        logger.debug(mytardis)
         parameter_list = []
-        for key in params.keys():
+        for key in dataset_dict.keys():
+            logger.debug(key)
             parameter_list.append({u'name': key,
-                                   u'value': params[key]})
+                                   u'value': dataset_dict[key]})
+            logger.debug(parameter_list)
         paramset['parameters'] = parameter_list
+        logger.debug(paramset)
         return (mytardis, paramset)
 
     def __split_experiment_dictionaries(self,
@@ -913,6 +926,7 @@ object being created
                 mytardis[key] = defaults[key]
         mytardis['title'] = expt_dict.pop('title')
         mytardis['internal_id'] = expt_dict.pop('internal_id')
+        mytardis['project_id'] = expt_dict.pop('project_id')
         for key in expt_dict.keys():
             if key == 'users':
                 users = expt_dict[key]
@@ -972,7 +986,7 @@ object being created
         try:
             uri = self.__get_experiment_uri(expt_dict['internal_id'])
         except Exception as error:
-            logger.error(f'Encountered error: {error.message}, when looking for experiment')
+            logger.error(f'Encountered error: {error}, when looking for experiment')
             return (False, None)
         if uri:
             return (False, uri)
@@ -1040,8 +1054,11 @@ object being created
                         logger.error(f'Error: {error} occured when searching for user {user}')
                     else:
                         try:
+                            logger.debug(uri)
+                            logger.debug(user_uri)
                             response = self.share_experiment_with_user(uri,
                                                                        user_uri)
+                            logger.debug(response)
                             response.raise_for_status()
                         except Exception as error:
                             logger.error(f'Error: {error} occured when allocating user {user} access to experiment: {mytardis["title"]}')
@@ -1089,6 +1106,8 @@ object being created
         False and the URI if the dataset already exists in the database as determined from dataset_id
         False and None if creation fails.
         '''
+        logger.debug('Creating Dataset\n===========================\n')
+        logger.debug(dataset_dict)
         from datetime import datetime
         required_keys = ['internal_id',
                          'description',
@@ -1123,6 +1142,9 @@ object being created
                 try:
                     mytardis, paramset = self.__split_dataset_dictionaries(dataset_dict,
                                                                            schema_key)
+                    logger.debug('Back from split\n=====================\m')
+                    logger.debug(mytardis)
+                    logger.debug(paramset)
                 except Exception as error:
                     logger.error(f'Encountered error: {error} when building dataset dictionaries')
                     return (False, None)
@@ -1198,12 +1220,15 @@ object being created
                          'size']
         check = check_dictionary(datafile_dict,
                                  required_keys)
+        logger.debug('Making Datafile\n=================\n')
         if not check[0]:
             logger.error(f'The datafile dictionary is incomplete. Missing keys: {", ".join(check[1])}')
             return (False, None)
         try:
             mytardis = self.__split_datafile_dictionaries(datafile_dict,
                                                           schema_key)
+            logger.debug('Back from splitting files\n===============\n')
+            logger.debug(mytardis)
         except Exception as error:
             logger.error(f'Encountered error: {error} when building datafile dictionaries')
             return (False, None)
