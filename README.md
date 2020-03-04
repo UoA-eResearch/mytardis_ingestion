@@ -4,6 +4,8 @@ Ingestion scripts to automate creation and data incorporation for UoA iteration 
 # uploader.py
 Uploader is the main ingestion script that interacts with myTardis.
 
+**NOTE: This is old and out of date - new documentation is indevelopment**
+
 ## MtUploader class:
 The MtUploader class provides a means of accessing myTardis via an api key that each instance of the class is initiated with. The class has the following functions:
 ### Private functions:
@@ -35,36 +37,91 @@ The MtUploader class provides a means of accessing myTardis via an api key that 
 * __delete_epxt_by_id(self, idnum)__ -
 * __create_datafile(self, datafile_json)__ -
 
-## JSON files:
+**Updated Text**
 
-### Config:
+# Config for ingestion
 
-The config file is a JSON containing the foloowing fields:
+Two sets of environment files are used by the ingestor. 
 
-    "username": UoA UPI,
-    "server": myTardis server IP aaddress,
-    "api_key": API key,
-    "root_dir": The top level directory of the staging space
-        
-__Note:__ API keys are user specific and defined through the myTardis admin interface. For most purposes, these will be kept solely for the harvester to interact with myTardis.
+*Global_env* is a list of global settings that are used across multiple classes and include:
 
-### Experiment JSON:
+* PROXY_HTTP: http and proxy url where needed
+* PROXY_HTTPS: https proxy url where needed
+* LDAP_URL: URL for the LDAP service
+* LDAP_USER_ATTR_MAP: dictionary linking different user attributes to a common framework for future compatibility
+* LDAP_ADMIN_USER: the user name for the admin user in LDAP
+* LDAP_ADMIN_PASSWORD: the admin user's password for LDAP
+* LDAP_USER_BASE: String defining the LDAP structure for search
+* PROJECT_DB: TODO - this is not yet defined
+* RAID_API: TODO - this is not yet defined
 
-The form of the experiment JSON is, like that of the dataset and datafile, dependant on the schema that is being implemented. There are, however, 3 fields that must be present, _schema\_namespace_, _title_, and _handle_:
+*Local_env* contains specific configuration for the facility in question and includes:
 
-    "schema_namespace": URL to schema used in creating the experiment,
-    Internal ID (can be anything as it is not used): {
-        	"title": A string naming the experiment
-	    	"handle": A unique identifier, can be a RaID or similar, or an internal standard
-        	}
-        
-Optional keys include:
+* HARVESTER_FILEHANDLER_MODULE: the filehandler module name to load for the specific filehandler used in this instance
+* HARVESTER_FILEHANDLER_CLASS: the class name of the specific filehandler class to be used in this instance
+* HARVESTER_PARSER_MODULE: the parser module name to load for this instance
+* HARVESTER_PARSER_CLASS: the class name of the specific parser class to be used in this instance.
+* MYTARDIS_URL: URL to the specific instance of MyTardis to ingest into
+* MYTARDIS_INGEST_USER: the service account the handles the ingestion
+* MYTARDIS_INGEST_API_KEY: the api key associated with this service account
+* MYTARDIS_FACILITY_MANAGER: a default user to associate the experiment with - a backstop to allow facility managers to assign experiments to users
+* MYTARDIS_VERIFY_CERT: a boolean that enforces SSL certificate verification when ingesting
+* MYTARDIS_EXPERIMENT_SCHEMA: the experiment schema to use with this ingestion - Note the schema configs should contain a dictionary with at least one 'DEFAULT' key linking to the default schema for this object. Additional keys are available to allow for multiple schema in a given object. For example, one for a raw data dataset and another for a processed data dataset.
+* MYTARDIS_DATASET_SCHEMA: the dataset schema to use with this ingestion
+* MYTARDIS_DATAFILE_SCHEMA: the datafile schema to use with this ingestion
+* MYTARDIS_STORAGE_BOX: the name of the storage box in MyTardis in which the datafiles are being stored
+* FILEHANDLER_S3_BUCKET: the S3 bucket to create objects in when moving from 'local' storage
+* FILEHANDLER_REMOTE_ROOT: the root directory which the relative file paths relate to in the object store
+* FILEHANDLER_STAGING_ROOT: the root directory on the staging server which the relative file paths relate to
+* FILEHANDLER_S3_ENDPOINT_URL: the endpoint URL
+* FILEHANDLER_S3_THRESHOLD: the file size above which multipart uploading will be used
+* FILEHANDLER_BLOCKSIZE: the chunk size for multipart uploading.
 
-    Internal ID: {
-        	"decription": Text that describes the experiment,
-        	Metadata_parameter_key: Value to store
-		}
-       
-While ideally the metadata parameters should be defined in the _schema\_namesapce_, this is not strictly necessary. Any additional parameters used will be added to the shcema.
+# Dictionary formats for ingestion into MyTardis using the MyTardisUploader class
 
-Multiple experiments using the same schema can be defined in the JSON by specifying multiple Internal IDs. It should also be noted that the _"description"_ and _Metadata key_ key/value pairs need to be included within the individual Iternal IDs, at the same level as the _'title"_ and _"handle"_ fields.
+## Experiment
+
+The bare minimum required to create an experiment as at 14/02/2020 is as follows:
+
+| Key | Value|
+|---|---|
+|title: | The name of the experiment as displayed in MyTardis|
+|description: | A short description of the sample|
+|internal_id: | A unique identifier to the experiment; preferably a RaID or similar PID|
+|project_id: | A unique identifier to the project that the experiment is part of; preferably a RaID or similar PID|
+|institution_name: | Included for completeness; defaults to University of Auckland|
+|created_time: | A datetime string included for completeness; defaults to Now at the time of ingestion|
+|owners: | A Python list of owners (UPIs) who have access to the experiment, defaults to Facility Manager (defined in config)|
+|users: | A Python list of users (UPIs) who have access to the experiment, defaults to None|
+|groups: | A Python list of groups that have access to the experiment, defaults to None|
+
+Any additional keys are added to a parameter set that is built with the experiment.
+
+## Dataset
+
+The bare minimum required to create an dataset as at 14/02/2020 is as follows:
+
+|Key |Value |
+|---|---|
+|description: | The name of the dataset|
+|dataset_id: | A unique identifier for the dataset; preferably a RaID or similar PID|
+|internal_id: | The unique identifier to an experiment that exists. If the internal_id cannot be found then creation will stop| 
+
+If *instrument* and/or *facility* keys are found, these will be used to link the dataset to the appropriate instrument.
+
+Any additional keys are added to a parameter set that is built with the dataset.
+
+## Datafile
+
+The bare minimum required to create an datafile as at 14/02/2020 is as follows:
+
+|Key |Value |
+|---|---|
+|file_name: | The name of the data file being uploaded|
+|dataset_id: | The unique identifier to a dataset that exists. If the dataset_id cannot be found then creation will stop|
+|remote_path: | The path to the directory that the file will be stored in once transfered to the data centre. *Note:* this is the final storage location|
+|local_path: | The path to the local directory that the file was taken from. Used to uniquely identify file so that the checksum_digest can be used|
+|size: | The file size in bytes|
+|mimetype: | The MIME type of the file|
+
+Any additional keys are added to a parameter set that is built with the datafile
