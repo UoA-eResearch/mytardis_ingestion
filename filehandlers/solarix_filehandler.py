@@ -31,6 +31,9 @@ class SolarixFileHandler(S3FileHandler):
                    d_dir):
         for root, directories, files in os.walk(d_dir):
             for filename in files:
-                abs_filepath = Path(os.path.join(root, filename))
-                response = self.upload_file(abs_filepath)
+                if filename[-4:] == '.zip':
+                    continue
+                else:
+                    abs_filepath = Path(os.path.join(root, filename))
+                    response = self.upload_file(abs_filepath)
         return response
