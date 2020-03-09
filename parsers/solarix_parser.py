@@ -286,9 +286,9 @@ class SolarixParser(Parser):
                     'owners': image_tuple[2],
                     'users': image_tuple[3],
                     'd_directory': image_tuple[6],
-                    'sample_name' = image_tuple[5],
-                    'top_dir' = image_tuple[6],
-                    'dataset_name' = image_tuple[5],
+                    'sample_name':  image_tuple[5],
+                    'top_dir': image_tuple[6],
+                    'dataset_name': image_tuple[5],
                     'zip_name': zip_name,
                     'meta': meta}
         return ret_dict
