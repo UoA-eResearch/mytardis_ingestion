@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 def get_user_from_upi(ldap_dict,
                       upi):
         try:
-                details = __do_ldap_search(ldap_dict,
+                details = do_ldap_search(ldap_dict,
                                            'upi',
                                            upi)
         except Exception as error:
@@ -17,16 +17,16 @@ def get_user_from_upi(ldap_dict,
 def get_user_from_email(ldap_dict,
                        email):
         try:
-                details = __do_ldap_search(ldap_dict,
-                                           'email',
-                                           email)
+                details = do_ldap_search(ldap_dict,
+                                         'email',
+                                         email)
         except Exception as error:
                 raise
         return details
 
-def __do_ldap_search(ldap_dict,
-                     search_action,
-                     value):
+def do_ldap_search(ldap_dict,
+                   search_action,
+                   value):
         if not search_action in ldap_dict['user_attr_map'].keys():
                 error_message = f'{search_action} is not a valid key in the LDAP user attribute map'
                 logger.error(error_message)
