@@ -24,8 +24,8 @@ class SolarixFileHandler(S3FileHandler):
                  local_config_file_path,
                  checksum_digest = None):
         super().__init__(global_config_file_path,
-                                                 local_config_file_path,
-                                                 checksum_digest)
+                         local_config_file_path,
+                         checksum_digest)
         
     def upload_dir(self,
                    d_dir):
@@ -35,5 +35,6 @@ class SolarixFileHandler(S3FileHandler):
                     continue
                 else:
                     abs_filepath = Path(os.path.join(root, filename))
-                    response = self.upload_file(abs_filepath)
+                    response = abs_filepath.as_posix() #self.upload_file(abs_filepath)
+                    print(response)
         return response
