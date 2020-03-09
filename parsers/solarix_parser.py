@@ -278,6 +278,8 @@ class SolarixParser(Parser):
         image_tuple = self.__get_basic_info(m_directory, maldi_image=True)
         if not image_tuple:
             return None
+        method_file = m_directory / 'apexAcquisition.method'
+        meta = self.__extract_metadata(method_file)
         zip_name = image_tuple[5] + '.zip'
         zip_directory(image_tuple[6],
                       zip_name)
