@@ -36,6 +36,5 @@ class SolarixFileHandler(S3FileHandler):
                     continue
                 else:
                     abs_filepath = Path(os.path.join(root, filename))
-                    response = abs_filepath.as_posix() #self.upload_file(abs_filepath)
-                    print(response)
+                    response = self.upload_file(abs_filepath)
         return response
