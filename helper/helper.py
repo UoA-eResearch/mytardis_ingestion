@@ -57,6 +57,7 @@ def writeJSON(json_dict, json_file):
     True if the file is created successfully
     '''
     import json
+    logger.debug(json_dict)
     try:
         with open(json_file, 'w') as out_file:
             json.dump(json_dict, out_file)
@@ -173,11 +174,17 @@ def calculate_md5sum(file_path,
     if os.path.getsize(file_path) > subprocess_size_threshold and \
        os.path.exists(md5sum_executable) and \
        os.access(md5sum_executable, os.X_OK):
-        return md5_subprocess(file_path,
-                              md5sum_executable=md5sum_executable)
+        md5sum = md5_subprocess(file_path,
+                                md5sum_executable=md5sum_executable)
     else:
-        return md5_python(file_path,
-                          blocksize=blocksize)
+        md5sum = md5_python(file_path,
+                            blocksize=blocksize)
+    try:
+        md5sum = md5sum.decode()
+    except(UnicodeDecodeError, AttributeError):
+        pass
+    return md5sum
+    
     
 def md5_python(file_path,
                blocksize=None):

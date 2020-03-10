@@ -1089,7 +1089,7 @@ object being created
         try:
             response = self.__rest_api_request(method,
                                                action,
-                                               api_template = url_template)
+                                               api_url_template = url_template)
         except Exception as error:
             logger.error(error)
             raise error
