@@ -6,3 +6,4 @@ from .ldap import *
 from .raid import *
 from .projectdb import *
 from .zip_functions import *
+from .config_helper import *
