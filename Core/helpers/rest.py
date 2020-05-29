@@ -8,6 +8,7 @@ from requests.auth import AuthBase
 import backoff
 import requests
 from urllib.parse import urljoin, urlparse
+from helper import process_config
 
 class MyTardisAuth(AuthBase):
     """
@@ -34,16 +35,21 @@ class MyTardisREST():
     user_agent_url = 'https://github.com/UoA-eResearch/mytardis_ingestion.git'
 
     def __init__(self,
-                 server,
-                 username,
-                 api_key,
-                 proxies,
-                 verify_certificate):
-        self.auth = MyTardisAuth(username,
-                                 api_key)
-        self.proxies = proxies
-        self.verify_certificate = verify_certificate
-        self.api_template = urljoin(server,
+                 local_config):
+        config_keys = ['server',
+                       'ingest_user',
+                       'ingest_api_key',
+                       'verify_certificate',
+                       'proxy_http',
+                       'proxy_https']
+        config_dict = process_config(keys = config_keys,
+                                     local_filepath = local_config)
+        self.auth = MyTardisAuth(config_dict['ingest_user'],
+                                 config_dict['ingest_api_key'])
+        self.proxies = {'http': config_dict['proxy_http'],
+                        'https': config_dict['proxy_https']}
+        self.verify_certificate = config_dict['verify_certificate']
+        self.api_template = urljoin(config_dict['server'],
                                     '/api/v1/%s')
         self.user_agent = '%s/%s (%s)' % (MyTardisUploader.user_agent_name,
                                           '2.0',

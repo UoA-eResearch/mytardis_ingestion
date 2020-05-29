@@ -20,11 +20,11 @@ local_keys = {
     'endpoint_url': 'FILEHANDLER_S3_ENDPOINT_URL',
     'threshold': 'FILEHANDLER_S3_THRESHOLD',
     'blocksize': 'FILEHANDLER_BLOCKSIZE',
+    'proxy_http': 'PROXY_HTTP',
+    'proxy_https': 'PROXY_HTTPS',
     }
 
 global_keys = {
-    'proxy_http': 'PROXY_HTTP',
-    'proxy_https': 'PROXY_HTTPS',
     'raid_api_key': 'RAID_API_KEY',
     'raid_url': 'RAID_URL',
     'raid_cert': 'RAID_VERIFY_CERT',
