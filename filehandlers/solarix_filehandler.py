@@ -14,6 +14,7 @@ import os
 from helper import zip_directory
 import re
 import logging
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -24,13 +25,16 @@ class SolarixFileHandler(S3FileHandler):
                  local_config_file_path,
                  checksum_digest = None):
         super().__init__(global_config_file_path,
-                                                 local_config_file_path,
-                                                 checksum_digest)
+                         local_config_file_path,
+                         checksum_digest)
         
     def upload_dir(self,
                    d_dir):
         for root, directories, files in os.walk(d_dir):
             for filename in files:
-                abs_filepath = Path(os.path.join(root, filename))
-                response = self.upload_file(abs_filepath)
+                if filename[-4:] == '.zip':
+                    continue
+                else:
+                    abs_filepath = Path(os.path.join(root, filename))
+                    response = self.upload_file(abs_filepath)
         return response

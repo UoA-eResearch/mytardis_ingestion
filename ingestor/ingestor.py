@@ -327,7 +327,7 @@ object being created
         else:
             response_dict = json.loads(response.text)
             logger.debug(response_dict)
-            if response_dict == [] or response_dict['objects'] == []:
+            if response_dict == {} or response_dict['objects'] == []:
                 return False
             elif len(response_dict['objects']) > 1:
                 logger.error(
@@ -1078,6 +1078,33 @@ object being created
             os.chdir(self.cwd)
             return (True, uri)
 
+    def __compare_datafiles(self,
+                            mytardis_file_uri,
+                            checksum):
+        file_id = self.__resource_uri_to_id(mytardis_file_uri)
+        url_template = urljoin(self.server,
+                               f'api/v1/%s/{file_id}/')
+        method = 'GET'
+        action = 'dataset_file'
+        try:
+            response = self.__rest_api_request(method,
+                                               action,
+                                               api_url_template = url_template)
+        except Exception as error:
+            logger.error(error)
+            raise error
+        else:
+            response_dict = json.loads(response.text)
+            logger.debug(response_dict)
+            if response_dict == {}:
+                return False
+            else:
+                mytardis_checksum = response_dict['md5sum']
+        if checksum == mytardis_checksum:
+            return True
+        else:
+            return False
+
     @backoff.on_exception(backoff.expo,
                           requests.exceptions.RequestException,
                           max_tries=8)
@@ -1178,12 +1205,30 @@ object being created
                 paramset_json = dict_to_json(paramset)
                 try:
                     response = self.__post_request('datasetparameterset',
-                                                      paramset_json)
+                                                   paramset_json)
                     response.raise_for_status()
                 except Exception as error:
                     logger.error(f'Error occurred when attaching metadata to dataset {mytardis["description"]}. Error: {error}')
         return (True, uri)
 
+    def __check_datafiles(self,
+                          filename,
+                          checksum):
+        query_params = {'filename': filename}
+        try:
+            response = self.__get_request('dataset_file',
+                                          params = query_params)
+        except Exception as error:
+            logger.error(error)
+            raise error
+        response_dict = json.loads(response.text)
+        for obj in response_dict['objects']:
+            resource_uri = obj['resource_uri']
+            if self.__compare_datafiles(resource_uri,
+                                        checksum):
+                return (True, resource_uri)
+        return False
+    
     def create_datafile(self,
                         datafile_dict,
                         schema_key='DEFAULT'):
@@ -1232,13 +1277,20 @@ object being created
         except Exception as error:
             logger.error(f'Encountered error: {error} when building datafile dictionaries')
             return (False, None)
-        mytardis_json = dict_to_json(mytardis)
-        try:
-            response = self.__post_request('dataset_file',
-                                              mytardis_json)
-            response.raise_for_status()
-        except Exception as error:
-            logger.error(f'Error: {error} eccountered when creating dataset_file {mytardis["filename"]}')
-            return (False, None)
-        writeJSON(self.checksums, self.checksum_digest)
-        return (True, None)
+        checksum = mytardis['md5sum']
+        file_exists = self.__check_datafiles(mytardis['filename'],
+                                             checksum)
+        if not file_exists:
+            mytardis_json = dict_to_json(mytardis)
+            try:
+                response = self.__post_request('dataset_file',
+                                               mytardis_json)
+                response.raise_for_status()
+            except Exception as error:
+                logger.error(f'Error: {error} eccountered when creating dataset_file {mytardis["filename"]}')
+                return (False, None)
+            writeJSON(self.checksums, self.checksum_digest)
+            return (True, None)
+        else:
+            return file_exists
+                

@@ -70,6 +70,7 @@ class SolarixParser(Parser):
             self.dataset_raid_list = readJSON(self.dataset_raid_list_file)
         # TODO: Rework this self.projects = self.find_data(self.sub_dirs)
         self.m_dicts = {}
+        self.images = []
         self.processed = self.__process_m_dirs(self.m_dirs)
         #self.m_dicts = self.__process_m_dirs(self.m_dirs)
 
@@ -227,7 +228,8 @@ class SolarixParser(Parser):
         return (owners, users, project_db_id)
 
     def __get_basic_info(self,
-                         m_directory):
+                         m_directory,
+                         maldi_image=False):
         date = None
         code = None
         project_db_id = None
@@ -249,7 +251,16 @@ class SolarixParser(Parser):
                 else:
                     owners[1] = upi # Ditto two previous - note this writes over the second position in the list
         d_directory = m_directory.parent
-        sample_name = d_directory.parts[-1][:-2]
+        if maldi_image:
+            top_directory = d_directory.parent
+            sample_name = top_directory.parts[-1]
+            if top_directory in self.images:
+                return None
+            else:
+                self.images.append(top_directory)
+        else:
+            top_directory = d_directory
+            sample_name = d_directory.parts[-1][:-2]
         if code:
             if code in self.projects_from_db.keys():
                 owners, users, project_db_id = self.projects_from_db[code]
@@ -258,17 +269,36 @@ class SolarixParser(Parser):
                                                                                          owners,
                                                                                          users)
                 self.projects_from_db[code] = (owners, users, project_db_id)
-        return (date, project_db_id, owners, users, d_directory, sample_name)
+        return (date, project_db_id, owners, users, d_directory, sample_name, top_directory)
 
     def __imaging_process(self,
                           m_directory):
+        # TODO - Need to discuss appropriate means of dealing with these samples
         # Include a dataset_description dictionary here - check if it exists otherwise use the sample name
-        pass
-    
+        image_tuple = self.__get_basic_info(m_directory, maldi_image=True)
+        if not image_tuple:
+            return None
+        method_file = m_directory / 'apexAcquisition.method'
+        meta = self.__extract_metadata(method_file)
+        zip_name = image_tuple[5] + '.zip'
+        zip_directory(image_tuple[6],
+                      zip_name)
+        ret_dict = {'date': image_tuple[0],
+                    'project_db_id':  image_tuple[1],
+                    'owners': image_tuple[2],
+                    'users': image_tuple[3],
+                    'd_directory': image_tuple[6],
+                    'sample_name':  image_tuple[5],
+                    'top_dir': image_tuple[6],
+                    'dataset_name': image_tuple[5],
+                    'zip_name': zip_name,
+                    'meta': meta}
+        return ret_dict
+        
     def __non_imaging_process(self,
                               m_directory):
         # Look for a date stamp, upi and/or research code
-        date, project_db_id, owners, users, d_directory, sample_name = self.__get_basic_info(m_directory)
+        date, project_db_id, owners, users, d_directory, sample_name, top_directory = self.__get_basic_info(m_directory)
         # project_db_id is kept for future proofing
         # extract the metadata from the apexAcquisition.method file
         method_file = m_directory / 'apexAcquisition.method'
@@ -307,6 +337,8 @@ class SolarixParser(Parser):
                 meta_dict = self.__extract_metadata(method_file)
             if meta_dict['Ion Source'] == 'MALDI Imaging':
                 processed_dict = self.__imaging_process(m_dir)
+                if not processed_dict:
+                    continue
             else:
                 processed_dict = self.__non_imaging_process(m_dir)
             if processed_dict:
