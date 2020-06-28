@@ -1,0 +1,26 @@
+# project_minion.py
+#
+# The Project specific MyTardisMinion class
+#
+# written by Chris Seal <c.seal@auckland.ac.nz>
+#
+# Last updated: 04 Jun 2020
+#
+
+from minion import MyTardisMinion
+
+class ProjectMinion(MyTardisMinion):
+
+    def def __init__(self,
+                     global_config_filepath,
+                     local_config_filepath):
+        '''
+        Define model_keys for the project model
+        '''
+        super().__init__(global_config_filepath,
+                         local_config_filepath)
+        self.model_keys = (
+
+    
+        
+        

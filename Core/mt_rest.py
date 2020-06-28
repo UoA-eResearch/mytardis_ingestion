@@ -2,13 +2,14 @@
 #
 # Written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated 25 May 2020
+# Last updated 04 Jun 2020
 
 from requests.auth import AuthBase
 import backoff
 import requests
 from urllib.parse import urljoin, urlparse
 from helper import process_config
+
 
 class MyTardisAuth(AuthBase):
     """
@@ -19,16 +20,18 @@ class MyTardisAuth(AuthBase):
     will act as the primary source for uploading to myTardis, authentication
     via a username and api key is used.
     """
+
     def __init__(self, username, api_key):
         self.username = username
         self.api_key = api_key
-        
+
     def __call__(self, r):
         r.headers['Authorization'] = 'ApiKey %s:%s' % (self.username,
                                                        self.api_key)
         return r
 
-class MyTardisREST():
+
+class MyTardisRESTFactory():
     ''' Class to interact with MyTardis by calling the REST API'''
 
     user_agent_name = __name__
@@ -42,8 +45,8 @@ class MyTardisREST():
                        'verify_certificate',
                        'proxy_http',
                        'proxy_https']
-        config_dict = process_config(keys = config_keys,
-                                     local_filepath = local_config)
+        config_dict = process_config(keys=config_keys,
+                                     local_filepath=local_config)
         self.auth = MyTardisAuth(config_dict['ingest_user'],
                                  config_dict['ingest_api_key'])
         self.proxies = {'http': config_dict['proxy_http'],
@@ -54,17 +57,6 @@ class MyTardisREST():
         self.user_agent = '%s/%s (%s)' % (MyTardisUploader.user_agent_name,
                                           '2.0',
                                           MyTardisUploader.user_agent_url)
-
-    def __resource_uri_to_id(self, uri):
-        """
-        Takes resource URI like: http://example.org/api/v1/experiment/998
-        and returns just the id value (998).
-        #
-        :type uri: str
-        :rtype: int"""
-        resource_id = int(urlparse(uri).path.rstrip(
-            os.sep).split(os.sep).pop())
-        return resource_id
 
     def __raise_request_exception(self, response):
         '''Function to add additional information to the base RequestException
@@ -84,7 +76,7 @@ class MyTardisREST():
                            extra_headers=None,
                            api_url_template=None):
         '''Function to handle the REST API calls
-        
+
         Inputs:
         =================================
         method: The REST API method, POST, GET etc.
@@ -93,7 +85,7 @@ class MyTardisREST():
         params: A JSON string of parameters to be passed in the URL
         extra_headers: Extra headers (META) to be passed to the API call
         api_url_template: Over-ride for the default API URL
-        
+
         Returns:
         =================================
         A Python Requests library repsonse object
@@ -147,7 +139,7 @@ class MyTardisREST():
         params: parameters to pass to filter the request return
         extra_headers: any additional information needed in the header (META) for the 
         object being created
-        
+
         Returns:
         =================================
         A Python requests module response object
@@ -172,7 +164,7 @@ class MyTardisREST():
         action: the type of object, (e.g. experiment, dataset) to POST
         data: a JSON string holding the data to generate the object
         extra_headers: any additional information needed in the header (META) for the object being created
-        
+
         Returns:
         =================================
         A Python requests module response object'''

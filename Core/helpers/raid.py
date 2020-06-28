@@ -1,4 +1,11 @@
-# Functions to create RaIDs and to update them as necessary (once it is working)
+# RAiDAuth and RAiDFactory classes
+#
+# Wrapper classes around the Python Requests library
+# to facilitate the creation and updating of RAiDs
+#
+# Written by Chris Seal <c.seal@auckland.ac.nz>
+#
+# Updated 04 Jun 2020
 
 import logging
 import requests
@@ -9,6 +16,7 @@ import backoff
 from .helper import dict_to_json
 
 logger = logging.getLogger(__name__)
+
 
 class RAiDAuth(AuthBase):
 
@@ -21,6 +29,7 @@ class RAiDAuth(AuthBase):
         request.headers['Authorization'] = f'Bearer {self.api_key}'
         print(request.headers)
         return request
+
 
 class RAiDFactory():
 
@@ -52,7 +61,7 @@ class RAiDFactory():
                         params=None,
                         extra_headers=None):
         '''Function to handle the REST API calls
-        
+
         Inputs:
         =================================
         method: The REST API method, POST, GET etc.
@@ -61,7 +70,7 @@ class RAiDFactory():
         params: A JSON string of parameters to be passed in the URL
         extra_headers: Extra headers (META) to be passed to the API call
         api_url_template: Over-ride for the default API URL
-        
+
         Returns:
         =================================
         A Python Requests library repsonse object
@@ -100,45 +109,24 @@ class RAiDFactory():
             logger.error("Request failed : %s : %s", err, url)
             raise err
         except Exception as err:
-            logger.error(f'Error, {err.msg}, occurred when attempting to call api request {url}')
+            logger.error(
+                f'Error, {err.msg}, occurred when attempting to call api request {url}')
             raise err
         return response
-        
-    def mint_project_raid(self,
-                          project_url,
-                          project_name,
-                          project_description,
-                          project_metadata=None,
-                          project_startdate=None):
-        from datetime import datetime
-        raid_dict = {}
-        raid_dict['contentPath'] = project_url
-        if project_startdate:
-            raid_dict['startDate'] = project_startdate
-        raid_dict['meta'] = {'name': project_name,
-                             'description': project_description}
-        if project_metadata:
-            for key in project_metadata.keys():
-                raid_dict['meta'][key] = project_metadata[key]
-        raid_json = dict_to_json(raid_dict)
-        response = self.__rest_api_call('POST',
-                                        'RAiD',
-                                        data=raid_json)
-        return response
 
-    def get_project_raid(self,
-                         raid_handle):        
+    def get_raid(self,
+                 raid_handle):
         url_safe_raid_handle = quote(raid_handle, safe='')
         response = self.__rest_api_call('GET',
                                         f'RAiD/{url_safe_raid_handle}')
         return response
 
-    def __mint_raid(self,
-                    name,
-                    description,
-                    url,
-                    metadata,
-                    startdate):
+    def mint_raid(self,
+                  name,
+                  description,
+                  url,
+                  metadata,
+                  startdate):
         from datetime import datetime
         raid_dict = {}
         raid_dict['contentPath'] = url
@@ -158,53 +146,6 @@ class RAiDFactory():
                                         data=raid_json)
         return response
 
-    def mint_experiment_raid(self,
-                             experiment_name,
-                             experiment_description,
-                             experiment_url='https://mytardis.nectar.auckland.ac.nz/experiment',
-                             experiment_metadata=None,
-                             experiment_startdate=None):
-        try:
-            resp = self.__mint_raid(experiment_name,
-                                    experiment_description,
-                                    experiment_url,
-                                    experiment_metadata,
-                                    experiment_startdate)
-        except Exception as error:
-            raise
-        return resp
-           
-    def mint_dataset_raid(self,
-                          dataset_description,
-                          dataset_url,
-                          dataset_metadata=None,
-                          dataset_startdate=None):
-        try:
-            resp = self.__mint_raid(dataset_description,
-                                    'UoA MyTardis Dataset',
-                                    dataset_url,
-                                    dataset_metadata,
-                                    dataset_startdate)
-        except Exception as error:
-            raise
-        return resp
-
-    def mint_project_raid(self,
-                          project_name,
-                          project_description,
-                          project_url,
-                          project_metadata=None,
-                          project_startdate=None):
-        try:
-            resp = self.__mint_raid(project_name,
-                                    project_description,
-                                    project_url,
-                                    project_metadata,
-                                    project_startdate)
-        except Exception as error:
-            raise
-        return resp
-
     def update_raid(self,
                     url,
                     name,
@@ -219,5 +160,3 @@ class RAiDFactory():
                                         f'RAiD/{url_safe_raid_handle}',
                                         data=raid_json)
         return response
-
-

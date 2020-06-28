@@ -4,7 +4,7 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 29 May 2020
+# Last updated: 04 Jun 2020
 #
 
 from . import constants as CONST
@@ -13,7 +13,7 @@ import subprocess
 
 
 def md5_python(file_path,
-               blocksize=None):
+               blocksize):
     '''
     Calculates the MD5 checksum of a file, returns the hex digest as a
     string. Streams the file in chunks of 'blocksize' to prevent running
@@ -31,9 +31,6 @@ def md5_python(file_path,
     md5sum: The hex encoded MD5 checksum.
     '''
 
-    if not blocksize:
-        blocksize = 128
-
     md5 = hashlib.md5()
     try:
         with open(file_path, 'rb') as f:
@@ -49,7 +46,7 @@ def md5_python(file_path,
 
 
 def md5_subprocess(file_path,
-                   md5sum_executable='/usr/bin/md5sum'):
+                   md5sum_executable):
     '''
     Calculates the MD5 checksum of a file, returns the hex digest as a
     string. Streams the file in chunks of 'blocksize' to prevent running
@@ -79,7 +76,7 @@ def md5_subprocess(file_path,
 
 
 def calculate_md5sum(file_path,
-                     blocksize=None,
+                     blocksize=128,
                      subprocess_size_threshold=10*CONST.MB,
                      md5sum_executable='/usr/bin/md5sum'):
     '''
