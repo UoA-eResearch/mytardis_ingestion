@@ -4,7 +4,7 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 25 Jun 2020
+# Last updated: 01 Jul 2020
 #
 
 from minion import MyTardisMinion
@@ -19,9 +19,9 @@ class DatasetMinion(MyTardisMinion):
 
     def __init__(self,
                  global_config_filepath,
-                 local_config__filepath):
+                 local_config_filepath):
         super().__init__(global_config_filepath,
-                         local_config__filepath)
+                         local_config_filepath)
 
     def get_from_raid(self,
                       dataset_id):

@@ -4,7 +4,7 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 11 Jun 2020
+# Last updated: 02 Jul 2020
 #
 
 from minion import MyTardisMinion
@@ -19,19 +19,19 @@ class ProjectMinion(MyTardisMinion):
 
     def __init__(self,
                  global_config_filepath,
-                 local_config__filepath):
+                 local_config_filepath):
         super().__init__(global_config_filepath,
-                         local_config__filepath)
+                         local_config_filepath)
 
     def get_from_raid(self,
                       raid):
         try:
-            uri, _ = self.get_uri('project',
-                                  'raid',
-                                  raid)
+            uri, obj = self.get_uri('project',
+                                    'raid',
+                                    raid)
         except Exception as error:
             raise error
-        return uri
+        return (uri, obj)
 
     def validate_dictionary(self,
                             input_dict):

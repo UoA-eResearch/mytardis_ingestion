@@ -1,8 +1,10 @@
 '''MyTardis ingestion specific exceptions'''
 
+
 class Error(Exception):
     """Base class for exceptions in this module."""
     pass
+
 
 class SanityCheckError(Error):
     '''Custom exception for when a sanity check has been failed.
@@ -13,6 +15,7 @@ class SanityCheckError(Error):
                  missing_keys):
         self.input_dict = input_dict
         self.missing_keys = missing_keys
+
 
 class UnableToFindUniqueError(Error):
     '''Custom exception for when a search returns a non-unique

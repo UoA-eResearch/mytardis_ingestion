@@ -4,7 +4,7 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 11 Jun 2020
+# Last updated: 02 Jul 2020
 #
 
 from .. import MyTardisRESTFactory
@@ -71,11 +71,11 @@ class MyTardisMinion(MyTardisRESTFactory):
             response = self.get_request(action,
                                         query_params)
         except Exception as error:
-            raise
+            raise error
         else:
             response_dict = json.loads(response.text)
             if response_dict == {} or response_dict['objects'] == []:
-                return None
+                return (None, None)
             elif len(response_dict['objects']) > 1:
                 raise UnableToFindUniqueError(action,
                                               query_params,
@@ -83,4 +83,4 @@ class MyTardisMinion(MyTardisRESTFactory):
             else:
                 obj = response_dict['objects'][0]
                 uri = obj['resource_uri']
-                return uri
+                return (uri, obj)
