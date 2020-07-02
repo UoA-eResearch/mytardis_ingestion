@@ -29,3 +29,14 @@ class UnableToFindUniqueError(Error):
         self.action = action
         self.query_params = query_params
         self.resonse_dict = response_dict
+
+
+class HierarchyError(Error):
+    '''Custom esception for when the parent object of an object
+    in the MyTardis database cannot be found.'''
+
+    def __init__(self,
+                 parent_obj,
+                 child_obj):
+        self.parent_obj = parent_obj
+        self.child_obj = child_obj

@@ -4,7 +4,7 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 02 Jul 2020
+# Last updated: 03 Jul 2020
 #
 
 from abc import ABC, abstractmethod
@@ -21,6 +21,7 @@ from schema_minions import SchemaMinion
 
 from ..helpers import UnableToFindUniqueError
 from ..helpers import SanityCheckError
+from ..helpers import HierarchyError
 
 import os
 import logging
@@ -131,8 +132,22 @@ class MyTardisOverseer():
         except Exception as error:
             logger.error(error)
             raise error
-        # CHECK THAT THE PROJECT EXISTS AND IS VALID
         if valid:
+            try:
+                uri, _ = self.project_minion.get_from_raid(
+                    experiment_dict['project'])
+            except Exception as error:
+                logger.error(error)
+                raise error
+            else:
+                if not uri:
+                    logger.warning(f'Unable to create experiment {experiment_dict["title"]}' +
+                                   f' as the project RAiD {experiment_dict["project"]} ' +
+                                   f'could not be found in the database')
+                    raise HierarchyError(experiment_dict["project"],
+                                         experiment_dict['title'])
+                else:
+                    experiment_dict['project'] = uri
             try:
                 uri, obj = self.experiment_minion.get_from_raid(
                     experiment_dict['raid'])
@@ -172,6 +187,21 @@ class MyTardisOverseer():
             raise error
         if valid:
             try:
+                uri, _ = self.experiment_minion.get_from_raid(
+                    dataset_dict['experiments'])
+            except Exception as error:
+                logger.error(error)
+                raise error
+            else:
+                if not uri:
+                    logger.warning(f'Unable to create dataset {dataset_dict["description"]}' +
+                                   f' as the experiment RAiD {dataset_dict["experiments"]} ' +
+                                   f'could not be found in the database')
+                    raise HierarchyError(dataset_dict["experiments"],
+                                         dataset_dict['description'])
+                else:
+                    dataset_dict['experiments'] = [uri]
+            try:
                 uri, obj = self.dataset_minion.get_from_raid(
                     dataset_dict['dataset_id'])
             except UnableToFindUniqueError as error:
@@ -184,5 +214,9 @@ class MyTardisOverseer():
                 logger.error(error)
                 raise error
             if uri:
-                TODO
+                if dataset_dict['description'] != obj['description']:
+                    logger.warning(f'Dataset names differ between dataset ' +
+                                   f'dictionary: {dataset_dict["description"]}, ' +
+                                   f'and object in MyTardis: {obj["description"]}')
+                    dataset_dict['description'] = obj['description']
         return dataset_dict
