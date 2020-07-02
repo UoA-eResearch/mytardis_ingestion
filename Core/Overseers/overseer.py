@@ -131,6 +131,7 @@ class MyTardisOverseer():
         except Exception as error:
             logger.error(error)
             raise error
+        # CHECK THAT THE PROJECT EXISTS AND IS VALID
         if valid:
             try:
                 uri, obj = self.experiment_minion.get_from_raid(
@@ -156,3 +157,32 @@ class MyTardisOverseer():
                                    f'and object in MyTardis: {obj["description"]}')
                     experiment_dict['description'] = obj['description']
         return experiment_dict
+
+    def validate_dataset(self,
+                         dataset_dict):
+        # First validate dataset dictionary using the minion
+        try:
+            valid = self.dataset_minion.validate_dictionary(dataset_dict)
+        except SanityCheckError as error:
+            logger.warning(f'Dataset {dataset_dict["description"]} failed ' +
+                           f'sanity check. Missing keys: {error.missing_keys}')
+            return None
+        except Exception as error:
+            logger.error(error)
+            raise error
+        if valid:
+            try:
+                uri, obj = self.dataset_minion.get_from_raid(
+                    dataset_dict['dataset_id'])
+            except UnableToFindUniqueError as error:
+                # We should never get here since DB enforces uniqueness
+                # If we are here something really wrong has happened
+                logger.critical(f'Multiple datasets with the same RAiD: ' +
+                                f'{dataset_dict["dataset_id"]}, found')
+                raise error
+            except Exception as error:
+                logger.error(error)
+                raise error
+            if uri:
+                TODO
+        return dataset_dict
