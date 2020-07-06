@@ -21,16 +21,22 @@ from schema_minions import SchemaMinion
 from ..helpers import UnableToFindUniqueError
 from ..helpers import SanityCheckError
 from ..helpers import HierarchyError
+from ..helpers import readJSON, writeJSON
+from ..helpers import calculate_md5sum, calculate_etag
 
 import os
 import logging
 
 logger = logging.getLogger(__name__)
 
+KB = 1024
+MB = KB ** 2
+GB = KB ** 3
+
 
 class MyTardisOverseer():
     '''
-    Abstract observer class:
+    Observer class:
     Overseer classes inspect the MyTardis database to ensure
     that the forge is not creating existing objects and validates
     that the heirarchical structures needed are in place before
@@ -256,3 +262,70 @@ class MyTardisOverseer():
                         return None
                     datafile_dict.pop('dataset_id')
                     return datafile_dict
+
+    def build_checksum_digest(checksum_digest,
+                              root_dir,
+                              file_path,
+                              s3=True,
+                              s3_blocksize=1*GB,
+                              md5_blocksize=None,
+                              subprocess_size_threshold=10*MB,
+                              md5sum_executable='/usr/bin/md5sum'):
+        """
+        Builds a tuple of md5, etag checksums for a given
+        data file and appends it to the checksum digest file for use
+        by the ingestion classes.
+        #
+        =================================
+        Inputs:
+        =================================
+        checksum_digest: a Path object to the file to append to
+        file_path: a Path object to the file to build the checksums force
+        s3: a boolean flag to indicate whether or not to calculate the ETag
+        #
+        =================================
+        Returns:
+        =================================
+        True: if checksums calculated and appended successfully
+        False: otherwise
+        """
+        abs_file_path = root_dir / file_path
+        checksum_dict = {}
+        if not os.path.isfile(checksum_digest):
+            checksum_dict = {}
+        else:
+            checksum_dict = readJSON(checksum_digest)
+        if not file_path in checksum_dict.keys():
+            checksum_dict[file_path.as_posix()] = {}
+        checksum_dict[file_path.as_posix()]['md5sum'] = calculate_md5sum(
+            abs_file_path)
+        if s3:
+            checksum_dict[file_path.as_posix()]['etag'] = calculate_etag(abs_file_path,
+                                                                         s3_blocksize)
+        writeJSON(checksum_dict, checksum_digest)
+        return checksum_dict
+
+    def validate_schema(self,
+                        input_dict,
+                        model_int):
+        '''SCHEMA TYPES -> These are the model_ints:
+        EXPERIMENT = 1
+        DATASET = 2
+        DATAFILE = 3
+        NONE = 4
+        INSTRUMENT = 5
+        PROJECT = 11'''
+        if 'schema' not in input_dict.keys():
+            logger.warning(f'No schema defined in the input dictionary')
+            return None
+        try:
+            uri, obj = self.schema_minion.get_from_namespace(
+                input_dict['schema'])
+        except Exception as error:
+            logger.error(error)
+            raise error
+        schema_type = obj['schema_type']
+        if schema_type != model_int:
+            return False
+        else:
+            return uri

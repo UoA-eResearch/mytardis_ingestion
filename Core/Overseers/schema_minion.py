@@ -4,7 +4,7 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 11 Jun 2020
+# Last updated: 06 Jul 2020
 #
 
 from minion import MyTardisMinion
@@ -26,9 +26,9 @@ class SchemaMinion(MyTardisMinion):
     def get_from_namespace(self,
                            namespace):
         try:
-            uri, response = self.get_uri('schema',
-                                         'namespace',
-                                         raid)
+            uri, obj = self.get_uri('schema',
+                                    'namespace',
+                                    raid)
         except Exception as error:
             raise error
-        return uri
+        return (uri, obj)
