@@ -4,7 +4,7 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 02 Jul 2020
+# Last updated: 06 Jul 2020
 #
 
 from minion import MyTardisMinion
@@ -26,7 +26,11 @@ class DatafileMinion(MyTardisMinion):
     def validate_dictionary(self,
                             input_dict):
         required_keys = ['dataset_id',
-                         'experiments', ]
+                         'filename',
+                         'md5sum',
+                         'storage_box',
+                         'remote_path',
+                         'local_path']
         try:
             valid = sanity_check(input_dict,
                                  required_keys)

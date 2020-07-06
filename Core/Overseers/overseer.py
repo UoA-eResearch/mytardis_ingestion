@@ -4,10 +4,9 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 03 Jul 2020
+# Last updated: 06 Jul 2020
 #
 
-from abc import ABC, abstractmethod
 from ..helpers import MyTardisRESTFactory
 from ..helpers import RAiDFactory
 from urllib.parse import urlparse
@@ -220,3 +219,40 @@ class MyTardisOverseer():
                                    f'and object in MyTardis: {obj["description"]}')
                     dataset_dict['description'] = obj['description']
         return dataset_dict
+
+    def validate_datafile(self,
+                          datafile_dict):
+        # First validate the datafile dictionary usin the minion
+        try:
+            valid = self.datafile_minion.validate_dictionary(datafile_dict)
+        except SanityCheckError as error:
+            logger.warning(f'Dataset {datafile_dict["filename"]} failed ' +
+                           f'sanity check. Missing keys: {error.missing_keys}')
+            return None
+        except Exception as error:
+            logger.error(error)
+            raise error
+        if valid:
+            try:
+                uri, _ = self.dataset_minion.get_from_raid(
+                    datafile_dict['dataset_id'])
+            except Exception as error:
+                logger.error(error)
+                raise error
+            else:
+                if not uri:
+                    logger.warning(f'Unable to create dataset {datafile_dict["filename"]}' +
+                                   f' as the experiment RAiD {datafile_dict["dataset_id"]} ' +
+                                   f'could not be found in the database')
+                    raise HierarchyError(datafile_dict["dataset_id"],
+                                         datafile_dict['filename'])
+                else:
+                    datafile_dict['dataset'] = [uri]
+                    file_exists = self.datafile_minion.check_file_exists(
+                        datafile_dict)
+                    if file_exists:
+                        logger.warning(f'File {datafile_dict["filemane"]} already' +
+                                       f'exists in MyTardis, skipping')
+                        return None
+                    datafile_dict.pop('dataset_id')
+                    return datafile_dict
