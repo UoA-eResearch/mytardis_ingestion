@@ -4,11 +4,12 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 06 Jul 2020
+# Last updated: 08 Jul 2020
 #
 
 from minion import MyTardisMinion
 from ..helpers import sanity_check
+import json
 
 
 class DatafileMinion(MyTardisMinion):
@@ -30,7 +31,8 @@ class DatafileMinion(MyTardisMinion):
                          'md5sum',
                          'storage_box',
                          'remote_path',
-                         'local_path']
+                         'local_path',
+                         'schema']
         try:
             valid = sanity_check(input_dict,
                                  required_keys)

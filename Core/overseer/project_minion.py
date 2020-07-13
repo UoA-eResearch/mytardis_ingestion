@@ -4,7 +4,7 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 02 Jul 2020
+# Last updated: 13 Jul 2020
 #
 
 from minion import MyTardisMinion
@@ -18,10 +18,8 @@ class ProjectMinion(MyTardisMinion):
     '''
 
     def __init__(self,
-                 global_config_filepath,
-                 local_config_filepath):
-        super().__init__(global_config_filepath,
-                         local_config_filepath)
+                 local_config_file_path):
+        super().__init__(local_config_file_path)
 
     def get_from_raid(self,
                       raid):
@@ -39,7 +37,8 @@ class ProjectMinion(MyTardisMinion):
                          'raid',
                          'description',
                          'lead_researcher',
-                         'institution', ]
+                         'institution',
+                         'schema']
         try:
             valid = sanity_check(input_dict,
                                  required_keys)

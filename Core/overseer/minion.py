@@ -4,13 +4,14 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 02 Jul 2020
+# Last updated: 13 Jul 2020
 #
 
 from .. import MyTardisRESTFactory
-from ..helpers import RAiDFactory
 from ..helpers import UnableToFindUniqueError
 import json
+import os
+from urllib.parse import urlparse
 
 
 class MyTardisMinion(MyTardisRESTFactory):
@@ -23,10 +24,8 @@ class MyTardisMinion(MyTardisRESTFactory):
     '''
 
     def __init__(self,
-                 global_config_filepath,
-                 local_config_filepath):
-        self.raid_factory = RAiDFactory(global_config_filepath)
-        super().__init__(local_config__filepath)
+                 local_config_file_path):
+        super().__init__(local_config_file_path)
 
     def resource_uri_to_id(self, uri):
         """

@@ -4,7 +4,7 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 02 Jul 2020
+# Last updated: 09 Jul 2020
 #
 
 from minion import MyTardisMinion
@@ -26,19 +26,19 @@ class InstitutionMinion(MyTardisMinion):
     def get_from_name(self,
                       name):
         try:
-            uri, response = self.get_uri('institution',
-                                         'name',
-                                         name)
+            uri, obj = self.get_uri('institution',
+                                    'name',
+                                    name)
         except Exception as error:
             raise error
-        return uri
+        return (uri, obj)
 
     def get_from_ror(self,
                      ror):
         try:
-            uri, response = self.get_uri('institution',
-                                         'ror',
-                                         ror)
+            uri, obj = self.get_uri('institution',
+                                    'ror',
+                                    ror)
         except Exception as error:
             raise error
-        return uri
+        return (uri, obj)

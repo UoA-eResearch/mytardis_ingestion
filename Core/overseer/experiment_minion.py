@@ -4,7 +4,7 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 30 Jun 2020
+# Last updated: 08 Jul 2020
 #
 
 from minion import MyTardisMinion
@@ -38,7 +38,8 @@ class ExperimentMinion(MyTardisMinion):
         required_keys = ['title',
                          'raid',
                          'description',
-                         'project', ]
+                         'project',
+                         'schema']
         try:
             valid = sanity_check(input_dict,
                                  required_keys)

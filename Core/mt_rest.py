@@ -2,12 +2,12 @@
 #
 # Written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated 04 Jun 2020
+# Last updated 08 Jul 2020
 
 from requests.auth import AuthBase
 import backoff
 import requests
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 from helper import process_config
 
 
@@ -54,9 +54,9 @@ class MyTardisRESTFactory():
         self.verify_certificate = config_dict['verify_certificate']
         self.api_template = urljoin(config_dict['server'],
                                     '/api/v1/%s')
-        self.user_agent = '%s/%s (%s)' % (MyTardisUploader.user_agent_name,
+        self.user_agent = '%s/%s (%s)' % (self.user_agent_name,
                                           '2.0',
-                                          MyTardisUploader.user_agent_url)
+                                          self.user_agent_url)
 
     def __raise_request_exception(self, response):
         '''Function to add additional information to the base RequestException
