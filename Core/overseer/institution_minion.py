@@ -18,10 +18,8 @@ class InstitutionMinion(MyTardisMinion):
     '''
 
     def __init__(self,
-                 global_config_filepath,
-                 local_config__filepath):
-        super().__init__(global_config_filepath,
-                         local_config__filepath)
+                 local_config__file_path):
+        super().__init__(local_config__file_path)
 
     def get_from_name(self,
                       name):

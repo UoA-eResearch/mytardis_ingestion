@@ -4,7 +4,7 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 08 Jul 2020
+# Last updated: 21 Jul 2020
 #
 
 from minion import MyTardisMinion
@@ -19,10 +19,8 @@ class DatafileMinion(MyTardisMinion):
     '''
 
     def __init__(self,
-                 global_config_filepath,
-                 local_config_filepath):
-        super().__init__(global_config_filepath,
-                         local_config_filepath)
+                 local_config_file_path):
+        super().__init__(local_config_file_path)
 
     def validate_dictionary(self,
                             input_dict):
