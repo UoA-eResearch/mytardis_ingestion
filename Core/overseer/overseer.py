@@ -4,7 +4,7 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 13 Jul 2020
+# Last updated: 21 Jul 2020
 #
 
 from urllib.parse import urlparse
@@ -16,6 +16,7 @@ from dataset_minion import DatasetMinion
 from datafile_minion import DatafileMinion
 from schema_minions import SchemaMinion
 from institution_minions import InstitutionMinion
+from instrument_minions import InstrumentMinion
 
 from ..helpers import UnableToFindUniqueError
 from ..helpers import SanityCheckError
@@ -43,10 +44,8 @@ class MyTardisOverseer():
     '''
 
     def __init__(self,
-                 global_config_filepath,
-                 local_config_filepath):
-        self.global_config_filepath = global_config_filepath
-        self.local_config_filepath = local_config_filepath
+                 local_config_file_path):
+        self.local_config_file_path = local_config_file_path
 
     def __resource_uri_to_id(self, uri):
         """
@@ -72,8 +71,7 @@ class MyTardisOverseer():
     # existing values from within MyTardis
     def validate_project(self,
                          project_dict):
-        project_minion = ProjectMinion(self.global_config_filepath,
-                                       self.local_config_filepath)
+        project_minion = ProjectMinion(self.local_config_file_path)
         # First validate project dictionary using the minion
         try:
             valid = project_minion.validate_dictionary(project_dict)
@@ -119,14 +117,12 @@ class MyTardisOverseer():
                                                 11)
         except Exception as error:
             raise error
-        return (project_dict, schema_valid, uri)
+        return (project_dict, schema_valid, uri, obj)
 
     def validate_experiment(self,
                             experiment_dict):
-        project_minion = ProjectMinion(self.global_config_filepath,
-                                       self.local_config_filepath)
-        experiment_minion = ExperimentMinion(self.global_config_filepath,
-                                             self.local_config_filepath)
+        project_minion = ProjectMinion(self.local_config_file_path)
+        experiment_minion = ExperimentMinion(self.local_config_file_path)
         # First validate experiment dictionary using the minion
         try:
             valid = experiment_minion.validate_dictionary(experiment_dict)
@@ -181,14 +177,13 @@ class MyTardisOverseer():
                                                 1)
         except Exception as error:
             raise error
-        return (experiment_dict, schema_valid)
+        return (experiment_dict, schema_valid, uri, obj)
 
     def validate_dataset(self,
                          dataset_dict):
-        experiment_minion = ExperimentMinion(self.global_config_filepath,
-                                             self.local_config_filepath)
-        dataset_minion = DatasetMinion(self.global_config_filepath,
-                                       self.local_config_filepath)
+        experiment_minion = ExperimentMinion(self.local_config_file_path)
+        dataset_minion = DatasetMinion(self.local_config_file_path)
+        instrument_minion = InstrumentMinion(self.local_config_file_path)
         # First validate dataset dictionary using the minion
         try:
             valid = dataset_minion.validate_dictionary(dataset_dict)
@@ -233,12 +228,30 @@ class MyTardisOverseer():
                                    f'dictionary: {dataset_dict["description"]}, ' +
                                    f'and object in MyTardis: {obj["description"]}')
                     dataset_dict['description'] = obj['description']
+            try:
+                uri, _ = instrument_minion.get_from_instrument_id(
+                    dataset_dict['instrument_id'])
+            except UnableToFindUniqueError as error:
+                # We should never get here since DB enforces uniqueness
+                # If we are here something really wrong has happened
+                logger.critical(f'Multiple datasets with the same RAiD: ' +
+                                f'{dataset_dict["dataset_id"]}, found')
+                raise error
+            except Exception as error:
+                logger.error(error)
+                raise error
+            if not uri:
+                logger.warning(f'No instrument with id {dataset_dict["instrument_id"]} ' +
+                               f'found. Unable to create dataset')
+                return None
+            else:
+                dataset_dict['instrument'] = uri
         try:
             schema_valid = self.validate_schema(dataset_dict,
                                                 2)
         except Exception as error:
             raise error
-        return (dataset_dict, schema_valid)
+        return (dataset_dict, schema_valid, uri, obj)
 
     def validate_datafile(self,
                           datafile_dict):
@@ -369,4 +382,20 @@ class MyTardisOverseer():
         if uri:
             return (uri, obj)
         else:
-            return None
+            return (None, None)
+
+    def validate_instrument(self,
+                            instrument_id):
+        institution_minion = InstrumentMinion(self.global_config_filepath,
+                                              self.local_config_filepath)
+        try:
+            uri, obj = institution_minion.get_from_ror(ror)
+        except Exception as error:
+            logger.warning(f'Instrument (ID: {instrument_id}) unable to be found in ' +
+                           f'the database')
+            logger.warning(error)
+            raise error
+        if uri:
+            return (uri, obj)
+        else:
+            return (None, None)

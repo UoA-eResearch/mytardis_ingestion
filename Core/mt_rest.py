@@ -2,7 +2,7 @@
 #
 # Written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated 08 Jul 2020
+# Last updated 21 Jul 2020
 
 from requests.auth import AuthBase
 import backoff
@@ -38,7 +38,7 @@ class MyTardisRESTFactory():
     user_agent_url = 'https://github.com/UoA-eResearch/mytardis_ingestion.git'
 
     def __init__(self,
-                 local_config):
+                 local_config_file_path):
         config_keys = ['server',
                        'ingest_user',
                        'ingest_api_key',
@@ -46,7 +46,7 @@ class MyTardisRESTFactory():
                        'proxy_http',
                        'proxy_https']
         config_dict = process_config(keys=config_keys,
-                                     local_filepath=local_config)
+                                     local_filepath=local_config_file_path)
         self.auth = MyTardisAuth(config_dict['ingest_user'],
                                  config_dict['ingest_api_key'])
         self.proxies = {'http': config_dict['proxy_http'],

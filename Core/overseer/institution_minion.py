@@ -1,10 +1,10 @@
-# institutioh_minion.py
+# institution_minion.py
 #
 # Minion class for institutions
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 09 Jul 2020
+# Last updated: 21 Jul 2020
 #
 
 from minion import MyTardisMinion
@@ -25,6 +25,8 @@ class InstitutionMinion(MyTardisMinion):
 
     def get_from_name(self,
                       name):
+        uri = None
+        obj = None
         try:
             uri, obj = self.get_uri('institution',
                                     'name',
@@ -35,6 +37,8 @@ class InstitutionMinion(MyTardisMinion):
 
     def get_from_ror(self,
                      ror):
+        uri = None
+        obj = None
         try:
             uri, obj = self.get_uri('institution',
                                     'ror',

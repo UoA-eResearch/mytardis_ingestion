@@ -1,4 +1,11 @@
+# project.py
+#
 # Class to ingest project data into MyTardis
+#
+# written by Chris Seal <c.seal@auckland.ac.nz>
+#
+# Last updated: 21 Jul 2020
+#
 
 from ..overseers import Overseer
 from .. import MyTardisRESTFactory
