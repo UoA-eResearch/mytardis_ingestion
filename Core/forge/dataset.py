@@ -4,12 +4,13 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 21 Jul 2020
+# Last updated: 22 Jul 2020
 #
 
 from ..overseers import Overseer
 from .. import MyTardisRESTFactory
 from ..helpers import dict_to_json
+import json
 import logging
 
 logger = logging.getLogger(__name__)
@@ -38,9 +39,9 @@ class DatasetForge():
         if not mytardis:
             return (None, None)
         else:
-            uri, project_id = self.forge(mytardis,
+            uri, dataset_id = self.forge(mytardis,
                                          parameters)
-            return (uri, project_id)
+            return (uri, dataset_id)
 
     def smelt(self,
               input_dict,

@@ -4,12 +4,13 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 21 Jul 2020
+# Last updated: 22 Jul 2020
 #
 
 from ..overseers import Overseer
 from .. import MyTardisRESTFactory
 from ..helpers import dict_to_json
+import json
 import logging
 
 logger = logging.getLogger(__name__)
@@ -93,7 +94,7 @@ class ExperimentForge():
             raise error
         body = json.loads(response.text)
         uri = body['resource_uri']
-        project_id = body['id']
+        experiment_id = body['id']
         if parameters:
             parameters['project'] = uri
             parameters_json = dict_to_json(parameters)
@@ -103,4 +104,4 @@ class ExperimentForge():
             except Exception as error:
                 logger.warning(f'Unable to attach metadata to project: {mytardis["title"]}. ' +
                                f' Error returned: {error}')
-        return (uri, project_id)
+        return (uri, experiment_id)
