@@ -4,3 +4,10 @@ Core/Legacy stuff to keep/
 Core/helpers/.#raid.py
 
 Core/helpers/#raid.py#
+
+*.pyc
+.#*
+
+mech_test.py
+
+test_ingest.py
