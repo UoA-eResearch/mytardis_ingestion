@@ -4,7 +4,7 @@
 #
 # Written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated 04 Jun 2020
+# Last updated 23 Jul 2020
 
 from decouple import Config, RepositoryEnv
 
@@ -16,7 +16,9 @@ def process_config(keys=None,
         'server': 'MYTARDIS_URL',
         'ingest_user': 'MYTARDIS_INGEST_USER',
         'ingest_api_key': 'MYTARDIS_INGEST_API_KEY',
+        'facility': 'MYTARDIS_FCILITY',
         'facility_manager': 'MYTARDIS_FACILITY_MANAGER',
+        'instrument': 'MYTARDIS_INSTRUMENT',
         'verify_certificate': 'MYTARDIS_VERIFY_CERT',
         'storage_box': 'MYTARDIS_STORAGE_BOX',
         'remote_root': 'FILEHANDLER_REMOTE_ROOT',
@@ -54,7 +56,7 @@ def process_config(keys=None,
                 if key in local_keys.keys():
                     local_dict[key] = None
     else:
-        config = Config(RepositoryEnv(filepath))
+        config = Config(RepositoryEnv(local_filepath))
         for key in keys:
             if key in local_keys.keys():
                 local_dict[key] = config(local_keys[key],
@@ -65,10 +67,15 @@ def process_config(keys=None,
                 if key in global_keys.keys():
                     global_dict[key] = None
     else:
-        config = Config(RepositoryEnv(filepath))
+        config = Config(RepositoryEnv(global_filepath))
         for key in keys:
             if key in global_keys.keys():
                 global_dict[key] = config(global_keys[key],
                                           default=None)
-    return_dict = global_dict.update(local_dict)
+    if not local_dict:
+        return_dict = global_dict
+    elif not global_dict:
+        return_dict = local_dict
+    else:
+        return_dict = global_dict.update(local_dict)
     return return_dict

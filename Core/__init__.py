@@ -4,7 +4,8 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 11 Jun 2020
+# Last updated: 23 Jul 2020
 #
 
-from mt_rest import *
+from .mt_rest import *
+from .factory import *

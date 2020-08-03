@@ -4,10 +4,10 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 21 Jul 2020
+# Last updated: 03 Aug 2020
 #
 
-from minion import MyTardisMinion
+from .minion import MyTardisMinion
 from ..helpers import sanity_check
 
 
@@ -24,12 +24,12 @@ class DatasetMinion(MyTardisMinion):
     def get_from_raid(self,
                       dataset_id):
         try:
-            uri, _ = self.get_uri('dataset',
-                                  'dataset_id',
-                                  dataset_id)
+            uri, obj = self.get_uri('dataset',
+                                    'dataset_id',
+                                    dataset_id)
         except Exception as error:
             raise error
-        return uri
+        return (uri, obj)
 
     def validate_dictionary(self,
                             input_dict):

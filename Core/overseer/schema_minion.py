@@ -4,10 +4,10 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 21 Jul 2020
+# Last updated: 23 Jul 2020
 #
 
-from minion import MyTardisMinion
+from .minion import MyTardisMinion
 from ..helpers import sanity_check
 
 
@@ -23,10 +23,11 @@ class SchemaMinion(MyTardisMinion):
 
     def get_from_namespace(self,
                            namespace):
+        print(namespace)
         try:
             uri, obj = self.get_uri('schema',
                                     'namespace',
-                                    raid)
+                                    namespace)
         except Exception as error:
             raise error
         return (uri, obj)

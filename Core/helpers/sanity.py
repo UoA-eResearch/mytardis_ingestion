@@ -1,4 +1,4 @@
-from exceptions import SanityCheckError
+from .exceptions import SanityCheckError
 
 
 def sanity_check(input_dict,

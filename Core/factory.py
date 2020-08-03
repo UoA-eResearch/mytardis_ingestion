@@ -4,11 +4,11 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 22 Jul 2020
+# Last updated: 23 Jul 2020
 #
 
 from abc import ABC, abstractmethod
-from overseer import Overseer
+from .overseer import Overseer
 
 
 class IngestionFactory(ABC):
@@ -36,9 +36,12 @@ class IngestionFactory(ABC):
 
     def forge_project(self,
                       input_dict):
-        from forge import ProjectForge
+        print('Forging Project')
+        from .forge import ProjectForge
         forge = ProjectForge(self.local_config_file_path)
+        print(forge)
         try:
+            print(input_dict)
             uri, project_id = forge.get_or_create(input_dict)
         except Exception as error:
             raise error
@@ -46,7 +49,7 @@ class IngestionFactory(ABC):
 
     def forge_experiment(self,
                          input_dict):
-        from forge import ExperimentForge
+        from .forge import ExperimentForge
         forge = ExperimentForge(self.local_config_file_path)
         try:
             uri, experiment_id = forge.get_or_create(input_dict)
@@ -56,7 +59,7 @@ class IngestionFactory(ABC):
 
     def forge_dataset(self,
                       input_dict):
-        from forge import DatasetForge
+        from .forge import DatasetForge
         forge = DatasetForge(self.local_config_file_path)
         try:
             uri, dataset_id = forge.get_or_create(input_dict)
@@ -64,9 +67,9 @@ class IngestionFactory(ABC):
             raise error
         return (uri, dataset_id)
 
-    def forge_project(self,
-                      input_dict):
-        from forge import DatafileForge
+    def forge_datafile(self,
+                       input_dict):
+        from .forge import DatafileForge
         forge = DatafileForge(self.local_config_file_path)
         try:
             uri, datafile_id = forge.get_or_create(input_dict)

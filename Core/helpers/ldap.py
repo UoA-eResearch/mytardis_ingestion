@@ -43,24 +43,24 @@ def do_ldap_search(ldap_dict,
         connection.search(ldap_dict['user_base'],
                           search_filter,
                           attributes=['*'])
-    if len(connection.entries) > 1:
-        error_message = f'More than one person with {search_action}: {value} has been found in the LDAP'
-        if logger:
-            logger.error(error_message)
-        raise Exception(error_message)
-    elif len(connection.entries) == 0:
-        error_message = f'No one with {search_action}: {value} has been found in the LDAP'
-        if logger:
-            logger.warning(error_message)
-        return None
-    else:
-        person = connection.entries[0]
-    username = person[ldap_dict['user_attr_map']['upi']].value
-    first_name = person[ldap_dict['user_attr_map']['first_name']].value
-    last_name = person[ldap_dict['user_attr_map']['last_name']].value
-    #email = person[ldap_dict['user_attr_map']['email']].value
-    details = {'username': username,
-               'first_name': first_name,
-               'last_name': last_name,
-               'email': 'email'}
-    return details
+        if len(connection.entries) > 1:
+            error_message = f'More than one person with {search_action}: {value} has been found in the LDAP'
+            if logger:
+                logger.error(error_message)
+            raise Exception(error_message)
+        elif len(connection.entries) == 0:
+            error_message = f'No one with {search_action}: {value} has been found in the LDAP'
+            if logger:
+                logger.warning(error_message)
+            return None
+        else:
+            person = connection.entries[0]
+            username = person[ldap_dict['user_attr_map']['upi']].value
+            first_name = person[ldap_dict['user_attr_map']['first_name']].value
+            last_name = person[ldap_dict['user_attr_map']['last_name']].value
+            #email = person[ldap_dict['user_attr_map']['email']].value
+            details = {'username': username,
+                       'first_name': first_name,
+                       'last_name': last_name,
+                       'email': 'email'}
+            return details

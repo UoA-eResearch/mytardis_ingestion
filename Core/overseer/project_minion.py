@@ -4,10 +4,10 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 13 Jul 2020
+# Last updated: 23 Jul 2020
 #
 
-from minion import MyTardisMinion
+from .minion import MyTardisMinion
 from ..helpers import sanity_check
 
 
@@ -33,15 +33,17 @@ class ProjectMinion(MyTardisMinion):
 
     def validate_dictionary(self,
                             input_dict):
+        print(input_dict)
         required_keys = ['name',
                          'raid',
                          'description',
                          'lead_researcher',
-                         'institution',
                          'schema']
         try:
             valid = sanity_check(input_dict,
                                  required_keys)
+            print(valid)
         except Exception as error:
+            print(error)
             raise error
         return valid

@@ -4,10 +4,10 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 22 Jul 2020
+# Last updated: 03 Aug 2020
 #
 
-from ..overseers import Overseer
+from ..overseer import Overseer
 from .. import MyTardisRESTFactory
 from ..helpers import dict_to_json
 import json
@@ -26,6 +26,7 @@ class ExperimentForge():
     def get_or_create(self,
                       input_dict):
         try:
+            print(input_dict)
             input_dict, schema, uri, obj = self.overseer.validate_experiment(
                 input_dict)
         except Exception as error:
@@ -39,8 +40,8 @@ class ExperimentForge():
         if not mytardis:
             return (None, None)
         else:
-            uri, project_id = self.forge(mytardis,
-                                         parameters)
+            uri, experiment_id = self.forge(mytardis,
+                                            parameters)
             return (uri, experiment_id)
 
     def smelt(self,
@@ -96,7 +97,7 @@ class ExperimentForge():
         uri = body['resource_uri']
         experiment_id = body['id']
         if parameters:
-            parameters['project'] = uri
+            parameters['experiment'] = uri
             parameters_json = dict_to_json(parameters)
             try:
                 response = self.rest_factory.post_request('experimentparameterset',

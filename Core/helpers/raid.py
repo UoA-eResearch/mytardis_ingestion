@@ -5,7 +5,7 @@
 #
 # Written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Updated 04 Jun 2020
+# Updated 23 Jul 2020
 
 import logging
 import requests
@@ -13,7 +13,7 @@ from requests.auth import AuthBase
 from decouple import Config, RepositoryEnv
 from urllib.parse import urljoin, quote
 import backoff
-from .helper import dict_to_json
+from .mt_json import dict_to_json
 
 logger = logging.getLogger(__name__)
 

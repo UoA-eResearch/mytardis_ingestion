@@ -2,13 +2,13 @@
 #
 # Written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated 21 Jul 2020
+# Last updated 27 Jul 2020
 
 from requests.auth import AuthBase
 import backoff
 import requests
 from urllib.parse import urljoin
-from helper import process_config
+from .helpers import process_config
 
 
 class MyTardisAuth(AuthBase):
@@ -39,12 +39,12 @@ class MyTardisRESTFactory():
 
     def __init__(self,
                  local_config_file_path):
-        config_keys = ['server',
-                       'ingest_user',
-                       'ingest_api_key',
-                       'verify_certificate',
-                       'proxy_http',
-                       'proxy_https']
+        config_keys = {'server': 'MYTARDIS_URL',
+                       'ingest_user': 'MYTARDIS_INGEST_USER',
+                       'ingest_api_key': 'MYTARDIS_INGEST_API_KEY',
+                       'verify_certificate': 'MYTARDIS_VERIFY_CERT',
+                       'proxy_http': 'PROXY_HTTP',
+                       'proxy_https': 'PROXY_HTTPS'}
         config_dict = process_config(keys=config_keys,
                                      local_filepath=local_config_file_path)
         self.auth = MyTardisAuth(config_dict['ingest_user'],
@@ -53,7 +53,7 @@ class MyTardisRESTFactory():
                         'https': config_dict['proxy_https']}
         self.verify_certificate = config_dict['verify_certificate']
         self.api_template = urljoin(config_dict['server'],
-                                    '/api/v1/%s')
+                                    '/api/v1/%s/')
         self.user_agent = '%s/%s (%s)' % (self.user_agent_name,
                                           '2.0',
                                           self.user_agent_url)
@@ -90,6 +90,7 @@ class MyTardisRESTFactory():
         =================================
         A Python Requests library repsonse object
         '''
+        print(f'Calling REST API with {method} request for {action}')
         url = self.api_template % action
         headers = {'Accept': 'application/json',
                    'Content-Type': 'application/json',
@@ -117,6 +118,8 @@ class MyTardisRESTFactory():
             # 502 Bad Gateway triggers retries, since the proxy web
             # server (eg Nginx or Apache) in front of MyTardis could be
             # temporarily restarting
+            print(response.status_code)
+            print(response.text)
             if response.status_code == 502:
                 self.__raise_request_exception(response)
             else:
@@ -157,6 +160,7 @@ class MyTardisRESTFactory():
                      action,
                      data,
                      extra_headers=None):
+        print(data)
         '''Wrapper around self._do_rest_api_request to handle POST requests
 
         Inputs:

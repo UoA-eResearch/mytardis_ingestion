@@ -4,19 +4,19 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 21 Jul 2020
+# Last updated: 24 Jul 2020
 #
 
 from urllib.parse import urlparse
 
 # Import minions
-from project_minion import ProjectMinion
-from experiment_minion import ExperimentMinion
-from dataset_minion import DatasetMinion
-from datafile_minion import DatafileMinion
-from schema_minions import SchemaMinion
-from institution_minions import InstitutionMinion
-from instrument_minions import InstrumentMinion
+from .project_minion import ProjectMinion
+from .experiment_minion import ExperimentMinion
+from .dataset_minion import DatasetMinion
+from .datafile_minion import DatafileMinion
+from .schema_minion import SchemaMinion
+from .institution_minion import InstitutionMinion
+from .instrument_minion import InstrumentMinion
 
 from ..helpers import UnableToFindUniqueError
 from ..helpers import SanityCheckError
@@ -34,7 +34,7 @@ MB = KB ** 2
 GB = KB ** 3
 
 
-class MyTardisOverseer():
+class Overseer():
     '''
     Observer class:
     Overseer classes inspect the MyTardis database to ensure
@@ -71,12 +71,14 @@ class MyTardisOverseer():
     # existing values from within MyTardis
     def validate_project(self,
                          project_dict):
+        print('Validating project')
         project_minion = ProjectMinion(self.local_config_file_path)
+        print(project_minion)
         # First validate project dictionary using the minion
         try:
             valid = project_minion.validate_dictionary(project_dict)
         except SanityCheckError as error:
-            logger.warning(f'Project {project_dict["project"]} failed sanity' +
+            logger.warning(f'Project {project_dict["name"]} failed sanity' +
                            f' check. Missing keys: {error.missing_keys}')
             return None
         except Exception as error:
@@ -107,11 +109,12 @@ class MyTardisOverseer():
                                    f'dictionary: {project_dict["description"]}, ' +
                                    f'and object in MyTardis: {obj["description"]}')
                     project_dict['description'] = obj['description']
-                if project_dict['lead_researcher'] != obj['lead_researcher']:
+                # Deactivate user check since upis are passed and uris returned
+                '''if project_dict['lead_researcher'] != obj['lead_researcher']:
                     logger.warning(f'Project Lead differs between project ' +
                                    f'dictionary: {project_dict["lead_researcher"]}, ' +
                                    f'and object in MyTardis: {obj["lead_researcher"]}')
-                    project_dict['leader_researcher'] = obj['leader_researcher']
+                    project_dict['lead_researcher'] = obj['lead_researcher']'''
         try:
             schema_valid = self.validate_schema(project_dict,
                                                 11)
@@ -121,6 +124,7 @@ class MyTardisOverseer():
 
     def validate_experiment(self,
                             experiment_dict):
+        print('Validating experiment')
         project_minion = ProjectMinion(self.local_config_file_path)
         experiment_minion = ExperimentMinion(self.local_config_file_path)
         # First validate experiment dictionary using the minion
@@ -181,6 +185,7 @@ class MyTardisOverseer():
 
     def validate_dataset(self,
                          dataset_dict):
+        print('Validating dataset')
         experiment_minion = ExperimentMinion(self.local_config_file_path)
         dataset_minion = DatasetMinion(self.local_config_file_path)
         instrument_minion = InstrumentMinion(self.local_config_file_path)
@@ -255,15 +260,14 @@ class MyTardisOverseer():
 
     def validate_datafile(self,
                           datafile_dict):
-        dataset_minion = DatasetMinion(self.global_config_filepath,
-                                       self.local_config_filepath)
-        datafile_minion = DatafileMinion(self.global_config_filepath,
-                                         self.local_config_filepath)
+        print('Validating datafile')
+        dataset_minion = DatasetMinion(self.local_config_file_path)
+        datafile_minion = DatafileMinion(self.local_config_file_path)
         # First validate the datafile dictionary usin the minion
         try:
             valid = datafile_minion.validate_dictionary(datafile_dict)
         except SanityCheckError as error:
-            logger.warning(f'Dataset {datafile_dict["filename"]} failed ' +
+            logger.warning(f'Datafile {datafile_dict["filename"]} failed ' +
                            f'sanity check. Missing keys: {error.missing_keys}')
             return None
         except Exception as error:
@@ -344,8 +348,7 @@ class MyTardisOverseer():
     def validate_schema(self,
                         input_dict,
                         model_int):
-        schema_minion = SchemaMinion(self.global_config_filepath,
-                                     self.local_config_filepath)
+        schema_minion = SchemaMinion(self.local_config_file_path)
         '''SCHEMA TYPES -> These are the model_ints:
         EXPERIMENT = 1
         DATASET = 2
@@ -370,8 +373,7 @@ class MyTardisOverseer():
 
     def validate_institution(self,
                              ror):
-        institution_minion = InstitutionMinion(self.global_config_filepath,
-                                               self.local_config_filepath)
+        institution_minion = InstitutionMinion(self.local_config_file_path)
         try:
             uri, obj = institution_minion.get_from_ror(ror)
         except Exception as error:

@@ -4,10 +4,10 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 22 Jul 2020
+# Last updated: 23 Jul 2020
 #
 
-from ..overseers import Overseer
+from ..overseer import Overseer
 from .. import MyTardisRESTFactory
 from ..helpers import dict_to_json
 import logging

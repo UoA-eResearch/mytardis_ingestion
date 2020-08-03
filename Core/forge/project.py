@@ -4,17 +4,18 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 21 Jul 2020
+# Last updated: 03 Aug 2020
 #
 
-from ..overseers import Overseer
+from ..overseer import Overseer
 from .. import MyTardisRESTFactory
 from ..helpers import dict_to_json
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
-UOA_ROR = '03b94tp07'
+UOA_ROR = 'https://ror.org/03b94tp07'
 
 
 class ProjectForge():
@@ -64,16 +65,16 @@ class ProjectForge():
         # TODO: Refactor to account for multiple institutions
         if 'institution' in input_dict.keys():
             ror = input_dict['institution']
+            input_dict.pop('institution')
         else:
             ror = UOA_ROR
-        institution = self.overseer.validate_institution(ror)
+        institution, _ = self.overseer.validate_institution(ror)
         if not institution:
             logger.error(f'Unable to create project {input_dict["name"]}. ' +
                          f'Incorrect ROR identifier given')
             return (None, None)
         else:
             mytardis['institution'] = [institution]
-            input_dict.pop('institution')
         if not schema:
             logger.warning(f'Schema {input_dict["schema"]} not found in database.' +
                            f'Not building project: {input_dict["name"]}')
@@ -108,12 +109,16 @@ class ProjectForge():
         uri = body['resource_uri']
         project_id = body['id']
         if parameters:
+            print(parameters)
             parameters['project'] = uri
             parameters_json = dict_to_json(parameters)
             try:
                 response = self.rest_factory.post_request('projectparameterset',
                                                           parameters_json)
+                print(response)
             except Exception as error:
                 logger.warning(f'Unable to attach metadata to project: {mytardis["name"]}. ' +
                                f' Error returned: {error}')
+                print(f'Unable to attach metadata to project: {mytardis["name"]}. ' +
+                      f' Error returned: {error}')
         return (uri, project_id)
