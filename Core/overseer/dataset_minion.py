@@ -4,7 +4,7 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 03 Aug 2020
+# Last updated: 05 Aug 2020
 #
 
 from .minion import MyTardisMinion
@@ -37,7 +37,7 @@ class DatasetMinion(MyTardisMinion):
                          'dataset_id',
                          'experiments',
                          'schema',
-                         'instrument']
+                         'instrument_id']
         try:
             valid = sanity_check(input_dict,
                                  required_keys)

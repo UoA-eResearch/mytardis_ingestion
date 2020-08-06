@@ -4,7 +4,7 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 23 Jul 2020
+# Last updated: 05 Aug 2020
 #
 
 from ..overseer import Overseer
@@ -26,13 +26,13 @@ class DatasetForge():
     def get_or_create(self,
                       input_dict):
         try:
-            input_dict, schema, uri, obj = self.overseer.validate_project(
+            input_dict, schema, uri, obj = self.overseer.validate_dataset(
                 input_dict)
         except Exception as error:
             raise error
         if uri:
-            project_id = obj['id']
-            return (uri, project_id)
+            dataset_id = obj['id']
+            return (uri, dataset_id)
         else:
             mytardis, parameters = self.smelt(input_dict,
                                               schema)
@@ -83,6 +83,7 @@ class DatasetForge():
               mytardis,
               parameters):
         mytardis_json = dict_to_json(mytardis)
+        print(mytardis_json)
         try:
             response = self.rest_factory.post_request('dataset',
                                                       mytardis_json)
@@ -94,7 +95,7 @@ class DatasetForge():
         uri = body['resource_uri']
         dataset_id = body['id']
         if parameters:
-            parameters['project'] = uri
+            parameters['dataset'] = uri
             parameters_json = dict_to_json(parameters)
             try:
                 response = self.rest_factory.post_request('datasetparameterset',

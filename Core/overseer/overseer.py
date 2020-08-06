@@ -4,7 +4,7 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 24 Jul 2020
+# Last updated: 05 Aug 2020
 #
 
 from urllib.parse import urlparse
@@ -216,6 +216,25 @@ class Overseer():
                 else:
                     dataset_dict['experiments'] = [uri]
             try:
+                uri, obj = instrument_minion.get_from_instrument_id(
+                    dataset_dict['instrument_id'])
+            except UnableToFindUniqueError as error:
+                # We should never get here since DB enforces uniqueness
+                # If we are here something really wrong has happened
+                logger.critical(f'Multiple datasets with the same RAiD: ' +
+                                f'{dataset_dict["dataset_id"]}, found')
+                raise error
+            except Exception as error:
+                logger.error(error)
+                raise error
+            if not uri:
+                logger.warning(f'No instrument with id {dataset_dict["instrument_id"]} ' +
+                               f'found. Unable to create dataset')
+                return None
+            else:
+                dataset_dict['instrument'] = uri
+                dataset_dict.pop('instrument_id')
+            try:
                 uri, obj = dataset_minion.get_from_raid(
                     dataset_dict['dataset_id'])
             except UnableToFindUniqueError as error:
@@ -233,24 +252,6 @@ class Overseer():
                                    f'dictionary: {dataset_dict["description"]}, ' +
                                    f'and object in MyTardis: {obj["description"]}')
                     dataset_dict['description'] = obj['description']
-            try:
-                uri, _ = instrument_minion.get_from_instrument_id(
-                    dataset_dict['instrument_id'])
-            except UnableToFindUniqueError as error:
-                # We should never get here since DB enforces uniqueness
-                # If we are here something really wrong has happened
-                logger.critical(f'Multiple datasets with the same RAiD: ' +
-                                f'{dataset_dict["dataset_id"]}, found')
-                raise error
-            except Exception as error:
-                logger.error(error)
-                raise error
-            if not uri:
-                logger.warning(f'No instrument with id {dataset_dict["instrument_id"]} ' +
-                               f'found. Unable to create dataset')
-                return None
-            else:
-                dataset_dict['instrument'] = uri
         try:
             schema_valid = self.validate_schema(dataset_dict,
                                                 2)

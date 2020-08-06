@@ -4,12 +4,16 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 04 Jun 2020
+# Last updated: 06 Aug 2020
 #
 
-from . import constants as CONST
 import hashlib
 import subprocess
+
+KB = 1024
+MB = KB ** 2
+GB = KB ** 3
+TB = KB ** 4
 
 
 def md5_python(file_path,
@@ -77,7 +81,7 @@ def md5_subprocess(file_path,
 
 def calculate_md5sum(file_path,
                      blocksize=128,
-                     subprocess_size_threshold=10*CONST.MB,
+                     subprocess_size_threshold=10*MB,
                      md5sum_executable='/usr/bin/md5sum'):
     '''
     Calculates the MD5 checksum of a file, returns the hex digest as a
