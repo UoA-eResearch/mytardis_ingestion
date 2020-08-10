@@ -1,0 +1,22 @@
+{
+	"replicas": [{
+		"uri": "MechTest/processed_data/tension_tests/Test-2.dat",
+		"location": "mech_tests",
+		"protocol": "file"
+	}],
+	"filename": "Test-2.dat",
+	"md5sum": "7fd4980a4314f63516fe4d6c04c52b77",
+	"mimetype": ["chemical/x-mopac-input", null],
+	"size": 5845,
+	"dataset": "/api/v1/dataset/52/",
+	"parameter_sets": {
+		"schema": "/api/v1/schema/17/",
+		"parameters": [{
+			"name": "local_path",
+			"value": "/home/chris/Projects/MyTardisTestData/mechtests/processed_data/tension_tests/Test-2.dat"
+		}, {
+			"name": "remote_path",
+			"value": "processed_data/tension_tests/Test-2.dat"
+		}]
+	}
+}

@@ -56,9 +56,9 @@ class DatafileMinion(MyTardisMinion):
         else:
             response_dict = json.loads(response.text)
             if response_dict == {} or response_dict['objects'] == []:
-                return False
+                return (None, None)
             objs = response_dict['objects']
             for obj in objs:
                 if input_dict == obj['md5sum']:
-                    return True
-            return False
+                    return (uri, obj)
+            return (None, None)

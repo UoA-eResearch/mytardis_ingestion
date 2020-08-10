@@ -289,20 +289,19 @@ class Overseer():
                     raise HierarchyError(datafile_dict["dataset_id"],
                                          datafile_dict['filename'])
                 else:
-                    datafile_dict['dataset'] = [uri]
-                    file_exists = datafile_minion.check_file_exists(
+                    datafile_dict['dataset'] = uri
+                    uri, obj = datafile_minion.check_file_exists(
                         datafile_dict)
-                    if file_exists:
+                    if uri:
                         logger.warning(f'File {datafile_dict["filemane"]} already' +
                                        f'exists in MyTardis, skipping')
-                        return None
                     datafile_dict.pop('dataset_id')
         try:
             schema_valid = self.validate_schema(datafile_dict,
                                                 3)
         except Exception as error:
             raise error
-        return (datafile_dict, schema_valid)
+        return (datafile_dict, schema_valid, uri, obj)
 
     def build_checksum_digest(checksum_digest,
                               root_dir,
