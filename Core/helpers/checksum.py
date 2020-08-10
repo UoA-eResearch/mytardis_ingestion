@@ -9,6 +9,7 @@
 
 import hashlib
 import subprocess
+import os
 
 KB = 1024
 MB = KB ** 2

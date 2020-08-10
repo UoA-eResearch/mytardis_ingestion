@@ -4,7 +4,7 @@
 #
 # Written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated 23 Jul 2020
+# Last updated 07 Aug 2020
 
 from decouple import Config, RepositoryEnv
 
@@ -13,6 +13,8 @@ def process_config(keys=None,
                    local_filepath=None,
                    global_filepath=None):
     local_keys = {
+        's3_key': 'S3_ID',
+        's3_secret_key': 'S3_SECRET_KEY',
         'server': 'MYTARDIS_URL',
         'ingest_user': 'MYTARDIS_INGEST_USER',
         'ingest_api_key': 'MYTARDIS_INGEST_API_KEY',

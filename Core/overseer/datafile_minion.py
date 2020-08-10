@@ -30,7 +30,8 @@ class DatafileMinion(MyTardisMinion):
                          'storage_box',
                          'remote_path',
                          'local_path',
-                         'schema']
+                         'schema',
+                         'full_path']
         try:
             valid = sanity_check(input_dict,
                                  required_keys)

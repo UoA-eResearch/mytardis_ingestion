@@ -4,14 +4,15 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 06 Aug 2020
+# Last updated: 07 Aug 2020
 #
 
 import boto3
 from pathlib import Path
-from mytardis_helper.mt_json import readJSON
-from checksum import calculate_etag
-from config_helper import process_config
+from ..helpers import readJSON
+from ..helpers import calculate_etag
+from ..helpers import process_config
+from smart_open import open
 import logging
 import traceback
 
@@ -37,6 +38,8 @@ class S3FileHandler():
                  local_config):
 
         local_keys = [
+            's3_key',
+            's3_secret_key',
             'staging_root',
             'remote_root',
             'bucket',
@@ -47,15 +50,26 @@ class S3FileHandler():
 
         self.config = process_config(keys=local_keys,
                                      local_filepath=local_config)
+        self.config['blocksize'] = int(self.config['blocksize'])
         # convert path's to Path objects
         pathkeys = [
             'remote_root',
             'staging_root']
         self.config = convert_pathstrings_in_dictionary(self.config,
                                                         pathkeys)
-        self.s3_client = boto3.client('s3',
-                                      endpoint_url=self.config['endpoint_url'])
-        print(self.s3_client)
+        print(self.config)
+        self.s3_session = boto3.Session(
+            aws_access_key_id=self.config['s3_key'],
+            aws_secret_access_key=self.config['s3_secret_key']
+        )
+        self.s3_connection = self.s3_session.client(
+            's3',
+            aws_session_token=None,
+            region_name='us-east-1',
+            use_ssl=True,
+            endpoint_url=self.config['endpoint_url'],
+            config=None
+        )
 
     # =================================
     #
@@ -143,20 +157,52 @@ class S3FileHandler():
         else:
             return False
 
+    def read_in_chunks(self,
+                       file_object):
+        '''
+        Iterator to read a file chunk by chunk.
+        file_object: file opened by caller
+        '''
+        while True:
+            data = file_object.read(self.config['blocksize'])
+            if not data:
+                break
+            yield data
+
     def upload_to_object_store(self,
                                filepath):
         remote_path = self.config['remote_root'] / filepath
         local_path = self.config['staging_root'] / filepath
-        from boto3.s3.transfer import TransferConfig
-        transfer_config = TransferConfig(multipart_threshold=int(self.config['threshold']),
-                                         multipart_chunksize=int(
-                                             self.config['blocksize']),
-                                         max_io_queue=1)
+        print(local_path)
+        size = local_path.stat().st_size
+        print(size)
+        multipart = size > self.config['blocksize']
+        print(multipart)
+        with open(local_path, 'rb') as file_input:
+            for chunk in self.read_in_chunks(file_input):
+                print(chunk)
+        print('Chunks done')
+        s3_uri = 's3://{}/{}'.format(self.config['bucket'],
+                                     remote_path)
+        print(s3_uri)
         try:
-            self.s3_client.upload_file(local_path.as_posix(),
-                                       self.config['bucket'],
-                                       remote_path.as_posix(),
-                                       Config=transfer_config)
+            with open(local_path, 'rb') as file_input:
+                with open(s3_uri,
+                          'wb',
+                          transport_params={
+                              'session': self.s3_session,
+                              'buffer_size': self.config['blocksize'],
+                              'multipart_upload': multipart,
+                              'resource_kwargs':
+                              {
+                                  'endpoint_url': self.config['endpoint_url']
+                              }
+                          },
+                          ignore_ext=True) as s3_destination:
+                    print('Opened for writing')
+                    for chunk in self.read_in_chunks(file_input):
+                        print(chunk)
+                        s3_destination.write(chunk)
         except Exception as error:
             logger.error(traceback.format_exc())
             return None

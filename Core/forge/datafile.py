@@ -82,7 +82,7 @@ class DatafileForge():
 
     def create_replica(self,
                        input_dict):
-        uri = input_dict.pop('stored_file_path')
+        uri = input_dict.pop('full_path')
         location = input_dict.pop('storage_box')
         replica = {'uri': uri,
                    'location': location,
