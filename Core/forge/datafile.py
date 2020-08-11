@@ -46,7 +46,7 @@ class DatafileForge():
     def smelt(self,
               input_dict,
               schema):
-        base_keys = {'dataset_id',
+        base_keys = {'dataset',
                      'filename',
                      'md5sum',
                      'directory',
@@ -61,7 +61,7 @@ class DatafileForge():
         parameters = {}
         if not schema:
             logger.warning(f'Schema {input_dict["schema"]} not found in database.' +
-                           f'Not building project: {input_dict["name"]}')
+                           f'Not building datafile: {input_dict["name"]}')
             return (None, None)
         else:
             input_dict.pop('schema')
@@ -97,14 +97,14 @@ class DatafileForge():
             response = self.rest_factory.post_request('dataset_file',
                                                       mytardis_json)
         except Exception as error:
-            logger.error(f'Unable to create project: {mytardis["filename"]}. ' +
+            logger.error(f'Unable to create datafile: {mytardis["filename"]}. ' +
                          f'Error returned: {error}')
             raise error
         body = json.loads(response.text)
         uri = body['resource_uri']
         datafile_id = body['id']
         if parameters:
-            parameters['project'] = uri
+            parameters['datafile'] = uri
             parameters_json = dict_to_json(parameters)
             try:
                 response = self.rest_factory.post_request('datafileparameterset',

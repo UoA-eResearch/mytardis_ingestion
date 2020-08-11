@@ -9,8 +9,6 @@
 
 import boto3
 from pathlib import Path
-from ..helpers import readJSON
-from ..helpers import calculate_etag
 from ..helpers import process_config
 from smart_open import open
 import logging
@@ -57,7 +55,6 @@ class S3FileHandler():
             'staging_root']
         self.config = convert_pathstrings_in_dictionary(self.config,
                                                         pathkeys)
-        print(self.config)
         self.s3_session = boto3.Session(
             aws_access_key_id=self.config['s3_key'],
             aws_secret_access_key=self.config['s3_secret_key']
@@ -173,18 +170,12 @@ class S3FileHandler():
                                filepath):
         remote_path = self.config['remote_root'] / filepath
         local_path = self.config['staging_root'] / filepath
-        print(local_path)
         size = local_path.stat().st_size
-        print(size)
         multipart = size > self.config['blocksize']
-        print(multipart)
         with open(local_path, 'rb') as file_input:
             for chunk in self.read_in_chunks(file_input):
-                print(chunk)
-        print('Chunks done')
         s3_uri = 's3://{}/{}'.format(self.config['bucket'],
                                      remote_path)
-        print(s3_uri)
         try:
             with open(local_path, 'rb') as file_input:
                 with open(s3_uri,
@@ -199,9 +190,7 @@ class S3FileHandler():
                               }
                           },
                           ignore_ext=True) as s3_destination:
-                    print('Opened for writing')
                     for chunk in self.read_in_chunks(file_input):
-                        print(chunk)
                         s3_destination.write(chunk)
         except Exception as error:
             logger.error(traceback.format_exc())

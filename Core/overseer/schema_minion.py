@@ -23,7 +23,6 @@ class SchemaMinion(MyTardisMinion):
 
     def get_from_namespace(self,
                            namespace):
-        print(namespace)
         try:
             uri, obj = self.get_uri('schema',
                                     'namespace',

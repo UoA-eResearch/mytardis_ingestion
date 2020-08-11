@@ -109,16 +109,12 @@ class ProjectForge():
         uri = body['resource_uri']
         project_id = body['id']
         if parameters:
-            print(parameters)
             parameters['project'] = uri
             parameters_json = dict_to_json(parameters)
             try:
                 response = self.rest_factory.post_request('projectparameterset',
                                                           parameters_json)
-                print(response)
             except Exception as error:
                 logger.warning(f'Unable to attach metadata to project: {mytardis["name"]}. ' +
                                f' Error returned: {error}')
-                print(f'Unable to attach metadata to project: {mytardis["name"]}. ' +
-                      f' Error returned: {error}')
         return (uri, project_id)

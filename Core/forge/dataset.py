@@ -83,7 +83,6 @@ class DatasetForge():
               mytardis,
               parameters):
         mytardis_json = dict_to_json(mytardis)
-        print(mytardis_json)
         try:
             response = self.rest_factory.post_request('dataset',
                                                       mytardis_json)

@@ -58,7 +58,6 @@ class RORFactory():
         A Python Requests library repsonse object
         '''
         url = self.url_base + f'/{action}'
-        print(url)
         headers = {'Accept': 'application/json'}
         if extra_headers:
             headers = {**headers, **extra_headers}

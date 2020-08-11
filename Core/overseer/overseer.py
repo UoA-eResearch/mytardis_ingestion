@@ -71,9 +71,7 @@ class Overseer():
     # existing values from within MyTardis
     def validate_project(self,
                          project_dict):
-        print('Validating project')
         project_minion = ProjectMinion(self.local_config_file_path)
-        print(project_minion)
         # First validate project dictionary using the minion
         try:
             valid = project_minion.validate_dictionary(project_dict)
@@ -124,7 +122,6 @@ class Overseer():
 
     def validate_experiment(self,
                             experiment_dict):
-        print('Validating experiment')
         project_minion = ProjectMinion(self.local_config_file_path)
         experiment_minion = ExperimentMinion(self.local_config_file_path)
         # First validate experiment dictionary using the minion
@@ -185,7 +182,6 @@ class Overseer():
 
     def validate_dataset(self,
                          dataset_dict):
-        print('Validating dataset')
         experiment_minion = ExperimentMinion(self.local_config_file_path)
         dataset_minion = DatasetMinion(self.local_config_file_path)
         instrument_minion = InstrumentMinion(self.local_config_file_path)
@@ -261,7 +257,6 @@ class Overseer():
 
     def validate_datafile(self,
                           datafile_dict):
-        print('Validating datafile')
         dataset_minion = DatasetMinion(self.local_config_file_path)
         datafile_minion = DatafileMinion(self.local_config_file_path)
         # First validate the datafile dictionary usin the minion

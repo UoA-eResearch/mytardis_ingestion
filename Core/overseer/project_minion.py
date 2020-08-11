@@ -33,7 +33,6 @@ class ProjectMinion(MyTardisMinion):
 
     def validate_dictionary(self,
                             input_dict):
-        print(input_dict)
         required_keys = ['name',
                          'raid',
                          'description',
@@ -42,8 +41,6 @@ class ProjectMinion(MyTardisMinion):
         try:
             valid = sanity_check(input_dict,
                                  required_keys)
-            print(valid)
         except Exception as error:
-            print(error)
             raise error
         return valid

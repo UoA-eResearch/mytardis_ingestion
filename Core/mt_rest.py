@@ -90,7 +90,6 @@ class MyTardisRESTFactory():
         =================================
         A Python Requests library repsonse object
         '''
-        print(f'Calling REST API with {method} request for {action}')
         url = self.api_template % action
         headers = {'Accept': 'application/json',
                    'Content-Type': 'application/json',
@@ -118,8 +117,6 @@ class MyTardisRESTFactory():
             # 502 Bad Gateway triggers retries, since the proxy web
             # server (eg Nginx or Apache) in front of MyTardis could be
             # temporarily restarting
-            print(response.status_code)
-            print(response.text)
             if response.status_code == 502:
                 self.__raise_request_exception(response)
             else:
@@ -140,7 +137,7 @@ class MyTardisRESTFactory():
         =================================
         action: the type of object, (e.g. experiment, dataset) to GET
         params: parameters to pass to filter the request return
-        extra_headers: any additional information needed in the header (META) for the 
+        extra_headers: any additional information needed in the header (META) for the
         object being created
 
         Returns:
@@ -160,7 +157,6 @@ class MyTardisRESTFactory():
                      action,
                      data,
                      extra_headers=None):
-        print(data)
         '''Wrapper around self._do_rest_api_request to handle POST requests
 
         Inputs:

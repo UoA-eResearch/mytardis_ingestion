@@ -26,7 +26,6 @@ class ExperimentForge():
     def get_or_create(self,
                       input_dict):
         try:
-            print(input_dict)
             input_dict, schema, uri, obj = self.overseer.validate_experiment(
                 input_dict)
         except Exception as error:

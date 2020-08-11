@@ -36,12 +36,9 @@ class IngestionFactory(ABC):
 
     def forge_project(self,
                       input_dict):
-        print('Forging Project')
         from .forge import ProjectForge
         forge = ProjectForge(self.local_config_file_path)
-        print(forge)
         try:
-            print(input_dict)
             uri, project_id = forge.get_or_create(input_dict)
         except Exception as error:
             raise error
