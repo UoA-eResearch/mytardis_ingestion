@@ -7,7 +7,7 @@
 #
 # written by Chris Seal <c.seal@auckland.ac.nz>
 #
-# Last updated: 23 Jul 2020
+# Last updated: 11 Aug 2020
 #
 
 from .checksum import *
