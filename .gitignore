@@ -15,3 +15,5 @@ test_ingest.py
 make_plots.py
 *~
 *.py#
+
+raid_test.py

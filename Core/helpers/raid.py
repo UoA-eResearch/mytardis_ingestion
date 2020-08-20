@@ -27,7 +27,7 @@ class RAiDAuth(AuthBase):
 
     def __call__(self,
                  request):
-        request.headers['Authorization'] = f'Bearer {self.config["api_key"]}'
+        request.headers['Authorization'] = f'Bearer {self.api_key}'
         return request
 
 
@@ -44,10 +44,14 @@ class RAiDFactory():
             'proxy_https']
         self.config = process_config(keys=local_keys,
                                      global_filepath=global_config_file_path)
-        self.auth = RAiDAuth(self.config['api_key'])
-        self.proxies = {"http": self.config['http'],
-                        "https": self.config['https']}
-        if self.proxies['http'] is None and self.proxies['https'] is None:
+        self.auth = RAiDAuth(self.config['raid_api_key'])
+        print(self.config)
+        self.proxies = {}
+        if 'proxy_http' in self.config.keys():
+            self.proxies["http"] = self.config['proxy_http']
+        if 'proxy_https' in self.config.keys():
+            self.proxies["https"] = self.config['proxy_https']
+        if self.proxies is {}:
             self.proxies = None
         self.verify_certificate = bool(self.config['raid_cert'])
 
@@ -131,8 +135,8 @@ class RAiDFactory():
                   name,
                   description,
                   url,
-                  metadata,
-                  startdate):
+                  metadata=None,
+                  startdate=None):
         from datetime import datetime
         raid_dict = {}
         raid_dict['contentPath'] = url
@@ -146,16 +150,15 @@ class RAiDFactory():
                     raid_dict['meta'] = {}
                 raid_dict['meta'][key] = metadata[key]
         raid_json = dict_to_json(raid_dict)
-        print(raid_json)
         response = self.rest_api_call('POST',
                                       'RAiD',
                                       data=raid_json)
         return response
 
     def update_raid(self,
-                    url,
                     name,
                     description,
+                    url,
                     raid_handle):
         raid_dict = {'contentPath': url,
                      'name': name,

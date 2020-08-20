@@ -39,19 +39,27 @@ class MyTardisRESTFactory():
 
     def __init__(self,
                  local_config_file_path):
-        config_keys = {'server': 'MYTARDIS_URL',
-                       'ingest_user': 'MYTARDIS_INGEST_USER',
-                       'ingest_api_key': 'MYTARDIS_INGEST_API_KEY',
-                       'verify_certificate': 'MYTARDIS_VERIFY_CERT',
-                       'proxy_http': 'PROXY_HTTP',
-                       'proxy_https': 'PROXY_HTTPS'}
-        config_dict = process_config(keys=config_keys,
+        local_keys = ['server',
+                      'ingest_user',
+                      'ingest_api_key',
+                      'verify_certificate',
+                      'proxy_http',
+                      'proxy_https']
+        config_dict = process_config(keys=local_keys,
                                      local_filepath=local_config_file_path)
         self.auth = MyTardisAuth(config_dict['ingest_user'],
                                  config_dict['ingest_api_key'])
         self.proxies = {'http': config_dict['proxy_http'],
                         'https': config_dict['proxy_https']}
         self.verify_certificate = config_dict['verify_certificate']
+        print(self.verify_certificate)
+        if self.verify_certificate is None:
+            self.verify_certificate = False
+        elif self.verify_certificate == 'False':
+            self.verify_certificate = False
+        else:
+            self.verify_certificate = True
+        print(self.verify_certificate)
         self.api_template = urljoin(config_dict['server'],
                                     '/api/v1/%s/')
         self.user_agent = '%s/%s (%s)' % (self.user_agent_name,
