@@ -27,8 +27,7 @@ class RAiDAuth(AuthBase):
 
     def __call__(self,
                  request):
-        request.headers['Authorization'] = f'Bearer {self.api_key}'
-        print(request.headers)
+        request.headers['Authorization'] = f'Bearer {self.config["api_key"]}'
         return request
 
 
@@ -114,6 +113,11 @@ class RAiDFactory():
             logger.error(
                 f'Error, {err.msg}, occurred when attempting to call api request {url}')
             raise err
+        return response
+
+    def get_all_raids(self):
+        response = self.rest_api_call('GET',
+                                      'RAiD?owner=true')
         return response
 
     def get_raid(self,
