@@ -13,3 +13,5 @@ mech_test.py
 test_ingest.py
 
 make_plots.py
+*~
+*.py#
