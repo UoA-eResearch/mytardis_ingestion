@@ -103,3 +103,59 @@ class DatasetForge():
                 logger.warning(f'Unable to attach metadata to dataset: {mytardis["description"]}. ' +
                                f' Error returned: {error}')
         return (uri, dataset_id)
+
+    def reforge(self,
+                input_dict):
+        # Check for the project in the database
+        # If it is there then reforge, otherwise forge.
+
+        try:
+            input_dict, schema, uri, obj = self.overseer.validate_dataset(
+                input_dict)
+        except Exception as error:
+            raise error
+        mytardis, parameters = self.smelt(input_dict,
+                                          schema)
+        mytardis_json = dict_to_json(mytardis)
+        if uri:
+            dataset_id = obj['id']
+            try:
+                response = self.rest_factory.put_request('dataset',
+                                                         mytardis_json,
+                                                         dataset_id)
+            except Exception as error:
+                logger.error(f'Unable to update dataset: {mytardis["description"]}. ' +
+                             f'Error returned: {error}')
+                raise error
+            if parameters:
+                reforge_flg = True
+                try:
+                    # only one param set here
+                    parameters_id = obj['parameter_sets'][0]['id']
+                except KeyError:
+                    reforge_flg = False
+                except Exception as error:
+                    raise error
+                parameters['dataset'] = dataset_id
+                parameters_json = dict_to_json(parameters)
+                if reforge_flg:
+                    try:
+                        response = self.rest_factory.put_request('datasetparameterset',
+                                                                 parameters_json,
+                                                                 parameters_id)
+                    except Exception as error:
+                        logger.warning(f'Unable to update metadata to dataset: {mytardis["description"]}. ' +
+                                       f' Error returned: {error}')
+                    return (uri, dataset_id)
+                else:
+                    try:
+                        response = self.rest_factory.post_request('datasetparameterset',
+                                                                  parameters_json)
+                    except Exception as error:
+                        logger.warning(f'Unable to attach metadata to dataset: {mytardis["description"]}. ' +
+                                       f' Error returned: {error}')
+                    return (uri, dataset_id)
+        else:
+            uri, dataset_id = self.forge(mytardis,
+                                         parameters)
+            return (uri, dataset_id)

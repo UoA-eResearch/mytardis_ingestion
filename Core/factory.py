@@ -44,6 +44,16 @@ class IngestionFactory(ABC):
             raise error
         return (uri, project_id)
 
+    def reforge_project(self,
+                        input_dict):
+        from .forge import ProjectForge
+        forge = ProjectForge(self.local_config_file_path)
+        try:
+            uri, project_id = forge.reforge(input_dict)
+        except Exception as error:
+            raise error
+        return (uri, project_id)
+
     def forge_experiment(self,
                          input_dict):
         from .forge import ExperimentForge
@@ -53,6 +63,16 @@ class IngestionFactory(ABC):
         except Exception as error:
             raise error
         return (uri, experiment_id)
+
+    def reforge_experiment(self,
+                           input_dict):
+        from .forge import ExperimentForge
+        forge = ExperimentForge(self.local_config_file_path)
+        try:
+            uri, project_id = forge.reforge(input_dict)
+        except Exception as error:
+            raise error
+        return (uri, project_id)
 
     def forge_dataset(self,
                       input_dict):
@@ -64,6 +84,16 @@ class IngestionFactory(ABC):
             raise error
         return (uri, dataset_id)
 
+    def reforge_dataset(self,
+                        input_dict):
+        from .forge import ProjectForge
+        forge = ProjectForge(self.local_config_file_path)
+        try:
+            uri, project_id = forge.reforge(input_dict)
+        except Exception as error:
+            raise error
+        return (uri, project_id)
+
     def forge_datafile(self,
                        input_dict):
         from .forge import DatafileForge
@@ -73,3 +103,13 @@ class IngestionFactory(ABC):
         except Exception as error:
             raise error
         return (uri, datafile_id)
+
+    def reforge_datafile(self,
+                         input_dict):
+        from .forge import ProjectForge
+        forge = ProjectForge(self.local_config_file_path)
+        try:
+            uri, project_id = forge.reforge(input_dict)
+        except Exception as error:
+            raise error
+        return (uri, project_id)

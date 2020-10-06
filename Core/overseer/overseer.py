@@ -70,7 +70,8 @@ class Overseer():
     # If these vary log a warning and update the dictionary with the
     # existing values from within MyTardis
     def validate_project(self,
-                         project_dict):
+                         project_dict,
+                         overwrite=False):
         project_minion = ProjectMinion(self.local_config_file_path)
         # First validate project dictionary using the minion
         try:
@@ -96,7 +97,7 @@ class Overseer():
             except Exception as error:
                 logger.error(error)
                 raise error
-            if uri:
+            if uri and not overwrite:
                 if project_dict['name'] != obj['name']:
                     logger.warning(f'Project names differ between project ' +
                                    f'dictionary: {project_dict["name"]}, ' +
@@ -121,7 +122,8 @@ class Overseer():
         return (project_dict, schema_valid, uri, obj)
 
     def validate_experiment(self,
-                            experiment_dict):
+                            experiment_dict,
+                            overwrite=False):
         project_minion = ProjectMinion(self.local_config_file_path)
         experiment_minion = ExperimentMinion(self.local_config_file_path)
         # First validate experiment dictionary using the minion
@@ -162,7 +164,7 @@ class Overseer():
             except Exception as error:
                 logger.error(error)
                 raise error
-            if uri:
+            if uri and not overwrite:
                 if experiment_dict['title'] != obj['title']:
                     logger.warning(f'Experiment names differ between experiment ' +
                                    f'dictionary: {experiment_dict["title"]}, ' +
@@ -181,7 +183,8 @@ class Overseer():
         return (experiment_dict, schema_valid, uri, obj)
 
     def validate_dataset(self,
-                         dataset_dict):
+                         dataset_dict,
+                         overwrite=False):
         experiment_minion = ExperimentMinion(self.local_config_file_path)
         dataset_minion = DatasetMinion(self.local_config_file_path)
         instrument_minion = InstrumentMinion(self.local_config_file_path)
@@ -242,7 +245,7 @@ class Overseer():
             except Exception as error:
                 logger.error(error)
                 raise error
-            if uri:
+            if uri and not overwrite:
                 if dataset_dict['description'] != obj['description']:
                     logger.warning(f'Dataset names differ between dataset ' +
                                    f'dictionary: {dataset_dict["description"]}, ' +
@@ -256,7 +259,8 @@ class Overseer():
         return (dataset_dict, schema_valid, uri, obj)
 
     def validate_datafile(self,
-                          datafile_dict):
+                          datafile_dict,
+                          overwrite=True):
         dataset_minion = DatasetMinion(self.local_config_file_path)
         datafile_minion = DatafileMinion(self.local_config_file_path)
         # First validate the datafile dictionary usin the minion
@@ -287,7 +291,7 @@ class Overseer():
                     datafile_dict['dataset'] = uri
                     uri, obj = datafile_minion.check_file_exists(
                         datafile_dict)
-                    if uri:
+                    if uri and not overwrite:
                         logger.warning(f'File {datafile_dict["filemane"]} already' +
                                        f'exists in MyTardis, skipping')
                     datafile_dict.pop('dataset_id')

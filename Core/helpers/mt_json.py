@@ -53,7 +53,7 @@ def writeJSON(json_dict, json_file):
 
     try:
         with open(json_file, 'w') as out_file:
-            json.dump(json_dict, out_file)
+            json.dump(json_dict, out_file, indent=4)
         return True
     except Exception as err:
         raise

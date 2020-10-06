@@ -90,7 +90,7 @@ class ProjectForge():
                     parameters['parameters'] = []
                 parameters['parameters'].append({u'name': key,
                                                  u'value': input_dict[key]})
-        if parameters['parameters'] == []:
+        if 'parameters' in parameters.keys() and parameters['parameters'] == []:
             parameters = None
         return (mytardis, parameters)
 
@@ -118,3 +118,59 @@ class ProjectForge():
                 logger.warning(f'Unable to attach metadata to project: {mytardis["name"]}. ' +
                                f' Error returned: {error}')
         return (uri, project_id)
+
+    def reforge(self,
+                input_dict):
+        # Check for the project in the database
+        # If it is there then reforge, otherwise forge.
+        try:
+            input_dict, schema, uri, obj = self.overseer.validate_project(
+                input_dict,
+                overwrite=True)
+        except Exception as error:
+            raise error
+        mytardis, parameters = self.smelt(input_dict,
+                                          schema)
+        mytardis_json = dict_to_json(mytardis)
+        if uri:
+            project_id = obj['id']
+            try:
+                response = self.rest_factory.put_request('project',
+                                                         mytardis_json,
+                                                         project_id)
+            except Exception as error:
+                logger.error(f'Unable to update project: {mytardis["name"]}. ' +
+                             f'Error returned: {error}')
+                raise error
+            if parameters:
+                reforge_flg = True
+                try:
+                    # only one param set here
+                    parameters_id = obj['parameter_sets'][0]['id']
+                except KeyError:
+                    reforge_flg = False
+                except Exception as error:
+                    raise error
+                parameters['project'] = project_id
+                parameters_json = dict_to_json(parameters)
+                if reforge_flg:
+                    try:
+                        response = self.rest_factory.put_request('projectparameterset',
+                                                                 parameters_json,
+                                                                 parameters_id)
+                    except Exception as error:
+                        logger.warning(f'Unable to update metadata to project: {mytardis["name"]}. ' +
+                                       f' Error returned: {error}')
+                    return (uri, project_id)
+                else:
+                    try:
+                        response = self.rest_factory.post_request('projectparameterset',
+                                                                  parameters_json)
+                    except Exception as error:
+                        logger.warning(f'Unable to attach metadata to project: {mytardis["name"]}. ' +
+                                       f' Error returned: {error}')
+                    return (uri, project_id)
+        else:
+            uri, project_id = self.forge(mytardis,
+                                         parameters)
+            return (uri, project_id)
