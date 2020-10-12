@@ -1,0 +1,5 @@
+{
+    "experiments": ["/api/v1/experiment/10/"],
+    "description": "A test dataset created with the API",
+    "dataset_id": "Raids all the way down"
+}
