@@ -172,8 +172,6 @@ class S3FileHandler():
         local_path = self.config['staging_root'] / filepath
         size = local_path.stat().st_size
         multipart = size > self.config['blocksize']
-        with open(local_path, 'rb') as file_input:
-            for chunk in self.read_in_chunks(file_input):
         s3_uri = 's3://{}/{}'.format(self.config['bucket'],
                                      remote_path)
         try:

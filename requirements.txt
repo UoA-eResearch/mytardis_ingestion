@@ -1,0 +1,7 @@
+requests
+backoff
+python-decouple
+python-dateutil
+ldap3
+boto3
+smart_open

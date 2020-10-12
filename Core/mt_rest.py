@@ -39,19 +39,28 @@ class MyTardisRESTFactory():
 
     def __init__(self,
                  local_config_file_path):
-        config_keys = {'server': 'MYTARDIS_URL',
-                       'ingest_user': 'MYTARDIS_INGEST_USER',
-                       'ingest_api_key': 'MYTARDIS_INGEST_API_KEY',
-                       'verify_certificate': 'MYTARDIS_VERIFY_CERT',
-                       'proxy_http': 'PROXY_HTTP',
-                       'proxy_https': 'PROXY_HTTPS'}
-        config_dict = process_config(keys=config_keys,
+        local_keys = ['server',
+                      'ingest_user',
+                      'ingest_api_key',
+                      'verify_certificate',
+                      'proxy_http',
+                      'proxy_https']
+        config_dict = process_config(keys=local_keys,
                                      local_filepath=local_config_file_path)
+        self.config_dict = config_dict
         self.auth = MyTardisAuth(config_dict['ingest_user'],
                                  config_dict['ingest_api_key'])
         self.proxies = {'http': config_dict['proxy_http'],
                         'https': config_dict['proxy_https']}
         self.verify_certificate = config_dict['verify_certificate']
+        print(self.verify_certificate)
+        if self.verify_certificate is None:
+            self.verify_certificate = False
+        elif self.verify_certificate == 'False':
+            self.verify_certificate = False
+        else:
+            self.verify_certificate = True
+        print(self.verify_certificate)
         self.api_template = urljoin(config_dict['server'],
                                     '/api/v1/%s/')
         self.user_agent = '%s/%s (%s)' % (self.user_agent_name,
@@ -70,11 +79,10 @@ class MyTardisRESTFactory():
                           max_tries=8)
     def __rest_api_request(self,
                            method,  # REST api method
-                           action,  # action here refers to experiment, dataset or datafile
+                           url,
                            data=None,
                            params=None,
-                           extra_headers=None,
-                           api_url_template=None):
+                           extra_headers=None):
         '''Function to handle the REST API calls
 
         Inputs:
@@ -90,12 +98,15 @@ class MyTardisRESTFactory():
         =================================
         A Python Requests library repsonse object
         '''
-        url = self.api_template % action
         headers = {'Accept': 'application/json',
                    'Content-Type': 'application/json',
                    'User-Agent': self.user_agent}
         if extra_headers:
             headers = {**headers, **extra_headers}
+        print(method)
+        print(url)
+        print(data)
+        print('=================')
         try:
             if self.proxies:
                 response = requests.request(method,
@@ -130,7 +141,8 @@ class MyTardisRESTFactory():
     def get_request(self,
                     action,
                     params,
-                    extra_headers=None):
+                    extra_headers=None,
+                    obj_id=None):
         '''Wrapper around self._do_rest_api_request to handle GET requests
 
         Inputs:
@@ -144,9 +156,14 @@ class MyTardisRESTFactory():
         =================================
         A Python requests module response object
         '''
+        url = self.api_template % action
+        if obj_id:
+            url = urljoin(url,
+                          str(obj_id))
+            params = None
         try:
             response = self.__rest_api_request('GET',
-                                               action,
+                                               url,
                                                params=params,
                                                extra_headers=extra_headers)
         except Exception as err:
@@ -168,9 +185,42 @@ class MyTardisRESTFactory():
         Returns:
         =================================
         A Python requests module response object'''
+        url = self.api_template % action
         try:
             response = self.__rest_api_request('POST',
-                                               action,
+                                               url,
+                                               data=data,
+                                               extra_headers=extra_headers)
+        except Exception as err:
+            raise err
+        return response
+
+    def put_request(self,
+                    action,
+                    data,
+                    obj_id,
+                    extra_headers=None):
+        '''Wrapper around self._do_rest_api_request to handle POST requests
+
+        Inputs:
+        =================================
+        action: the type of object, (e.g. experiment, dataset) to PUT
+        data: a JSON string holding the data to update the object
+        extra_headers: any additional information needed in the header (META) for the object being updated
+
+        Returns:
+        =================================
+        A Python requests module response object'''
+        url = urljoin(self.api_template % action,
+                      str(obj_id))
+        print(url)
+        url += '/'
+        print(url)
+        print("PUTTING")
+        print(data)
+        try:
+            response = self.__rest_api_request('PUT',
+                                               url,
                                                data=data,
                                                extra_headers=extra_headers)
         except Exception as err:

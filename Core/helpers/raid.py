@@ -14,6 +14,7 @@ from decouple import Config, RepositoryEnv
 from urllib.parse import urljoin, quote
 import backoff
 from .mt_json import dict_to_json
+from .config_helper import process_config
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,6 @@ class RAiDAuth(AuthBase):
     def __call__(self,
                  request):
         request.headers['Authorization'] = f'Bearer {self.api_key}'
-        print(request.headers)
         return request
 
 
@@ -36,30 +36,35 @@ class RAiDFactory():
     def __init__(self,
                  global_config_file_path):
         # global_config holds environment variables that don't change often such as LDAP parameters and project_db stuff
-        global_config = Config(RepositoryEnv(global_config_file_path))
-        self.api_key = global_config('RAID_API_KEY')
-        self.url_base = global_config('RAID_URL')
-        self.auth = RAiDAuth(self.api_key)
-        self.proxies = {"http": global_config('PROXY_HTTP',
-                                              default=None),
-                        "https": global_config('PROXY_HTTPS',
-                                               default=None)}
-        if self.proxies['http'] == None and self.proxies['https'] == None:
+        local_keys = [
+            'raid_api_key',
+            'raid_url',
+            'raid_cert',
+            'proxy_http',
+            'proxy_https']
+        self.config = process_config(keys=local_keys,
+                                     global_filepath=global_config_file_path)
+        self.auth = RAiDAuth(self.config['raid_api_key'])
+        print(self.config)
+        self.proxies = {}
+        if 'proxy_http' in self.config.keys():
+            self.proxies["http"] = self.config['proxy_http']
+        if 'proxy_https' in self.config.keys():
+            self.proxies["https"] = self.config['proxy_https']
+        if self.proxies is {}:
             self.proxies = None
-        self.verify_certificate = global_config('RAID_VERIFY_CERT',
-                                                default=True,
-                                                cast=bool)
+        self.verify_certificate = bool(self.config['raid_cert'])
 
     @backoff.on_exception(backoff.expo,
                           (requests.exceptions.Timeout,
                            requests.exceptions.ConnectionError),
                           max_tries=8)
-    def __rest_api_call(self,
-                        method,  # REST api method
-                        action,  # action here refers to experiment, dataset or datafile
-                        data=None,
-                        params=None,
-                        extra_headers=None):
+    def rest_api_call(self,
+                      method,  # REST api method
+                      action,  # action here refers to experiment, dataset or datafile
+                      data=None,
+                      params=None,
+                      extra_headers=None):
         '''Function to handle the REST API calls
 
         Inputs:
@@ -75,7 +80,7 @@ class RAiDFactory():
         =================================
         A Python Requests library repsonse object
         '''
-        url = self.url_base + f'/{action}'
+        url = self.config['raid_url'] + f'/{action}'
         print(url)
         headers = {'Accept': 'application/json'}
         if extra_headers:
@@ -114,19 +119,24 @@ class RAiDFactory():
             raise err
         return response
 
+    def get_all_raids(self):
+        response = self.rest_api_call('GET',
+                                      'RAiD?owner=true')
+        return response
+
     def get_raid(self,
                  raid_handle):
         url_safe_raid_handle = quote(raid_handle, safe='')
-        response = self.__rest_api_call('GET',
-                                        f'RAiD/{url_safe_raid_handle}')
+        response = self.rest_api_call('GET',
+                                      f'RAiD/{url_safe_raid_handle}')
         return response
 
     def mint_raid(self,
                   name,
                   description,
                   url,
-                  metadata,
-                  startdate):
+                  metadata=None,
+                  startdate=None):
         from datetime import datetime
         raid_dict = {}
         raid_dict['contentPath'] = url
@@ -140,23 +150,22 @@ class RAiDFactory():
                     raid_dict['meta'] = {}
                 raid_dict['meta'][key] = metadata[key]
         raid_json = dict_to_json(raid_dict)
-        print(raid_json)
-        response = self.__rest_api_call('POST',
-                                        'RAiD',
-                                        data=raid_json)
+        response = self.rest_api_call('POST',
+                                      'RAiD',
+                                      data=raid_json)
         return response
 
     def update_raid(self,
-                    url,
                     name,
                     description,
+                    url,
                     raid_handle):
         raid_dict = {'contentPath': url,
                      'name': name,
                      'description': description}
         raid_json = dict_to_json(raid_dict)
         url_safe_raid_handle = quote(raid_handle, safe='')
-        response = self.__rest_api_call('PUT',
-                                        f'RAiD/{url_safe_raid_handle}',
-                                        data=raid_json)
+        response = self.rest_api_call('PUT',
+                                      f'RAiD/{url_safe_raid_handle}',
+                                      data=raid_json)
         return response
