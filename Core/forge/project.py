@@ -82,6 +82,11 @@ class ProjectForge():
         else:
             input_dict.pop('schema')
             parameters['schema'] = schema
+        if 'admins' in input_dict.keys():
+            input_dict['admins'] = list(set(input_dict['admins']))
+            if 'lead_researcher' in input_dict.keys():
+                if input_dict['lead_researcher'] in input_dict['admins']:
+                    input_dict['admins'].pop(input_dict['lead_researcher'])
         for key in input_dict.keys():
             if key in base_keys:
                 mytardis[key] = input_dict[key]
@@ -151,7 +156,7 @@ class ProjectForge():
                     reforge_flg = False
                 except Exception as error:
                     raise error
-                parameters['project'] = project_id
+                parameters['project'] = uri
                 parameters_json = dict_to_json(parameters)
                 if reforge_flg:
                     try:

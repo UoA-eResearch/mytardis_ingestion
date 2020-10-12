@@ -68,6 +68,11 @@ class DatafileForge():
             parameters['schema'] = schema
         replica, input_dict = self.create_replica(input_dict)
         mytardis['replicas'] = [replica]
+        if 'admins' in input_dict.keys():
+            input_dict['admins'] = list(set(input_dict['admins']))
+            if 'lead_researcher' in input_dict.keys():
+                if input_dict['lead_researcher'] in input_dict['admins']:
+                    input_dict['admins'].pop(input_dict['lead_researcher'])
         for key in input_dict.keys():
             if key in base_keys:
                 mytardis[key] = input_dict[key]

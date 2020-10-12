@@ -86,13 +86,13 @@ class IngestionFactory(ABC):
 
     def reforge_dataset(self,
                         input_dict):
-        from .forge import ProjectForge
-        forge = ProjectForge(self.local_config_file_path)
+        from .forge import DatasetForge
+        forge = DatasetForge(self.local_config_file_path)
         try:
-            uri, project_id = forge.reforge(input_dict)
+            uri, dataset_id = forge.reforge(input_dict)
         except Exception as error:
             raise error
-        return (uri, project_id)
+        return (uri, dataset_id)
 
     def forge_datafile(self,
                        input_dict):
@@ -106,10 +106,10 @@ class IngestionFactory(ABC):
 
     def reforge_datafile(self,
                          input_dict):
-        from .forge import ProjectForge
-        forge = ProjectForge(self.local_config_file_path)
+        from .forge import DatafileForge
+        forge = DatafileForge(self.local_config_file_path)
         try:
-            uri, project_id = forge.reforge(input_dict)
+            uri, datafile_id = forge.reforge(input_dict)
         except Exception as error:
             raise error
-        return (uri, project_id)
+        return (uri, datafile_id)

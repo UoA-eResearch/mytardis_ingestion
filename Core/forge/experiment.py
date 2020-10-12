@@ -69,6 +69,11 @@ class ExperimentForge():
         else:
             input_dict.pop('schema')
             parameters['schema'] = schema
+        if 'admins' in input_dict.keys():
+            input_dict['admins'] = list(set(input_dict['admins']))
+            if 'lead_researcher' in input_dict.keys():
+                if input_dict['lead_researcher'] in input_dict['admins']:
+                    input_dict['admins'].pop(input_dict['lead_researcher'])
         for key in input_dict.keys():
             if key in base_keys:
                 mytardis[key] = input_dict[key]
@@ -110,39 +115,29 @@ class ExperimentForge():
                 input_dict):
         # Check for the experiment in the database
         # If it is there then reforge, otherwise forge.
-
         try:
             input_dict, schema, uri, obj = self.overseer.validate_experiment(
                 input_dict,
                 overwrite=True)
-            print('Schema')
-            print(schema)
         except Exception as error:
             raise error
-        if uri:
+        '''if uri:
             obj_id = obj['id']
             response = self.rest_factory.get_request('experiment',
                                                      None,
                                                      obj_id=obj_id)
-            resp = json.loads(response.text)
-        print(resp)
+            resp = json.loads(response.text)'''
         mytardis, parameters = self.smelt(input_dict,
                                           schema)
-        print(mytardis)
-        print(parameters)
-        if uri:
+        '''if uri:
             for key in mytardis.keys():
                 resp[key] = mytardis[key]
-            print(resp)
             mytardis_json = dict_to_json(mytardis)
-            print(mytardis_json)
-        else:
-            mytardis_json = dict_to_json(mytardis)
+        else:'''
+        mytardis_json = dict_to_json(mytardis)
         if uri:
             experiment_id = obj['id']
             try:
-                print('putting')
-                print(mytardis_json)
                 response = self.rest_factory.put_request('experiment',
                                                          mytardis_json,
                                                          experiment_id)
@@ -151,7 +146,6 @@ class ExperimentForge():
                              f'Error returned: {error}')
                 raise error
             if parameters:
-                print(parameters)
                 reforge_flg = True
                 try:
                     # only one param set here
@@ -164,8 +158,6 @@ class ExperimentForge():
                 parameters_json = dict_to_json(parameters)
                 if reforge_flg:
                     try:
-                        print(parameters_id)
-                        print(parameters_json)
                         response = self.rest_factory.put_request('experimentparameterset',
                                                                  parameters_json,
                                                                  parameters_id)

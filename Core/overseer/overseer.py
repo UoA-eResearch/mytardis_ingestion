@@ -201,7 +201,7 @@ class Overseer():
         if valid:
             try:
                 uri, _ = experiment_minion.get_from_raid(
-                    dataset_dict['experiments'])
+                    dataset_dict['experiments'][0])
             except Exception as error:
                 logger.error(error)
                 raise error
