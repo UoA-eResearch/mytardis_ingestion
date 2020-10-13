@@ -60,5 +60,6 @@ class DatafileMinion(MyTardisMinion):
             objs = response_dict['objects']
             for obj in objs:
                 if input_dict == obj['md5sum']:
+                    uri = obj['resource_uri']
                     return (uri, obj)
             return (None, None)

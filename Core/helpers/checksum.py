@@ -46,7 +46,7 @@ def md5_python(file_path,
                 md5.update(chunk)
         md5sum = md5.hexdigest()
     except Exception as err:
-        raise
+        raise err
     return md5sum
 
 
@@ -114,19 +114,19 @@ def calculate_md5sum(file_path,
             md5sum = md5_subprocess(file_path,
                                     md5sum_executable=md5sum_executable)
         except Exception as err:
-            raise
+            raise err
     else:
         try:
             md5sum = md5_python(file_path,
                                 blocksize=blocksize)
         except Exception as err:
-            raise
+            raise err
     try:
         md5sum = md5sum.decode()
     except(UnicodeDecodeError, AttributeError):
         pass
     except Exception as err:
-        raise
+        raise err
     return md5sum
 
 
@@ -158,7 +158,7 @@ def calculate_etag(file_path,
                     break
                 md5s.append(hashlib.md5(chunk))
     except Exception as err:
-        raise
+        raise err
     try:
         if len(md5s) > 1:
             digests = b"".join(m.digest() for m in md5s)
@@ -169,5 +169,5 @@ def calculate_etag(file_path,
         else:
             etag = '""'
     except Exception as err:
-        raise
+        raise err
     return etag

@@ -27,6 +27,7 @@ def lowercase(obj):
 
 def check_dictionary(dictionary,
                      required_keys):
+    # TODO Refactor to remove this since sanity.py does the same thing
     '''Carry out basic sanity tests on a dictionary
 
     Inputs:

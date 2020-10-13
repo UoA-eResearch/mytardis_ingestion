@@ -10,8 +10,7 @@
 import logging
 import requests
 from requests.auth import AuthBase
-from decouple import Config, RepositoryEnv
-from urllib.parse import urljoin, quote
+from urllib.parse import quote
 import backoff
 from .mt_json import dict_to_json
 from .config_helper import process_config
@@ -35,7 +34,8 @@ class RAiDFactory():
 
     def __init__(self,
                  global_config_file_path):
-        # global_config holds environment variables that don't change often such as LDAP parameters and project_db stuff
+        # global_config holds environment variables that don't change often
+        # such as LDAP parameters and project_db stuff
         local_keys = [
             'raid_api_key',
             'raid_url',

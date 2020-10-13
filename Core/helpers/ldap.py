@@ -11,8 +11,8 @@ def get_user_from_upi(ldap_dict,
         details = do_ldap_search(ldap_dict,
                                  'upi',
                                  upi)
-    except Exception as error:
-        raise
+    except Exception as err:
+        raise err
     return details
 
 
@@ -22,15 +22,15 @@ def get_user_from_email(ldap_dict,
         details = do_ldap_search(ldap_dict,
                                  'email',
                                  email)
-    except Exception as error:
-        raise
+    except Exception as err:
+        raise err
     return details
 
 
 def do_ldap_search(ldap_dict,
                    search_action,
                    value):
-    if not search_action in ldap_dict['user_attr_map'].keys():
+    if search_action not in ldap_dict['user_attr_map'].keys():
         error_message = f'{search_action} is not a valid key in the LDAP user attribute map'
         logger.error(error_message)
         raise KeyError(error_message)
@@ -58,9 +58,12 @@ def do_ldap_search(ldap_dict,
             username = person[ldap_dict['user_attr_map']['upi']].value
             first_name = person[ldap_dict['user_attr_map']['first_name']].value
             last_name = person[ldap_dict['user_attr_map']['last_name']].value
-            #email = person[ldap_dict['user_attr_map']['email']].value
+            try:
+                email = person[ldap_dict['user_attr_map']['email']].value
+            except KeyError:
+                email = 'email'
             details = {'username': username,
                        'first_name': first_name,
                        'last_name': last_name,
-                       'email': 'email'}
+                       'email': email}
             return details
