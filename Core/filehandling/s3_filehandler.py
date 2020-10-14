@@ -8,6 +8,7 @@
 #
 
 import boto3
+from botocore.exceptions import ClientError
 from pathlib import Path
 from ..helpers import process_config
 from smart_open import open
@@ -59,7 +60,7 @@ class S3FileHandler():
             aws_access_key_id=self.config['s3_key'],
             aws_secret_access_key=self.config['s3_secret_key']
         )
-        self.s3_connection = self.s3_session.client(
+        self.s3_client = self.s3_session.client(
             's3',
             aws_session_token=None,
             region_name='us-east-1',
@@ -154,6 +155,33 @@ class S3FileHandler():
         else:
             return False
 
+    def list_buckets(self):
+        try:
+            response = self.s3_client.list_buckets()
+        except ClientError as err:
+            logging.error(err)
+            return []
+        except Exception as err:
+            logging.error(err)
+            raise
+        buckets = response['Buckets']
+        bucket_list = []
+        for bucket in buckets:
+            bucket_list.append(bucket['Name'])
+        return bucket_list
+
+    def create_bucket(self,
+                      bucket):
+        buckets = self.list_buckets()
+        if bucket in buckets:
+            return False
+        try:
+            self.s3_client.create_bucket(Bucket=bucket)
+        except Exception as err:
+            logging.error(err)
+            raise
+        return True
+
     def read_in_chunks(self,
                        file_object):
         '''
@@ -166,14 +194,29 @@ class S3FileHandler():
                 break
             yield data
 
+    def copy_file_to_new_bucket(self,
+                                src_bucket,
+                                src_key,
+                                dst_bucket,
+                                dst_key=None):
+        try:
+            cpy_src = '{0}/{1}'.format(src_bucket, src_key)
+            self.s3_client.copy_object(Bucket=dst_bucket,
+                                       CopySource=cpy_src,
+                                       Key=dst_key)
+        except Exception as err:
+            logging.error(err)
+            print(err)
+            raise err
+
     def upload_to_object_store(self,
                                filepath):
         remote_path = self.config['remote_root'] / filepath
         local_path = self.config['staging_root'] / filepath
         size = local_path.stat().st_size
         multipart = size > self.config['blocksize']
-        s3_uri = 's3://{}/{}'.format(self.config['bucket'],
-                                     remote_path)
+        s3_uri = 's3://{0}/{1}'.format(self.config['bucket'],
+                                       remote_path)
         try:
             with open(local_path, 'rb') as file_input:
                 with open(s3_uri,
