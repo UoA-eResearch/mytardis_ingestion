@@ -179,6 +179,21 @@ class S3FileHandler():
             bucket_list.append(bucket['Name'])
         return bucket_list
 
+    def list_files(self
+                   bucket_name):
+        try:
+            response = self.s3_client.list_objects_v2(Bucket=bucket)
+        except ClientError as err:
+            logging.error(err)
+            return []
+        except Exception as err:
+            logging.error(err)
+            raise
+        file_list = []
+        for obj in response['Contents']:
+            file_list.append(obj['Key'])
+        return file_list
+
     def create_bucket(self,
                       bucket):
         buckets = self.list_buckets()
