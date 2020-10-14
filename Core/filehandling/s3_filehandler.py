@@ -179,8 +179,8 @@ class S3FileHandler():
             bucket_list.append(bucket['Name'])
         return bucket_list
 
-    def list_files(self
-                   bucket_name):
+    def list_files(self,
+                   bucket):
         try:
             response = self.s3_client.list_objects_v2(Bucket=bucket)
         except ClientError as err:
