@@ -1,6 +1,8 @@
 # MyTardisREST class
 #
 # Written by Chris Seal <c.seal@auckland.ac.nz>
+# Based on the code found at
+#   https://github.com/mytardis/mytardis_ngs_ingestor
 #
 # Last updated 27 Jul 2020
 

@@ -9,11 +9,9 @@
 
 import logging
 import requests
-from requests.auth import AuthBase
 from decouple import Config, RepositoryEnv
-from urllib.parse import urljoin, quote
+from urllib.parse import quote
 import backoff
-from .mt_json import dict_to_json
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +20,8 @@ class RORFactory():
 
     def __init__(self,
                  global_config_file_path):
-        # global_config holds environment variables that don't change often such as LDAP parameters and project_db stuff
+        # global_config holds environment variables that don't change often
+        # such as LDAP parameters and project_db stuff
         global_config = Config(RepositoryEnv(global_config_file_path))
         self.url_base = global_config('ROR_URL')
         self.proxies = {"http": global_config('PROXY_HTTP',

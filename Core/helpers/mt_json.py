@@ -1,4 +1,4 @@
-# json.py
+# mt_json.py
 #
 # Helper functions for reading/writing JSONs for MyTardis ingestion
 #
@@ -31,7 +31,7 @@ def readJSON(json_file):
         with open(json_file, 'r') as in_file:
             json_dict = json.load(in_file)
     except Exception as err:
-        raise
+        raise err
     return json_dict
 
 
@@ -56,7 +56,7 @@ def writeJSON(json_dict, json_file):
             json.dump(json_dict, out_file, indent=4)
         return True
     except Exception as err:
-        raise
+        raise err
 
 
 def dict_to_json(dictionary):
@@ -87,5 +87,5 @@ def dict_to_json(dictionary):
     try:
         json_string = json.dumps(dictionary, default=date_handler)
     except Exception as err:
-        raise
+        raise err
     return json_string

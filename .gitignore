@@ -17,3 +17,9 @@ make_plots.py
 *.py#
 
 raid_test.py
+
+Core/__pycache__/
+
+Core/helpers/__pycache__/
+
+Core/overseer/__pycache__/

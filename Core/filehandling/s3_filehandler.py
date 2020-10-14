@@ -8,6 +8,7 @@
 #
 
 import boto3
+from botocore.exceptions import ClientError
 from pathlib import Path
 from ..helpers import process_config
 from smart_open import open
@@ -33,14 +34,13 @@ def convert_pathstrings_in_dictionary(input_dict,
 class S3FileHandler():
 
     def __init__(self,
-                 local_config):
+                 local_config,
+                 staging_root,
+                 remote_root):
 
         local_keys = [
             's3_key',
             's3_secret_key',
-            'staging_root',
-            'remote_root',
-            'bucket',
             'endpoint_url',
             'threshold',
             'blocksize'
@@ -50,6 +50,8 @@ class S3FileHandler():
                                      local_filepath=local_config)
         self.config['blocksize'] = int(self.config['blocksize'])
         # convert path's to Path objects
+        self.config['staging_root'] = staging_root
+        self.config['remote_root'] = remote_root
         pathkeys = [
             'remote_root',
             'staging_root']
@@ -59,7 +61,7 @@ class S3FileHandler():
             aws_access_key_id=self.config['s3_key'],
             aws_secret_access_key=self.config['s3_secret_key']
         )
-        self.s3_connection = self.s3_session.client(
+        self.s3_client = self.s3_session.client(
             's3',
             aws_session_token=None,
             region_name='us-east-1',
@@ -74,6 +76,7 @@ class S3FileHandler():
     #
     # =================================
     def get_matching_s3_objects(self,
+                                bucket,
                                 prefix="",
                                 suffix=""):
         """
@@ -86,7 +89,7 @@ class S3FileHandler():
         """
         s3 = self.s3_client
         paginator = s3.get_paginator("list_objects_v2")
-        kwargs = {'Bucket': self.config['bucket']}
+        kwargs = {'Bucket': bucket}
 
         # We can pass the prefix directly to the S3 API.  If the user has passed
         # a tuple or list of prefixes, we go through them one by one.
@@ -110,6 +113,7 @@ class S3FileHandler():
                         yield obj
 
     def get_matching_s3_keys(self,
+                             bucket,
                              prefix="",
                              suffix=""):
         """
@@ -118,7 +122,8 @@ class S3FileHandler():
         :param prefix: Only fetch keys that start with this prefix (optional).
         :param suffix: Only fetch keys that end with this suffix (optional).
         """
-        for obj in self.get_matching_s3_objects(prefix,
+        for obj in self.get_matching_s3_objects(bucket,
+                                                prefix,
                                                 suffix):
             yield obj["Key"]
     # =================================
@@ -128,13 +133,18 @@ class S3FileHandler():
     # =================================
 
     def get_obj_from_store(self,
-                           filepath):
+                           bucket,
+                           filepath,
+                           remote_root=None):
         """
         Note: filepath should be relative to the s3 root
         """
-        fullpath = self.config['remote_root'] / filepath
+        if not remote_root:
+            remote_root = self.config['remote_root']
+        fullpath = remote_root / filepath
         objs = []
-        for obj in self.get_matching_s3_objects(fullpath.as_posix()):
+        for obj in self.get_matching_s3_objects(bucket,
+                                                fullpath.as_posix()):
             objs.append(obj)
         if len(objs) > 1:
             error_msg = f'Multiple files with the same name and file path found in object store'
@@ -154,6 +164,33 @@ class S3FileHandler():
         else:
             return False
 
+    def list_buckets(self):
+        try:
+            response = self.s3_client.list_buckets()
+        except ClientError as err:
+            logging.error(err)
+            return []
+        except Exception as err:
+            logging.error(err)
+            raise
+        buckets = response['Buckets']
+        bucket_list = []
+        for bucket in buckets:
+            bucket_list.append(bucket['Name'])
+        return bucket_list
+
+    def create_bucket(self,
+                      bucket):
+        buckets = self.list_buckets()
+        if bucket in buckets:
+            return False
+        try:
+            self.s3_client.create_bucket(Bucket=bucket)
+        except Exception as err:
+            logging.error(err)
+            raise
+        return True
+
     def read_in_chunks(self,
                        file_object):
         '''
@@ -166,14 +203,42 @@ class S3FileHandler():
                 break
             yield data
 
+    def copy_file_to_new_bucket(self,
+                                src_bucket,
+                                src_key,
+                                dst_bucket,
+                                dst_key=None):
+        try:
+            cpy_src = '{0}/{1}'.format(src_bucket, src_key)
+            self.s3_client.copy_object(Bucket=dst_bucket,
+                                       CopySource=cpy_src,
+                                       Key=dst_key)
+        except Exception as err:
+            logging.error(err)
+            print(err)
+            raise err
+
+    def remove_object(self,
+                      bucket,
+                      key):
+        self.s3_client.delete_object(Bucket=bucket,
+                                     Key=KeyError)
+
     def upload_to_object_store(self,
-                               filepath):
-        remote_path = self.config['remote_root'] / filepath
-        local_path = self.config['staging_root'] / filepath
+                               filepath,
+                               bucket,
+                               remote_root=None,
+                               staging_root=None):
+        if not remote_root:
+            remote_root = self.config['remote_root']
+        if not staging_root:
+            staging_root = self.config['staging_root']
+        remote_path = remote_root / filepath
+        local_path = staging_root / filepath
         size = local_path.stat().st_size
         multipart = size > self.config['blocksize']
-        s3_uri = 's3://{}/{}'.format(self.config['bucket'],
-                                     remote_path)
+        s3_uri = 's3://{0}/{1}'.format(bucket,
+                                       remote_path)
         try:
             with open(local_path, 'rb') as file_input:
                 with open(s3_uri,
