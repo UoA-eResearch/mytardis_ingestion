@@ -12,9 +12,11 @@ from botocore.exceptions import ClientError
 from boto3.s3.transfer import TransferConfig
 from pathlib import Path
 from ..helpers import process_config
-from smart_open import open
+#from smart_open import open
 import logging
-import traceback
+#import traceback
+import sys
+import os
 
 logger = logging.getLogger('__name__')
 
@@ -280,14 +282,34 @@ class S3FileHandler():
         except Exception as error:
             logger.error(traceback.format_exc())
             return None'''
-        # config = TransferConfig(multipart_threshold=self.config['blocksize'],
-        #                        multipart_chunksize=self.config['blocksize'],
-        #                        max_io_queue=1)
+        config = TransferConfig(multipart_threshold=self.config['blocksize'],
+                                multipart_chunksize=self.config['blocksize'],
+                                max_io_queue=1)
         try:
             self.s3_client.upload_file(local_path.as_posix(),  # the file to upload
                                        bucket,  # the bucket to put it into
-                                       remote_path)  # ,  # the s3 file path
+                                       remote_path,
+                                       Config=config,
+                                       Callback=ProgressPercentage(local_path.as_posix()))  # ,  # the s3 file path
             # Config=config)
         except ClientError as error:
             logger.error(error)
             return None
+
+
+class ProgressPercentage(object):
+    def __init__(self, filename):
+        self._filename = filename
+        self._size = float(os.path.getsize(filename))
+        self._seen_so_far = 0
+
+    def __call__(self, bytes_amount):
+        # To simplify we'll assume this is hooked up
+        # to a single filename.
+        self._seen_so_far += bytes_amount
+        percentage = (self._seen_so_far / self._size) * 100
+        sys.stdout.write(
+            "\r%s  %s / %s  (%.2f%%)" % (
+                self._filename, self._seen_so_far, self._size,
+                percentage))
+        sys.stdout.flush()
