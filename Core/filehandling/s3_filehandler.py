@@ -280,8 +280,8 @@ class S3FileHandler():
         except Exception as error:
             logger.error(traceback.format_exc())
             return None'''
-        config = TransferConfig(multipart_threshold=self.threshold,
-                                multipart_chunksize=self.blocksize,
+        config = TransferConfig(multipart_threshold=self.config['blocksize'],
+                                multipart_chunksize=self.config['blocksize'],
                                 max_io_queue=1)
         try:
             self.s3_client.upload_file(local_path.as_posix(),  # the file to upload
