@@ -52,9 +52,12 @@ class S3FileHandler():
         # convert path's to Path objects
         self.config['staging_root'] = staging_root
         self.config['remote_root'] = remote_root
-        pathkeys = [
-            'remote_root',
-            'staging_root']
+        if remote_root:
+            pathkeys = [
+                'remote_root',
+                'staging_root']
+        else:
+            pathkeys = ['staging_root']
         self.config = convert_pathstrings_in_dictionary(self.config,
                                                         pathkeys)
         self.s3_session = boto3.Session(
