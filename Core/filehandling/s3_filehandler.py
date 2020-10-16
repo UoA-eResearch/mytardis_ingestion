@@ -286,7 +286,7 @@ class S3FileHandler():
         try:
             self.s3_client.upload_file(local_path.as_posix(),  # the file to upload
                                        bucket,  # the bucket to put it into
-                                       remote_path.as_posix(),  # the s3 file path
+                                       remote_path,  # the s3 file path
                                        Config=config)
         except ClientError as error:
             logger.error(error)
