@@ -9,6 +9,7 @@
 
 import boto3
 from botocore.exceptions import ClientError
+from boto3.s3.transfer import TransferConfig
 from pathlib import Path
 from ..helpers import process_config
 from smart_open import open
@@ -256,9 +257,9 @@ class S3FileHandler():
         else:
             remote_path = filepath
         local_path = staging_root / filepath
-        size = local_path.stat().st_size
-        multipart = size > self.config['blocksize']
-        s3_uri = 's3://{0}/{1}'.format(bucket,
+        #size = local_path.stat().st_size
+        #multipart = size > self.config['blocksize']
+        '''s3_uri = 's3://{0}/{1}'.format(bucket,
                                        remote_path)
         try:
             with open(local_path, 'rb') as file_input:
@@ -278,4 +279,15 @@ class S3FileHandler():
                         s3_destination.write(chunk)
         except Exception as error:
             logger.error(traceback.format_exc())
+            return None'''
+        config = TransferConfig(multipart_threshold=self.threshold,
+                                multipart_chunksize=self.blocksize,
+                                max_io_queue=1)
+        try:
+            self.s3_client.upload_file(local_path.as_posix(),  # the file to upload
+                                       bucket,  # the bucket to put it into
+                                       remote_path.as_posix(),  # the s3 file path
+                                       Config=config)
+        except ClientError as error:
+            logger.error(error)
             return None
