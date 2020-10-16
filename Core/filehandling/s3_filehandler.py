@@ -286,11 +286,15 @@ class S3FileHandler():
                                 multipart_chunksize=self.config['blocksize'],
                                 max_io_queue=1)
         try:
-            self.s3_client.upload_file(local_path.as_posix(),  # the file to upload
+            '''self.s3_client.upload_file(local_path.as_posix(),  # the file to upload
                                        bucket,  # the bucket to put it into
                                        remote_path,
                                        Config=config,
-                                       Callback=ProgressPercentage(local_path.as_posix()))  # ,  # the s3 file path
+                                       Callback=ProgressPercentage(local_path.as_posix()))  # ,  # the s3 file path'''
+            transfer_bot = boto3.s3.transfer.S3Transfer(
+                client=self.s3_client, config=config)
+            transfer_bot.upload_file(
+                local_path.as_posix(), bucket, remote_path)
             # Config=config)
         except ClientError as error:
             logger.error(error)
