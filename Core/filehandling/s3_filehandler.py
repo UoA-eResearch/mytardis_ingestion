@@ -36,7 +36,7 @@ class S3FileHandler():
     def __init__(self,
                  local_config,
                  staging_root,
-                 remote_root):
+                 remote_root=None):
 
         local_keys = [
             's3_key',
