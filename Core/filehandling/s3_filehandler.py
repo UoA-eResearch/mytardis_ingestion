@@ -251,7 +251,10 @@ class S3FileHandler():
             remote_root = self.config['remote_root']
         if not staging_root:
             staging_root = self.config['staging_root']
-        remote_path = remote_root / filepath
+        if remote_root:
+            remote_path = remote_root / filepath
+        else:
+            remote_path = filepath
         local_path = staging_root / filepath
         size = local_path.stat().st_size
         multipart = size > self.config['blocksize']
