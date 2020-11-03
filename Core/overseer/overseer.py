@@ -291,6 +291,7 @@ class Overseer():
                     datafile_dict['dataset'] = uri
                     uri, obj = datafile_minion.check_file_exists(
                         datafile_dict)
+                    print(uri, datafile_dict)
                     if uri and not overwrite:
                         logger.warning(f'File {datafile_dict["filemane"]} already' +
                                        f'exists in MyTardis, skipping')

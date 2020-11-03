@@ -28,6 +28,10 @@ class DatafileForge():
         try:
             input_dict, schema, uri, obj = self.overseer.validate_datafile(
                 input_dict)
+            print(input_dict,
+                  schema,
+                  uri,
+                  obj)
         except Exception as error:
             raise error
         if uri:
@@ -36,6 +40,8 @@ class DatafileForge():
         else:
             mytardis, parameters = self.smelt(input_dict,
                                               schema)
+            print(mytardis)
+            print(parameters)
         if not mytardis:
             return (None, None)
         else:
@@ -81,7 +87,7 @@ class DatafileForge():
                     parameters['parameters'] = []
                 parameters['parameters'].append({u'name': key,
                                                  u'value': input_dict[key]})
-        if parameters['parameters'] == []:
+        if 'parameters' not in parameters.keys() or parameters['parameters'] == []:
             parameters = None
         return (mytardis, parameters)
 

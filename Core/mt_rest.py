@@ -60,8 +60,6 @@ class MyTardisRESTFactory():
             self.verify_certificate = False
         elif self.verify_certificate == 'False':
             self.verify_certificate = False
-        else:
-            self.verify_certificate = True
         print(self.verify_certificate)
         self.api_template = urljoin(config_dict['server'],
                                     '/api/v1/%s/')

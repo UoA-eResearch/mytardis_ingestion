@@ -28,8 +28,6 @@ class DatafileMinion(MyTardisMinion):
                          'filename',
                          'md5sum',
                          'storage_box',
-                         'remote_path',
-                         'local_path',
                          'schema',
                          'full_path']
         try:
@@ -59,7 +57,7 @@ class DatafileMinion(MyTardisMinion):
                 return (None, None)
             objs = response_dict['objects']
             for obj in objs:
-                if input_dict == obj['md5sum']:
+                if input_dict['md5sum'] == obj['md5sum']:
                     uri = obj['resource_uri']
                     return (uri, obj)
             return (None, None)
