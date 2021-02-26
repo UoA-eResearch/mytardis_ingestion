@@ -91,7 +91,7 @@ Development of instrument persistent identifiers (PIDInst) has reached a point w
  - **Owner**: The institution(s) responsible for the management of the instrument
    - **Owner Name**: The full name of the owner
  - **Manufacturer**: The manufacturer or developer of the instrument
-   -**Manufacturer Name**: The full name of the manufacturer
+   - **Manufacturer Name**: The full name of the manufacturer
    
 Recommended metadata fields include:
  - **Owner**:
@@ -108,6 +108,13 @@ Recommended metadata fields include:
  - **Description**: Technical description of the instrument and its capabilities
  - **Instrument Type**: Classification of the type of instrument
  - **Measured Variable**: What the instrument measures or observes
+ - **Date**: Key dates include commissioning/decommissioning, calibration etc.
+   -**Date Type**: What the date represents
+ - **Related Identifier**: PIDs that are related to the instrument. For example a complex instrument might contain sensors that can be considered to be instruments in their own right. These could have PIDInst minted for them and they would list the other sensors in the instrument as related identifiers
+   - **Related Identifier Type**: The type of PID included.
+   - **Relation Type**: Description of the relationship
+ - **Alternate Identifier**: Other Identifiers that the instrument has
+   - **Alternate Identifier Type**: The type of identifier used as an alternate
 ### Roadmap
 
  - Migrate the API keys out of an **env** file and into a more secure information repository
