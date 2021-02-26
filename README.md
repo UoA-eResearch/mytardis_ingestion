@@ -70,7 +70,7 @@ The data ingestion part of the ingestion process takes the prepared metadata dic
    - **description**: The dataset name (see experiment **title** above)
    - **dataset_id**: A unique dataset identifier, RAiD for UoA datasets, could also be Dataset DOIs
    - **experiments**: A **list** of experiment identifiers associated with the experiment **raid**. We have assumed a one-to-many relationship between experiments and datasets, rather than the many-to-many relationship that is default in MyTardis. As such the scripts only get the first item in the list and would need refactoring to accommodate a many-to-many relationship.
-   - **instrument_id**: A unique identifier to the instrument that the data was generated on. Currently there is no standard persistent identifier that has widespread community adoption (DOIs are the most likely candidate).
+   - [**instrument_id**](#instrument-metadata): A unique identifier to the instrument that the data was generated on. Currently there is no standard persistent identifier that has widespread community adoption (DOIs are the most likely candidate).
    - **schema**: A schema name as defined within MyTardis for the Dataset level schema. This will include the metadata fields and short names associated with them.
    - As with the project any additional keys will be added as metadata fields
  - Datafile Object. (*NB*: Given the limitations associated with transferring data through the *html* interface of MyTardis, we are streaming the data directly into our object store, using the **boto3** python library, and the **filehandler.py** script provides wrapper functions to do this. We then create a **replica** in MyTardis that points to the file location.
@@ -83,9 +83,36 @@ The data ingestion part of the ingestion process takes the prepared metadata dic
    - **schema**: A schema name as defined within MyTardis for the Datafile level schema. This will include the metadata fields and short names associated with them.
    - As with the project any additional keys will be added as metadata fields
    
+### Instrument Metadata
+   
+Development of instrument persistent identifiers (PIDInst) has reached a point where we are comfortable beginning to use these in MyTardis. Instruments add to MyTardis from 2021 onward will have a PIDInst minted for them and this requires minimum metadata as described below.
+ - **Landing Page**: A URL that the identifier resolves to.
+ - **Name**: The instrument name
+ - **Owner**: The institution(s) responsible for the management of the instrument
+   - **Owner Name**: The full name of the owner
+ - **Manufacturer**: The manufacturer or developer of the instrument
+   -**Manufacturer Name**: The full name of the manufacturer
+   
+Recommended metadata fields include:
+ - **Owner**:
+   - **Owner Contact**: Contact email for the instrument owner
+   - **Owner Identifier**: Persistent identifier (PID) for the instrument owner
+   - **Owner Identifier Type**: The type of PID included.
+ - **Manufacturer**:
+   - **Manufacturer Identifier** PID for the manufacturer
+   - **Manufacturer Identifier Type**: The type of PID included
+ - **Model**: Name or model of the instrument as attributed by the manufacturer
+   - **Model Name**: Full name of the Model
+   - **Model Identifier**: PID for the model
+   - **Model Identifier Type**: The type of PID included
+ - **Description**: Technical description of the instrument and its capabilities
+ - **Instrument Type**: Classification of the type of instrument
+ - **Measured Variable**: What the instrument measures or observes
 ### Roadmap
 
-TBD
+ - Migrate the API keys out of an **env** file and into a more secure information repository
+ - Maintain parity with UoA MyTardis development to ensure that the ingestion scripts continue to function as expected
+  - As part of ongoing MyTardis development an assessment of the cost/benefit of using GraphQL as an API in place of Tastypie will be made. Based on the outcome of that decision modifications to the ingestion scripts may be necessary.
 
 ### Change Log
 
