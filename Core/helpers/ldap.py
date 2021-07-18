@@ -9,7 +9,7 @@ def get_user_from_upi(ldap_dict,
                       upi):
     try:
         details = do_ldap_search(ldap_dict,
-                                 'upi',
+                                 'cn',
                                  upi)
     except Exception as err:
         raise err
@@ -66,4 +66,5 @@ def do_ldap_search(ldap_dict,
                        'first_name': first_name,
                        'last_name': last_name,
                        'email': email}
+            details = person
             return details
