@@ -103,10 +103,6 @@ class MyTardisRESTFactory():
                    'User-Agent': self.user_agent}
         if extra_headers:
             headers = {**headers, **extra_headers}
-        print(method)
-        print(url)
-        print(data)
-        print('=================')
         try:
             if self.proxies:
                 response = requests.request(method,

@@ -23,3 +23,5 @@ Core/__pycache__/
 Core/helpers/__pycache__/
 
 Core/overseer/__pycache__/
+
+__pycache__/
