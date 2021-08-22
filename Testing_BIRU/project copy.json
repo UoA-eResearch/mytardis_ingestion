@@ -1,0 +1,31 @@
+{
+	"schema": "https://mytardis.nectar.auckland.ac.nz/FMHS/BIRU/v1/Project",
+	"admin_groups": ["BIRU_admin"],
+	"admins": ["xli677"],
+	"url": "http://www.google.co.nz",
+	"projects": [{
+			"name": "BIRU_MultipleLungCancer",
+			"description": "This is the description of project - BIRU_MultipleleLungCancer. In this project, we treat two cancer tissues with/without DrugA to see the difference of the tissue from the image",
+			"raid": "biru-multipleLungcancer",
+			"lead_researcher": "csea004",
+			"member_groups": [
+				["BIRU_member", true, true]
+			],
+			"members": [
+				["xli677", true, true]
+			]
+		},
+		{
+			"name": "BIRU_GastricCancer",
+			"description": "This is the description of project - Description of BIRU_GastricCancer. In this project, we see how the cancer tissue looks like with no treatment",
+			"raid": "biru-gastriccancer",
+			"lead_researcher": "csea004",
+			"member_groups": [
+				["BIRU_member", true, true]
+			],
+			"members": [
+				["xli677", true, true]
+			]
+		}
+	]
+}
