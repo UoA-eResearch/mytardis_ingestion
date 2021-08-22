@@ -1,0 +1,42 @@
+{
+    "schema": "https://mytardis.nectar.auckland.ac.nz/FMHS/BIRU/v1/Experiment",
+    "admin_groups": [
+        "BIRU_admin"
+    ],
+    "admins": [
+        "xli677"
+    ],
+    "url": "http://www.google.co.nz",
+    "experiments": [
+        {
+            "project_id": "biru-multipleLungcancer",
+            "title": "BIRU lungcancer1_NoTreatment",
+            "description": "Description of BIRU cancer1 with no treatment",
+            "raid": "biru-lungcancer1",
+            "tissue_type": "cancer",
+            "tissue_culture_conditions": "NA",
+            "number_of_conditions": "2",
+            "number_of_biological_replicates": "2"
+        },
+        {
+            "project_id": "biru-multipleLungcancer",
+            "title": "BIRU lungcancer2_DrugA",
+            "description": "Description of BIRU cancer2 treated with DrugA",
+            "raid": "biru-lungcancer2",
+            "tissue_type": "cancer",
+            "tissue_culture_conditions": "DrugA",
+            "number_of_conditions": "1",
+            "number_of_biological_replicates": "2"
+        },
+        {
+            "project_id": "biru-gastriccancer",
+            "title": "BIRU gastriccancer",
+            "description": "Description of gastriccancer tissue in normal condition",
+            "raid": "biru-gastriccancer",
+            "tissue_type": "gasstriccancer",
+            "tissue_culture_conditions": "test",
+            "number_of_conditions": "test",
+            "number_of_biological_replicates": "test"
+        }
+    ]
+}

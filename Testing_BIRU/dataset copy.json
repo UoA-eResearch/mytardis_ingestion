@@ -1,0 +1,57 @@
+{
+    "schema": "https://mytardis.nectar.auckland.ac.nz/FMHS/BIRU/v1/Dataset",
+    "admin_groups": [
+        "BIRU_admin"
+    ],
+    "admins": [
+        "xli677"
+    ],
+    "url": "http://www.google.co.nz",
+    "datasets": [
+        {
+            "experiments": "biru-lungcancer1",
+            "description": "Dataset1 of biru-lungcancer1",
+            "dataset_id": "BIRU-DataSet1",
+            "dataset_type": "oib",
+            "fixation_and-permeabilization_conditions":"NA",
+            "staining_conditions":"test",
+            "mounting_conditions":"test",
+            "dataset_sent_date": "2018-12-12T00:00:00",
+            "instrument_id": "Olympus FV1000 confocal"
+        },
+        {
+            "experiments": "biru-lungcancer1",
+            "description": "Dataset2 of biru-lungcancer1",
+            "dataset_id": "BIRU-DataSet2",
+            "dataset_type": "oib",
+            "fixation_and-permeabilization_conditions":"PBS-T 15min @ RT",
+            "staining_conditions":"test",
+            "mounting_conditions":"test",
+            "dataset_sent_date": "2018-12-13T00:00:00",
+            "instrument_id": "Olympus FV1000 live cell imaging confocal microscope"
+        },
+        {
+            "experiments": "biru-lungcancer2",
+            "description": "Dataset3 of biru-lungcancer2",
+            "dataset_id": "BIRU-DataSet3",
+            "dataset_type": "oib",
+            "fixation_and-permeabilization_conditions":"PBS-T 15min @ RT",
+            "staining_conditions":"test",
+            "mounting_conditions":"test",
+            "dataset_sent_date": "2019-12-12T00:00:00",
+            "instrument_id": "Olympus FV1000 live cell imaging confocal microscope"
+        },
+        {
+            "experiments": "biru-gastriccancer",
+            "description": "Dataset4 of BIRU gastriccancer",
+            "dataset_id": "BIRU-DataSet4",
+            "dataset_type": "oib",
+            "fixation_and-permeabilization_conditions":"PBS-T 15min @ RT",
+            "staining_conditions":"test",
+            "mounting_conditions":"test",
+            "dataset_sent_date": "2020-12-12T00:00:00",
+            "instrument_id": "Olympus FV1000 live cell imaging confocal microscope"
+        }
+
+    ]
+}

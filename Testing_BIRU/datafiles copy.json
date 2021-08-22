@@ -1,0 +1,90 @@
+{
+    "schema": "https://mytardis.nectar.auckland.ac.nz/FMHS/BIRU/v1/Datafile",
+    "storage_box": "BIRU",
+    "datafiles": [
+        {
+            "filename": "good image 02.oib",
+            "dataset_id": "BIRU-DataSet1",
+            "datafile_run_number": 1.0,
+            "directory": "project1/experiment1/dataset1",
+            "md5sum": "5a7f09577f72072663fc2e66dba7d7c7",
+            "full_path": "project1/experiment1/dataset1/good image 02.oib",
+            "size": 4861952.0,
+            "SignificantBits": "12",
+            "DimensionOrder": "XYCZT",
+            "LightControl": "9999",
+            "Magnification": "60.0"
+            
+        },
+        {
+            "filename": "sequt_405_488_594_stk.oib",
+            "dataset_id": "BIRU-DataSet2",
+            "datafile_run_number": 1.0,
+            "directory": "project1/experiment1/dataset2",
+            "md5sum": "6ba5136687e0f8d1f178a01142caa98e",
+            "full_path": "project1/experiment1/dataset2/sequt_405_488_594_stk.oib",
+            "size": 7389184.0,
+            "SignificantBits": "12",
+            "DimensionOrder": "XYCZT",
+            "LightControl": "9999",
+            "Magnification": "80.0"
+            
+            
+        },
+        {
+            "filename": "sequt_488_594_stk.oib",
+            "dataset_id": "BIRU-DataSet2",
+            "datafile_run_number": 1.0,
+            "directory": "project1/experiment1/dataset2",
+            "md5sum": "ccca9dfc8da54af6f35b2350f6cdceb6",
+            "full_path": "project1/experiment1/dataset2/sequt_488_594_stk.oib",
+            "size": 4964352.0,
+            "SignificantBits": "12",
+            "DimensionOrder": "XYCZT",
+            "LightControl": "9999",
+            "Magnification": "80.0"
+            
+        },
+        {
+            "filename": "beads 20190925.oib",
+            "dataset_id": "BIRU-DataSet3",
+            "datafile_run_number": 1.0,
+            "directory": "project1/experiment2/dataset3",
+            "md5sum": "2604ccd8791eda69c1d93f16df8369cb",
+            "full_path": "project1/experiment2/dataset3/beads 20190925.oib",
+            "size": 26977064.0,
+            "SignificantBits": "12",
+            "DimensionOrder": "XYCZT",
+            "LightControl": "9999",
+            "Magnification": "100.0"
+            
+        },
+        {
+            "filename": "20190812 HF 01 stack.oib",
+            "dataset_id": "BIRU-DataSet4",
+            "datafile_run_number": 1.0,
+            "directory": "project2/experiment3/dataset4",
+            "md5sum": "b04b6477fb63bea9a16fa92f0718bc31",
+            "full_path": "project2/experiment3/dataset4/20190812 HF 01 stack.oib",
+            "size": 43941888.0,
+            "SignificantBits": "12",
+            "DimensionOrder": "XYCZT",
+            "LightControl": "9999",
+            "Magnification": "40.0"
+            
+        },
+        {
+            "filename": "20190812 NT 100x 01 slice.oib",
+            "dataset_id": "BIRU-DataSet4",
+            "datafile_run_number": 1.0,
+            "directory": "project2/experiment3/dataset4",
+            "md5sum": "cca4746b1c44b88ea971567c78c7f21b",
+            "full_path": "project2/experiment3/dataset4/20190812 NT 100x 01 slice.oib",
+            "size": 10911744.0,
+            "SignificantBits": "12",
+            "DimensionOrder": "XYCZT",
+            "LightControl": "9999",
+            "Magnification": "30.0"
+        }
+    ]
+}
