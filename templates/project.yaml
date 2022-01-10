@@ -1,0 +1,43 @@
+---
+# Project template. Please replace <key> with the metadata keys defined in the schema and <value> with its value
+#
+# Necessary info
+project_name: <value>
+project_id: <the identifier you wish to associate with the project - prepend with PGG- >
+description: <value>
+lead_researcher: <value>
+# schema: <value> - un-comment if multiple schema have been defined and set the appropriate type of schema 
+#
+# Access control. Please remove or comment out un-necessary types of group/users
+# Groups are preferred over individual users for the purposes of admin
+#
+admin_groups:
+  - <value>
+  - <value> # Add new rows prepended with - as needed, or remove as needed
+admin_users:
+  - <value>
+  - <value>
+read_groups:
+  - <value>
+  - <value>
+read_users:
+  - <value>
+  - <value>
+download_groups:
+  - <value>
+  - <value>
+download_users:
+  - <value>
+  - <value>
+sensitive_groups:
+  - <value>
+  - <value>
+sensitive_users:
+  - <value>
+  - <value>
+#
+# General metadata
+#
+metadata:
+  <key>: <value>
+  <key>: <value>

@@ -1,0 +1,11 @@
+\babel@toc {english}{}
+\contentsline {chapter}{\numberline {1}Scope}{3}{chapter.1}%
+\contentsline {chapter}{\numberline {2}Onboarding a New Instrument}{5}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Onboarding Steps}{5}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Preliminary Discussions}{6}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Gathering Required Data}{6}{section.2.3}%
+\contentsline {section}{\numberline {2.4}Determining an Ingestion Strategy}{8}{section.2.4}%
+\contentsline {section}{\numberline {2.5}Developing Customised Ingestion Scripts}{10}{section.2.5}%
+\contentsline {section}{\numberline {2.6}Testing the Ingestion Pipeline}{10}{section.2.6}%
+\contentsline {section}{\numberline {2.7}Going Live}{11}{section.2.7}%
+\contentsline {chapter}{\numberline {3}Indices and tables}{13}{chapter.3}%
