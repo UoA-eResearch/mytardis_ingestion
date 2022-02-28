@@ -1,0 +1,10 @@
+requests
+backoff
+pytest
+mock
+pytest-dependency
+pylint
+interrogate
+mypy
+types-requests
+types-mock
