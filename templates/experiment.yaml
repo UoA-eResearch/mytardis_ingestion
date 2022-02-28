@@ -9,7 +9,7 @@ project_id: # Multiple projects can be associated with a sample. If this is the 
   - <one of the identifiers associated with the project that this experiment/sample is part of>
 experiment_id: <an identifier, unique within the project, that is associated with the sample>
 description: <value>
-# schema: <value> - un-comment if multiple schema have been defined and set the appropriate type of schema 
+# schema: <value> - un-comment if multiple schema have been defined and set the appropriate type of schema
 #
 # Access control. Access, unless specified otherwise, cascades from the projects associated with the experiment.
 # If different access controls are needed, they need to be explicitly defined.

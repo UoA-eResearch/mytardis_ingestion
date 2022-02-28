@@ -694,7 +694,7 @@ e
 * paper: letterpaper
 * layout: <same size as paper>
 * layoutoffset:(h,v)=(0.0pt,0.0pt)
-* modes: twoside 
+* modes: twoside
 * h-part:(L,W,R)=(72.26999pt, 469.75502pt, 72.26999pt)
 * v-part:(T,H,B)=(72.26999pt, 650.43001pt, 72.26999pt)
 * \paperwidth=614.295pt
@@ -791,7 +791,7 @@ Chapter 3.
 (./mytardisingestion.ind) [13] (./mytardisingestion.aux)
 Package rerunfilecheck Info: File `mytardisingestion.out' has not changed.
 (rerunfilecheck)             Checksum: EA0D27A3A0FBA1112463FFEC981C243A;1685.
- ) 
+ )
 Here is how much of TeX's memory you used:
  13485 strings out of 478994
  193427 string characters out of 5864751

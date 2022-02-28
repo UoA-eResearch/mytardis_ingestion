@@ -25,3 +25,5 @@ Core/helpers/__pycache__/
 Core/overseer/__pycache__/
 
 __pycache__/
+
+*.OLD

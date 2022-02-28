@@ -9,7 +9,7 @@ experiment_id: # Multiple samples can be associated with a dataset. If this is t
   - <one of the identifiers associated with the experiment/sample that this dataset is part of>
 dataset_id: <an identifier, unique within the experiment/sample, that is associated with the dataset>
 instrument_id: <the identifier associated with the instrument (or commercial entity if outsourced) used to generate the dataset>
-# schema: <value> - un-comment if multiple schema have been defined and set the appropriate type of schema 
+# schema: <value> - un-comment if multiple schema have been defined and set the appropriate type of schema
 #
 # Access control. Access, unless specified otherwise, cascades from the experiments associated with the dataset.
 # If different access controls are needed, they need to be explicitly defined.

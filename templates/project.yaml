@@ -6,7 +6,7 @@ project_name: <value>
 project_id: <the identifier you wish to associate with the project - prepend with PGG- >
 description: <value>
 lead_researcher: <value>
-# schema: <value> - un-comment if multiple schema have been defined and set the appropriate type of schema 
+# schema: <value> - un-comment if multiple schema have been defined and set the appropriate type of schema
 #
 # Access control. Please remove or comment out un-necessary types of group/users
 # Groups are preferred over individual users for the purposes of admin

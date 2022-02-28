@@ -100,23 +100,23 @@ The process of onboarding a new instrument has developed organically as work has
 \sphinxAtStartPar
 During this refactoring process most of the customisation applied at UoA have been moved into ‘apps’, or micro\sphinxhyphen{}services. The current list of ‘apps’ that are used (currently not available upstream but future pull requests should make them more widely available for the MyTardis community) are:
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 project
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 instrument\_profile
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 identifiers
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 search
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 facility\_profile
 
@@ -131,11 +131,11 @@ The ingestion scripts developed employ these apps and are therefore incompatible
 \sphinxAtStartPar
 There are several stages to the onboarding process and it is, by its nature, iterative. Broadly speaking the steps involved consist of the following, which are discussed in more detail
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 {\hyperref[\detokenize{index:prelim}]{\sphinxcrossref{\DUrole{std,std-ref}{Preliminary discussion with researchers and facility managers}}}}
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 Co\sphinxhyphen{}developing the ingestion process %
 \begin{footnote}[1]\sphinxAtStartFootnote
@@ -143,25 +143,25 @@ These processes are iterative and happen concurrently in a typical onboarding.
 %
 \end{footnote}
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 {\hyperref[\detokenize{index:gathering-data}]{\sphinxcrossref{\DUrole{std,std-ref}{Gathering necessary data for creating the instrument (and facility if necessary) and metadata schema}}}}
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 {\hyperref[\detokenize{index:ingestion-strat}]{\sphinxcrossref{\DUrole{std,std-ref}{Co\sphinxhyphen{}developing an ingestion strategy with researchers and facility managers}}}}
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 {\hyperref[\detokenize{index:modding-scripts}]{\sphinxcrossref{\DUrole{std,std-ref}{Customising the ingestion scripts to fit with the strategy devised}}}}
 
 \end{itemize}
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 {\hyperref[\detokenize{index:testing}]{\sphinxcrossref{\DUrole{std,std-ref}{Testing the ingestion pipeline}}}}
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 {\hyperref[\detokenize{index:going-live}]{\sphinxcrossref{\DUrole{std,std-ref}{Migrating to a live service}}}}
 
@@ -173,59 +173,59 @@ These processes are iterative and happen concurrently in a typical onboarding.
 \sphinxAtStartPar
 Most researchers and facility managers are not aware of MyTardis and what the instrument data repository offers. In order to ensure that both the facility managers and the researchers are fully engaged with the co\sphinxhyphen{}design process it is important to provide them with context. This is typically done by meeting, either individually or as a group and going through the following:
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 What are we trying to achieve with our repository?
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 Protect data by ensuring that it is backed up in the data centre.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 Ensure that a set of raw data is collected as ‘close’ to the instrument as possible, allowing for repetition of different analyses for reproducible research.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 Provide search functionality allowing researchers to find their own, and UoA shared data, quickly and easily.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 Provide secured access to data that is in need of protection through robust access control.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 Automate, as much as is possible, the hand\sphinxhyphen{}over of data from a facility to researchers
 
 \end{itemize}
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 What is MyTardis and how does it help us achieve these aims?
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 Normally a live demonstration with sample users/data.
 
 \end{itemize}
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 What are our next steps?
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 Introduce the need for minimum metadata.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 Discuss the concept of metadata schema and what additional data would be useful to collate.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 Discuss co\sphinxhyphen{}design process and agree to the approach that will be taken.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 Check that there is still interest in pursuing the use of the repository.
 
@@ -245,29 +245,29 @@ When onboarding a new instrument we have made the choice to implement instrument
 \sphinxAtStartPar
 The data required to mint an instrument PID is summarised here:
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Landing Page}: A URL that the identifier resolves to.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Name}: The instrument name
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Owner}: The institution(s) responsible for the management of the instrument
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Owner Name}: The full name of the owner
 
 \end{itemize}
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Manufacturer}: The manufacturer or developer of the instrument
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Manufacturer Name}: The full name of the manufacturer
 
@@ -276,94 +276,94 @@ The data required to mint an instrument PID is summarised here:
 \end{itemize}
 \begin{description}
 \item[{Other recommended metadata fields defined in the schema include:}] \leavevmode\begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Owner}:
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Owner Contact}: Contact email for the instrument owner
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Owner Identifier}: Persistent identifier (PID) for the instrument owner
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Owner Identifier Type}: The type of PID included.
 
 \end{itemize}
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Manufacturer}:
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Manufacturer Identifier} PID for the manufacturer
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Manufacturer Identifier Type}: The type of PID included
 
 \end{itemize}
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Model}: Name or model of the instrument as attributed by the manufacturer
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Model Name}: Full name of the Model
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Model Identifier}: PID for the model
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Model Identifier Type}: The type of PID included
 
 \end{itemize}
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Description}: Technical description of the instrument and its capabilities
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Instrument Type}: Classification of the type of instrument
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Measured Variable}: What the instrument measures or observes
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Date}: Key dates include commissioning/decommissioning, calibration etc.
 
 \sphinxAtStartPar
 \sphinxhyphen{}\sphinxstylestrong{Date Type}: What the date represents
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Related Identifier}: PIDs that are related to the instrument. For example a complex instrument might contain sensors that can be considered to be instruments in their own right. These could have PIDInst minted for them and they would list the other sensors in the instrument as related identifiers
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Related Identifier Type}: The type of PID included.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Relation Type}: Description of the relationship
 
 \end{itemize}
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Alternate Identifier}: Other Identifiers that the instrument has
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{Alternate Identifier Type}: The type of identifier used as an alternate
 
@@ -380,17 +380,17 @@ In addition to the instrument metadata if the facility is also being onboarded t
 MyTardis has been developed with a very flexible metadata model that allows for nearly complete customisation of the metadata fields stored and presented by the system. This flexibility comes with the additional overhead, however, of needing to establish metadata schema for the different objects stored in the database. During the data gathering stage of the onboarding process, we work with researchers and facility managers to discover:
 \begin{enumerate}
 \sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
-\item {} 
+\item {}
 \sphinxAtStartPar
 What metadata exists for the data generated?
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 What data can be automatically obtained from the instrument or the output files from the instrument?
 
 \end{itemize}
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 What metadata should be stored with the data? %
 \begin{footnote}[2]\sphinxAtStartFootnote
@@ -398,17 +398,17 @@ Since metadata is trivially small compared to the data attached, and in the abse
 %
 \end{footnote}
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 What is useful for researchers to be able to search on?
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 Are there any examples of international best practice that we can leverage?
 
 \end{itemize}
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 What is the priority of the metadata, in other words, what is the best order to display it in? %
 \begin{footnote}[3]\sphinxAtStartFootnote
@@ -416,7 +416,7 @@ This has yet to be implemented/undertaken. Current developments with one of our 
 %
 \end{footnote}
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 At what level in the object hierarchy of MyTardis should the metadata sit?
 
@@ -438,19 +438,19 @@ This process is complicated by the presence of an object hierarchy within MyTard
 With the \sphinxstylestrong{project} ‘app’ installed the object hierarchy in MyTardis is as follows:
 \begin{enumerate}
 \sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
-\item {} 
+\item {}
 \sphinxAtStartPar
 Project.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 Experiment (It is often convenient to think of this as being a sample on which multiple assays, from different instruments, are being made).
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 Dataset (This represents a suite of measurement(s) taken using a single instrument for a related sample or samples).
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 Datafiles generated by the instrument (It is envisaged that little metadata will sit at this level of the object hierarchy, but it does provide a location for quality assurance data or similar to sit).
 
@@ -462,23 +462,23 @@ For each level of the hierarchy the minimum metadata is similar, but has differe
 \sphinxAtStartPar
 At the Project level the minimum metadata is:
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{name}: The project name
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{description}: A short project description
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{identifier}: A unique project identifier, can be multiple in use but all need to be globally unique within MyTardis. To help with global uniqueness we are recommending that facilities prepend their own identifiers with a 3 letter code representing the facility. This provides some protection against namespace collision.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{principal\_investigator}: A username for the lead researcher in the project. This user will get admin access at all levels of the project and it’s child objects. It should be noted that the UoA version of MyTardis authenticates against Active Directory and the API may need reworking for OAuth authentication.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{schema}: A schema name as defined within MyTardis for the Project level schema. This will include the metadata fields and short names associated with them.
 
@@ -487,23 +487,23 @@ At the Project level the minimum metadata is:
 \sphinxAtStartPar
 For Experiments the minimum metadata required for them to be created in MyTardis is:
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{title}: The experiment name
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{identifier}: A unique experiment identifier. See Project identifier field for notes.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{description}: A short description of the experiment.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{project}: A \sphinxstylestrong{list} of project identifiers (i.e. the \sphinxstylestrong{identifier} field from the project object in question) for the parent projects. \sphinxstyleemphasis{Note:} Many\sphinxhyphen{}To\sphinxhyphen{}Many relationships are established between the Project and the Experiment objects, allowing for the ready re\sphinxhyphen{}use of data, as appropriate.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{schema}: A schema name as defined within MyTardis for the Experiment level schema. This will include the metadata fields and short names associated with them.
 
@@ -512,23 +512,23 @@ For Experiments the minimum metadata required for them to be created in MyTardis
 \sphinxAtStartPar
 For Datasets the minimum metatdata is:
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{description}: The dataset name (see experiment \sphinxstylestrong{title} above)
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{identifier}: A unique dataset identifier, could also be Dataset DOIs. See Project::\sphinxstylestrong{identifer} for notes.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{experiments}: A \sphinxstylestrong{list} of experiment identifiers associated with the Experiment \sphinxstylestrong{identifier}. \sphinxstyleemphasis{Note:} Many\sphinxhyphen{}To\sphinxhyphen{}Many relationships are established between the Experiment and the Dataset objects, allowing for the ready re\sphinxhyphen{}use of data, as appropriate.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{instrument\_id}: A unique identifier to the instrument that the data was generated on.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{schema}: A schema name as defined within MyTardis for the Dataset level schema. This will include the metadata fields and short names associated with them.
 
@@ -537,31 +537,31 @@ For Datasets the minimum metatdata is:
 \sphinxAtStartPar
 Datafiles have the following minimum metadata requirements:
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{filename}: The file name of the data file to be ingested
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{md5sum}: The MD5 checksum of the original data file
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{storage\_box}: The MyTardis storage box defined for the facility
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{local\_path}: The full path to the local instance of the data file to be ingested
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{remote\_path}: The relative path to the remote instance of the data file for the purposes of maintaining the local directory structure. This is in place to accommodate analysis packages that expect a specific directory structure.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{full\_path}: The full path to the remote instance of the data file (normally constructed from the \sphinxstylestrong{remote\_path} by the parser.
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \sphinxstylestrong{schema}: A schema name as defined within MyTardis for the Datafile level schema. This will include the metadata fields and short names associated with them.
 
@@ -603,15 +603,15 @@ The standard metadata dictionaries for ingestion are described in detail \sphinx
 \sphinxAtStartPar
 The UoA instance of MyTardis consists of three separate instances:
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 A development instance
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 A test instance
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 A live instance
 
@@ -632,19 +632,19 @@ During this transition period researchers and facility managers should be encour
 \sphinxAtStartPar
 Once a majority of users have integrated MyTardis into their workflows, and provided there are no scale\sphinxhyphen{}up issues, discussions should be held with the facility managers about removing the primary copy of the data stored locally, once a verfied copy of the data have been ingested into MyTardis. At this point the transition to production can be considered complete and ingestion into MyTardis business as usual.
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 Functionality provided by the Ingestion Classes
 \begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 Class overview
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 How it all links together
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 Minimum metadata
 
@@ -655,15 +655,15 @@ Minimum metadata
 
 \chapter{Indices and tables}
 \label{\detokenize{index:indices-and-tables}}\begin{itemize}
-\item {} 
+\item {}
 \sphinxAtStartPar
 \DUrole{xref,std,std-ref}{genindex}
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \DUrole{xref,std,std-ref}{modindex}
 
-\item {} 
+\item {}
 \sphinxAtStartPar
 \DUrole{xref,std,std-ref}{search}
 
