@@ -28,3 +28,5 @@ __pycache__/
 
 *.OLD
 interrogate_badge.svg
+
+*.OLD#

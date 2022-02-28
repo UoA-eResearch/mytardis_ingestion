@@ -44,9 +44,10 @@ badge-format = "svg"
 fail-under = 50
 
 [tool.mypy]
-exclude = [
-	'^mytardis_ingestion\/docs\/*',
-	]
+mypy_path = [
+	  '^src$',
+	  '^tests$'
+	  ]
 ignore_missing_imports = true
 
 [build-system]

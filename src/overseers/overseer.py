@@ -1,6 +1,6 @@
 # pylint: disable=logging-fstring-interpolation
-"""Defines Overseer class which is a class that mediates between MyTardis
-and the forge classes."""
+"""Defines Overseer class which is a class that inspects MyTardis
+for the Forge class."""
 
 import json
 import logging
@@ -29,50 +29,31 @@ SCHEMA_TYPES = {
 
 
 class Overseer:
-    """The Overseer class mediates between MyTardis and the forge classes
+    """The Overseer class inspects MyTardis
 
     Overseer classes inspect the MyTardis database to ensure
-    that the forge is not creating existing objects and validates
+    that the Forge is not creating existing objects and validates
     that the heirarchical structures needed are in place before
     a new object is created.
 
     Where there are differences in the stored objects in MyTardis the behaviour
-    is governed by the overwrite attribute of the overseer class
+    is governed by the overwrite attribute of the Forge class
 
     Attributes:
         rest_factory: An instance of MyTardisRESTFactory providing access to the API
-        projects_enabled: A boolean value indicating whether or not projects are in use
-        object_acls_enabled: A boolean value indicating ACLs are present on all objects in the
-            hierarchy
-        detailed_acls_enabled: A boolean value indicating whether or not to use detailed ACLs
-        identifier_enabled: A boolean value indicating if the identifier app is in use
-        identifers: A list of objects that have identifiers active if the app is enabled
-        profiles_enabled: A boolean value indicating if the profiles app is in use
-        profiles: A list of objects that have profiles active if the app is enabled
     """
 
     def __init__(self, config_dict: dict) -> None:
         """Class initialisation using a configuration dictionary.
 
         Creates an instance of MyTardisRESTFactory to provide access to MyTardis for
-        inspection of the database. During the initialisation, the Overseer uses
-        the introspection API to check what apps are active and adjusts the behaviour of
-        the ingestion scripts accordingly.
+        inspection of the database.
 
         Args:
             config_dict: A configuration dictionary containing the keys required to
                 initialise a MyTardisRESTFactory instance.
         """
         self.rest_factory = MyTardisRESTFactory(config_dict)
-        mytardis_setup = self.get_mytardis_set_up()
-        self.old_acls = mytardis_setup["old_acls"]
-        self.projects_enabled = mytardis_setup["projects_enabled"]
-        self.objects_with_ids = None
-        self.objects_with_profiles = None
-        if "objects_with_ids" in mytardis_setup.keys():  # pylint: disable=C0201
-            self.objects_with_ids = mytardis_setup["objects_with_ids"]
-        if "objects_with_profiles" in mytardis_setup.keys():  # pylint: disable=C0201
-            self.objects_with_ids = mytardis_setup["objects_with_profiles"]
 
     @staticmethod
     def resource_uri_to_id(uri: str) -> int:
