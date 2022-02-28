@@ -45,7 +45,7 @@ fail-under = 50
 
 [tool.mypy]
 exclude = [
-	'^docs\/*',
+	'^mytardis_ingestion\/docs\/*',
 	]
 ignore_missing_imports = true
 
