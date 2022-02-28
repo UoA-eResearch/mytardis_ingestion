@@ -1,7 +1,10 @@
 requests
 backoff
-python-decouple
-python-dateutil
-ldap3
-boto3
-smart_open
+pytest
+mock
+pytest-dependency
+pylint
+interrogate
+mypy
+types-requests
+types-mock

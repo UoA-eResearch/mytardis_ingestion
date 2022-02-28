@@ -35,20 +35,20 @@ The ingestion scripts developed employ these apps and are therefore incompatible
 Onboarding Steps
 ----------------
 
-There are several stages to the onboarding process and it is, by its nature, iterative. Broadly speaking the steps involved consist of the following, which are discussed in more detail 
+There are several stages to the onboarding process and it is, by its nature, iterative. Broadly speaking the steps involved consist of the following, which are discussed in more detail
 
   - :ref:`Preliminary discussion with researchers and facility managers <prelim>`
   - Co-developing the ingestion process [#f1]_
-    
+
     - :ref:`Gathering necessary data for creating the instrument (and facility if necessary) and metadata schema <gathering_data>`
     - :ref:`Co-developing an ingestion strategy with researchers and facility managers <ingestion_strat>`
     - :ref:`Customising the ingestion scripts to fit with the strategy devised <modding_scripts>`
-      
+
   - :ref:`Testing the ingestion pipeline <testing>`
   - :ref:`Migrating to a live service <going_live>`
 
 .. _prelim:
-   
+
 Preliminary Discussions
 -----------------------
 
@@ -73,10 +73,10 @@ Most researchers and facility managers are not aware of MyTardis and what the in
     - Discuss co-design process and agree to the approach that will be taken.
     - Check that there is still interest in pursuing the use of the repository.
 
-After holding preliminary discussions, if there is still interest in pursuing the use of MyTardis, the co-design process begins. 
+After holding preliminary discussions, if there is still interest in pursuing the use of MyTardis, the co-design process begins.
 
 .. _gathering_data:
-   
+
 Gathering Required Data
 -----------------------
 
@@ -87,45 +87,45 @@ The data required to mint an instrument PID is summarised here:
   - **Landing Page**: A URL that the identifier resolves to.
   - **Name**: The instrument name
   - **Owner**: The institution(s) responsible for the management of the instrument
-    
+
     - **Owner Name**: The full name of the owner
-      
+
   - **Manufacturer**: The manufacturer or developer of the instrument
-    
+
     - **Manufacturer Name**: The full name of the manufacturer
-   
+
 Other recommended metadata fields defined in the schema include:
   - **Owner**:
-    
+
     - **Owner Contact**: Contact email for the instrument owner
     - **Owner Identifier**: Persistent identifier (PID) for the instrument owner
     - **Owner Identifier Type**: The type of PID included.
-      
+
   - **Manufacturer**:
-    
+
     - **Manufacturer Identifier** PID for the manufacturer
     - **Manufacturer Identifier Type**: The type of PID included
-      
+
   - **Model**: Name or model of the instrument as attributed by the manufacturer
-    
+
     - **Model Name**: Full name of the Model
     - **Model Identifier**: PID for the model
     - **Model Identifier Type**: The type of PID included
-      
+
   - **Description**: Technical description of the instrument and its capabilities
   - **Instrument Type**: Classification of the type of instrument
   - **Measured Variable**: What the instrument measures or observes
   - **Date**: Key dates include commissioning/decommissioning, calibration etc.
-    
+
     -**Date Type**: What the date represents
-    
+
   - **Related Identifier**: PIDs that are related to the instrument. For example a complex instrument might contain sensors that can be considered to be instruments in their own right. These could have PIDInst minted for them and they would list the other sensors in the instrument as related identifiers
 
     - **Related Identifier Type**: The type of PID included.
     - **Relation Type**: Description of the relationship
-      
+
   - **Alternate Identifier**: Other Identifiers that the instrument has
-    
+
     - **Alternate Identifier Type**: The type of identifier used as an alternate
 
 In addition to the instrument metadata if the facility is also being onboarded then we need metadata associated with this. Currently there are no internationally recognised PIDs for facility or department scale institutions that lie under a larger research institution, such as a university. Work in this area is ongoing and there is some indication that the Research Organisation Registry (ROR) PID will be extended to include sub-units. As such, there is no agreed upon minimum metadata, other than the facility name. We have developed a skeleton facility profile to hold this data once consensus about what the minimum metadata standards are has been reached.
@@ -143,11 +143,11 @@ MyTardis has been developed with a very flexible metadata model that allows for 
 
   3. What is the priority of the metadata, in other words, what is the best order to display it in? [#f3]_
   4. At what level in the object hierarchy of MyTardis should the metadata sit?
-     
+
 Once this information has been gathered, appropriate metadata schema can be prepared within MyTardis and their identifier recorded.
 
 .. _ingestion_strat:
-   
+
 Determining an Ingestion Strategy
 ---------------------------------
 
@@ -170,10 +170,10 @@ At the Project level the minimum metadata is:
   - **description**: A short project description
   - **identifier**: A unique project identifier, can be multiple in use but all need to be globally unique within MyTardis. To help with global uniqueness we are recommending that facilities prepend their own identifiers with a 3 letter code representing the facility. This provides some protection against namespace collision.
   - **principal_investigator**: A username for the lead researcher in the project. This user will get admin access at all levels of the project and it's child objects. It should be noted that the UoA version of MyTardis authenticates against Active Directory and the API may need reworking for OAuth authentication.
-  - **schema**: A schema name as defined within MyTardis for the Project level schema. This will include the metadata fields and short names associated with them. 
+  - **schema**: A schema name as defined within MyTardis for the Project level schema. This will include the metadata fields and short names associated with them.
 
 For Experiments the minimum metadata required for them to be created in MyTardis is:
-    
+
   - **title**: The experiment name
   - **identifier**: A unique experiment identifier. See Project identifier field for notes.
   - **description**: A short description of the experiment.
@@ -207,7 +207,7 @@ The ingestion scripts also automate the generation of the file path and checksum
 This strategy is intended as an example as to how the object metadata may be captured in a robust manner without excessively burdening researchers and facility staff with administration.
 
 .. _modding_scripts:
-   
+
 Developing Customised Ingestion Scripts
 ---------------------------------------
 
@@ -222,7 +222,7 @@ Similarly, as new facilities are brought onboard, there is no need to develop sc
 The standard metadata dictionaries for ingestion are described in detail `here <pages/ingestion_interface>`_
 
 .. _testing:
-   
+
 Testing the Ingestion Pipeline
 ------------------------------
 
@@ -235,7 +235,7 @@ The UoA instance of MyTardis consists of three separate instances:
 Once a set of ingestion scripts has been developed and an ingestion strategy employed, the process needs end-to-end testing using data that is as similar as possible to that to be ingested. Testing of ingestion scripts should be undertaken on the test instance and the primary copy of the data will not be removed from its existing storage until the ingestion process moves into 'production'. It's also important to ensure that the researchers and facility managers are aware that, during the testing phase of ingestion, we will need to verify that everything is progressing as expected, which in turn means that we need access to the data. For sensitive data this may not be possible and in these cases we will need to work with the researchers to get data that is similar to the data generated by the instrument, with similar metadata for the purposes of testing.
 
 .. _going_live:
-   
+
 Going Live
 ----------
 
@@ -246,16 +246,16 @@ During this transition period researchers and facility managers should be encour
 Once a majority of users have integrated MyTardis into their workflows, and provided there are no scale-up issues, discussions should be held with the facility managers about removing the primary copy of the data stored locally, once a verfied copy of the data have been ingested into MyTardis. At this point the transition to production can be considered complete and ingestion into MyTardis business as usual.
 
 * Functionality provided by the Ingestion Classes
-  
+
   * Class overview
-    
+
   * How it all links together
-    
+
   * Minimum metadata
 
 .. toctree::
 
-    
+
 Indices and tables
 ==================
 
