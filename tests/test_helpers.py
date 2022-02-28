@@ -75,7 +75,7 @@ def test_read_json(datadir):  # pylint: disable=redefined-outer-name
     assert read_json(test_file) == json_dict
 
 
-@pytest.mark.dependency(depends=["test_readJSON"])
+@pytest.mark.dependency(depends=["test_read_json"])
 def test_write_json(datadir):  # pylint: disable=redefined-outer-name
     output_file = Path(datadir / "test.json")
     write_json(json_dict, output_file)

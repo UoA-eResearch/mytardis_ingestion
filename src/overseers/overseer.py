@@ -142,13 +142,13 @@ class Overseer:
             return_dict["objects_with_profiles"] = response_dict["profiled_objects"]
         return return_dict
 
-    def get_uris(
+    def get_objects(
         self, object_type: str, search_target: str, search_string: str
     ) -> Union[list, None]:
-        """Gets a list of URIs matching the search parameters passed
+        """Gets a list of objects matching the search parameters passed
 
         This function prepares a GET request via the MyTardisRESTFactory instance and returns
-        a list of object URIs that match the search request.
+        a list of objects that match the search request.
 
         Args:
             object_type: A string representing the different object types that can be searched for
@@ -156,12 +156,11 @@ class Overseer:
             search_string: The string that the search_target is being searched for.
 
         Returns:
-            A list of object URIs from the search request made.
+            A list of objects from the search request made.
 
         Raises:
             HTTPError: The GET request failed for some reason
         """
-        return_list = []
         query_params = {search_target: search_string}
         url = urljoin(self.rest_factory.api_template, object_type)
         try:
@@ -171,7 +170,7 @@ class Overseer:
         except HTTPError:
             logger.exception(
                 (
-                    "Failed HTTP request from Overseer.get_uris call\n"
+                    "Failed HTTP request from Overseer.get_objects call\n"
                     f"object_type = {object_type}\n"
                     f"search_target = {search_target}\n"
                     f"serach_string = {search_string}"
@@ -181,7 +180,7 @@ class Overseer:
         except Exception as error:
             logger.exception(
                 (
-                    "Non-HTTP exception in Overseer.get_uris call\n"
+                    "Non-HTTP exception in Overseer.get_objects call\n"
                     f"object_type = {object_type}\n"
                     f"search_target = {search_target}\n"
                     f"serach_string = {search_string}"
@@ -191,43 +190,76 @@ class Overseer:
         response_dict = json.loads(response.json())
         if response_dict == {} or response_dict["objects"] == []:
             return None
-        for obj in response_dict["objects"]:
-            try:
-                uri = obj["resource_uri"]
-            except KeyError:
-                uri = None
-            except Exception as error:
-                raise error
-            return_list.append(uri)
-        return return_list
+        return response_dict["objects"]
 
+    def get_uris(
+        self, object_type: str, search_target: str, search_string: str
+    ) -> Union[list, None]:
+        """Calls self.get_objects() to get a list of objects matching search then extracts URIs
 
-#    def validate_schema(self, schema: str, object_type: str) -> Union[bool, str]:
-#        """Validates that a schema with the name 'schema' exists and that it
-#        is the right type for the object passed.
-#
-#        This function calls the schema model in MyTardis by the full
-#        name (a URL defined when the schema is defined). If the schema is found
-#        then it's type is compared against the object_type requesting the
-#        schema and if it passes, the URI to the schema is returned, else False is returned
-#
-#        Args:
-#            schema: The string representing the URL of the schema
-#            object_type: the string representing the MyTardis Object that the
-#                schema is going to be applied to.
-#
-#        Returns:
-#            Either the URI of the schema as string or False
-#
-#        Raises:
-#            Exceptions from the API call for logging and further exception handling
-#        """
-#        try:
-#            obect_type_int = SCHEMA_TYPES[object_type]
-#        except KeyError:
-#            logger.warning(f"Schema for {object_type} are not defined in MyTardis")
-#            return False
-#        except Exception as error:
-#            raise error
-#        # try:
-#        return True
+        This function calls the get_objects function with the parameters passed. It then takes
+        the list of returned objects and extracts the URI from the dictionaries passed.
+
+        Args:
+            object_type: A string representing the different object types that can be searched for
+            search_target: The field that is being searched on (varies from object to object)
+            search_string: The string that the search_target is being searched for.
+
+        Returns:
+            A list of object URIs from the search request made.
+        """
+        return_list = []
+        objects = self.get_objects(object_type, search_target, search_string)
+        if objects:
+            for obj in objects:
+                try:
+                    uri = obj["resource_uri"]
+                except KeyError:
+                    uri = None
+                except Exception as error:
+                    raise error
+                return_list.append(uri)
+            return return_list
+        return None
+
+    def validate_schema(self, schema: str, object_type: str) -> Union[bool, str]:
+        """Validates that a schema with the name 'schema' exists and that it
+        is the right type for the object passed.
+
+        This function calls the schema model in MyTardis by the full
+        name (a URL defined when the schema is defined). If the schema is found
+        then it's type is compared against the object_type requesting the
+        schema and if it passes, the URI to the schema is returned, else False is returned
+
+        Args:
+            schema: The string representing the URL of the schema
+            object_type: the string representing the MyTardis Object that the
+                schema is going to be applied to.
+
+        Returns:
+            Either the URI of the schema as string or False
+
+        Raises:
+            Exceptions from the API call for logging and further exception handling
+        """
+        try:
+            object_type_int = SCHEMA_TYPES[object_type]
+        except KeyError:
+            logger.warning(f"Schema for {object_type} are not defined in MyTardis")
+            return False
+        except Exception as error:
+            raise error
+        try:
+            objects = self.get_objects("schema", "namespace", schema)
+        except Exception as error:
+            raise error
+        if objects and len(objects) == 1:
+            schema_type = int(objects[0]["schema_type"])
+            if schema_type == object_type_int:
+                try:
+                    return objects[0]["resource_uri"]
+                except KeyError:
+                    return False
+                except Exception as error:
+                    raise error
+        return False
