@@ -24,4 +24,4 @@ jobs:
         pytest
     - name: run pylint
       run: |
-        pylint .
+        pylint src
