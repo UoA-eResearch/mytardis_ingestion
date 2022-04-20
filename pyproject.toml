@@ -25,6 +25,8 @@ PySnooper = "^1.1.0"
 responses = "^0.19.0"
 pre-commit = "^2.18.1"
 bandit = "^1.7.4"
+coverage = "^6.3.2"
+pytest-cov = "^3.0.0"
 
 [tool.isort]
 profile = "black"

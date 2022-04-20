@@ -28,10 +28,12 @@ repos:
     rev: v0.931
     hooks:
     -   id: mypy
+        stages: [commit]
         additional_dependencies:
           - types-requests
           - types-PyYAML
           - types-mock
+        exclude: tests, docs
 -   repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
     rev: v1.0.5
     hooks:
@@ -43,13 +45,6 @@ repos:
         stages: [commit]
         language: system
         entry: pytest -v --showlocals
-        types: [python]
-        pass_filenames: false
-    -   id: coverage
-        name: coverage
-        stages: [push]
-        language: system
-        entry: coverage run
         types: [python]
         pass_filenames: false
 -   repo: https://github.com/Lucas-C/pre-commit-hooks-safety
