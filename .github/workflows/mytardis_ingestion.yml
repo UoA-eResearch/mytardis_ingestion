@@ -29,5 +29,5 @@ jobs:
     - name: Run Coverage
       run: PYTHONPATH=src/ poetry run python -m coverage report -m;
 
-    - name: Generate XML Report
-      run: PYTHONPATH=src/ poetry run python -m coverage xml
+    - name: Run pylint
+      run: PYTHONPATH=src/ poetry run pylint src/
