@@ -23,11 +23,10 @@ jobs:
       uses: actions/cache@v1
       id: cache
       with:
-        with:
-          path: ~/.virtualenvs
-          key: poetry-$
-          restore-keys: |
-            poetry-$
+        path: ~/.virtualenvs
+        key: poetry-$
+        restore-keys: |
+          poetry-$
 
     - name: Set Poetry config
       run: |
