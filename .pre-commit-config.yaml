@@ -32,9 +32,7 @@ repos:
           - types-requests
           - types-PyYAML
           - types-mock
-        excludes:
-          - tests
-          - docs
+        exclude: tests, docs
 -   repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
     rev: v1.0.5
     hooks:
