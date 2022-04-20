@@ -28,6 +28,7 @@ repos:
     rev: v0.931
     hooks:
     -   id: mypy
+        stages: [commit]
         additional_dependencies:
           - types-requests
           - types-PyYAML
