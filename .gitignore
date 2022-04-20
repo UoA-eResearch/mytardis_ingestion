@@ -34,3 +34,5 @@ interrogate_badge.svg
 Print_group_ingestion.py
 
 src/specific_implementations/print.py
+
+*.yml#
