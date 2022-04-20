@@ -23,10 +23,11 @@ jobs:
       uses: actions/cache@v1
       id: cache
       with:
-        path: ~/.virtualenvs
-        key: poetry-${{ hashFiles('**/poetry.lock') }}
-        restore-keys: |
-          poetry-${{ hashFiles('**/poetry.lock') }}
+        with:
+          path: ~/.virtualenvs
+          key: poetry-$
+          restore-keys: |
+            poetry-$
 
     - name: Set Poetry config
       run: |
@@ -37,11 +38,11 @@ jobs:
       run: poetry install
       if: steps.cache.outputs.cache-hit != 'true'
 
-    - name: Code Quality
-      run: poetry run black . --check
+    - name: Run pytest
+      run: PYTHONPATH=src/ poetry run python -m pytest -v --cov=src/ tests/
 
-    - name: Test with pytest
-      run: poetry run pytest --cov . -n 2
+    - name: Run Coverage
+      run: PYTHONPATH=src/ poetry run python -m coverage report -m;
 
-    - name: Lint with pylint
-      run: poetry run pylint
+    - name: Generate XML Report
+      run: PYTHONPATH=src/ poetry run python -m coverage xml
