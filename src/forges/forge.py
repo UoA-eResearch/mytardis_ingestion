@@ -85,7 +85,7 @@ class Forge:
                 action, url, data=object_json
             )
         except HTTPError:
-            logger.exception(
+            logger.warning(
                 (
                     "Failed HTTP request from Forge.forge_object call\n"
                     f"object_type: {object_type}\n"
@@ -131,6 +131,9 @@ class Forge:
                     )
                 )
                 return (object_name, False)
-        except JSONDecodeError:  # Not all objects return any information when they are created
+        except JSONDecodeError:
+            # Not all objects return any information when they are created
+            # In this case ignore the error - Need to think about how this is
+            # handled.
             pass
         return (object_name, True, uri)

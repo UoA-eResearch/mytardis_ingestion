@@ -1,16 +1,17 @@
+# pylint: disable=logging-fstring-interpolation
 """YAML smelter. A class that processes YAML files into dictionaries suitable to be passed to an
 instance of the Forge class for creating objects in MyTardis."""
 
 import logging
 from copy import deepcopy
 from pathlib import Path
+from typing import Union
 
-import pysnooper
 import yaml
 from yaml.parser import ParserError
 from yaml.scanner import ScannerError
 
-from src.smelters import Smelter
+from src.smelters.smelter import Smelter
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ class YAMLSmelter(Smelter):
             objects_with_profiles: a list of objects that have profiles. Defaults to empty
         """
         super().__init__(mytardis_config)
-        self.OBJECT_TYPES = {
+        self.OBJECT_TYPES = {  # pylint: disable=invalid-name
             "project_name": "project",
             "experiment_name": "experiment",
             "dataset_name": "dataset",
@@ -71,7 +72,62 @@ class YAMLSmelter(Smelter):
             "datafile": {},
         }
 
-    def read_file(self, file_path: Path) -> tuple:
+    def _tidy_up_metadata_keys(  # pylint: disable=no-self-use
+        self, parsed_dict: dict, object_type: str
+    ) -> dict:
+        """Function to get rid of spaces and convert human readable metadata keys to snakecase"""
+        cleaned_dict = deepcopy(parsed_dict)
+        if "metadata" in parsed_dict.keys():
+            for key in parsed_dict["metadata"].keys():
+                value = cleaned_dict["metadata"].pop(key)
+                new_key = object_type + "_" + key.replace(" ", "_").lower()
+                cleaned_dict[new_key] = value
+            cleaned_dict.pop("metadata")
+        return cleaned_dict
+
+    def get_file_type_for_input_files(self) -> str:  # pylint: disable=no-self-use
+        """Function to return a string that can be used by Path.glob() to
+        get all of the input files in a directory"""
+
+        return "*.yaml"
+
+    def get_objects_in_input_file(self, file_path: Path) -> tuple:
+        """Takes a file path for a YAML file and returns a tuple of object types contained with the
+        file
+
+        Calls YAMLSmelter.read_yaml_file to read in a YAML file into a tuple of dictionaries.
+        For each of the dictionaries read, adds the object types to a tuple of types and returns
+        this tuple
+
+        Args:
+            file_path: a Path to the YAML file to be processed
+
+        Returns:
+            A tuple of object types within the file
+        """
+        object_types: list = []
+        parsed_dictionaries = self.read_file(file_path)
+        for parsed_dict in parsed_dictionaries:
+            object_type_key = list(set(parsed_dict).intersection(self.OBJECT_TYPES))
+            if len(object_type_key) == 0:
+                logger.warning(
+                    f"File {file_path} was not recognised as a MyTardis ingestion file"
+                )
+                object_types.append(None)
+            if len(object_type_key) > 1:
+                logger.warning(
+                    (
+                        f"Malformed MyTardis ingestion file, {file_path}. Please ensure that "
+                        "sections are properly delimited with '---' and that each section is "
+                        "defined for one object type only i.e. 'project', 'experiment', "
+                        "'dataset' or 'datafile'."
+                    )
+                )
+                object_types.append(None)
+            object_types.append(self.OBJECT_TYPES[object_type_key[0]])
+        return (*object_types,)
+
+    def read_file(self, file_path: Path) -> tuple:  # pylint: disable=no-self-use
         """Takes a file path for a YAML file and reads it into a tuple of dictionaries.
 
         Reads in a YAML file. As it is possible for multiple YAML documents to be placed in
@@ -97,78 +153,24 @@ class YAMLSmelter(Smelter):
             return_list.append(dictionary)
         return tuple(return_list)
 
-    def get_objects_in_input_file(self, file_path: Path) -> tuple:
-        """Takes a file path for a YAML file and returns a tuple of object types contained with the
-        file
-
-        Calls YAMLSmelter.read_yaml_file to read in a YAML file into a tuple of dictionaries.
-        For each of the dictionaries read, adds the object types to a tuple of types and returns
-        this tuple
-
-        Args:
-            file_path: a Path to the YAML file to be processed
-
-        Returns:
-            A tuple of object types within the file
-        """
-        object_types = []
-        parsed_dictionaries = YAMLSmelter.read_file(file_path)
-        for parsed_dict in parsed_dictionaries:
-            object_type_key = set(parsed_dict).intersection(OBJECT_TYPES)
-            if len(object_type_key) == 0:
-                logger.warning(
-                    f"File {file_path} was not recognised as a MyTardis ingestion file"
-                )
-                object_types.append(None)
-            if len(object_type_key) > 1:
-                logger.warning(
-                    (
-                        f"Malformed MyTardis ingestion file, {file_path}. Please ensure that "
-                        "sections are properly delimited with '---' and that each section is "
-                        "defined for one object type only i.e. 'project', 'experiment', "
-                        "'dataset' or 'datafile'."
-                    )
-                )
-                object_types.append(None)
-            object_types.append(object_type_key[0])
-        return (*object_types,)
-
-    def get_file_type_for_input_files(self) -> str:
-        """Function to return a string that can be used by Path.glob() to
-        get all of the input files in a directory"""
-
-        return "*.yaml"
-
-    def get_objects_in_input_file(self, file_path: Path) -> tuple:
-        """Function to read in an input file and return a tuple containing
-        the object types that are in the file"""
-        type_list = []
-        object_dictionaries = self.read_file(file_path)
-        for object_dict in object_dictionaries:
-            type_list.append(self.get_object_from_dictionary(object_dict))
-        type_list = set(type_list)
-        return tuple(type_list)
-
-    def tidy_up_metadata_keys(self, parsed_dict: dict, object_type: str) -> dict:
-        """Function to get rid of spaces and convert human readable metadata keys to snakecase"""
+    def rebase_file_path(self, parsed_dict: dict) -> dict:
+        """Function to redirect the file path to account for the directory
+        that the research drive is mounted on"""
         cleaned_dict = deepcopy(parsed_dict)
-        if "metadata" in parsed_dict.keys():
-            for key in parsed_dict["metadata"].keys():
-                value = cleaned_dict["metadata"].pop(key)
-                new_key = object_type + "_" + key.replace(" ", "_").lower()
-                cleaned_dict[new_key] = value
-            cleaned_dict.pop("metadata")
+        cleaned_dict["datafiles"]["files"] = []
+        for file_path in parsed_dict["datafiles"]["files"]:
+            remote_path = Path(file_path["name"])
+            mounted_path = self.mount_dir / remote_path.relative_to(self.remote_dir)
+            file_dict = {}
+            if "metadata" in file_path.keys():
+                file_dict["metadata"] = file_path["metadata"]
+            file_dict["name"] = mounted_path
+            cleaned_dict["datafiles"]["files"].append(file_dict)
         return cleaned_dict
 
-    def get_object_from_dictionary(self, parsed_dict: dict) -> str:
-        """Helper function to get the object type from a parsed dictionary"""
-        for key in self.OBJECT_TYPES.keys():
-            if key in parsed_dict.keys():
-                return self.OBJECT_TYPES[key]
-        return None
-
-    @pysnooper.snoop()
-    def expand_datafile_entry(self, parsed_dict: dict) -> list:
+    def expand_datafile_entry(  # pylint: disable=too-many-nested-blocks
+        self, parsed_dict: dict
+    ) -> list:
         file_list = []
         for file_dict in parsed_dict["datafiles"]["files"]:
             if not file_dict["name"].is_file():
@@ -190,7 +192,7 @@ class YAMLSmelter(Smelter):
                         cleaned_dict["file_path"] = Path(filename).relative_to(
                             self.mount_dir
                         )
-                        cleaned_dict = self.create_replica(cleaned_dict)
+                        cleaned_dict = self._create_replica(cleaned_dict)
                         file_list.append(cleaned_dict)
             else:
                 cleaned_dict = {}
@@ -207,22 +209,15 @@ class YAMLSmelter(Smelter):
                 cleaned_dict["file_path"] = Path(file_dict["name"]).relative_to(
                     self.mount_dir
                 )
-                cleaned_dict = self.create_replica(cleaned_dict)
+                cleaned_dict = self._create_replica(cleaned_dict)
                 file_list.append(cleaned_dict)
         return file_list
 
-    @pysnooper.snoop()
-    def rebase_file_path(self, parsed_dict: dict) -> dict:
-        """Function to redirect the file path to account for the directory
-        that the research drive is mounted on"""
-        cleaned_dict = deepcopy(parsed_dict)
-        cleaned_dict["datafiles"]["files"] = []
-        for file_path in parsed_dict["datafiles"]["files"]:
-            remote_path = Path(file_path["name"])
-            mounted_path = self.mount_dir / remote_path.relative_to(self.remote_dir)
-            file_dict = {}
-            if "metadata" in file_path.keys():
-                file_dict["metadata"] = file_path["metadata"]
-            file_dict["name"] = mounted_path
-            cleaned_dict["datafiles"]["files"].append(file_dict)
-        return cleaned_dict
+    def get_object_from_dictionary(  # pylint: disable=consider-using-dict-items,consider-iterating-dictionary
+        self, parsed_dict: dict
+    ) -> Union[str, None]:
+        """Helper function to get the object type from a parsed dictionary"""
+        for key in self.OBJECT_TYPES.keys():
+            if key in parsed_dict.keys():
+                return self.OBJECT_TYPES[key]
+        return None

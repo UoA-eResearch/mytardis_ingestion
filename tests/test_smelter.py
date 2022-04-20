@@ -2,7 +2,7 @@
 
 """Tests of the Smelter base class functions"""
 
-import pysnooper
+import mock
 
 from src.smelters import Smelter
 
@@ -11,25 +11,28 @@ mytardis_setup = {
     "objects_with_ids": ["project", "experiment", "dataset", "institution"],
     "remote_directory": "//files.auckland.ac.nz/research/rescer202200001-test-dir/",
     "mount_directory": "/home/chris/GitRepos/mytardis_ingestion/tests/test_yaml_smelter/",
+    "storage_box": "MyTest Storage",
 }
 
 
-@pysnooper.snoop()
 def test_tidy_up_dictionary_keys_with_good_inputs():
     parsed_dict = {"key1": "value1", "key2": "value2", "key3": "value3"}
-    translation_dict = {"key1": "new_key1", "key2": "new_key2"}
+    # Note we have no object_type in the Smelter Base class so use None as object type key
+    translation_dict = {None: {"key1": "new_key1", "key2": "new_key2"}}
     Smelter.__abstractmethods__ = set()
-    smelter = Smelter(mytardis_setup)
+    smelter = Smelter(mytardis_setup)  # noqa
     smelter.OBJECT_KEY_CONVERSION = translation_dict
     cleaned_dict = smelter.tidy_up_dictionary_keys(parsed_dict)
-    assert cleaned_dict == {
-        "new_key1": "value1",
-        "new_key2": "value2",
-        "key3": "value3",
-    }
+    assert cleaned_dict == (
+        None,
+        {
+            "new_key1": "value1",
+            "new_key2": "value2",
+            "key3": "value3",
+        },
+    )
 
 
-@pysnooper.snoop()
 def test_parse_groups_and_users_from_separate_access():
     cleaned_dict = {
         "admin_users": ["usr_a", "usr_b", "usr_a"],
@@ -66,8 +69,10 @@ def test_parse_groups_and_users_from_separate_access():
     assert cleaned_dict == {"another_key": "value"}
 
 
-@pysnooper.snoop()
-def test_split_dictionary_into_object_and_parameters():
+@mock.patch("src.smelters.smelter.Smelter._tidy_up_metadata_keys")
+def test_split_dictionary_into_object_and_parameters(
+    mock_smelter_tidy_up_metadata_keys,
+):
     cleaned_dict = {
         "schema": "test schema",
         "name": "test",
@@ -75,6 +80,7 @@ def test_split_dictionary_into_object_and_parameters():
         "pkey1": "pvalue1",
         "pkey2": "pvalue2",
     }
+    mock_smelter_tidy_up_metadata_keys.return_value = cleaned_dict
     object_keys = ["name", "key1"]
     object_dict = {"name": "test", "key1": "value1"}
     parameter_dict = {
@@ -84,7 +90,11 @@ def test_split_dictionary_into_object_and_parameters():
             {"name": "pkey2", "value": "pvalue2"},
         ],
     }
-    assert Smelter.smelt_object(object_keys, cleaned_dict) == (
+    translation_dict = {None: {}}
+    Smelter.__abstractmethods__ = set()
+    smelter = Smelter(mytardis_setup)  # noqa
+    smelter.OBJECT_KEY_CONVERSION = translation_dict
+    assert smelter._smelt_object(object_keys, cleaned_dict) == (
         object_dict,
         parameter_dict,
     )

@@ -11,11 +11,12 @@
 # Necessary info
 datafiles:
   # If a rigorous directory structure is used then this can be inferred from the directory and only needs explicit definition if multiple samples are associated with the dataset
-  dataset_id: Test-dataset
+  dataset_id:
+    - Test-dataset
   # schema: <value> - un-comment if multiple schema have been defined and set the appropriate type of schema
   files:
-    - name: //files.auckland.ac.nz/research/rescer202200001-test-dir/test_data.dat
+    - name: /remote/path/test_data.dat
       metadata:
         key1: value1
         key2: value2
-    - name: //files.auckland.ac.nz/research/rescer202200001-test-dir/test_data2.dat
+    - name: /remote/path/test_data2.dat

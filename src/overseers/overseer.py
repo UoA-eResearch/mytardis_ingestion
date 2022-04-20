@@ -2,7 +2,6 @@
 """Defines Overseer class which is a class that inspects MyTardis
 for the Forge class."""
 
-import json
 import logging
 import os
 from typing import Union
@@ -10,7 +9,6 @@ from urllib.parse import urljoin, urlparse
 
 from requests.exceptions import HTTPError
 
-# HierarchyError,; sanitySanityCheckError,; calculate_md5sum,; read_json,; write_json,
 from src.helpers import MyTardisRESTFactory
 
 logger = logging.getLogger(__name__)

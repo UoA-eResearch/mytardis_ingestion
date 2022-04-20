@@ -1,8 +1,10 @@
-from abc import ABC, abstractmethod, abstractstaticmethod
+"""IngestionFactory is a base class for specific instances of MyTardis
+Ingestion scripts. The base class contains mostly concrete functions but
+needs to determine the Smelter class that is used by the Factory"""
+
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union
-
-import pysnooper
 
 from src.forges import Forge
 from src.overseers import Overseer
@@ -19,14 +21,14 @@ class IngestionFactory(ABC):
 
     Attributes:
         self.overseer: An instance of the Overseer class
+        self.mytardis_setup: The return from the introspection API that specifies how MyTardis is
+            set up.
         self.forge: An instance of the Forge class
         self.smelter: An instance of a smelter class that varies for different ingestion approaches
-        self.project_factory: An instance of the ProjectFactory inner class
-        self.experiment_factory: A Path to the directory holding the experiment input files
-        self.dataset_factory: A Path to the directory holding the dataset input files
-        self.datafile_factory: A Path to the directory holding the datafile input files.
-            NB: This is NOT necessarily the same directory as the data files themselves - this
-            should be defined in the input files
+        self.glob_string: For smelters that use files, what is the extension or similar to search
+            for. See pathlib documentations for glob details.
+        self.default_institution: Either a name, or an identifier for an Institution to use as the
+            default for Project and Experiment creation.
     """
 
     def __init__(self, config_dict: dict) -> None:
@@ -37,7 +39,8 @@ class IngestionFactory(ABC):
 
         Args:
            config_dict: A configuration dictionary containing the keys required to
-                initialise a MyTardisRESTFactory instance.
+                initialise the IngestionFactory and it's sub-classes. See documenation
+                for more details.
         """
         self.overseer = Overseer(config_dict)
         self.mytardis_setup = self.overseer.get_mytardis_set_up()
@@ -80,17 +83,18 @@ class IngestionFactory(ABC):
         return return_list
 
     @staticmethod
-    def insert_default_schema_into_cleaned_dict(
-        cleaned_dict: dict, default_schema: str
-    ) -> dict:
-        """Helper function for cases where there is only one type of schema in use for an
-        object and thus it can be defined externally and not be included in the input files"""
-        cleaned_dict["schema"] = default_schema
-        return cleaned_dict
+    def refine_smelted_object_dict(
+        cleaned_dict: dict, updates: dict
+    ) -> Union[dict, None]:
+        """Helper function to add or replace key value pairs in a dictionary
 
-    @staticmethod
-    def refine_smelted_object_dict(cleaned_dict: dict, updates: dict) -> None:
-        """Helper function to add or replace key value pairs in a dictionary"""
+        Args:
+            cleaned_dict: the object dictionary to update
+            updates: a dictionary of key/value pairs to add/update the cleaned_dict with.
+
+        Returns:
+            The dictionary updated by the updates dictionary
+        """
         return cleaned_dict.update(updates)
 
     def replace_search_term_with_uri(
@@ -100,16 +104,31 @@ class IngestionFactory(ABC):
         fallback_search: str,
         key_name: str = None,
     ) -> dict:
+        """Helper function to carry out a search using an identifier or name
+        and replace it's value with a URI from MyTardis
+
+        Args:
+            object_type: A string representation of the object type in MyTardis to search for
+            cleaned_dict: A dictionary containing the key to be replaced
+            fallback_search: The name of the search key should searching by identifier fail
+            key_name: The name of the key to replace, if it is not the object_type.
+
+        Returns:
+            The cleaned_dict dictionary with the search term replaced by a URI from MyTardis
+        """
         if not key_name:
             key_name = object_type
-        objects = []
+        objects: Union[list, None] = []
         if key_name in cleaned_dict.keys():
             if not Overseer.is_uri(cleaned_dict[key_name], object_type):
-                if object_type in self.objects_with_ids:
+                if object_type in self.mytardis_setup["objects_with_ids"]:
                     objects = self.overseer.get_uris_by_identifier(
                         object_type, cleaned_dict[key_name]
                     )
-                    if object_type not in self.objects_with_ids or not objects:
+                    if (
+                        object_type not in self.mytardis_setup["objects_with_ids"]
+                        or not objects
+                    ):
                         objects = self.overseer.get_uris(
                             object_type, fallback_search, cleaned_dict[key_name]
                         )
@@ -117,6 +136,14 @@ class IngestionFactory(ABC):
         return cleaned_dict
 
     def get_institution_uri(self, institution):
+        """Helper function to get the URI to an institution object for Project creation
+
+        Args:
+            institution: A persistent identifier or name of an institution to search for
+
+        Returns:
+            The URI from MyTardis that points to the institution object
+        """
         uri = None
         if "institution" in self.mytardis_setup["objects_with_ids"]:
             uri = self.overseer.get_uris_by_identifier("institution", institution)
@@ -125,6 +152,14 @@ class IngestionFactory(ABC):
         return uri
 
     def get_project_uri(self, project_id):
+        """Helper function to get a Project URI from MyTardis
+
+        Args:
+            project_id: An identifier or project name to search for
+
+        Returns:
+            The URI from MyTardis for the project searched for.
+        """
         uri = None
         if "project" in self.mytardis_setup["objects_with_ids"]:
             uri = self.overseer.get_uris_by_identifier("project", project_id)
@@ -133,6 +168,14 @@ class IngestionFactory(ABC):
         return uri
 
     def get_experimentt_uri(self, experiment_id):
+        """Helper function to get an Experiment URI from MyTardis
+
+        Args:
+            experiment_id: An identifier or experiment name to search for
+
+        Returns:
+            The URI from MyTardis for the experiment searched for.
+        """
         uri = None
         if "experiment" in self.mytardis_setup["objects_with_ids"]:
             uri = self.overseer.get_uris_by_identifier("experiment", experiment_id)
@@ -141,6 +184,14 @@ class IngestionFactory(ABC):
         return uri
 
     def get_dataset_uri(self, dataset_id):
+        """Helper function to get a Dataset URI from MyTardis
+
+        Args:
+            dataset_id: An identifier or dataset name to search for
+
+        Returns:
+            The URI from MyTardis for the dataset searched for.
+        """
         uri = None
         if "dataset" in self.mytardis_setup["objects_with_ids"]:
             uri = self.overseer.get_uris_by_identifier("dataset", dataset_id)
@@ -149,6 +200,14 @@ class IngestionFactory(ABC):
         return uri
 
     def get_instrument_uri(self, instrument):
+        """Helper function to get a Instrumentt URI from MyTardis
+
+        Args:
+            instrument_id: An identifier or instrument name to search for
+
+        Returns:
+            The URI from MyTardis for the instrument searched for.
+        """
         uri = None
         if "instrument" in self.mytardis_setup["objects_with_ids"]:
             uri = self.overseer.get_uris_by_identifier("instrument", instrument)
@@ -156,19 +215,7 @@ class IngestionFactory(ABC):
             uri = self.overseer.get_uris("instrument", "name", instrument)
         return uri
 
-    @staticmethod
-    def set_schema_to_default_if_not_defined(
-        cleaned_dict: dict, default_schema: str
-    ) -> Union[dict, None]:
-        if "schema" not in cleaned_dict.keys():
-            if default_schema:
-                cleaned_dict = IngestionFactory.insert_default_schema_into_cleaned_dict(
-                    cleaned_dict, default_schema
-                )
-                return cleaned_dict
-        return None
-
-    def process_projects(self, file_path: Path, default_schema: str = None) -> list:
+    def process_projects(self, file_path: Path) -> list:
         """Wrapper function to create the projects from input files"""
         project_files = self.build_object_lists(file_path, "project")
         return_list = []
@@ -203,8 +250,9 @@ class IngestionFactory(ABC):
                         )
         return return_list
 
-    @pysnooper.snoop()
-    def process_experiments(self, file_path: Path, default_schema: str = None) -> list:
+    def process_experiments(  # pylint: disable=too-many-locals
+        self, file_path: Path
+    ) -> list:
         """Wrapper function to create the experiments from input files"""
         experiment_files = self.build_object_lists(file_path, "experiment")
         return_list = []
@@ -243,8 +291,9 @@ class IngestionFactory(ABC):
                         )
         return return_list
 
-    @pysnooper.snoop()
-    def process_datasets(self, file_path: Path, default_schema: str = None) -> list:
+    def process_datasets(  # pylint: disable=too-many-locals
+        self, file_path: Path
+    ) -> list:
         """Wrapper function to create the experiments from input files"""
         dataset_files = self.build_object_lists(file_path, "dataset")
         return_list = []
@@ -285,7 +334,7 @@ class IngestionFactory(ABC):
                         )
         return return_list
 
-    def process_datafiles(self, file_path: Path, default_schema: str = None) -> list:
+    def process_datafiles(self, file_path: Path) -> list:
         """Wrapper function to create the experiments from input files"""
         datafile_files = self.build_object_lists(file_path, "datafile")
         return_list = []
@@ -318,7 +367,7 @@ class IngestionFactory(ABC):
                         if parameter_dict["parameters"] != [] and uri:
                             parameter_dict["dataset"] = uri
                             return_list.append(
-                                self.forge_object(
+                                self.forge.forge_object(
                                     f"{name} - Parameters",
                                     "datafileparameterset",
                                     parameter_dict,

@@ -28,34 +28,66 @@ def test_staticmethod_resource_uri_to_id():
 
 @responses.activate
 def test_get_uris():
+    institution_response_dict = {
+        "meta": {
+            "limit": 20,
+            "next": None,
+            "offset": 0,
+            "previous": None,
+            "total_count": 1,
+        },
+        "objects": [
+            {
+                "address": "words",
+                "aliases": 1,
+                "alternate_ids": ["fruit", "apples"],
+                "country": "NZ",
+                "name": "University of Auckland",
+                "persistent_id": "Uni ROR",
+                "resource_uri": "/api/v1/institution/1/",
+            }
+        ],
+    }
+    introspection_response_dict = {
+        "meta": {
+            "limit": 20,
+            "next": None,
+            "offset": 0,
+            "previous": None,
+            "total_count": 1,
+        },
+        "objects": [
+            {
+                "experiment_only_acls": False,
+                "identified_objects": [
+                    "dataset",
+                    "experiment",
+                    "facility",
+                    "instrument",
+                    "project",
+                    "institution",
+                ],
+                "identifiers_enabled": True,
+                "profiled_objects": [],
+                "profiles_enabled": False,
+                "projects_enabled": True,
+                "resource_uri": "/api/v1/introspection/None/",
+            }
+        ],
+    }
     responses.add(
         responses.GET,
         "https://test.mytardis.nectar.auckland.ac.nz/api/v1/institution",
-        json=(
-            "{"
-            '"meta": {'
-            '	"limit": 20,'
-            '	"next": null,'
-            '	"offset": 0,'
-            '	"previous": null,'
-            '	"total_count": 1'
-            "},"
-            '"objects": [{'
-            '	"address": "words",'
-            '	"aliases": 1,'
-            '	"alternate_ids": ['
-            '		"fruit",'
-            '		"apples"'
-            "	],"
-            '	"country": "NZ",'
-            '	"name": "University of Auckland",'
-            '	"persistent_id": "BANANA",'
-            '	"resource_uri": "/api/v1/institution/1/"'
-            "}]"
-            "}"
-        ),
+        json=(institution_response_dict),
         status=200,
     )
+    responses.add(
+        responses.GET,
+        "https://test.mytardis.nectar.auckland.ac.nz/api/v1/introspection",
+        json=(introspection_response_dict),
+        status=200,
+    )
+
     test_overseer = Overseer(config_dict)
     assert test_overseer.get_uris("institution", "pids", "Uni ROR") == [
         "/api/v1/institution/1/"

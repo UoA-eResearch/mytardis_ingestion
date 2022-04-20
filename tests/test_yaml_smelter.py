@@ -3,11 +3,9 @@
 import shutil
 from pathlib import Path
 
-import pysnooper
 import pytest
 from pytest import fixture
 
-from src.helpers import dict_to_json
 from src.smelters import YAMLSmelter
 
 config_dict = {
@@ -19,8 +17,8 @@ config_dict = {
     "proxy_https": "http://myproxy.com",
     "projects_enabled": True,
     "objects_with_ids": ["project"],
-    "remote_directory": "//files.auckland.ac.nz/research/rescer202200001-test-dir/",
-    "mount_directory": "/home/chris/GitRepos/mytardis_ingestion/tests/test_yaml_smelter/",
+    "remote_directory": "/remote/path",
+    "mount_directory": "/mount/path",
     "storage_box": "Test_storage_box",
     "default_schema": {
         "project": "http://dummy.test/proj_schema",
@@ -45,14 +43,12 @@ def datadir(tmpdir, request):
     return tmpdir
 
 
-@pysnooper.snoop()
 def test_get_objects_in_input_file(datadir):
     input_file = Path(datadir / "test_project.yaml")
     smelter = YAMLSmelter(config_dict)
     assert smelter.get_objects_in_input_file(input_file) == ("project",)
 
 
-@pysnooper.snoop()
 @pytest.mark.dependency()
 def test_read_file(datadir):
     input_file = Path(datadir / "test_project.yaml")
@@ -79,19 +75,17 @@ def test_read_file(datadir):
     )
 
 
-@pysnooper.snoop()
 @pytest.mark.dependency(depends=["test_read_file"])
 def test_tidy_up_metadata_keys(datadir):
     input_file = Path(datadir / "test_project.yaml")
     smelter = YAMLSmelter(config_dict)
     parsed_dict = smelter.read_file(input_file)
     object_type = smelter.get_object_from_dictionary(parsed_dict[0])
-    cleaned_dict = smelter.tidy_up_metadata_keys(parsed_dict[0], object_type)
+    cleaned_dict = smelter._tidy_up_metadata_keys(parsed_dict[0], object_type)
     assert cleaned_dict["project_my_test_key_1"] == "Test Value"
     assert cleaned_dict["project_my_test_key_2"] == "Test Value 2"
 
 
-@pysnooper.snoop()
 @pytest.mark.dependency(depends=["test_read_file", "test_tidy_up_metadata_keys"])
 def test_smelt_project(datadir):
     input_file = Path(datadir / "test_project.yaml")
@@ -125,7 +119,6 @@ def test_smelt_project(datadir):
     }
 
 
-@pysnooper.snoop()
 @pytest.mark.dependency(depends=["test_read_file", "test_tidy_up_metadata_keys"])
 def test_rebase_file_path(datadir):
     input_file = Path(datadir / "test_datafile.yaml")
@@ -134,32 +127,26 @@ def test_rebase_file_path(datadir):
     cleaned_dict = smelter.rebase_file_path(parsed_dict[0])
     test_dict = {
         "datafiles": {
-            "dataset_id": "Test-dataset",
+            "dataset_id": ["Test-dataset"],
             "files": [
                 {
                     "metadata": {"key1": "value1", "key2": "value2"},
-                    "name": Path(
-                        "/home/chris/GitRepos/mytardis_ingestion/tests/test_yaml_smelter/test_data.dat"
-                    ),
+                    "name": Path("/mount/path/test_data.dat"),
                 },
-                {
-                    "name": Path(
-                        "/home/chris/GitRepos/mytardis_ingestion/tests/test_yaml_smelter/test_data2.dat"
-                    )
-                },
+                {"name": Path("/mount/path/test_data2.dat")},
             ],
         }
     }
     assert cleaned_dict == test_dict
 
 
-@pysnooper.snoop()
 @pytest.mark.dependency(
     depends=["test_read_file", "test_tidy_up_metadata_keys", "test_rebase_file_path"]
 )
 def test_expand_datafile_entry(datadir):
     input_file = Path(datadir / "test_datafile.yaml")
     smelter = YAMLSmelter(config_dict)
+    smelter.mount_dir = Path(datadir)
     parsed_dict = smelter.read_file(input_file)
     cleaned_dict = smelter.rebase_file_path(parsed_dict[0])
     file_list = smelter.expand_datafile_entry(cleaned_dict)
@@ -170,27 +157,29 @@ def test_expand_datafile_entry(datadir):
             "key2": "value2",
             "filename": "test_data.dat",
             "md5sum": "0d32909e86e422d04a053d1ba26a990e",
-            "full_path": Path(
-                "/home/chris/GitRepos/mytardis_ingestion/tests/test_yaml_smelter/test_data.dat"
-            ),
-            "replica": {
-                "uri": Path("test_data.dat"),
-                "location": "Test_storage_box",
-                "protocol": "file",
-            },
+            "full_path": Path(datadir / "test_data.dat"),
+            "replicas": [
+                {
+                    "uri": "test_data.dat",
+                    "location": "Test_storage_box",
+                    "protocol": "file",
+                },
+            ],
+            "size": 52428800,
         },
         {
             "dataset": "Test-dataset",
             "filename": "test_data2.dat",
             "md5sum": "457a252fffb56e95c74bc99dfc3830c2",
-            "full_path": Path(
-                "/home/chris/GitRepos/mytardis_ingestion/tests/test_yaml_smelter/test_data2.dat"
-            ),
-            "replica": {
-                "uri": Path("test_data2.dat"),
-                "location": "Test_storage_box",
-                "protocol": "file",
-            },
+            "full_path": Path(datadir / "test_data2.dat"),
+            "replicas": [
+                {
+                    "uri": "test_data2.dat",
+                    "location": "Test_storage_box",
+                    "protocol": "file",
+                },
+            ],
+            "size": 1048576,
         },
     ]
 
