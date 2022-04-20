@@ -74,6 +74,7 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
                 unless debugging"""
 
         self.auth = MyTardisAuth(config_dict["username"], config_dict["api_key"])
+        self.proxies = None
         if "proxy_http" in config_dict.keys() or "proxy_https" in config_dict.keys():
             self.proxies = {
                 "http": config_dict["proxy_http"],

@@ -253,8 +253,13 @@ Once a majority of users have integrated MyTardis into their workflows, and prov
 
   * Minimum metadata
 
-.. toctree::
+Module Documentation
+====================
 
+.. toctree::
+   :maxdepth: 4
+
+   src
 
 Indices and tables
 ==================

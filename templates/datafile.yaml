@@ -5,11 +5,9 @@
 # If no dataset_id is needed as there is a well defined directory structure, and there is no file specific metadata, then this
 # file can be left blank.
 #
-# Blocks of files can be tagged with the same dataset ids by defining a fileblock as shown below. Multiple fileblocks can be defined
-# but these need unique keys, for example block_1:, block_2:
 #
 # Necessary info
-block_1:
+datafiles:
   # If a rigorous directory structure is used then this can be inferred from the directory and only needs explicit definition if multiple samples are associated with the dataset
   dataset_id: <the identifier associated with the dataset that this file is part of>
   # schema: <value> - un-comment if multiple schema have been defined and set the appropriate type of schema

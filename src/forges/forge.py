@@ -1,14 +1,12 @@
 # pylint: disable=logging-fstring-interpolation
 """Defines Forge class which is a class that creates MyTardis objects."""
 
-import json
 import logging
-from typing import Union
 from urllib.parse import urljoin
 
-from requests.exceptions import HTTPError
+from requests.exceptions import HTTPError, JSONDecodeError
 
-from src.helpers import MyTardisRESTFactory
+from src.helpers import MyTardisRESTFactory, dict_to_json
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +21,7 @@ class Forge:
         rest_factory: An instance of MyTardisRESTFactory providing access to the API
     """
 
-    def __init__(self, config_dict: dict, overwrite_objects: bool = False) -> None:
+    def __init__(self, config_dict: dict) -> None:
         """Class initialisation using a configuration dictionary.
 
         Creates an instance of MyTardisRESTFactory to provide access to MyTardis for
@@ -34,11 +32,15 @@ class Forge:
                 initialise a MyTardisRESTFactory instance.
         """
         self.rest_factory = MyTardisRESTFactory(config_dict)
-        self.overwrite_objects = overwrite_objects
 
     def forge_object(
-        self, object_type: str, object_dict: dict, object_id: int = None
-    ) -> Union[bool, str]:
+        self,
+        object_name: str,
+        object_type: str,
+        object_dict: dict,
+        object_id: int = None,
+        overwrite_objects: bool = False,
+    ) -> tuple:
         """POSTs a request to create an object in MyTardis
 
         This function prepares a POST request to MyTardis and catches any exceptions.
@@ -50,6 +52,7 @@ class Forge:
                 the data necessary to create the object.
             object_id: The id of the object to update if the forge request is an
                 overwrite_objects = True forge request.
+            overwrite_objects: A bool indicating whether duplicate items should be overwritten
 
         Returns:
             False if the object was not created
@@ -58,14 +61,17 @@ class Forge:
         Raises:
             HTTPError: The POST was not handled successfully
         """
+        object_json = dict_to_json(object_dict)
         action = "POST"
         url = urljoin(self.rest_factory.api_template, object_type)
-        if self.overwrite_objects:
+        url = url + "/"
+        if overwrite_objects:
             if object_id:
                 action = "PUT"
                 url = urljoin(
                     urljoin(self.rest_factory.api_template, object_type), object_id
                 )
+                url = url + "/"
             else:
                 logger.warning(
                     (
@@ -73,26 +79,28 @@ class Forge:
                         "called from Forge class. There was no object_id passed with this request"
                     )
                 )
-                return False
+                return (object_name, False)
         try:
             response = self.rest_factory.mytardis_api_request(
-                action, url, data=object_dict
+                action, url, data=object_json
             )
         except HTTPError:
-            logger.exception(
+            logger.warning(
                 (
                     "Failed HTTP request from Forge.forge_object call\n"
                     f"object_type: {object_type}\n"
-                    f"object_dict: {object_dict}"
+                    f"object_dict: {object_dict}\n"
+                    f"object_json: {object_json}"
                 )
             )
-            return False
+            return (object_name, False)
         except Exception as error:
             logger.exception(
                 (
                     "Non-HTTP request from Forge.forge_object call\n"
                     f"object_type: {object_type}\n"
-                    f"object_dict: {object_dict}"
+                    f"object_dict: {object_dict}\n"
+                    f"object_json: {object_json}"
                 )
             )
             raise error
@@ -106,19 +114,26 @@ class Forge:
                     f"response text: {response.json()}"
                 )
             )
-            return False
-        response_dict = json.loads(response.json())
+            return (object_name, False)
+        uri = None
         try:
-            uri = response_dict["resource_uri"]
-        except KeyError:
-            logger.warning(
-                (
-                    "No URI found for newly created object in Forge.forge_object call\n"
-                    f"object_type: {object_type}\n"
-                    f"object_dict: {object_dict}\n"
-                    f"response status code: {response.status_code}\n"
-                    f"response text: {response.json()}"
+            response_dict = response.json()
+            try:
+                uri = response_dict["resource_uri"]
+            except KeyError:
+                logger.warning(
+                    (
+                        "No URI found for newly created object in Forge.forge_object call\n"
+                        f"object_type: {object_type}\n"
+                        f"object_dict: {object_dict}\n"
+                        f"response status code: {response.status_code}\n"
+                        f"response text: {response.json()}"
+                    )
                 )
-            )
-            return False
-        return uri
+                return (object_name, False)
+        except JSONDecodeError:
+            # Not all objects return any information when they are created
+            # In this case ignore the error - Need to think about how this is
+            # handled.
+            pass
+        return (object_name, True, uri)

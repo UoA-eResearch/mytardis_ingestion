@@ -2,7 +2,6 @@
 """Defines Overseer class which is a class that inspects MyTardis
 for the Forge class."""
 
-import json
 import logging
 import os
 from typing import Union
@@ -10,7 +9,6 @@ from urllib.parse import urljoin, urlparse
 
 from requests.exceptions import HTTPError
 
-# HierarchyError,; sanitySanityCheckError,; calculate_md5sum,; read_json,; write_json,
 from src.helpers import MyTardisRESTFactory
 
 logger = logging.getLogger(__name__)
@@ -54,6 +52,7 @@ class Overseer:
                 initialise a MyTardisRESTFactory instance.
         """
         self.rest_factory = MyTardisRESTFactory(config_dict)
+        self.mytardis_setup = self.get_mytardis_set_up()
 
     @staticmethod
     def resource_uri_to_id(uri: str) -> int:
@@ -90,7 +89,7 @@ class Overseer:
         except Exception as error:
             logger.exception("Non-HTTP exception in Overseer.get_mytardis_set_up")
             raise error
-        response_dict = json.loads(response.json())
+        response_dict = response.json()
         if response_dict == {} or response_dict["objects"] == []:
             raise ValueError(
                 (
@@ -168,7 +167,7 @@ class Overseer:
                 )
             )
             raise error
-        response_dict = json.loads(response.json())
+        response_dict = response.json()
         if response_dict == {} or response_dict["objects"] == []:
             return None
         return response_dict["objects"]
@@ -202,6 +201,22 @@ class Overseer:
                 return_list.append(uri)
             return return_list
         return None
+
+    @staticmethod
+    def is_uri(uri_string: str, object_type: str) -> bool:
+        """Does a simple assessment to see if the string is appropriately formatted as a
+        URI for the object_type.
+
+        Args:
+            uri_string: the string to be tested as a URI
+            object_type: the object type from which the URI should be generated
+
+        Returns:
+           True if the test string is formatted correctly for URIs, False otherwise
+        """
+        if uri_string.startswith(f"/api/v1/{object_type}/"):
+            return True
+        return False
 
     def validate_schema(self, schema: str, object_type: str) -> Union[bool, str]:
         """Validates that a schema with the name 'schema' exists and that it
@@ -244,3 +259,35 @@ class Overseer:
                 except Exception as error:
                     raise error
         return False
+
+    def get_uris_by_identifier(
+        self, object_type: str, search_string: str
+    ) -> Union[list, None]:
+        """Wrapper around Overseer.get_uris that checks if the identifer app is enabled and
+        that the object_type has identifiers.
+
+        Args:
+            object_type: A string representing the different object types that can be searched for
+            search_string: The string that the search_target is being searched for.
+
+        Returns:
+            A list of object URIs from the search request made.
+        """
+        if self.mytardis_setup["objects_with_ids"] == []:
+            logger.warning(
+                (
+                    "The identifiers app is not installed in the instance of MyTardis, "
+                    "or there are no objects defined in OBJECTS_WITH_IDENTIFIERS in "
+                    "settings.py"
+                )
+            )
+            return None
+        if object_type not in self.mytardis_setup["objects_with_ids"]:
+            logger.warning(
+                (
+                    f"The object type, {object_type}, is not present in "
+                    "OBJECTS_WITH_IDENTIFIERS defined in settings.py"
+                )
+            )
+            return None
+        return self.get_uris(object_type, "pids", search_string)

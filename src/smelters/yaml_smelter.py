@@ -1,0 +1,223 @@
+# pylint: disable=logging-fstring-interpolation
+"""YAML smelter. A class that processes YAML files into dictionaries suitable to be passed to an
+instance of the Forge class for creating objects in MyTardis."""
+
+import logging
+from copy import deepcopy
+from pathlib import Path
+from typing import Union
+
+import yaml
+from yaml.parser import ParserError
+from yaml.scanner import ScannerError
+
+from src.smelters.smelter import Smelter
+
+logger = logging.getLogger(__name__)
+
+
+class YAMLSmelter(Smelter):
+    """This Smelter class takes a YAML file as an input and processes it into dictionaries.
+
+    The YAMLSmelter class reads in a YAML file, identifies it's type based on the keys in the file
+    and passes it to the appropriate function for deconstruction into object and parameter
+    dictionaries.
+
+    Attributes:
+        projects_enabled: a boolean flag indicating whether or not to process projects
+        objects_with_pids: a list of objects that have identifiers
+        objects_with_profiles: a list of objects that have profiles
+        OBJECT_TYPES: a dictionary of object types and the smelter functions that are used
+            to process the input dictionaries.
+    """
+
+    def __init__(self, mytardis_config: dict) -> None:
+        """Class initialisation to set options for dictionary processing
+
+        Stores MyTardis set up information from the introspection API to allow the parser
+        to prepare only objects that exist and to handle additional keys in the dictionaries
+        gracefully.
+
+        Args:
+            projects_enabled: a boolean flag indicating whether or not to process projects
+            objects_with_pids: a list of objects that have identifiers. Defaults to empty
+            objects_with_profiles: a list of objects that have profiles. Defaults to empty
+        """
+        super().__init__(mytardis_config)
+        self.OBJECT_TYPES = {  # pylint: disable=invalid-name
+            "project_name": "project",
+            "experiment_name": "experiment",
+            "dataset_name": "dataset",
+            "datafiles": "datafile",
+        }
+
+    def get_key_conversions(self):
+        return {
+            "project": {
+                "project_name": "name",
+                "lead_researcher": "principal_investigator",
+                "project_id": "persistent_id",
+            },
+            "experiment": {
+                "experiment_name": "title",
+                "experiment_id": "persistent_id",
+                "project_id": "projects",
+            },
+            "dataset": {
+                "dataset_name": "description",
+                "experiment_id": "experiments",
+                "dataset_id": "persistent_id",
+                "instrument_id": "instrument",
+            },
+            "datafile": {},
+        }
+
+    def _tidy_up_metadata_keys(  # pylint: disable=no-self-use
+        self, parsed_dict: dict, object_type: str
+    ) -> dict:
+        """Function to get rid of spaces and convert human readable metadata keys to snakecase"""
+        cleaned_dict = deepcopy(parsed_dict)
+        if "metadata" in parsed_dict.keys():
+            for key in parsed_dict["metadata"].keys():
+                value = cleaned_dict["metadata"].pop(key)
+                new_key = object_type + "_" + key.replace(" ", "_").lower()
+                cleaned_dict[new_key] = value
+            cleaned_dict.pop("metadata")
+        return cleaned_dict
+
+    def get_file_type_for_input_files(self) -> str:  # pylint: disable=no-self-use
+        """Function to return a string that can be used by Path.glob() to
+        get all of the input files in a directory"""
+
+        return "*.yaml"
+
+    def get_objects_in_input_file(self, file_path: Path) -> tuple:
+        """Takes a file path for a YAML file and returns a tuple of object types contained with the
+        file
+
+        Calls YAMLSmelter.read_yaml_file to read in a YAML file into a tuple of dictionaries.
+        For each of the dictionaries read, adds the object types to a tuple of types and returns
+        this tuple
+
+        Args:
+            file_path: a Path to the YAML file to be processed
+
+        Returns:
+            A tuple of object types within the file
+        """
+        object_types: list = []
+        parsed_dictionaries = self.read_file(file_path)
+        for parsed_dict in parsed_dictionaries:
+            object_type_key = list(set(parsed_dict).intersection(self.OBJECT_TYPES))
+            if len(object_type_key) == 0:
+                logger.warning(
+                    f"File {file_path} was not recognised as a MyTardis ingestion file"
+                )
+                object_types.append(None)
+            if len(object_type_key) > 1:
+                logger.warning(
+                    (
+                        f"Malformed MyTardis ingestion file, {file_path}. Please ensure that "
+                        "sections are properly delimited with '---' and that each section is "
+                        "defined for one object type only i.e. 'project', 'experiment', "
+                        "'dataset' or 'datafile'."
+                    )
+                )
+                object_types.append(None)
+            object_types.append(self.OBJECT_TYPES[object_type_key[0]])
+        return (*object_types,)
+
+    def read_file(self, file_path: Path) -> tuple:  # pylint: disable=no-self-use
+        """Takes a file path for a YAML file and reads it into a tuple of dictionaries.
+
+        Reads in a YAML file. As it is possible for multiple YAML documents to be placed in
+        a single file, the function also checks to see if a generator has been yielded and creates
+        a tuple of dictionaries as a return.
+
+        Args:
+           file_path: a Path to the YAML file to be processed
+
+        Returns:
+           A tuple of dictionaries containing the parsed YAML file.
+        """
+        try:
+            with open(file_path, "r", encoding="UTF-8") as open_file:
+                parsed_dictionaries = yaml.safe_load_all(open_file.read())
+        except (ParserError, ScannerError):
+            logger.warning(f"Unable to parse {file_path}. Check YAML syntax")
+            return tuple()
+        except Exception as error:
+            raise error
+        return_list = []
+        for dictionary in parsed_dictionaries:
+            return_list.append(dictionary)
+        return tuple(return_list)
+
+    def rebase_file_path(self, parsed_dict: dict) -> dict:
+        """Function to redirect the file path to account for the directory
+        that the research drive is mounted on"""
+        cleaned_dict = deepcopy(parsed_dict)
+        cleaned_dict["datafiles"]["files"] = []
+        for file_path in parsed_dict["datafiles"]["files"]:
+            remote_path = Path(file_path["name"])
+            mounted_path = self.mount_dir / remote_path.relative_to(self.remote_dir)
+            file_dict = {}
+            if "metadata" in file_path.keys():
+                file_dict["metadata"] = file_path["metadata"]
+            file_dict["name"] = mounted_path
+            cleaned_dict["datafiles"]["files"].append(file_dict)
+        return cleaned_dict
+
+    def expand_datafile_entry(  # pylint: disable=too-many-nested-blocks
+        self, parsed_dict: dict
+    ) -> list:
+        file_list = []
+        for file_dict in parsed_dict["datafiles"]["files"]:
+            if not file_dict["name"].is_file():
+                for filename in file_dict["name"].iterdir():
+                    if filename.is_file():
+                        cleaned_dict = {}
+                        cleaned_dict["dataset"] = parsed_dict["datafiles"][
+                            "dataset_id"
+                        ][0]
+                        if "metadata" in file_dict.keys():
+                            for key in file_dict["metadata"].keys():
+                                cleaned_dict[key] = file_dict["metadata"][key]
+                        cleaned_dict["filename"] = Smelter.get_filename_from_filepath(
+                            filename
+                        )
+                        cleaned_dict["md5sum"] = Smelter.get_file_checksum(filename)
+                        cleaned_dict["size"] = filename.stat().st_size
+                        cleaned_dict["full_path"] = filename
+                        cleaned_dict["file_path"] = Path(filename).relative_to(
+                            self.mount_dir
+                        )
+                        cleaned_dict = self._create_replica(cleaned_dict)
+                        file_list.append(cleaned_dict)
+            else:
+                cleaned_dict = {}
+                cleaned_dict["dataset"] = parsed_dict["datafiles"]["dataset_id"][0]
+                if "metadata" in file_dict.keys():
+                    for key in file_dict["metadata"].keys():
+                        cleaned_dict[key] = file_dict["metadata"][key]
+                cleaned_dict["filename"] = Smelter.get_filename_from_filepath(
+                    file_dict["name"]
+                )
+                cleaned_dict["md5sum"] = Smelter.get_file_checksum(file_dict["name"])
+                cleaned_dict["size"] = file_dict["name"].stat().st_size
+                cleaned_dict["full_path"] = file_dict["name"]
+                cleaned_dict["file_path"] = Path(file_dict["name"]).relative_to(
+                    self.mount_dir
+                )
+                cleaned_dict = self._create_replica(cleaned_dict)
+                file_list.append(cleaned_dict)
+        return file_list
+
+    def get_object_from_dictionary(  # pylint: disable=consider-using-dict-items,consider-iterating-dictionary
+        self, parsed_dict: dict
+    ) -> Union[str, None]:
+        """Helper function to get the object type from a parsed dictionary"""
+        for key in self.OBJECT_TYPES.keys():
+            if key in parsed_dict.keys():
+                return self.OBJECT_TYPES[key]
+        return None
