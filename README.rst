@@ -36,6 +36,8 @@ Feature
 
 .. raw:: html
 
+..image:: ./coverage-badge.svg ..image:: ./interrogate_badge.svg ..image:: ./tests-badge.svg
+
    <!-- TABLE OF CONTENTS -->
 
 Table of Contents
