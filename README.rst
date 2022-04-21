@@ -36,8 +36,7 @@ Feature
 
 .. raw:: html
 
-.. image:: coverage-badge.svg  image:: interrogate_badge.svg  image:: tests-badge.svg
-
+.. image:: /github/workflow/status/UoA-eResearch/mytardis_ingestion/Test%20and%20Lint%20MyTardis%20Ingestion/develop
    <!-- TABLE OF CONTENTS -->
 
 Table of Contents
