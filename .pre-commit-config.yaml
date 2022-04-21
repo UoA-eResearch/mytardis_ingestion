@@ -43,36 +43,10 @@ repos:
     hooks:
     -   id: pytest
         name: pytest
-        stages: [commit, push]
+        stages: [commit]
         language: system
-        entry: pytest -v --showlocals --junitxml=./pytest.xml
+        entry: pytest -v --showlocals
         types: [python]
-        pass_filenames: false
-    -   id: generate pytest badge
-        name: pytest_badge
-        stages: [push]
-        language: system
-        entry: genbadge tests --input-file=./pytest.xml
-        pass_filenames: false
-    -   id: coverage
-        name: coverage
-        stages: [push]
-        language: system
-        entry: overage run -m pytest tests
-        types: [python]
-        pass_filenames: false
-    -   id: Generate coverage XML
-        name: coverage_xml
-        stages: [push]
-        language: system
-        entry: coverage xml
-        types: [python]
-        pass_filenames: false
-    -   id: generate coverage badge
-        name: coverage_badge
-        stages: [push]
-        language: system
-        entry: genbadge coverage --input-file=./coverage.xml
         pass_filenames: false
 -   repo: https://github.com/Lucas-C/pre-commit-hooks-safety
     rev: v1.2.2
