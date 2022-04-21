@@ -26,10 +26,6 @@ jobs:
     - name: Run pytest
       run: PYTHONPATH=src/ poetry run python -m pytest -v --cov=src/ tests/
 
-    - name: Test with pytest
-      run: |
-        coverage run -m pytest
-
     - name: Upload Coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
