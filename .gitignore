@@ -27,8 +27,6 @@ Core/overseer/__pycache__/
 __pycache__/
 
 *.OLD
-interrogate_badge.svg
-
 *.OLD#
 
 Print_group_ingestion.py
@@ -36,3 +34,7 @@ Print_group_ingestion.py
 src/specific_implementations/print.py
 
 *.yml#
+
+coverage.xml
+
+pytest.xml
