@@ -1,6 +1,9 @@
 name: Test and Lint MyTardis Ingestion
 
-on: [push]
+name: Test PR
+on:
+  pull_request:
+    branches: [master, develop]
 
 jobs:
   test:
