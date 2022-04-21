@@ -1,8 +1,6 @@
 name: Test and Lint MyTardis Ingestion
 
-on:
-  pull_request:
-    branches: [master, develop]
+on: [push,pull-request]
 
 jobs:
   test:
@@ -28,8 +26,11 @@ jobs:
     - name: Run pytest
       run: PYTHONPATH=src/ poetry run python -m pytest -v --cov=src/ tests/
 
-    - name: Run Coverage
-      run: PYTHONPATH=src/ poetry run python -m coverage report -m;
+    - name: Test with pytest
+      run: |
+        coverage run -m pytest
 
-    - name: Run pylint
-      run: PYTHONPATH=src/ poetry run pylint src/
+    - name: Upload Coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
