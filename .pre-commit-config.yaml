@@ -52,7 +52,7 @@ repos:
         name: pytest_badge
         stages: [push]
         language: system
-        entry: genbadge --input-file=./pytest.xml tests
+        entry: genbadge tests --input-file=./pytest.xml
     -   id: coverage
         name: coverage
         stages: [push]
@@ -71,7 +71,7 @@ repos:
         name: coverage_badge
         stages: [push]
         language: system
-        entry: genbadge --input-file=./coverage.xml coverage
+        entry: genbadge coverage --input-file=./coverage.xml
 -   repo: https://github.com/Lucas-C/pre-commit-hooks-safety
     rev: v1.2.2
     hooks:
