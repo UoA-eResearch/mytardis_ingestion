@@ -45,14 +45,14 @@ repos:
         name: pytest
         stages: [commit, push]
         language: system
-        entry: pytest -v --showlocals --junitxml=pytest.xml
+        entry: pytest -v --showlocals --junitxml=./reports/junit/junit.xml
         types: [python]
         pass_filenames: false
     -   id: generate pytest badge
         name: pytest_badge
         stages: [push]
         language: system
-        entry: genbadge tests --input-file=./pytest.xml
+        entry: genbadge tests
     -   id: coverage
         name: coverage
         stages: [push]
@@ -64,14 +64,14 @@ repos:
         name: coverage_xml
         stages: [push]
         language: system
-        entry: coverage xml
+        entry: coverage xml -o ./reports/coverage/coverage.xml
         types: [python]
         pass_filenames: false
     -   id: generate coverage badge
         name: coverage_badge
         stages: [push]
         language: system
-        entry: genbadge coverage --input-file=./coverage.xml
+        entry: genbadge coverage
 -   repo: https://github.com/Lucas-C/pre-commit-hooks-safety
     rev: v1.2.2
     hooks:
