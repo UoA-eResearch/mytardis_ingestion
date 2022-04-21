@@ -26,7 +26,7 @@
 * [Contact](#contact)
   [Change Log](#change-log)
 
-![master](https://github.com/UoA-eResearch/mytardis_ingestion/actions/workflows/Test%20and%20Lint%20MyTardis%20Ingestion/badge.svg)
+![master](https://github.com/UoA-eResearch/mytardis_ingestion/actions/workflows/mytardis_ingestion.yaml/badge.svg)
 
 ## About the Project
 
