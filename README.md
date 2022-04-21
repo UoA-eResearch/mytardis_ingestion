@@ -27,7 +27,7 @@
   [Change Log](#change-log)
 
 ![master](https://github.com/UoA-eResearch/mytardis_ingestion/actions/workflows/mytardis_ingestion.yml/badge.svg)
-![Codecov branch](https://img.shields.io/codecov/c/github/UoA-eResearch/mytardis_ingestion/master?token=87b03af3-8737-4d66-b2aa-ad56e5a08376)
+[![codecov](https://codecov.io/gh/UoA-eResearch/mytardis_ingestion/branch/master/graph/badge.svg?token=GEI8FW6T1W)](https://codecov.io/gh/UoA-eResearch/mytardis_ingestion)
 
 ## About the Project
 
