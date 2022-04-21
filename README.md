@@ -28,6 +28,7 @@
 
 ![master](https://github.com/UoA-eResearch/mytardis_ingestion/actions/workflows/mytardis_ingestion.yml/badge.svg)
 [![codecov](https://codecov.io/gh/UoA-eResearch/mytardis_ingestion/branch/master/graph/badge.svg?token=GEI8FW6T1W)](https://codecov.io/gh/UoA-eResearch/mytardis_ingestion)
+![interrogate](interrogate_badge.svg)
 ![lastcommit](https://img.shields.io/github/last-commit/UoA-eResearch/mytardis_ingestion/badge.svg)
 
 ## About the Project
