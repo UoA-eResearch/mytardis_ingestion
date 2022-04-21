@@ -38,9 +38,11 @@ Feature
 
 
 .. image:: https://github.com/UoA-eResearch/mytardis_ingestion/actions/workflows/mytardis_ingestion.yml/badge.svg
+
 .. image:: https://codecov.io/gh/UoA-eResearch/mytardis_ingestion/branch/master/graph/badge.svg?token=GEI8FW6T1W
       :target: https://codecov.io/gh/UoA-eResearch/mytardis_ingestion
 
+.. image:: https://img.shields.io/github/last-commit/UoA-eResearch/mytardis_ingestion   :alt: GitHub last commit
 
    <!-- TABLE OF CONTENTS -->
 
