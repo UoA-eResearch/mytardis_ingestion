@@ -52,6 +52,14 @@ class YAMLSmelter(Smelter):
         }
 
     def get_key_conversions(self):
+        """Get the translation dictionary between the YAML key names and the MyTardis
+        object names. This has been added to allow for standardisation of the naming system
+        in the YAML files to make it clearer for researchers.
+
+        Returns:
+            A dictionary of conversions with the YAML key used as a key and the MyTardis key
+                the value in the key: value pair
+        """
         return {
             "project": {
                 "project_name": "name",
@@ -171,6 +179,16 @@ class YAMLSmelter(Smelter):
     def expand_datafile_entry(  # pylint: disable=too-many-nested-blocks
         self, parsed_dict: dict
     ) -> list:
+        """Function to read in a data file entry from the YAML file, locate the file and
+        generate a known good MD5 sum, determine the file size and create a file replica
+        ready for ingestion into MyTardis
+
+        Args:
+            parsed_dict: a dictionary containing the data file entries from the YAML file
+
+        Returns:
+            a list of dictionaries ready for ingestion into MyTardis
+        """
         file_list = []
         for file_dict in parsed_dict["datafiles"]["files"]:
             if not file_dict["name"].is_file():

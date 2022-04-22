@@ -34,6 +34,7 @@ class MyTardisAuth(AuthBase):  # pylint: disable=R0903
         self.api_key = api_key
 
     def __call__(self, r):
+        """Return an authorisation header for MyTardis"""
         r.headers["Authorization"] = f"ApiKey {self.username}:{self.api_key}"
         return r
 
