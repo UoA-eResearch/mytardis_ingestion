@@ -16,9 +16,9 @@ import os
 import subprocess
 
 KB = 1024
-MB = KB ** 2
-GB = KB ** 3
-TB = KB ** 4
+MB = KB**2
+GB = KB**3
+TB = KB**4
 
 
 def md5_python(file_path, blocksize):
@@ -36,7 +36,7 @@ def md5_python(file_path, blocksize):
         The hex encoded MD5 checksum.
     """
 
-    md5 = hashlib.md5()
+    md5 = hashlib.new("md5", usedforsecurity=False)
     try:
         with open(file_path, "rb") as infile:
             while True:

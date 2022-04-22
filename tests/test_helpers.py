@@ -22,7 +22,7 @@ from src.helpers import (
 from src.helpers.mt_rest import MyTardisAuth
 
 KB = 1024
-MB = KB ** 2
+MB = KB**2
 
 logger = logging.getLogger(__name__)
 logger.propagate = True

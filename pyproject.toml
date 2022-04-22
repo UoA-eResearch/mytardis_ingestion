@@ -28,6 +28,7 @@ bandit = "^1.7.4"
 coverage = "^6.3.2"
 pytest-cov = "^3.0.0"
 genbadge = {extras = ["tests", "coverage"], version = "^1.0.6"}
+click = "8.0.4"
 
 [tool.isort]
 profile = "black"

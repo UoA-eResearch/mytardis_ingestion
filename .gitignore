@@ -38,3 +38,5 @@ src/specific_implementations/print.py
 coverage.xml
 
 pytest.xml
+
+.coverage
