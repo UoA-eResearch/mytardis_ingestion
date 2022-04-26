@@ -16,9 +16,9 @@ import os
 import subprocess
 
 KB = 1024
-MB = KB ** 2
-GB = KB ** 3
-TB = KB ** 4
+MB = KB**2
+GB = KB**3
+TB = KB**4
 
 
 def md5_python(file_path, blocksize):
@@ -36,7 +36,7 @@ def md5_python(file_path, blocksize):
         The hex encoded MD5 checksum.
     """
 
-    md5 = hashlib.md5()
+    md5 = hashlib.new("md5", usedforsecurity=False)
     try:
         with open(file_path, "rb") as infile:
             while True:
@@ -125,51 +125,3 @@ def calculate_md5sum(
     except Exception as err:
         raise err
     return md5sum
-
-
-def calculate_etag(file_path, blocksize):
-    """Calculates the s3 etag of a file.
-
-    Calculates the S3 etag of a file. Since etags are calculated
-    from md5 sums, chinks of file are streamed in order to prevent
-    out of memory errors on large files.
-
-    The algorithm for calculating the S3 etag is as follows:
-        For a single part upload the etag = the MD5 checksum
-        For a multipart upload with a chunk size of X, for each
-        chunk calculate the MD5 sum. Concatenate the MD5 sums in order
-        and calculate the MD5 checksum of the concatenated string.
-        This final MD5 checksum is the etag
-
-    Args:
-        file_path: The file path for creating checksum from
-        blocksize: The size of the file 'chunk' streamed for multipart upload.
-            For a single part upload this is equal to or greater than the file
-            size
-
-    Returns:
-        The Amazon s3 etag checksum of the file
-    """
-
-    md5s = []
-    try:
-        with open(file_path, "rb") as infile:
-            while True:
-                chunk = infile.read(blocksize)
-                if not chunk:
-                    break
-                md5s.append(hashlib.md5(chunk))
-    except Exception as error:
-        raise error
-    try:
-        if len(md5s) > 1:
-            digests = b"".join(m.digest() for m in md5s)
-            new_md5 = hashlib.md5(digests)
-            etag = new_md5.hexdigest() + "-" + str(len(md5s))
-        elif len(md5s) == 1:
-            etag = md5s[0].hexdigest()
-        else:
-            etag = '""'
-    except Exception as error:
-        raise error
-    return etag

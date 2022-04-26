@@ -14,8 +14,8 @@ from src.helpers import MyTardisRESTFactory
 logger = logging.getLogger(__name__)
 
 KB = 1024
-MB = KB ** 2
-GB = KB ** 3
+MB = KB**2
+GB = KB**3
 
 SCHEMA_TYPES = {
     "project": 11,

@@ -29,15 +29,3 @@ class HierarchyError(Exception):
         self.message = f"The parent object, {parent_obj} for {child_obj} was not found."
         self.parent_obj = parent_obj
         self.child_obj = child_obj
-
-
-class UnableToFindUniqueError(Exception):
-    """Custom exception for when a search returns a non-unique
-    database entry. Pass up the response for further analysis
-    should it be needed."""
-
-    def __init__(self, action, query_params, response_dict):
-        super().__init__()
-        self.action = action
-        self.query_params = query_params
-        self.resonse_dict = response_dict

@@ -13,6 +13,18 @@ from requests.auth import AuthBase
 from requests.exceptions import RequestException
 
 
+class BadGateWayException(RequestException):
+    """A specific exception for 502 errors to trigger backoff retries.
+
+    502 Bad Gateway triggers retries, since the proxy web server (eg Nginx
+    or Apache) in front of MyTardis could be temporarily restarting
+    """
+
+    # Included for clarity even though it is unnecessary
+    def __init__(self, response):  # pylint: disable=useless-super-delegation
+        super().__init__(response)
+
+
 class MyTardisAuth(AuthBase):  # pylint: disable=R0903
     """Attaches HTTP headers for Tastypie API key Authentication to the given
 
@@ -34,6 +46,7 @@ class MyTardisAuth(AuthBase):  # pylint: disable=R0903
         self.api_key = api_key
 
     def __call__(self, r):
+        """Return an authorisation header for MyTardis"""
         r.headers["Authorization"] = f"ApiKey {self.username}:{self.api_key}"
         return r
 
@@ -84,9 +97,7 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
         self.api_template = urljoin(config_dict["hostname"], "/api/v1/")
         self.user_agent = f"{self.user_agent_name}/2.0 ({self.user_agent_url})"
 
-    @backoff.on_exception(
-        backoff.expo, requests.exceptions.RequestException, max_tries=8
-    )
+    @backoff.on_exception(backoff.expo, BadGateWayException, max_tries=8)
     def mytardis_api_request(
         self,
         method: str,  # REST api method
@@ -151,7 +162,7 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
                     verify=self.verify_certificate,
                 )
             if response.status_code == 502:
-                error = RequestException(response)
+                error = BadGateWayException(response)
                 raise error
             response.raise_for_status()
         except Exception as error:

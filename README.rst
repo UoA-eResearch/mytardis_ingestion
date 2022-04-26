@@ -36,7 +36,14 @@ Feature
 
 .. raw:: html
 
-.. image:: /github/workflow/status/UoA-eResearch/mytardis_ingestion/workflow/actions/mytardis_ingestion.yml/develop/badge.svg
+.. image:: /github/workflow/status/UoA-eResearch/mytardis_ingestion/Test%20and%20Lint%20MyTardis%20Ingestion/develop
+
+.. image:: https://github.com/UoA-eResearch/mytardis_ingestion/actions/workflows/mytardis_ingestion.yml/badge.svg
+
+.. image:: https://codecov.io/gh/UoA-eResearch/mytardis_ingestion/branch/master/graph/badge.svg?token=GEI8FW6T1W
+      :target: https://codecov.io/gh/UoA-eResearch/mytardis_ingestion
+
+.. image:: https://img.shields.io/github/last-commit/UoA-eResearch/mytardis_ingestion   :alt: GitHub last commit
 
 .. image:: interrogate_badge.svg
 

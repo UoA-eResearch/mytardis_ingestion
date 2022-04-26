@@ -542,18 +542,21 @@ class Smelter(ABC):
     def get_filename_from_filepath(  # pylint: disable=missing-function-docstring
         file_path: Path,
     ) -> str:
+        """Wrapper around Pathlib Path .name attribute for disambiguation"""
         return file_path.name
 
     @staticmethod
     def get_file_size(  # pylint: disable=missing-function-docstring
         file_path: Path,
     ) -> int:
+        """Wrapper around Pathlib Path .stat().size attribute for diambiguation"""
         return file_path.stat().st_size
 
     @staticmethod
     def get_file_checksum(  # pylint: disable=missing-function-docstring
         file_path: Path,
     ) -> int:
+        """Wrapper around calculate_md5sum function for disambiguation"""
         return calculate_md5sum(file_path)
 
     @abstractmethod

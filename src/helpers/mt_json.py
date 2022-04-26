@@ -63,6 +63,7 @@ def dict_to_json(dictionary: dict) -> str:
         raise TypeError("Must be a dictionary")
 
     def date_handler(obj):
+        """Helper function to format the date into a JSON compatible format"""
         return (
             obj.isoformat()
             if isinstance(obj, (datetime.date, datetime.datetime))

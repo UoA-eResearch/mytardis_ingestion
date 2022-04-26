@@ -184,3 +184,8 @@ def test_expand_datafile_entry(datadir):
     ]
 
     assert file_list == test_list
+
+
+def test_glob_string():
+    smelter = YAMLSmelter(config_dict)
+    assert smelter.get_file_type_for_input_files() == "*.yaml"
