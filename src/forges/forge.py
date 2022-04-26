@@ -6,7 +6,7 @@ from urllib.parse import urljoin
 
 from requests.exceptions import HTTPError, JSONDecodeError
 
-from src.helpers import MyTardisRESTFactory, dict_to_json
+from src.helpers import BadGateWayException, MyTardisRESTFactory, dict_to_json
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,7 @@ class Forge:
         If the overwrite_objects flag is set to True, it PUTs rather than posts
 
         Args:
+            object_name: The name of the object for logging purposes
             object_type: The MyTardis object type to be created
             object_dict: A data dictionary to be passed to the POST request containing
                 the data necessary to create the object.
@@ -62,15 +63,16 @@ class Forge:
             HTTPError: The POST was not handled successfully
         """
         object_json = dict_to_json(object_dict)
+        # Consider refactoring this as a function to generate the URL?
         action = "POST"
         url = urljoin(self.rest_factory.api_template, object_type)
         url = url + "/"
         if overwrite_objects:
             if object_id:
                 action = "PUT"
-                url = urljoin(
-                    urljoin(self.rest_factory.api_template, object_type), object_id
-                )
+                url = urljoin(self.rest_factory.api_template, object_type)
+                url = url + "/"
+                url = urljoin(url, str(object_id))
                 url = url + "/"
             else:
                 logger.warning(
@@ -84,34 +86,35 @@ class Forge:
             response = self.rest_factory.mytardis_api_request(
                 action, url, data=object_json
             )
-        except HTTPError:
+        except (HTTPError, BadGateWayException) as error:
             logger.warning(
                 (
-                    "Failed HTTP request from Forge.forge_object call\n"
+                    "Failed HTTP request from forge_object call\n"
                     f"object_type: {object_type}\n"
                     f"object_dict: {object_dict}\n"
                     f"object_json: {object_json}"
                 )
             )
+            logger.error(error, exc_info=True)
             return (object_name, False)
         except Exception as error:
-            logger.exception(
+            logger.error(
                 (
-                    "Non-HTTP request from Forge.forge_object call\n"
+                    "Non-HTTP request from forge_object call\n"
                     f"object_type: {object_type}\n"
                     f"object_dict: {object_dict}\n"
                     f"object_json: {object_json}"
                 )
             )
+            logger.error(error, exc_info=True)
             raise error
-        if response.status_code >= 300:
+        if response.status_code >= 300 and response.status_code < 400:
             logger.warning(
                 (
-                    "Object not successfully created in Forge.forge_object call\n"
+                    "Object not successfully created in forge_object call\n"
                     f"object_type: {object_type}\n"
                     f"object_dict: {object_dict}\n"
-                    f"response status code: {response.status_code}\n"
-                    f"response text: {response.json()}"
+                    f"response status code: {response.status_code}"
                 )
             )
             return (object_name, False)
@@ -119,11 +122,11 @@ class Forge:
         try:
             response_dict = response.json()
             try:
-                uri = response_dict["resource_uri"]
+                uri = response_dict["objects"][0]["resource_uri"]
             except KeyError:
                 logger.warning(
                     (
-                        "No URI found for newly created object in Forge.forge_object call\n"
+                        "No URI found for newly created object in forge_object call\n"
                         f"object_type: {object_type}\n"
                         f"object_dict: {object_dict}\n"
                         f"response status code: {response.status_code}\n"
@@ -136,4 +139,10 @@ class Forge:
             # In this case ignore the error - Need to think about how this is
             # handled.
             pass
+        logger.info(
+            (
+                f"Object: {object_name} successfully created in MyTardis\n"
+                f"Object Type: {object_type}"
+            )
+        )
         return (object_name, True, uri)
