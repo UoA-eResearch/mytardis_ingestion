@@ -50,15 +50,15 @@ class IngestionFactory(ABC):
         self.glob_string = self.smelter.get_file_type_for_input_files()
         self.default_institution = config_dict["default_institution"]
 
-    @abstractmethod
-    def get_smelter(self, config_dict: dict):
+    @abstractmethod  # pragma: no cover
+    def get_smelter(self, config_dict: dict):  # pragma: no cover
         """Abstract method to return the specific instance of a smelter for the
         concrete instance of the IngestionFactory.
 
         Returns:
             None
         """
-        return None
+        return None  # pragma: no cover
 
     def build_object_lists(self, file_path: Path, object_type: str) -> list:
         """General function to glob for files and return a list with the files that
@@ -81,21 +81,6 @@ class IngestionFactory(ABC):
             if object_type in self.smelter.get_objects_in_input_file(input_file):
                 return_list.append(input_file)
         return return_list
-
-    @staticmethod
-    def refine_smelted_object_dict(
-        cleaned_dict: dict, updates: dict
-    ) -> Union[dict, None]:
-        """Helper function to add or replace key value pairs in a dictionary
-
-        Args:
-            cleaned_dict: the object dictionary to update
-            updates: a dictionary of key/value pairs to add/update the cleaned_dict with.
-
-        Returns:
-            The dictionary updated by the updates dictionary
-        """
-        return cleaned_dict.update(updates)
 
     def replace_search_term_with_uri(
         self,

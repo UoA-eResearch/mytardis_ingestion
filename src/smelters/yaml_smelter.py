@@ -8,8 +8,6 @@ from pathlib import Path
 from typing import Union
 
 import yaml
-from yaml.parser import ParserError
-from yaml.scanner import ScannerError
 
 from src.smelters.smelter import Smelter
 
@@ -122,6 +120,7 @@ class YAMLSmelter(Smelter):
                     f"File {file_path} was not recognised as a MyTardis ingestion file"
                 )
                 object_types.append(None)
+                continue
             if len(object_type_key) > 1:
                 logger.warning(
                     (
@@ -132,6 +131,7 @@ class YAMLSmelter(Smelter):
                     )
                 )
                 object_types.append(None)
+                continue
             object_types.append(self.OBJECT_TYPES[object_type_key[0]])
         return (*object_types,)
 
@@ -151,10 +151,8 @@ class YAMLSmelter(Smelter):
         try:
             with open(file_path, "r", encoding="UTF-8") as open_file:
                 parsed_dictionaries = yaml.safe_load_all(open_file.read())
-        except (ParserError, ScannerError):
-            logger.warning(f"Unable to parse {file_path}. Check YAML syntax")
-            return tuple()
         except Exception as error:
+            logger.error(f"Failed to read file {file_path}.", exc_info=True)
             raise error
         return_list = []
         for dictionary in parsed_dictionaries:

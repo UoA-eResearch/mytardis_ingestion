@@ -1,4 +1,4 @@
-# pylint: disable=logging-fstring-interpolation
+# pylint: disable=logging-fstring-interpolation,pointless-string-statement
 """Defines Overseer class which is a class that inspects MyTardis
 for the Forge class."""
 
@@ -218,7 +218,41 @@ class Overseer:
             return True
         return False
 
-    def validate_schema(self, schema: str, object_type: str) -> Union[bool, str]:
+    def get_uris_by_identifier(
+        self, object_type: str, search_string: str
+    ) -> Union[list, None]:
+        """Wrapper around Overseer.get_uris that checks if the identifer app is enabled and
+        that the object_type has identifiers.
+
+        Args:
+            object_type: A string representing the different object types that can be searched for
+            search_string: The string that the search_target is being searched for.
+
+        Returns:
+            A list of object URIs from the search request made.
+        """
+        if self.mytardis_setup["objects_with_ids"] == []:
+            logger.warning(
+                (
+                    "The identifiers app is not installed in the instance of MyTardis, "
+                    "or there are no objects defined in OBJECTS_WITH_IDENTIFIERS in "
+                    "settings.py"
+                )
+            )
+            return None
+        if object_type not in self.mytardis_setup["objects_with_ids"]:
+            logger.warning(
+                (
+                    f"The object type, {object_type}, is not present in "
+                    "OBJECTS_WITH_IDENTIFIERS defined in settings.py"
+                )
+            )
+            return None
+        return self.get_uris(object_type, "pids", search_string)
+
+
+# Future functionality
+'''    def validate_schema(self, schema: str, object_type: str) -> Union[bool, str]:
         """Validates that a schema with the name 'schema' exists and that it
         is the right type for the object passed.
 
@@ -258,36 +292,4 @@ class Overseer:
                     return False
                 except Exception as error:
                     raise error
-        return False
-
-    def get_uris_by_identifier(
-        self, object_type: str, search_string: str
-    ) -> Union[list, None]:
-        """Wrapper around Overseer.get_uris that checks if the identifer app is enabled and
-        that the object_type has identifiers.
-
-        Args:
-            object_type: A string representing the different object types that can be searched for
-            search_string: The string that the search_target is being searched for.
-
-        Returns:
-            A list of object URIs from the search request made.
-        """
-        if self.mytardis_setup["objects_with_ids"] == []:
-            logger.warning(
-                (
-                    "The identifiers app is not installed in the instance of MyTardis, "
-                    "or there are no objects defined in OBJECTS_WITH_IDENTIFIERS in "
-                    "settings.py"
-                )
-            )
-            return None
-        if object_type not in self.mytardis_setup["objects_with_ids"]:
-            logger.warning(
-                (
-                    f"The object type, {object_type}, is not present in "
-                    "OBJECTS_WITH_IDENTIFIERS defined in settings.py"
-                )
-            )
-            return None
-        return self.get_uris(object_type, "pids", search_string)
+        return False'''

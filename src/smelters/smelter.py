@@ -265,7 +265,7 @@ class Smelter(ABC):
             cleaned_dict["schema"] = self.default_schema["project"]
         if "institution" not in cleaned_dict.keys() and self.default_institution:
             cleaned_dict["institution"] = self.default_institution
-        if not self._verify_project:
+        if not self._verify_project(cleaned_dict):
             return (None, None)
         return self._smelt_object(object_keys, cleaned_dict)
 
@@ -343,7 +343,7 @@ class Smelter(ABC):
             and "experiment" in self.default_schema.keys()
         ):
             cleaned_dict["schema"] = self.default_schema["experiment"]
-        if not self._verify_experiment:
+        if not self._verify_experiment(cleaned_dict):
             return (None, None)
         return self._smelt_object(object_keys, cleaned_dict)
 
@@ -413,7 +413,7 @@ class Smelter(ABC):
             and "dataset" in self.default_schema.keys()
         ):
             cleaned_dict["schema"] = self.default_schema["dataset"]
-        if not self._verify_dataset:
+        if not self._verify_dataset(cleaned_dict):
             return (None, None)
         return self._smelt_object(object_keys, cleaned_dict)
 
@@ -479,7 +479,7 @@ class Smelter(ABC):
             and "datafile" in self.default_schema.keys()
         ):
             cleaned_dict["schema"] = self.default_schema["datafile"]
-        if not Smelter._verify_datafile:
+        if not Smelter._verify_datafile(cleaned_dict):
             return (None, None)
         object_dict, parameter_dict = self._smelt_object(object_keys, cleaned_dict)
         return (object_dict, parameter_dict)
@@ -543,14 +543,14 @@ class Smelter(ABC):
         file_path: Path,
     ) -> str:
         """Wrapper around Pathlib Path .name attribute for disambiguation"""
-        return file_path.name
+        return file_path.name  # pragma: no cover
 
     @staticmethod
     def get_file_size(  # pylint: disable=missing-function-docstring
         file_path: Path,
     ) -> int:
         """Wrapper around Pathlib Path .stat().size attribute for diambiguation"""
-        return file_path.stat().st_size
+        return file_path.stat().st_size  # pragma: no cover
 
     @staticmethod
     def get_file_checksum(  # pylint: disable=missing-function-docstring
@@ -565,44 +565,46 @@ class Smelter(ABC):
         return {}
 
     @abstractmethod
-    def _tidy_up_metadata_keys(self, parsed_dict: dict, object_type: str) -> dict:
+    def _tidy_up_metadata_keys(
+        self, parsed_dict: dict, object_type: str
+    ) -> dict:  # pragma: no cover
         """Placeholder function"""
         return {}
 
-    @abstractmethod
-    def get_file_type_for_input_files(self) -> str:
+    @abstractmethod  # pragma: no cover
+    def get_file_type_for_input_files(self) -> str:  # pragma: no cover
         """Function to return a string that can be used by Path.glob() to
         get all of the input files in a directory"""
 
-        return ""
+        return ""  # pragma: no cover
 
-    @abstractmethod
-    def get_objects_in_input_file(self, file_path: Path) -> tuple:
+    @abstractmethod  # pragma: no cover
+    def get_objects_in_input_file(self, file_path: Path) -> tuple:  # pragma: no cover
         """Function to read in an input file and return a tuple containing
         the object types that are in the file"""
 
-        return tuple()
+        return tuple()  # pragma: no cover
 
-    @abstractmethod
-    def read_file(self, file_path: Path) -> tuple:
+    @abstractmethod  # pragma: no cover
+    def read_file(self, file_path: Path) -> tuple:  # pragma: no cover
         """Function to read in different input files and process into
         dictionaries. As there may be more than one object in a file, wrap in
         a tuple and return."""
 
-        return tuple()
+        return tuple()  # pragma: no cover
 
-    @abstractmethod
-    def rebase_file_path(self, parsed_dict: dict) -> dict:
+    @abstractmethod  # pragma: no cover
+    def rebase_file_path(self, parsed_dict: dict) -> dict:  # pragma: no cover
         """Function to fix up the file path to take into account where it is
         mounted."""
-        return parsed_dict
+        return parsed_dict  # pragma: no cover
 
-    @abstractmethod
-    def expand_datafile_entry(self, parsed_dict) -> list:
+    @abstractmethod  # pragma: no cover
+    def expand_datafile_entry(self, parsed_dict) -> list:  # pragma: no cover
         """Function to add the additional fields (size, checksum etc.) from files"""
-        return []
+        return []  # pragma: no cover
 
-    @abstractmethod
+    @abstractmethod  # pragma: no cover
     def get_object_from_dictionary(self, parsed_dict: dict) -> Union[str, None]:
         """Helper function to get the object type from a parsed dictionary"""
-        return None
+        return None  # pragma: no cover
