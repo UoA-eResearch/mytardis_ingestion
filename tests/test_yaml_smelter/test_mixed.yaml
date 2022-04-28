@@ -2,44 +2,47 @@
 # Project template. Please replace <key> with the metadata keys defined in the schema and <value> with its value
 #
 # Necessary info
-project_name: <value>
-project_id: <the identifier you wish to associate with the project - prepend with PGG- >
+project_name: Test Project 2
+project_id: Project_2
 alternate_ids:
-  - <a list of alternative identifiers that are used for this object>
-description: <value>
-lead_researcher: <value>
+  - Test_Project_2
+  - Project_Test_2
+description: A test project for the purposes of testing
+lead_researcher: upi001
 # schema: <value> - un-comment if multiple schema have been defined and set the appropriate type of schema
 #
 # Access control. Please remove or comment out un-necessary types of group/users
 # Groups are preferred over individual users for the purposes of admin
 #
 admin_groups:
-  - <value>
-  - <value> # Add new rows prepended with - as needed, or remove as needed
+  - Test_Group_1 # Add new rows prepended with - as needed, or remove as needed
 admin_users:
-  - <value>
-  - <value>
-read_groups:
-  - <value>
-  - <value>
-read_users:
-  - <value>
-  - <value>
-download_groups:
-  - <value>
-  - <value>
-download_users:
-  - <value>
-  - <value>
-sensitive_groups:
-  - <value>
-  - <value>
-sensitive_users:
-  - <value>
-  - <value>
+  - csea004
+  - user2
+
 #
 # General metadata
 #
 metadata:
-  <key>: <value>
-  <key>: <value>
+  My Test Key 1: Test Value
+  My Test Key 2: Test Value 2
+
+---
+# Experiment/Sample template. Please replace <key> with the metadata keys defined in the schema and <value> with its value
+#
+# Necessary info
+experiment_name: Test Experiment 2
+project_id:
+  - Project_2
+  - Test_Project
+experiment_id: Experiment_2
+alternate_ids:
+  - Test_Experiment_2
+  - Experiment_Test_2
+description: A test experiment for the purposes of testing
+#
+# General metadata
+#
+metadata:
+  My Test Key 1: Test Value
+  My Test Key 2: Test Value 2

@@ -7,8 +7,8 @@ project_id: Project_1
 alternate_ids:
   - Test_Project
   - Project_Test_1
-description: A test project for the purposes of testing the YAMLSmelter class
-lead_researcher: csea004
+description: A test project for the purposes of testing
+lead_researcher: upi001
 # schema: <value> - un-comment if multiple schema have been defined and set the appropriate type of schema
 #
 # Access control. Please remove or comment out un-necessary types of group/users
@@ -17,8 +17,8 @@ lead_researcher: csea004
 admin_groups:
   - Test_Group_1 # Add new rows prepended with - as needed, or remove as needed
 admin_users:
-  - csea004
-  - user2
+  - upi002
+  - upi003
 
 #
 # General metadata

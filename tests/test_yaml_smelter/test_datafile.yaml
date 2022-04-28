@@ -6,8 +6,7 @@
 # file can be left blank.
 #
 # Blocks of files can be tagged with the same dataset ids by defining a fileblock as shown below. Multiple fileblocks can be defined
-# but these need unique keys, for example block_1:, block_2:
-#
+# but these need to be separated as different YAML blocks via the ---
 # Necessary info
 datafiles:
   # If a rigorous directory structure is used then this can be inferred from the directory and only needs explicit definition if multiple samples are associated with the dataset

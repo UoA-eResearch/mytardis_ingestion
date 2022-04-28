@@ -5,63 +5,77 @@
 import logging
 
 import mock
+import pytest
+from pytest import fixture
 
+from src.helpers import SanityCheckError
 from src.smelters import Smelter
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
-mytardis_setup = {
-    "projects_enabled": True,
-    "objects_with_ids": ["project", "experiment", "dataset", "institution"],
-    "remote_directory": "/remote/path",
-    "mount_directory": "/mount/path",
-    "storage_box": "MyTest Storage",
-    "default_institution": "Test Institution",
-    "hostname": "https://test.mytardis.nectar.auckland.ac.nz",
-    "default_schema": {
-        "project": "https://test.mytardis.nectar.auckland.ac.nz/project/v1",
-        "experiment": "https://test.mytardis.nectar.auckland.ac.nz/experiment/v1",
-        "dataset": "https://test.mytardis.nectar.auckland.ac.nz/dataset/v1",
-        "datafile": "https://test.mytardis.nectar.auckland.ac.nz/datafile/v1",
-    },
-}
-
-mytardis_setup_no_projects = {
-    "projects_enabled": False,
-    "objects_with_ids": ["experiment", "dataset", "institution"],
-    "remote_directory": "/remote/path",
-    "mount_directory": "/mount/path",
-    "storage_box": "MyTest Storage",
-}
-
-mytardis_setup_no_ids = {
-    "projects_enabled": True,
-    "remote_directory": "/remote/path",
-    "mount_directory": "/mount/path",
-    "storage_box": "MyTest Storage",
-}
-
-test_project_dict = {
-    "name": "Test Project",
-    "description": "Test project for testing",
-    "principal_investigator": "Test User",
-    "persistent_id": "TestID",
-    "alternate_ids": [
-        "Alt ID 1",
-        "Alt ID 2",
-    ],
-    "metadata1": "Test parameter 1",
-    "metadata2": "Test parameter 2",
-}
+from .conftest import (
+    config_dict,
+    raw_dataset_dictionary,
+    raw_experiment_dictionary,
+    raw_project_dictionary,
+    tidied_dataset_dictionary,
+    tidied_experiment_dictionary,
+    tidied_project_dictionary,
+)
 
 
-def test_tidy_up_dictionary_keys_with_good_inputs():
+@fixture
+def mytardis_config(config_dict):
+    configuration = config_dict
+    configuration["projects_enabled"] = True
+    configuration["objects_with_ids"] = [
+        "dataset",
+        "experiment",
+        "facility",
+        "instrument",
+        "project",
+        "institution",
+    ]
+    return configuration
+
+
+@fixture
+def smelter(mytardis_config):
+    Smelter.__abstractmethods__ = set()
+    smelter = Smelter(mytardis_config)
+    smelter.OBJECT_KEY_CONVERSION = {
+        "project": {
+            "project_name": "name",
+            "lead_researcher": "principal_investigator",
+            "project_id": "persistent_id",
+        },
+        "experiment": {
+            "experiment_name": "title",
+            "experiment_id": "persistent_id",
+            "project_id": "projects",
+        },
+        "dataset": {
+            "dataset_name": "description",
+            "experiment_id": "experiments",
+            "dataset_id": "persistent_id",
+            "instrument_id": "instrument",
+        },
+        "datafile": {},
+    }
+    smelter.OBJECT_TYPES = {
+        "project_name": "project",
+        "experiment_name": "experiment",
+        "dataset_name": "dataset",
+        "datafiles": "datafile",
+    }
+    return smelter
+
+
+def test_tidy_up_dictionary_keys_with_good_inputs(smelter):
     parsed_dict = {"key1": "value1", "key2": "value2", "key3": "value3"}
     # Note we have no object_type in the Smelter Base class so use None as object type key
     translation_dict = {None: {"key1": "new_key1", "key2": "new_key2"}}
-    Smelter.__abstractmethods__ = set()
-    smelter = Smelter(mytardis_setup)  # noqa
     smelter.OBJECT_KEY_CONVERSION = translation_dict
     cleaned_dict = smelter.tidy_up_dictionary_keys(parsed_dict)
     assert cleaned_dict == (
@@ -74,11 +88,9 @@ def test_tidy_up_dictionary_keys_with_good_inputs():
     )
 
 
-def test_tidy_up_dictionary_keys_with_no_translation_dict(caplog):
+def test_tidy_up_dictionary_keys_with_no_translation_dict(caplog, smelter):
     caplog.set_level(logging.WARNING)
     parsed_dict = {"key1": "value1", "key2": "value2", "key3": "value3"}
-    Smelter.__abstractmethods__ = set()
-    smelter = Smelter(mytardis_setup)
     cleaned_dict = smelter.tidy_up_dictionary_keys(parsed_dict)
     assert "Unable to find None in OBJECT_KEY_CONVERSION dictionary" in caplog.text
     assert cleaned_dict == (
@@ -87,10 +99,12 @@ def test_tidy_up_dictionary_keys_with_no_translation_dict(caplog):
     )
 
 
-def test_mytardis_setup_with_no_ids():
+def test_mytardis_setup_with_no_ids(mytardis_config):
+    mytardis_setup_no_ids = mytardis_config
+    mytardis_setup_no_ids.pop("objects_with_ids")
     Smelter.__abstractmethods__ = set()
-    smelter = Smelter(mytardis_setup_no_ids)
-    assert smelter.objects_with_ids == []
+    smelter_no_id = Smelter(mytardis_setup_no_ids)
+    assert smelter_no_id.objects_with_ids == []
 
 
 def test_parse_groups_and_users_from_separate_access():
@@ -129,9 +143,35 @@ def test_parse_groups_and_users_from_separate_access():
     assert cleaned_dict == {"another_key": "value"}
 
 
+def test_parse_groups_and_users_from_separate_access_no_admin_but_pi():
+    cleaned_dict = {
+        "principal_investigator": "upi001",
+        "read_users": ["upi002"],
+    }
+    users, _ = Smelter.parse_groups_and_users_from_separate_access(cleaned_dict)
+    users = sorted(users)
+    assert users == [
+        ("upi001", True, True, True),
+        ("upi002", False, False, False),
+    ]
+
+
+def test_parse_groups_and_users_from_separate_access_pi_adds_to_admin():
+    cleaned_dict = {
+        "admin_users": ["upi001"],
+        "principal_investigator": "upi002",
+    }
+    users, _ = Smelter.parse_groups_and_users_from_separate_access(cleaned_dict)
+    users = sorted(users)
+    assert users == [
+        ("upi001", True, True, True),
+        ("upi002", True, True, True),
+    ]
+
+
 @mock.patch("src.smelters.smelter.Smelter._tidy_up_metadata_keys")
 def test_split_dictionary_into_object_and_parameters(
-    mock_smelter_tidy_up_metadata_keys,
+    mock_smelter_tidy_up_metadata_keys, smelter
 ):
     cleaned_dict = {
         "schema": "test schema",
@@ -151,8 +191,6 @@ def test_split_dictionary_into_object_and_parameters(
         ],
     }
     translation_dict = {None: {}}
-    Smelter.__abstractmethods__ = set()
-    smelter = Smelter(mytardis_setup)  # noqa
     smelter.OBJECT_KEY_CONVERSION = translation_dict
     assert smelter._smelt_object(object_keys, cleaned_dict) == (
         object_dict,
@@ -160,8 +198,69 @@ def test_split_dictionary_into_object_and_parameters(
     )
 
 
-def test_smelt_project_no_projects(caplog):
+def test_set_access_control():
+    combined_names = [
+        "user1",
+        "user2",
+        "user3",
+        "user4",
+    ]
+    download_names = [
+        "user2",
+        "user4",
+    ]
+    sensitive_names = [
+        "user3",
+        "user4",
+    ]
+    expected_output = [
+        ("user1", False, False, False),
+        ("user2", False, True, False),
+        ("user3", False, False, True),
+        ("user4", False, True, True),
+    ]
+    assert (
+        Smelter.set_access_controls(combined_names, download_names, sensitive_names)
+        == expected_output
+    )
+
+
+def test_verify_project_with_bad_dictionary(
+    caplog,
+    smelter,
+    raw_project_dictionary,
+):
     caplog.set_level(logging.WARNING)
+    sanity_check = smelter._verify_project(raw_project_dictionary)
+    missing_keys = sorted(
+        [
+            "institution",
+            "schema",
+        ]
+    )
+    warning_str = (
+        "Incomplete data for Project creation\n"
+        f"cleaned_dict: {raw_project_dictionary}\n"
+        f"missing keys: {missing_keys}"
+    )
+    assert sanity_check == False
+    assert warning_str in caplog.text
+
+
+def test_verify_project_with_good_dictionary(
+    smelter,
+    raw_project_dictionary,
+):
+    project_dict = raw_project_dictionary
+    project_dict["schema"] = "https://test.mytardis.nectar.auckland.ac.nz/project/v1"
+    project_dict["institution"] = "Test Institution"
+    assert smelter._verify_project(project_dict) == True
+
+
+def test_smelt_project_no_projects(caplog, mytardis_config):
+    caplog.set_level(logging.WARNING)
+    mytardis_setup_no_projects = mytardis_config
+    mytardis_setup_no_projects["projects_enabled"] = False
     cleaned_dict = {}
     Smelter.__abstractmethods__ = set()
     smelter = Smelter(mytardis_setup_no_projects)
@@ -175,14 +274,41 @@ def test_smelt_project_no_projects(caplog):
     assert test_values == (None, None)
 
 
-"""def test_smelt_project(datadir):
-    # TODO: Fix this test
-    input_file = Path(datadir / "test_project.yaml")
-    smelter = YAMLSmelter(config_dict)
-    parsed_dict = smelter.read_file(input_file)
-    out_dict, param_dict = smelter.smelt_project(parsed_dict[0])
+def test_inject_schema_from_default_value(smelter, raw_project_dictionary):
+    expected_output = raw_project_dictionary
+    expected_output["schema"] = "https://test.mytardis.nectar.auckland.ac.nz/project/v1"
+    assert (
+        smelter._inject_schema_from_default_value(
+            raw_project_dictionary["name"], "project", raw_project_dictionary
+        )
+        == expected_output
+    )
+
+
+def test_inject_schema_from_default_value_with_no_default_schema(
+    smelter, raw_project_dictionary
+):
+    smelter.default_schema = {}
+    with pytest.raises(SanityCheckError):
+        smelter._inject_schema_from_default_value(
+            raw_project_dictionary["name"], "project", raw_project_dictionary
+        )
+
+
+@mock.patch("src.smelters.smelter.Smelter.get_object_from_dictionary")
+@mock.patch("src.smelters.smelter.Smelter._tidy_up_metadata_keys")
+def test_smelt_project(
+    mock_tidy_up_metadata_keys,
+    mock_get_object_from_dictionary,
+    smelter,
+    raw_project_dictionary,
+    tidied_project_dictionary,
+):
+    mock_get_object_from_dictionary.return_value = "project"
+    mock_tidy_up_metadata_keys.return_value = tidied_project_dictionary
+    out_dict, param_dict = smelter.smelt_project(raw_project_dictionary)
     assert param_dict == {
-        "schema": "http://dummy.test/proj_schema",
+        "schema": "https://test.mytardis.nectar.auckland.ac.nz/project/v1",
         "parameters": [
             {
                 "name": "project_my_test_key_1",
@@ -196,13 +322,144 @@ def test_smelt_project_no_projects(caplog):
     }
     assert out_dict == {
         "users": [
-            ("csea004", True, True, True),
-            ("user2", True, True, True),
+            ("upi001", True, True, True),
+            ("upi002", True, True, True),
+            ("upi003", True, True, True),
         ],
         "groups": [("Test_Group_1", True, True, True)],
         "alternate_ids": ["Test_Project", "Project_Test_1"],
-        "description": "A test project for the purposes of testing the YAMLSmelter class",
+        "description": "A test project for the purposes of testing",
         "name": "Test Project",
         "persistent_id": "Project_1",
-        "principal_investigator": "csea004",
-    }"""
+        "principal_investigator": "upi001",
+        "institution": "Test Institution",
+    }
+
+
+@mock.patch("src.smelters.smelter.Smelter.get_object_from_dictionary")
+@mock.patch("src.smelters.smelter.Smelter._tidy_up_metadata_keys")
+def test_smelt_project_no_schema(
+    mock_tidy_up_metadata_keys,
+    mock_get_object_from_dictionary,
+    caplog,
+    smelter,
+    raw_project_dictionary,
+    tidied_project_dictionary,
+):
+    caplog.set_level(logging.WARNING)
+    mock_get_object_from_dictionary.return_value = "project"
+    mock_tidy_up_metadata_keys.return_value = tidied_project_dictionary
+    smelter.default_schema = {}
+    out_dict, param_dict = smelter.smelt_project(raw_project_dictionary)
+    warning_str = "Unable to find default project schema and no schema provided"
+    assert warning_str in caplog.text
+    assert param_dict == None
+    assert out_dict == None
+
+
+@mock.patch("src.smelters.smelter.Smelter.get_object_from_dictionary")
+@mock.patch("src.smelters.smelter.Smelter._tidy_up_metadata_keys")
+def test_smelt_project_no_institution(
+    mock_tidy_up_metadata_keys,
+    mock_get_object_from_dictionary,
+    caplog,
+    smelter,
+    raw_project_dictionary,
+    tidied_project_dictionary,
+):
+    caplog.set_level(logging.WARNING)
+    mock_get_object_from_dictionary.return_value = "project"
+    mock_tidy_up_metadata_keys.return_value = tidied_project_dictionary
+    smelter.default_institution = None
+    out_dict, param_dict = smelter.smelt_project(raw_project_dictionary)
+    warning_str = "Unable to find default institution and no institution provided"
+    assert warning_str in caplog.text
+    assert param_dict == None
+    assert out_dict == None
+
+
+def test_verify_experiment_with_bad_dictionary(
+    caplog,
+    smelter,
+    raw_experiment_dictionary,
+):
+    caplog.set_level(logging.WARNING)
+    sanity_check = smelter._verify_experiment(raw_experiment_dictionary)
+    missing_keys = sorted(
+        [
+            "schema",
+        ]
+    )
+    warning_str = (
+        "Incomplete data for Experiment creation\n"
+        f"cleaned_dict: {raw_experiment_dictionary}\n"
+        f"missing keys: {missing_keys}"
+    )
+    assert sanity_check == False
+    assert warning_str in caplog.text
+
+
+def test_verify_experiment_with_good_dictionary(
+    smelter,
+    raw_experiment_dictionary,
+):
+    experiment_dict = raw_experiment_dictionary
+    experiment_dict[
+        "schema"
+    ] = "https://test.mytardis.nectar.auckland.ac.nz/experiment/v1"
+    assert smelter._verify_experiment(experiment_dict) == True
+
+
+@mock.patch("src.smelters.smelter.Smelter.get_object_from_dictionary")
+@mock.patch("src.smelters.smelter.Smelter._tidy_up_metadata_keys")
+def test_smelt_experiment(
+    mock_tidy_up_metadata_keys,
+    mock_get_object_from_dictionary,
+    smelter,
+    raw_experiment_dictionary,
+    tidied_experiment_dictionary,
+):
+    mock_get_object_from_dictionary.return_value = "experiment"
+    mock_tidy_up_metadata_keys.return_value = tidied_experiment_dictionary
+    out_dict, param_dict = smelter.smelt_experiment(raw_experiment_dictionary)
+    assert param_dict == {
+        "schema": "https://test.mytardis.nectar.auckland.ac.nz/experiment/v1",
+        "parameters": [
+            {
+                "name": "experiment_my_test_key_1",
+                "value": "Test Value",
+            },
+            {
+                "name": "experiment_my_test_key_2",
+                "value": "Test Value 2",
+            },
+        ],
+    }
+    assert out_dict == {
+        "alternate_ids": ["Test_Experiment", "Experiment_Test_1"],
+        "description": "A test experiment for the purposes of testing",
+        "title": "Test Experiment",
+        "persistent_id": "Experiment_1",
+        "projects": ["Project_1", "Test_Project"],
+    }
+
+
+@mock.patch("src.smelters.smelter.Smelter.get_object_from_dictionary")
+@mock.patch("src.smelters.smelter.Smelter._tidy_up_metadata_keys")
+def test_smelt_experiment_no_schema(
+    mock_tidy_up_metadata_keys,
+    mock_get_object_from_dictionary,
+    caplog,
+    smelter,
+    raw_experiment_dictionary,
+    tidied_experiment_dictionary,
+):
+    caplog.set_level(logging.WARNING)
+    mock_get_object_from_dictionary.return_value = "experiment"
+    mock_tidy_up_metadata_keys.return_value = tidied_experiment_dictionary
+    smelter.default_schema = {}
+    out_dict, param_dict = smelter.smelt_experiment(raw_experiment_dictionary)
+    warning_str = "Unable to find default experiment schema and no schema provided"
+    assert warning_str in caplog.text
+    assert param_dict == None
+    assert out_dict == None
