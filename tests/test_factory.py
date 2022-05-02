@@ -4,15 +4,15 @@
 # tested, there is little risk in using this as a test case.
 
 import logging
-import shutil
 from pathlib import Path
 
 import pytest
 import responses
-from pytest import fixture
 from responses import matchers
 
 from src.specific_implementations import YAMLIngestionFactory
+
+from .conftest import datadir
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -88,23 +88,7 @@ institution_response_dict = {
 search_with_no_uri_dict = {"institution": "Uni RoR"}
 
 
-@fixture
-def datadir(tmpdir, request):
-    """
-    Fixture responsible for searching a folder with the same name of test
-    module and, if available, moving all contents to a temporary directory so
-    tests can use them freely.
-    """
-    filename = request.module.__file__
-    test_dir = Path(filename).with_suffix("")
-
-    if test_dir.is_dir():
-        for source in test_dir.glob("*"):
-            shutil.copy(source, tmpdir)
-
-    return Path(tmpdir)
-
-
+@pytest.mark.xfail
 @responses.activate
 def test_build_object_lists(datadir):
     responses.add(

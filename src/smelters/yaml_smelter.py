@@ -204,7 +204,6 @@ class YAMLSmelter(Smelter):
                         )
                         cleaned_dict["md5sum"] = Smelter.get_file_checksum(filename)
                         cleaned_dict["size"] = filename.stat().st_size
-                        cleaned_dict["full_path"] = filename
                         cleaned_dict["file_path"] = Path(filename).relative_to(
                             self.mount_dir
                         )
@@ -221,7 +220,6 @@ class YAMLSmelter(Smelter):
                 )
                 cleaned_dict["md5sum"] = Smelter.get_file_checksum(file_dict["name"])
                 cleaned_dict["size"] = file_dict["name"].stat().st_size
-                cleaned_dict["full_path"] = file_dict["name"]
                 cleaned_dict["file_path"] = Path(file_dict["name"]).relative_to(
                     self.mount_dir
                 )

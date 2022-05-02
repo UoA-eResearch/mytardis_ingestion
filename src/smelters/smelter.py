@@ -106,11 +106,11 @@ class Smelter(ABC):
             to create the object in MyTardis, and a parameter dictionary containing the
             additional metadata.
         """
+        object_type, cleaned_dict = self.tidy_up_dictionary_keys(cleaned_dict)
+        cleaned_dict = self._tidy_up_metadata_keys(cleaned_dict, object_type)
         users, groups = Smelter.parse_groups_and_users_from_separate_access(
             cleaned_dict
         )
-        object_type, cleaned_dict = self.tidy_up_dictionary_keys(cleaned_dict)
-        cleaned_dict = self._tidy_up_metadata_keys(cleaned_dict, object_type)
         object_dict = {}
         if users != []:
             object_dict["users"] = users
@@ -157,7 +157,7 @@ class Smelter(ABC):
         return return_list
 
     @staticmethod
-    def parse_groups_and_users_from_separate_access(
+    def parse_groups_and_users_from_separate_access(  # pylint: disable=too-many-branches
         cleaned_dict: dict,
     ) -> tuple:
         """A helper function to parse a set of separate users and groups into a single
@@ -179,6 +179,13 @@ class Smelter(ABC):
         download_users = []
         sensitive_groups = []
         sensitive_users = []
+        if "principal_investigator" in cleaned_dict.keys():
+            if "admin_users" in cleaned_dict.keys():
+                cleaned_dict["admin_users"].append(
+                    cleaned_dict["principal_investigator"]
+                )
+            else:
+                cleaned_dict["admin_users"] = [cleaned_dict["principal_investigator"]]
         if "admin_users" in cleaned_dict.keys():
             for user in set(cleaned_dict.pop("admin_users")):
                 users.append((user, True, True, True))
@@ -258,16 +265,46 @@ class Smelter(ABC):
         if "project" in self.objects_with_ids:
             object_keys.append("persistent_id")
             object_keys.append("alternate_ids")
-        if (
-            "schema" not in cleaned_dict.keys()
-            and "project" in self.default_schema.keys()
-        ):
-            cleaned_dict["schema"] = self.default_schema["project"]
-        if "institution" not in cleaned_dict.keys() and self.default_institution:
-            cleaned_dict["institution"] = self.default_institution
+        if "schema" not in cleaned_dict.keys():
+            try:
+                cleaned_dict = self._inject_schema_from_default_value(
+                    cleaned_dict["name"], "project", cleaned_dict
+                )
+            except SanityCheckError:
+                logger.warning(
+                    "Unable to find default project schema and no schema provided"
+                )
+                return (None, None)
+        if "institution" not in cleaned_dict.keys():
+            if self.default_institution:
+                cleaned_dict["institution"] = self.default_institution
+            else:
+                logger.warning(
+                    "Unable to find default institution and no institution provided"
+                )
+                return (None, None)
         if not self._verify_project(cleaned_dict):
             return (None, None)
         return self._smelt_object(object_keys, cleaned_dict)
+
+    def _inject_schema_from_default_value(self, name, object_type, cleaned_dict):
+        """Generic function to inject the schema into the cleaned dictionary provided
+        one exists.
+
+        Args:
+            object_type: the object type defined by the dictionary
+            cleaned_dict: The dictionary to inject schema into
+
+        Returns:
+            the dictionary with the schema included
+
+        Raises:
+            SanityCheckError if no default schema can be found for this object type
+        """
+        if object_type not in self.default_schema.keys():
+            raise SanityCheckError(name, cleaned_dict, "default schema")
+        cleaned_dict["schema"] = self.default_schema[object_type]
+        return cleaned_dict
 
     def _verify_project(self, cleaned_dict: dict) -> bool:
         """Function to make sure that there is a minimum set of
@@ -300,7 +337,7 @@ class Smelter(ABC):
                 (
                     "Incomplete data for Project creation\n"
                     f"cleaned_dict: {cleaned_dict}\n"
-                    f"missing keys: {error.missing_keys}"
+                    f"missing keys: {sorted(error.missing_keys)}"
                 )
             )
             return False
@@ -338,11 +375,16 @@ class Smelter(ABC):
             object_keys.append("alternate_ids")
         if self.projects_enabled:
             object_keys.append("projects")
-        if (
-            "schema" not in cleaned_dict.keys()
-            and "experiment" in self.default_schema.keys()
-        ):
-            cleaned_dict["schema"] = self.default_schema["experiment"]
+        if "schema" not in cleaned_dict.keys():
+            try:
+                cleaned_dict = self._inject_schema_from_default_value(
+                    cleaned_dict["title"], "experiment", cleaned_dict
+                )
+            except SanityCheckError:
+                logger.warning(
+                    "Unable to find default experiment schema and no schema provided"
+                )
+                return (None, None)
         if not self._verify_experiment(cleaned_dict):
             return (None, None)
         return self._smelt_object(object_keys, cleaned_dict)
@@ -408,11 +450,16 @@ class Smelter(ABC):
         if "dataset" in self.objects_with_ids:
             object_keys.append("persistent_id")
             object_keys.append("alternate_ids")
-        if (
-            "schema" not in cleaned_dict.keys()
-            and "dataset" in self.default_schema.keys()
-        ):
-            cleaned_dict["schema"] = self.default_schema["dataset"]
+        if "schema" not in cleaned_dict.keys():
+            try:
+                cleaned_dict = self._inject_schema_from_default_value(
+                    cleaned_dict["description"], "dataset", cleaned_dict
+                )
+            except SanityCheckError:
+                logger.warning(
+                    "Unable to find default dataset schema and no schema provided"
+                )
+                return (None, None)
         if not self._verify_dataset(cleaned_dict):
             return (None, None)
         return self._smelt_object(object_keys, cleaned_dict)
@@ -474,11 +521,24 @@ class Smelter(ABC):
             "size",
             "replicas",
         ]
-        if (
-            "schema" not in cleaned_dict.keys()
-            and "datafile" in self.default_schema.keys()
-        ):
-            cleaned_dict["schema"] = self.default_schema["datafile"]
+        if "schema" not in cleaned_dict.keys():
+            try:
+                cleaned_dict = self._inject_schema_from_default_value(
+                    cleaned_dict["filename"], "datafile", cleaned_dict
+                )
+            except SanityCheckError:
+                logger.warning(
+                    "Unable to find default datafile schema and no schema provided"
+                )
+                return (None, None)
+        try:
+            _ = cleaned_dict["file_path"]
+        except KeyError:
+            logger.warning(
+                f"Unable to create file replica for {cleaned_dict['filename']}"
+            )
+            return (None, None)
+        cleaned_dict = self._create_replica(cleaned_dict)
         if not Smelter._verify_datafile(cleaned_dict):
             return (None, None)
         object_dict, parameter_dict = self._smelt_object(object_keys, cleaned_dict)
@@ -504,9 +564,7 @@ class Smelter(ABC):
             "dataset",
             "filename",
             "md5sum",
-            "storage_box",
             "schema",
-            "file_path",
             "replicas",
         ]
         try:
