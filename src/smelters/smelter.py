@@ -450,11 +450,16 @@ class Smelter(ABC):
         if "dataset" in self.objects_with_ids:
             object_keys.append("persistent_id")
             object_keys.append("alternate_ids")
-        if (
-            "schema" not in cleaned_dict.keys()
-            and "dataset" in self.default_schema.keys()
-        ):
-            cleaned_dict["schema"] = self.default_schema["dataset"]
+        if "schema" not in cleaned_dict.keys():
+            try:
+                cleaned_dict = self._inject_schema_from_default_value(
+                    cleaned_dict["description"], "dataset", cleaned_dict
+                )
+            except SanityCheckError:
+                logger.warning(
+                    "Unable to find default dataset schema and no schema provided"
+                )
+                return (None, None)
         if not self._verify_dataset(cleaned_dict):
             return (None, None)
         return self._smelt_object(object_keys, cleaned_dict)
@@ -516,11 +521,24 @@ class Smelter(ABC):
             "size",
             "replicas",
         ]
-        if (
-            "schema" not in cleaned_dict.keys()
-            and "datafile" in self.default_schema.keys()
-        ):
-            cleaned_dict["schema"] = self.default_schema["datafile"]
+        if "schema" not in cleaned_dict.keys():
+            try:
+                cleaned_dict = self._inject_schema_from_default_value(
+                    cleaned_dict["filename"], "datafile", cleaned_dict
+                )
+            except SanityCheckError:
+                logger.warning(
+                    "Unable to find default datafile schema and no schema provided"
+                )
+                return (None, None)
+        try:
+            _ = cleaned_dict["file_path"]
+        except KeyError:
+            logger.warning(
+                f"Unable to create file replica for {cleaned_dict['filename']}"
+            )
+            return (None, None)
+        cleaned_dict = self._create_replica(cleaned_dict)
         if not Smelter._verify_datafile(cleaned_dict):
             return (None, None)
         object_dict, parameter_dict = self._smelt_object(object_keys, cleaned_dict)
@@ -546,9 +564,7 @@ class Smelter(ABC):
             "dataset",
             "filename",
             "md5sum",
-            "storage_box",
             "schema",
-            "file_path",
             "replicas",
         ]
         try:

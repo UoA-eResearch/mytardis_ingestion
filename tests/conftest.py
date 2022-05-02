@@ -214,3 +214,39 @@ def tidied_dataset_dictionary():
         "dataset_my_test_key_2": "Test Value 2",
         "schema": "https://test.mytardis.nectar.auckland.ac.nz/dataset/v1",
     }
+
+
+@fixture
+def raw_datafile_dictionary():
+    return {
+        "dataset": ["Dataset_1"],
+        "filename": "test_data.dat",
+        "file_path": Path("/mount/remote/test_data.dat"),
+        "md5sum": "0d32909e86e422d04a053d1ba26a990e",
+        "full_path": "/mount/remote/test_data.dat",
+        "metadata": {
+            "My Test Key 1": "Test Value",
+            "My Test Key 2": "Test Value 2",
+        },
+        "size": 52428800,
+    }
+
+
+@fixture
+def tidied_datafile_dictionary():
+    return {
+        "dataset": ["Dataset_1"],
+        "filename": "test_data.dat",
+        "md5sum": "0d32909e86e422d04a053d1ba26a990e",
+        "datafile_my_test_key_1": "Test Value",
+        "datafile_my_test_key_2": "Test Value 2",
+        "size": 52428800,
+        "replicas": [
+            {
+                "uri": "test_data.dat",
+                "location": "Test_storage_box",
+                "protocol": "file",
+            },
+        ],
+        "schema": "https://test.mytardis.nectar.auckland.ac.nz/datafile/v1",
+    }

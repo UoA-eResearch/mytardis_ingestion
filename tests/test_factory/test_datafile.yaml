@@ -16,6 +16,6 @@ datafiles:
   files:
     - name: /remote/path/test_data.dat
       metadata:
-        key1: value1
-        key2: value2
+          My Test Key 1: Test Value
+          My Test Key 2: Test Value 2
     - name: /remote/path/test_data2.dat

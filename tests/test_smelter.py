@@ -3,6 +3,7 @@
 """Tests of the Smelter base class functions"""
 
 import logging
+from pathlib import Path
 
 import mock
 import pytest
@@ -16,9 +17,11 @@ logger.propagate = True
 
 from .conftest import (
     config_dict,
+    raw_datafile_dictionary,
     raw_dataset_dictionary,
     raw_experiment_dictionary,
     raw_project_dictionary,
+    tidied_datafile_dictionary,
     tidied_dataset_dictionary,
     tidied_experiment_dictionary,
     tidied_project_dictionary,
@@ -460,6 +463,218 @@ def test_smelt_experiment_no_schema(
     smelter.default_schema = {}
     out_dict, param_dict = smelter.smelt_experiment(raw_experiment_dictionary)
     warning_str = "Unable to find default experiment schema and no schema provided"
+    assert warning_str in caplog.text
+    assert param_dict == None
+    assert out_dict == None
+
+
+def test_verify_dataset_with_bad_dictionary(
+    caplog,
+    smelter,
+    raw_dataset_dictionary,
+):
+    caplog.set_level(logging.WARNING)
+    sanity_check = smelter._verify_dataset(raw_dataset_dictionary)
+    missing_keys = sorted(
+        [
+            "schema",
+        ]
+    )
+    warning_str = (
+        "Incomplete data for Dataset creation\n"
+        f"cleaned_dict: {raw_dataset_dictionary}\n"
+        f"missing keys: {missing_keys}"
+    )
+    assert sanity_check == False
+    assert warning_str in caplog.text
+
+
+def test_verify_dataset_with_good_dictionary(
+    smelter,
+    raw_dataset_dictionary,
+):
+    dataset_dict = raw_dataset_dictionary
+    dataset_dict["schema"] = "https://test.mytardis.nectar.auckland.ac.nz/dataset/v1"
+    assert smelter._verify_dataset(dataset_dict) == True
+
+
+@mock.patch("src.smelters.smelter.Smelter.get_object_from_dictionary")
+@mock.patch("src.smelters.smelter.Smelter._tidy_up_metadata_keys")
+def test_smelt_dataset(
+    mock_tidy_up_metadata_keys,
+    mock_get_object_from_dictionary,
+    smelter,
+    raw_dataset_dictionary,
+    tidied_dataset_dictionary,
+):
+    mock_get_object_from_dictionary.return_value = "dataset"
+    mock_tidy_up_metadata_keys.return_value = tidied_dataset_dictionary
+    out_dict, param_dict = smelter.smelt_dataset(raw_dataset_dictionary)
+    assert param_dict == {
+        "schema": "https://test.mytardis.nectar.auckland.ac.nz/dataset/v1",
+        "parameters": [
+            {
+                "name": "dataset_my_test_key_1",
+                "value": "Test Value",
+            },
+            {
+                "name": "dataset_my_test_key_2",
+                "value": "Test Value 2",
+            },
+        ],
+    }
+    assert out_dict == {
+        "alternate_ids": ["Test_Dataset", "Dataset_Test_1"],
+        "description": "Test Dataset",
+        "instrument": "Instrument_1",
+        "persistent_id": "Dataset_1",
+        "experiments": ["Experiment_1", "Test_Experiment"],
+    }
+
+
+@mock.patch("src.smelters.smelter.Smelter.get_object_from_dictionary")
+@mock.patch("src.smelters.smelter.Smelter._tidy_up_metadata_keys")
+def test_smelt_dataset_no_schema(
+    mock_tidy_up_metadata_keys,
+    mock_get_object_from_dictionary,
+    caplog,
+    smelter,
+    raw_dataset_dictionary,
+    tidied_dataset_dictionary,
+):
+    caplog.set_level(logging.WARNING)
+    mock_get_object_from_dictionary.return_value = "dataset"
+    mock_tidy_up_metadata_keys.return_value = tidied_dataset_dictionary
+    smelter.default_schema = {}
+    out_dict, param_dict = smelter.smelt_dataset(raw_dataset_dictionary)
+    warning_str = "Unable to find default dataset schema and no schema provided"
+    assert warning_str in caplog.text
+    assert param_dict == None
+    assert out_dict == None
+
+
+def test_create_replica(smelter, raw_datafile_dictionary):
+    expected_output = raw_datafile_dictionary
+    expected_output["replicas"] = [
+        {"uri": "test_data.dat", "storage_box": "Test_storage_box", "protocol": "file"},
+    ]
+    raw_datafile_dictionary["file_path"] = Path("test_data.dat")
+    assert expected_output == smelter._create_replica(raw_datafile_dictionary)
+
+
+def test_verify_datafile_with_bad_dictionary(
+    caplog,
+    smelter,
+    tidied_datafile_dictionary,
+):
+    caplog.set_level(logging.WARNING)
+    test_dictionary = tidied_datafile_dictionary
+    test_dictionary.pop("schema")
+    sanity_check = smelter._verify_datafile(test_dictionary)
+    missing_keys = sorted(
+        [
+            "schema",
+        ]
+    )
+    warning_str = (
+        "Incomplete data for Datafile creation\n"
+        f"cleaned_dict: {test_dictionary}\n"
+        f"missing keys: {missing_keys}"
+    )
+    assert sanity_check == False
+    assert warning_str in caplog.text
+
+
+def test_verify_datafile_with_good_dictionary(
+    smelter,
+    tidied_datafile_dictionary,
+):
+    dataset_dict = tidied_datafile_dictionary
+    assert smelter._verify_datafile(dataset_dict) == True
+
+
+@mock.patch("src.smelters.smelter.Smelter._create_replica")
+@mock.patch("src.smelters.smelter.Smelter.get_object_from_dictionary")
+@mock.patch("src.smelters.smelter.Smelter._tidy_up_metadata_keys")
+def test_smelt_datafile(
+    mock_tidy_up_metadata_keys,
+    mock_get_object_from_dictionary,
+    mock_create_replica,
+    smelter,
+    raw_datafile_dictionary,
+    tidied_datafile_dictionary,
+):
+    mock_get_object_from_dictionary.return_value = "datafile"
+    mock_tidy_up_metadata_keys.return_value = tidied_datafile_dictionary
+    mock_create_replica.return_value = tidied_datafile_dictionary
+    out_dict, param_dict = smelter.smelt_datafile(raw_datafile_dictionary)
+    assert param_dict == {
+        "schema": "https://test.mytardis.nectar.auckland.ac.nz/datafile/v1",
+        "parameters": [
+            {
+                "name": "datafile_my_test_key_1",
+                "value": "Test Value",
+            },
+            {
+                "name": "datafile_my_test_key_2",
+                "value": "Test Value 2",
+            },
+        ],
+    }
+    assert out_dict == {
+        "dataset": ["Dataset_1"],
+        "filename": "test_data.dat",
+        "md5sum": "0d32909e86e422d04a053d1ba26a990e",
+        "size": 52428800,
+        "replicas": [
+            {
+                "uri": "test_data.dat",
+                "location": "Test_storage_box",
+                "protocol": "file",
+            },
+        ],
+    }
+
+
+@mock.patch("src.smelters.smelter.Smelter.get_object_from_dictionary")
+@mock.patch("src.smelters.smelter.Smelter._tidy_up_metadata_keys")
+def test_smelt_datafile_no_schema(
+    mock_tidy_up_metadata_keys,
+    mock_get_object_from_dictionary,
+    caplog,
+    smelter,
+    raw_datafile_dictionary,
+    tidied_datafile_dictionary,
+):
+    caplog.set_level(logging.WARNING)
+    mock_get_object_from_dictionary.return_value = "datafile"
+    mock_tidy_up_metadata_keys.return_value = tidied_datafile_dictionary
+    smelter.default_schema = {}
+    out_dict, param_dict = smelter.smelt_datafile(raw_datafile_dictionary)
+    warning_str = "Unable to find default datafile schema and no schema provided"
+    assert warning_str in caplog.text
+    assert param_dict == None
+    assert out_dict == None
+
+
+@mock.patch("src.smelters.smelter.Smelter.get_object_from_dictionary")
+@mock.patch("src.smelters.smelter.Smelter._tidy_up_metadata_keys")
+def test_smelt_datafile_no_replica(
+    mock_tidy_up_metadata_keys,
+    mock_get_object_from_dictionary,
+    caplog,
+    smelter,
+    raw_datafile_dictionary,
+    tidied_datafile_dictionary,
+):
+    caplog.set_level(logging.WARNING)
+    test_dictionary = raw_datafile_dictionary
+    test_dictionary.pop("file_path")
+    mock_get_object_from_dictionary.return_value = "datafile"
+    mock_tidy_up_metadata_keys.return_value = tidied_datafile_dictionary
+    out_dict, param_dict = smelter.smelt_datafile(test_dictionary)
+    filename = test_dictionary["filename"]
+    warning_str = f"Unable to create file replica for {filename}"
     assert warning_str in caplog.text
     assert param_dict == None
     assert out_dict == None
