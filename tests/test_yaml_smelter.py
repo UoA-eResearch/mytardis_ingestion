@@ -6,13 +6,9 @@ from pathlib import Path
 
 import mock
 import pytest
+from pytest import fixture
 
-from .conftest import (
-    config_dict,
-    datadir,
-    project_dict_as_read_from_yaml,
-    raw_project_dictionary,
-)
+from .conftest import config_dict, datadir, raw_project_dictionary
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -27,7 +23,7 @@ test_malformed_ingestion_dict_too_many_objects = {
 }
 
 
-@pytest.fixture
+@fixture
 def YAML_config_dict(config_dict):
     configuration = config_dict
     configuration["projects_enabled"] = True
@@ -42,25 +38,108 @@ def YAML_config_dict(config_dict):
     return configuration
 
 
-def test_get_objects_in_input_file(datadir, YAML_config_dict):
-    input_file = Path(datadir / "test_project.yaml")
-    smelter = YAMLSmelter(YAML_config_dict)
-    assert smelter.get_objects_in_input_file(input_file) == ("project",)
+@fixture
+def smelter(YAML_config_dict):
+    return YAMLSmelter(YAML_config_dict)
+
+
+@fixture
+def project_dictionary_from_yaml_file():
+    return {
+        "project_name": "Test Project",
+        "project_id": "Project_1",
+        "alternate_ids": [
+            "Test_Project",
+            "Project_Test_1",
+        ],
+        "description": "A test project for the purposes of testing",
+        "lead_researcher": "upi001",
+        "admin_groups": [
+            "Test_Group_1",
+        ],
+        "admin_users": [
+            "upi002",
+            "upi003",
+        ],
+        "metadata": {"My Test Key 1": "Test Value", "My Test Key 2": "Test Value 2"},
+    }
 
 
 @pytest.mark.dependency()
-def test_read_file(datadir, YAML_config_dict, project_dict_as_read_from_yaml):
-    input_file = Path(datadir / "test_project.yaml")
+def test_tidy_up_metadata_keys(smelter, raw_project_dictionary):
+    cleaned_dict = smelter._tidy_up_metadata_keys(raw_project_dictionary, "project")
+    assert cleaned_dict["project_my_test_key_1"] == "Test Value"
+    assert cleaned_dict["project_my_test_key_2"] == "Test Value 2"
+
+
+def test_get_file_type_for_input_files(YAML_config_dict):
     smelter = YAMLSmelter(YAML_config_dict)
-    print(smelter.read_file(input_file))
-    print(project_dict_as_read_from_yaml)
-    assert smelter.read_file(input_file) == (project_dict_as_read_from_yaml,)
+    assert smelter.get_file_type_for_input_files() == "*.yaml"
+
+
+@mock.patch("src.smelters.yaml_smelter.YAMLSmelter.read_file")
+def test_get_objects_in_input_file(
+    mock_read_file,
+    YAML_config_dict,
+    smelter,
+    project_dictionary_from_yaml_file,
+):
+    mock_read_file.return_value = [project_dictionary_from_yaml_file]
+    assert smelter.get_objects_in_input_file(project_dictionary_from_yaml_file) == (
+        "project",
+    )
+
+
+@mock.patch("src.smelters.yaml_smelter.YAMLSmelter.read_file")
+def test_get_objects_in_input_file_with_no_objects(
+    mock_read_file,
+    caplog,
+    YAML_config_dict,
+    smelter,
+    project_dictionary_from_yaml_file,
+):
+    caplog.set_level(logging.WARNING)
+    test_dictionary = project_dictionary_from_yaml_file
+    test_dictionary.pop("project_name")
+    mock_read_file.return_value = [test_dictionary]
+    warning_str = (
+        f"File {Path('Test_file_path')} was not recognised as a MyTardis ingestion file"
+    )
+    assert smelter.get_objects_in_input_file(Path("Test_file_path")) == (None,)
+    assert warning_str in caplog.text
+
+
+@mock.patch("src.smelters.yaml_smelter.YAMLSmelter.read_file")
+def test_get_objects_in_input_file_with_two_objects(
+    mock_read_file,
+    caplog,
+    YAML_config_dict,
+    smelter,
+    project_dictionary_from_yaml_file,
+):
+    caplog.set_level(logging.WARNING)
+    test_dictionary = project_dictionary_from_yaml_file
+    test_dictionary["datafiles"] = "Test Datafile"
+    mock_read_file.return_value = [test_dictionary]
+    warning_str = (
+        f"Malformed MyTardis ingestion file, {Path('Test_file_path')}. Please ensure that "
+        "sections are properly delimited with '---' and that each section is "
+        "defined for one object type only i.e. 'project', 'experiment', "
+        "'dataset' or 'datafile'."
+    )
+    assert smelter.get_objects_in_input_file(Path("Test_file_path")) == (None,)
+    assert warning_str in caplog.text
+
+
+@pytest.mark.dependency()
+def test_read_file(datadir, smelter, project_dictionary_from_yaml_file):
+    input_file = Path(datadir / "test_project.yaml")
+    assert smelter.read_file(input_file) == (project_dictionary_from_yaml_file,)
 
 
 @pytest.mark.dependency(depends=["test_read_file"])
-def test_read_file_exceptions_log_error(caplog, datadir, YAML_config_dict):
+def test_read_file_exceptions_log_error(caplog, datadir, smelter):
     caplog.set_level(logging.ERROR)
-    smelter = YAMLSmelter(YAML_config_dict)
     input_file = Path(datadir / "no_such_file.dat")
     with pytest.raises(FileNotFoundError):
         _ = smelter.read_file(input_file)
@@ -69,22 +148,9 @@ def test_read_file_exceptions_log_error(caplog, datadir, YAML_config_dict):
         assert "FileNotFoundError" in caplog.text
 
 
-@pytest.mark.dependency(depends=["test_read_file"])
-def test_tidy_up_metadata_keys(datadir, YAML_config_dict):
-    input_file = Path(datadir / "test_project.yaml")
-    smelter = YAMLSmelter(YAML_config_dict)
-    parsed_dict = smelter.read_file(input_file)
-    object_type = smelter.get_object_from_dictionary(parsed_dict[0])
-    cleaned_dict = smelter._tidy_up_metadata_keys(parsed_dict[0], object_type)
-    assert cleaned_dict["project_my_test_key_1"] == "Test Value"
-    assert cleaned_dict["project_my_test_key_2"] == "Test Value 2"
-
-
-@pytest.mark.xfail()
 @pytest.mark.dependency(depends=["test_read_file", "test_tidy_up_metadata_keys"])
-def test_rebase_file_path(datadir, YAML_config_dict):
+def test_rebase_file_path(datadir, smelter):
     input_file = Path(datadir / "test_datafile.yaml")
-    smelter = YAMLSmelter(YAML_config_dict)
     parsed_dict = smelter.read_file(input_file)
     cleaned_dict = smelter.rebase_file_path(parsed_dict[0])
     test_dict = {
@@ -92,7 +158,10 @@ def test_rebase_file_path(datadir, YAML_config_dict):
             "dataset_id": ["Test-dataset"],
             "files": [
                 {
-                    "metadata": {"key1": "value1", "key2": "value2"},
+                    "metadata": {
+                        "My Test Key 1": "Test Value",
+                        "My Test Key 2": "Test Value 2",
+                    },
                     "name": Path("/mount/path/test_data.dat"),
                 },
                 {"name": Path("/mount/path/test_data2.dat")},
@@ -102,55 +171,11 @@ def test_rebase_file_path(datadir, YAML_config_dict):
     assert cleaned_dict == test_dict
 
 
-def test_get_file_type_for_input_files(YAML_config_dict):
-    smelter = YAMLSmelter(YAML_config_dict)
-    assert smelter.get_file_type_for_input_files() == "*.yaml"
-
-
-@mock.patch("src.smelters.yaml_smelter.YAMLSmelter.read_file")
-def test_malformed_ingestion_dict_no_object_logs_warning(
-    mock_read_file, caplog, YAML_config_dict
-):
-    mock_read_file.return_value = [
-        test_malformed_ingestion_dict_no_object,
-    ]
-    caplog.set_level(logging.WARNING)
-    smelter = YAMLSmelter(YAML_config_dict)
-    file_path = Path("/home/test/test.dat")
-    object_types = smelter.get_objects_in_input_file(file_path)
-    warning_str = f"File {file_path} was not recognised as a MyTardis ingestion file"
-    assert warning_str in caplog.text
-    assert object_types == (None,)
-
-
-@mock.patch("src.smelters.yaml_smelter.YAMLSmelter.read_file")
-def test_malformed_ingestion_dict_too_many_objects_logs_warning(
-    mock_read_file, caplog, YAML_config_dict
-):
-    mock_read_file.return_value = [
-        test_malformed_ingestion_dict_too_many_objects,
-    ]
-    caplog.set_level(logging.WARNING)
-    smelter = YAMLSmelter(YAML_config_dict)
-    file_path = Path("/home/test/test.dat")
-    object_types = smelter.get_objects_in_input_file(file_path)
-    warning_str = (
-        f"Malformed MyTardis ingestion file, {file_path}. Please ensure that "
-        "sections are properly delimited with '---' and that each section is "
-        "defined for one object type only i.e. 'project', 'experiment', "
-        "'dataset' or 'datafile'."
-    )
-    assert warning_str in caplog.text
-    assert object_types == (None,)
-
-
-@pytest.mark.xfail()
 @pytest.mark.dependency(
     depends=["test_read_file", "test_tidy_up_metadata_keys", "test_rebase_file_path"]
 )
-def test_expand_datafile_entry(datadir, YAML_config_dict):
+def test_expand_datafile_entry(datadir, smelter):
     input_file = Path(datadir / "test_datafile.yaml")
-    smelter = YAMLSmelter(YAML_config_dict)
     smelter.mount_dir = Path(datadir)
     parsed_dict = smelter.read_file(input_file)
     cleaned_dict = smelter.rebase_file_path(parsed_dict[0])
@@ -158,11 +183,10 @@ def test_expand_datafile_entry(datadir, YAML_config_dict):
     test_processed_file_list = [
         {
             "dataset": "Test-dataset",
-            "key1": "value1",
-            "key2": "value2",
+            "My Test Key 1": "Test Value",
+            "My Test Key 2": "Test Value 2",
             "filename": "test_data.dat",
             "md5sum": "0d32909e86e422d04a053d1ba26a990e",
-            "full_path": Path(datadir / "test_data.dat"),
             "replicas": [
                 {
                     "uri": "test_data.dat",
@@ -176,7 +200,6 @@ def test_expand_datafile_entry(datadir, YAML_config_dict):
             "dataset": "Test-dataset",
             "filename": "test_data2.dat",
             "md5sum": "457a252fffb56e95c74bc99dfc3830c2",
-            "full_path": Path(datadir / "test_data2.dat"),
             "replicas": [
                 {
                     "uri": "test_data2.dat",
@@ -190,15 +213,15 @@ def test_expand_datafile_entry(datadir, YAML_config_dict):
     assert file_list == test_processed_file_list
 
 
-@pytest.mark.xfail()
 @pytest.mark.dependency(depends=["test_expand_datafile_entry"])
 @mock.patch("pathlib.Path.iterdir")
-def test_expand_datafile_entry_for_directories(mock_iterdir, datadir, YAML_config_dict):
+def test_expand_datafile_entry_for_directories(mock_iterdir, datadir, smelter):
     iter_dir_return_list = [
         Path(datadir / "test_data.dat"),
         Path(datadir / "test_data2.dat"),
     ]
     mock_iterdir.return_value = iter_dir_return_list
+    smelter.mount_dir = Path(datadir)
     test_parsed_dict = {
         "datafiles": {
             "files": [
@@ -207,16 +230,12 @@ def test_expand_datafile_entry_for_directories(mock_iterdir, datadir, YAML_confi
             "dataset_id": ["Test-dataset"],
         },
     }
-    smelter = YAMLSmelter(YAML_config_dict)
-    smelter.mount_dir = Path(datadir)
     file_list = smelter.expand_datafile_entry(test_parsed_dict)
-    print(file_list)
     test_processed_file_list = [
         {
             "dataset": "Test-dataset",
             "filename": "test_data.dat",
             "md5sum": "0d32909e86e422d04a053d1ba26a990e",
-            "full_path": Path(datadir / "test_data.dat"),
             "replicas": [
                 {
                     "uri": "test_data.dat",
@@ -230,7 +249,6 @@ def test_expand_datafile_entry_for_directories(mock_iterdir, datadir, YAML_confi
             "dataset": "Test-dataset",
             "filename": "test_data2.dat",
             "md5sum": "457a252fffb56e95c74bc99dfc3830c2",
-            "full_path": Path(datadir / "test_data2.dat"),
             "replicas": [
                 {
                     "uri": "test_data2.dat",
@@ -241,4 +259,15 @@ def test_expand_datafile_entry_for_directories(mock_iterdir, datadir, YAML_confi
             "size": 1048576,
         },
     ]
-    assert set(test_processed_file_list) == set(file_list)
+    assert test_processed_file_list == file_list
+
+
+def test_get_object_from_dictionary(smelter):
+    project_dict = {"project_name": "Name"}
+    experiment_dict = {"experiment_name": "Name"}
+    dataset_dict = {"dataset_name": "Name"}
+    datafile_dict = {"datafiles": "Namee"}
+    assert smelter.get_object_from_dictionary(project_dict) == "project"
+    assert smelter.get_object_from_dictionary(experiment_dict) == "experiment"
+    assert smelter.get_object_from_dictionary(dataset_dict) == "dataset"
+    assert smelter.get_object_from_dictionary(datafile_dict) == "datafile"

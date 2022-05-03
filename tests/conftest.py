@@ -115,26 +115,6 @@ def tidied_project_dictionary():
 
 
 @fixture
-def project_dict_as_read_from_yaml():
-    return {
-        "project_name": "Test Project",
-        "project_id": "Project_1",
-        "alternate_ids": [
-            "Test_Project",
-            "Project_Test_1",
-        ],
-        "description": "A test project for the purposes of testing",
-        "lead_researcher": "upi001",
-        "admin_groups": ["Test_Group_1"],
-        "admin_users": ["upi002", "upi003"],
-        "metadata": {
-            "My Test Key 1": "Test Value",
-            "My Test Key 2": "Test Value 2",
-        },
-    }
-
-
-@fixture
 def raw_experiment_dictionary():
     return {
         "title": "Test Experiment",
