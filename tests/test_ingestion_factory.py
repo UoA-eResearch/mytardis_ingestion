@@ -6,84 +6,36 @@
 import logging
 from pathlib import Path
 
+import mock
 import pytest
 import responses
+from pytest import fixture
 from responses import matchers
 
-from src.specific_implementations import YAMLIngestionFactory
+from src.factory import IngestionFactory
+from src.smelter import Smelter
 
-from .conftest import datadir
+from .conftest import config_dict, processed_introspection_response, smelter
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
-config_dict = {
-    "username": "Test_User",
-    "api_key": "Test_API_Key",
-    "hostname": "https://test.mytardis.nectar.auckland.ac.nz",
-    "verify_certificate": True,
-    "proxy_http": "http://myproxy.com",
-    "proxy_https": "http://myproxy.com",
-    "remote_directory": "/remote/path",
-    "mount_directory": "/mount/path",
-    "storage_box": "Test_storage_box",
-    "default_institution": "Test Institution",
-    "default_schema": {
-        "project": "https://test.mytardis.nectar.auckland.ac.nz/project/v1",
-        "experiment": "https://test.mytardis.nectar.auckland.ac.nz/experiment/v1",
-        "dataset": "https://test.mytardis.nectar.auckland.ac.nz/dataset/v1",
-        "datafile": "https://test.mytardis.nectar.auckland.ac.nz/datafile/v1",
-    },
-}
 
-introspection_response_dict = {
-    "meta": {
-        "limit": 20,
-        "next": None,
-        "offset": 0,
-        "previous": None,
-        "total_count": 1,
-    },
-    "objects": [
-        {
-            "experiment_only_acls": False,
-            "identified_objects": [
-                "dataset",
-                "experiment",
-                "facility",
-                "instrument",
-                "project",
-                "institution",
-            ],
-            "identifiers_enabled": True,
-            "profiled_objects": [],
-            "profiles_enabled": False,
-            "projects_enabled": True,
-            "resource_uri": "/api/v1/introspection/None/",
-        }
-    ],
-}
+@mock.patch("src.overseers.overseer.Overseer.get_mytardis_set_up")
+@mock.patch("src.smelter.smelter.Smelter.get_file_type_for_input_files")
+@mock.patch("src.factory.factory.IngestionFactory.get_smelter")
+@fixture
+def factory(
+    mock_get_smelter,
+    mock_get_file_type_for_input_files,
+    mock_get_mytardis_setup,
+    smelter,
+):
+    mock_get_smelter.return_value = smelter
+    mock_get_file_type_for_input_files.return_value = "*.test"
+    mock_get_mytardis_setup.return_value = processed_introspection_response
+    IngestionFactory.__abstractmethods__ = set()
 
-institution_response_dict = {
-    "meta": {
-        "limit": 20,
-        "next": None,
-        "offset": 0,
-        "previous": None,
-        "total_count": 1,
-    },
-    "objects": [
-        {
-            "address": "words",
-            "aliases": 1,
-            "alternate_ids": ["fruit", "apples"],
-            "country": "NZ",
-            "name": "University of Auckland",
-            "persistent_id": "Uni ROR",
-            "resource_uri": "/api/v1/institution/1/",
-        }
-    ],
-}
 
 search_with_no_uri_dict = {"institution": "Uni RoR"}
 

@@ -3,6 +3,8 @@ from pathlib import Path
 
 from pytest import fixture
 
+from src.smelters import Smelter
+
 
 @fixture
 def datadir(tmpdir, request):
@@ -69,6 +71,46 @@ def introspection_response_dict():
                 "profiles_enabled": False,
                 "projects_enabled": True,
                 "resource_uri": "/api/v1/introspection/None/",
+            }
+        ],
+    }
+
+
+@fixture
+def processed_introspection_response():
+    return {
+        "old_acls": False,
+        "projects_enabled": True,
+        "objects_with_ids": [
+            "dataset",
+            "experiment",
+            "facility",
+            "instrument",
+            "project",
+            "institution",
+        ],
+    }
+
+
+@fixture
+def institution_response_dict():
+    return {
+        "meta": {
+            "limit": 20,
+            "next": None,
+            "offset": 0,
+            "previous": None,
+            "total_count": 1,
+        },
+        "objects": [
+            {
+                "address": "words",
+                "aliases": 1,
+                "alternate_ids": ["fruit", "apples"],
+                "country": "NZ",
+                "name": "University of Auckland",
+                "persistent_id": "Uni ROR",
+                "resource_uri": "/api/v1/institution/1/",
             }
         ],
     }
@@ -230,3 +272,50 @@ def tidied_datafile_dictionary():
         ],
         "schema": "https://test.mytardis.nectar.auckland.ac.nz/datafile/v1",
     }
+
+
+@fixture
+def mytardis_config(config_dict):
+    configuration = config_dict
+    configuration["projects_enabled"] = True
+    configuration["objects_with_ids"] = [
+        "dataset",
+        "experiment",
+        "facility",
+        "instrument",
+        "project",
+        "institution",
+    ]
+    return configuration
+
+
+@fixture
+def smelter(mytardis_config):
+    Smelter.__abstractmethods__ = set()
+    smelter = Smelter(mytardis_config)
+    smelter.OBJECT_KEY_CONVERSION = {
+        "project": {
+            "project_name": "name",
+            "lead_researcher": "principal_investigator",
+            "project_id": "persistent_id",
+        },
+        "experiment": {
+            "experiment_name": "title",
+            "experiment_id": "persistent_id",
+            "project_id": "projects",
+        },
+        "dataset": {
+            "dataset_name": "description",
+            "experiment_id": "experiments",
+            "dataset_id": "persistent_id",
+            "instrument_id": "instrument",
+        },
+        "datafile": {},
+    }
+    smelter.OBJECT_TYPES = {
+        "project_name": "project",
+        "experiment_name": "experiment",
+        "dataset_name": "dataset",
+        "datafiles": "datafile",
+    }
+    return smelter

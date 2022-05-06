@@ -17,62 +17,17 @@ logger.propagate = True
 
 from .conftest import (
     config_dict,
+    mytardis_config,
     raw_datafile_dictionary,
     raw_dataset_dictionary,
     raw_experiment_dictionary,
     raw_project_dictionary,
+    smelter,
     tidied_datafile_dictionary,
     tidied_dataset_dictionary,
     tidied_experiment_dictionary,
     tidied_project_dictionary,
 )
-
-
-@fixture
-def mytardis_config(config_dict):
-    configuration = config_dict
-    configuration["projects_enabled"] = True
-    configuration["objects_with_ids"] = [
-        "dataset",
-        "experiment",
-        "facility",
-        "instrument",
-        "project",
-        "institution",
-    ]
-    return configuration
-
-
-@fixture
-def smelter(mytardis_config):
-    Smelter.__abstractmethods__ = set()
-    smelter = Smelter(mytardis_config)
-    smelter.OBJECT_KEY_CONVERSION = {
-        "project": {
-            "project_name": "name",
-            "lead_researcher": "principal_investigator",
-            "project_id": "persistent_id",
-        },
-        "experiment": {
-            "experiment_name": "title",
-            "experiment_id": "persistent_id",
-            "project_id": "projects",
-        },
-        "dataset": {
-            "dataset_name": "description",
-            "experiment_id": "experiments",
-            "dataset_id": "persistent_id",
-            "instrument_id": "instrument",
-        },
-        "datafile": {},
-    }
-    smelter.OBJECT_TYPES = {
-        "project_name": "project",
-        "experiment_name": "experiment",
-        "dataset_name": "dataset",
-        "datafiles": "datafile",
-    }
-    return smelter
 
 
 def test_tidy_up_dictionary_keys_with_good_inputs(smelter):

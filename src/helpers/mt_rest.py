@@ -97,7 +97,7 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
         self.api_template = urljoin(config_dict["hostname"], "/api/v1/")
         self.user_agent = f"{self.user_agent_name}/2.0 ({self.user_agent_url})"
 
-    @backoff.on_exception(backoff.expo, BadGateWayException, max_tries=8)
+    @backoff.on_exception(backoff.expo, BadGateWayException, max_tries=1)
     def mytardis_api_request(
         self,
         method: str,  # REST api method
