@@ -102,6 +102,27 @@ def tidied_project_dictionary():
 
 
 @fixture
+def project_object_dictionary():
+    return {
+        "users": [
+            ("upi001", True, True, True),
+            ("upi0022", True, True, True),
+        ],
+        "groups": [
+            ("Test_Group_1", True, True, True),
+        ],
+        "alternate_ids": [
+            "Test_Project",
+            "Project_Test_1",
+        ],
+        "description": "A test project for the purposes of testing",
+        "name": "Test Project",
+        "persistent_id": "Project_1",
+        "principal_investigator": "upi001",
+    }
+
+
+@fixture
 def raw_experiment_dictionary():
     return {
         "title": "Test Experiment",
@@ -196,6 +217,27 @@ def raw_datafile_dictionary():
             "My Test Key 2": "Test Value 2",
         },
         "size": 52428800,
+    }
+
+
+@fixture
+def preconditioned_datafile_dictionary():
+    return {
+        "dataset": ["Dataset_1"],
+        "filename": "test_data.dat",
+        "md5sum": "0d32909e86e422d04a053d1ba26a990e",
+        "datafile_my_test_key_1": "Test Value",
+        "datafile_my_test_key_2": "Test Value 2",
+        "size": 52428800,
+        "replicas": [
+            {
+                "uri": "test_data.dat",
+                "location": "Test_storage_box",
+                "protocol": "file",
+            },
+        ],
+        "schema": "https://test.mytardis.nectar.auckland.ac.nz/datafile/v1",
+        "file_path": "test_data.dat",
     }
 
 
@@ -527,4 +569,36 @@ def storage_box_response_dict():
                 "status": "online",
             },
         ],
+    }
+
+
+@fixture
+def project_creation_response_dict():
+    return {
+        "alternate_ids": [
+            "Test_Project",
+            "Project_Test_1",
+        ],
+        "created_by": "api/v1/user/1/",
+        "datafile_count": 2,
+        "dataset_count": 1,
+        "description": "A test project for the purposes of testing",
+        "embargo_until": None,
+        "end_time": None,
+        "experiment_count": 1,
+        "id": 1,
+        "institution": [
+            "api/v1/institution/1/",
+        ],
+        "locked": False,
+        "name": "Test Project",
+        "parameter_sets": [],
+        "persistent_id": "Project_1",
+        "principal_investigator": "upi001",
+        "public_access": 1,
+        "resource_uri": "/api/v1/project/1/",
+        "size": 1000000,
+        "start_time": "2000-01-01T00:00:00",
+        "tags": [],
+        "url": None,
     }

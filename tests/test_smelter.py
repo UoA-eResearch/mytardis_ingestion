@@ -18,6 +18,7 @@ logger.propagate = True
 from .conftest import (
     config_dict,
     mytardis_config,
+    preconditioned_datafile_dictionary,
     raw_datafile_dictionary,
     raw_dataset_dictionary,
     raw_experiment_dictionary,
@@ -306,7 +307,9 @@ def test_smelt_project_no_schema(
 ):
     caplog.set_level(logging.WARNING)
     mock_get_object_from_dictionary.return_value = "project"
-    mock_tidy_up_metadata_keys.return_value = tidied_project_dictionary
+    test_dictionary = tidied_project_dictionary
+    test_dictionary.pop("schema")
+    mock_tidy_up_metadata_keys.return_value = test_dictionary
     smelter.default_schema = {}
     out_dict, param_dict = smelter.smelt_project(raw_project_dictionary)
     warning_str = "Unable to find default project schema and no schema provided"
@@ -327,7 +330,9 @@ def test_smelt_project_no_institution(
 ):
     caplog.set_level(logging.WARNING)
     mock_get_object_from_dictionary.return_value = "project"
-    mock_tidy_up_metadata_keys.return_value = tidied_project_dictionary
+    test_dictionary = tidied_project_dictionary
+    test_dictionary.pop("institution")
+    mock_tidy_up_metadata_keys.return_value = test_dictionary
     smelter.default_institution = None
     out_dict, param_dict = smelter.smelt_project(raw_project_dictionary)
     warning_str = "Unable to find default institution and no institution provided"
@@ -414,7 +419,9 @@ def test_smelt_experiment_no_schema(
 ):
     caplog.set_level(logging.WARNING)
     mock_get_object_from_dictionary.return_value = "experiment"
-    mock_tidy_up_metadata_keys.return_value = tidied_experiment_dictionary
+    test_dict = tidied_experiment_dictionary
+    test_dict.pop("schema")
+    mock_tidy_up_metadata_keys.return_value = test_dict
     smelter.default_schema = {}
     out_dict, param_dict = smelter.smelt_experiment(raw_experiment_dictionary)
     warning_str = "Unable to find default experiment schema and no schema provided"
@@ -499,7 +506,9 @@ def test_smelt_dataset_no_schema(
 ):
     caplog.set_level(logging.WARNING)
     mock_get_object_from_dictionary.return_value = "dataset"
-    mock_tidy_up_metadata_keys.return_value = tidied_dataset_dictionary
+    test_dictionary = tidied_dataset_dictionary
+    test_dictionary.pop("schema")
+    mock_tidy_up_metadata_keys.return_value = test_dictionary
     smelter.default_schema = {}
     out_dict, param_dict = smelter.smelt_dataset(raw_dataset_dictionary)
     warning_str = "Unable to find default dataset schema and no schema provided"
@@ -558,9 +567,10 @@ def test_smelt_datafile(
     smelter,
     raw_datafile_dictionary,
     tidied_datafile_dictionary,
+    preconditioned_datafile_dictionary,
 ):
     mock_get_object_from_dictionary.return_value = "datafile"
-    mock_tidy_up_metadata_keys.return_value = tidied_datafile_dictionary
+    mock_tidy_up_metadata_keys.return_value = preconditioned_datafile_dictionary
     mock_create_replica.return_value = tidied_datafile_dictionary
     out_dict, param_dict = smelter.smelt_datafile(raw_datafile_dictionary)
     assert param_dict == {
@@ -603,6 +613,8 @@ def test_smelt_datafile_no_schema(
 ):
     caplog.set_level(logging.WARNING)
     mock_get_object_from_dictionary.return_value = "datafile"
+    test_dict = tidied_datafile_dictionary
+    test_dict.pop("schema")
     mock_tidy_up_metadata_keys.return_value = tidied_datafile_dictionary
     smelter.default_schema = {}
     out_dict, param_dict = smelter.smelt_datafile(raw_datafile_dictionary)
