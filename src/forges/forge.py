@@ -122,7 +122,7 @@ class Forge:
         try:
             response_dict = response.json()
             try:
-                uri = response_dict["objects"][0]["resource_uri"]
+                uri = response_dict["resource_uri"]
             except KeyError:
                 logger.warning(
                     (
