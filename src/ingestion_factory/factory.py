@@ -117,24 +117,8 @@ class IngestionFactory(ABC):
                         objects = self.overseer.get_uris(
                             object_type, fallback_search, cleaned_dict[key_name]
                         )
-        cleaned_dict[key_name] = objects
+                    cleaned_dict[key_name] = objects
         return cleaned_dict
-
-    def get_institution_uri(self, institution):
-        """Helper function to get the URI to an institution object for Project creation
-
-        Args:
-            institution: A persistent identifier or name of an institution to search for
-
-        Returns:
-            The URI from MyTardis that points to the institution object
-        """
-        uri = None
-        if "institution" in self.mytardis_setup["objects_with_ids"]:
-            uri = self.overseer.get_uris_by_identifier("institution", institution)
-        if not uri:
-            uri = self.overseer.get_uris("institution", "name", institution)
-        return uri
 
     def get_project_uri(self, project_id):
         """Helper function to get a Project URI from MyTardis
@@ -213,9 +197,8 @@ class IngestionFactory(ABC):
                         parsed_dict
                     )
                     name = object_dict["name"]
-                    institution_id = object_dict["institution"]
-                    object_dict["institution"] = self.get_institution_uri(
-                        institution_id
+                    object_dict = self.replace_search_term_with_uri(
+                        "institution", object_dict, "name"
                     )
                     forged_object = self.forge.forge_object(
                         name, "project", object_dict
@@ -254,9 +237,9 @@ class IngestionFactory(ABC):
                     project_uris = []
                     for project in project_id:
                         project_uris.append(self.get_project_uri(project))
-                    project_uris = [
-                        item for sublist in project_uris for item in sublist
-                    ]
+                    project_uris = list(
+                        set([item for sublist in project_uris for item in sublist])
+                    )
                     object_dict["projects"] = project_uris
                     forged_object = self.forge.forge_object(
                         name, "experiment", object_dict
@@ -295,9 +278,9 @@ class IngestionFactory(ABC):
                     experiment_uris = []
                     for experiment in experiments:
                         experiment_uris.append(self.get_experimentt_uri(experiment))
-                    experiment_uris = [
-                        item for sublist in experiment_uris for item in sublist
-                    ]
+                    experiment_uris = list(
+                        set([item for sublist in experiment_uris for item in sublist])
+                    )
                     object_dict["experiments"] = experiment_uris
                     instrument = object_dict["instrument"]
                     object_dict["instrument"] = self.get_instrument_uri(instrument)[0]
@@ -329,19 +312,15 @@ class IngestionFactory(ABC):
                 object_type = self.smelter.get_object_from_dictionary(parsed_dict)
                 if object_type == "datafile":
                     cleaned_dict = self.smelter.rebase_file_path(parsed_dict)
-                    print(cleaned_dict)
                     cleaned_dict["datafiles"]["dataset_id"] = self.get_dataset_uri(
                         cleaned_dict["datafiles"]["dataset_id"]
                     )
                     cleaned_list = self.smelter.expand_datafile_entry(cleaned_dict)
                     for cleaned_dict in cleaned_list:
-                        print(cleaned_dict)
                         name = cleaned_dict["filename"]
                         object_dict, parameter_dict = self.smelter.smelt_datafile(
                             cleaned_dict
                         )
-                        print(object_dict)
-                        print(parameter_dict)
                         forged_object = self.forge.forge_object(
                             name, "dataset_file", object_dict
                         )

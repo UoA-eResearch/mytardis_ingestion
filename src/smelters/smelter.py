@@ -106,16 +106,7 @@ class Smelter(ABC):
             to create the object in MyTardis, and a parameter dictionary containing the
             additional metadata.
         """
-        object_type, cleaned_dict = self.tidy_up_dictionary_keys(cleaned_dict)
-        cleaned_dict = self._tidy_up_metadata_keys(cleaned_dict, object_type)
-        users, groups = Smelter.parse_groups_and_users_from_separate_access(
-            cleaned_dict
-        )
         object_dict = {}
-        if users != []:
-            object_dict["users"] = users
-        if groups != []:
-            object_dict["groups"] = groups
         parameter_dict = {}
         schema = cleaned_dict.pop("schema")
         parameter_dict["schema"] = schema
@@ -228,6 +219,30 @@ class Smelter(ABC):
         )
         return (sorted(users), sorted(groups))
 
+    def precondition_input_dictionary(self, parsed_dict) -> dict:
+        """Function to precondition the raw input from the file read. This ensures
+        that any key translation is carried out as well as tidying up the metadata
+        keys and user stuff
+
+        Args:
+            parsed_dict: raw dictionary as parsed from its input file
+
+        Returns:
+            A tuple containing the object type and the cleaned dictionary
+        """
+        object_type, cleaned_dict = self.tidy_up_dictionary_keys(parsed_dict)
+        print(object_type)
+        print(cleaned_dict)
+        cleaned_dict = self._tidy_up_metadata_keys(cleaned_dict, object_type)
+        users, groups = Smelter.parse_groups_and_users_from_separate_access(
+            cleaned_dict
+        )
+        if users != []:
+            cleaned_dict["users"] = users
+        if groups != []:
+            cleaned_dict["groups"] = groups
+        return cleaned_dict
+
     def smelt_project(self, cleaned_dict: dict) -> tuple:
         """Wrapper to check and create the python dictionaries in a from expected by the
         forge class.
@@ -249,6 +264,7 @@ class Smelter(ABC):
                 )
             )
             return (None, None)
+        cleaned_dict = self.precondition_input_dictionary(cleaned_dict)
         object_keys = [
             "name",
             "description",
@@ -261,6 +277,8 @@ class Smelter(ABC):
             "end_time",
             "created_by",
             "url",
+            "users",
+            "groups",
         ]
         if "project" in self.objects_with_ids:
             object_keys.append("persistent_id")
@@ -355,6 +373,7 @@ class Smelter(ABC):
             to create the object in MyTardis, and a parameter dictionary containing the
             additional metadata.
         """
+        cleaned_dict = self.precondition_input_dictionary(cleaned_dict)
         object_keys = [
             "title",
             "description",
@@ -369,6 +388,8 @@ class Smelter(ABC):
             "update_time",
             "created_by",
             "url",
+            "users",
+            "groups",
         ]
         if "experiment" in self.objects_with_ids:
             object_keys.append("persistent_id")
@@ -438,6 +459,7 @@ class Smelter(ABC):
             to create the object in MyTardis, and a parameter dictionary containing the
             additional metadata.
         """
+        cleaned_dict = self.precondition_input_dictionary(cleaned_dict)
         object_keys = [
             "experiments",
             "description",
@@ -446,6 +468,8 @@ class Smelter(ABC):
             "modified_time",
             "immutable",
             "instrument",
+            "users",
+            "groups",
         ]
         if "dataset" in self.objects_with_ids:
             object_keys.append("persistent_id")
@@ -512,6 +536,7 @@ class Smelter(ABC):
             to create the object in MyTardis, and a parameter dictionary containing the
             additional metadata.
         """
+        cleaned_dict = self.precondition_input_dictionary(cleaned_dict)
         object_keys = [
             "dataset",
             "filename",
@@ -520,6 +545,8 @@ class Smelter(ABC):
             "mimetype",
             "size",
             "replicas",
+            "users",
+            "groups",
         ]
         if "schema" not in cleaned_dict.keys():
             try:
