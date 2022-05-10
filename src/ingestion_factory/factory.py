@@ -1,3 +1,4 @@
+# pylint: disable=consider-using-set-comprehension
 """IngestionFactory is a base class for specific instances of MyTardis
 Ingestion scripts. The base class contains mostly concrete functions but
 needs to determine the Smelter class that is used by the Factory"""
@@ -136,7 +137,7 @@ class IngestionFactory(ABC):
             uri = self.overseer.get_uris("project", "name", project_id)
         return uri
 
-    def get_experimentt_uri(self, experiment_id):
+    def get_experiment_uri(self, experiment_id):
         """Helper function to get an Experiment URI from MyTardis
 
         Args:
@@ -277,7 +278,7 @@ class IngestionFactory(ABC):
                     experiments = object_dict["experiments"]
                     experiment_uris = []
                     for experiment in experiments:
-                        experiment_uris.append(self.get_experimentt_uri(experiment))
+                        experiment_uris.append(self.get_experiment_uri(experiment))
                     experiment_uris = list(
                         set([item for sublist in experiment_uris for item in sublist])
                     )

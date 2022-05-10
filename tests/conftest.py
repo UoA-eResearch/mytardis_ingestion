@@ -486,6 +486,49 @@ def project_response_dict():
 
 
 @fixture
+def instrument_response_dict():
+    return {
+        "meta": {
+            "limit": 20,
+            "next": None,
+            "offset": 0,
+            "previous": None,
+            "total_count": 1,
+        },
+        "objects": [
+            {
+                "alternate_ids": [
+                    "Test_Instrument",
+                    "Instrument_Test_1",
+                ],
+                "created_time": "2000-01-01T00:00:00",
+                "facility": {
+                    "alternate_ids": [
+                        "Test_Facility",
+                        "Facility_Test_1",
+                    ],
+                    "created_time": "2000-01-01T00:00:00",
+                    "id": 1,
+                    "manager_group": {
+                        "name": "Test_Facility_Management_Group",
+                        "id": 1,
+                        "resource_uri": "/api/v1/group/1/",
+                    },
+                    "modified_time": "2000-01-01T00:00:00",
+                    "name": "Test Facility",
+                    "persistent_id": "Facility_1",
+                    "resource_uri": "/api/v1/facility/1/",
+                },
+                "modified_time": "2000-01-01T00:00:00",
+                "name": "Test Instrument",
+                "persistent_id": "Instrument_1",
+                "resource_uri": "/api/v1/instrument/1/",
+            },
+        ],
+    }
+
+
+@fixture
 def introspection_response_dict():
     return {
         "meta": {
