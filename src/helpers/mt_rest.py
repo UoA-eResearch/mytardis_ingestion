@@ -45,7 +45,7 @@ class MyTardisAuth(AuthBase):  # pylint: disable=R0903
         self.username = username
         self.api_key = api_key
 
-    def __call__(self, r):
+    def __call__(self, r):  # pylint: disable=invalid-name
         """Return an authorisation header for MyTardis"""
         r.headers["Authorization"] = f"ApiKey {self.username}:{self.api_key}"
         return r
@@ -97,7 +97,7 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
         self.api_template = urljoin(config_dict["hostname"], "/api/v1/")
         self.user_agent = f"{self.user_agent_name}/2.0 ({self.user_agent_url})"
 
-    @backoff.on_exception(backoff.expo, BadGateWayException, max_tries=1)
+    @backoff.on_exception(backoff.expo, BadGateWayException, max_tries=8)
     def mytardis_api_request(
         self,
         method: str,  # REST api method

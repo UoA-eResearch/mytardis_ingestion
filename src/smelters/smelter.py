@@ -1,4 +1,4 @@
-# pylint: disable=logging-fstring-interpolation
+# pylint: disable=logging-fstring-interpolation,consider-iterating-dictionary
 """Smelter base class. A class that provides functions to split input dictionaries into
 dictionaries suited to be passed into an instance of the Forge class for creating
 objects in MyTardis."""
@@ -91,7 +91,7 @@ class Smelter(ABC):
                 cleaned_dict[translation_dict[key]] = cleaned_dict.pop(key)
         return (object_type, cleaned_dict)
 
-    def _smelt_object(  # pylint: disable=consider-using-dict-items,consider-iterating-dictionary
+    def _smelt_object(  # pylint: disable=consider-using-dict-items,no-self-use
         self, object_keys: list, cleaned_dict: dict
     ) -> tuple:
         """A helper function to split up a combined dictionary into an object_dict
@@ -231,8 +231,6 @@ class Smelter(ABC):
             A tuple containing the object type and the cleaned dictionary
         """
         object_type, cleaned_dict = self.tidy_up_dictionary_keys(parsed_dict)
-        print(object_type)
-        print(cleaned_dict)
         cleaned_dict = self._tidy_up_metadata_keys(cleaned_dict, object_type)
         users, groups = Smelter.parse_groups_and_users_from_separate_access(
             cleaned_dict
@@ -526,7 +524,10 @@ class Smelter(ABC):
 
     def smelt_datafile(self, cleaned_dict: dict) -> tuple:
         """Wrapper to check and create the python dictionaries in a from expected by the
-        forge class.
+        forge class. The smelt_datafile function is somewhat unique as it takes a processed
+        dictionary after having been through the rebase_file_path function and the
+        expand_datafile_entry function processed by the Factory class. Arguably this should
+        be refactored to be all held by the smelter class and an issue has been created in Github.
 
         Args:
             cleaned_dict: dictionary containing the object data and metadata

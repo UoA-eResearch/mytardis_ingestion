@@ -20,6 +20,7 @@ from .conftest import (
     dataset_response_dict,
     experiment_response_dict,
     institution_response_dict,
+    instrument_response_dict,
     processed_introspection_response,
     project_response_dict,
     response_dict_not_found,
@@ -56,7 +57,13 @@ def factory(
 
 @fixture
 def search_with_no_uri_dict():
-    return {"institution": "Uni RoR"}
+    return {
+        "institution": "Uni RoR",
+        "project": "Test_Project",
+        "experiment": "Test_Experiment",
+        "dataset": "Test_Dataset",
+        "instrument": "Instrument_1",
+    }
 
 
 def mock_smelter_get_objects_in_input_file(file_path):
@@ -125,9 +132,10 @@ def test_replace_search_term_with_uri(
         json=(institution_response_dict),
     )
     object_type = "institution"
-    assert factory.replace_search_term_with_uri(
-        object_type, search_with_no_uri_dict, "name"
-    ) == {"institution": ["/api/v1/institution/1/"]}
+    test_dict = {object_type: search_with_no_uri_dict[object_type]}
+    assert factory.replace_search_term_with_uri(object_type, test_dict, "name") == {
+        "institution": ["/api/v1/institution/1/"]
+    }
 
 
 @responses.activate
@@ -161,9 +169,10 @@ def test_replace_search_term_with_uri_fallback_search(
         json=(institution_response_dict),
     )
     object_type = "institution"
-    assert factory.replace_search_term_with_uri(
-        object_type, search_with_no_uri_dict, "name"
-    ) == {"institution": ["/api/v1/institution/1/"]}
+    test_dict = {object_type: search_with_no_uri_dict[object_type]}
+    assert factory.replace_search_term_with_uri(object_type, test_dict, "name") == {
+        "institution": ["/api/v1/institution/1/"]
+    }
 
 
 @responses.activate
@@ -243,5 +252,344 @@ def test_replace_search_term_with_uri_http_error(
 
 
 @responses.activate
-def test_get_project_uri(factory, config_dict, project_response_dict):
-    pass
+def test_get_project_uri(
+    factory,
+    config_dict,
+    project_response_dict,
+    search_with_no_uri_dict,
+):
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/project",
+        match=[
+            matchers.query_param_matcher({"pids": search_with_no_uri_dict["project"]})
+        ],
+        status=200,
+        json=(project_response_dict),
+    )
+    assert factory.get_project_uri(search_with_no_uri_dict["project"]) == [
+        "/api/v1/project/1/"
+    ]
+
+
+@responses.activate
+def test_get_project_uri_fall_back_search(
+    factory,
+    config_dict,
+    project_response_dict,
+    search_with_no_uri_dict,
+    response_dict_not_found,
+):
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/project",
+        match=[
+            matchers.query_param_matcher({"pids": search_with_no_uri_dict["project"]})
+        ],
+        status=200,
+        json=(response_dict_not_found),
+    )
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/project",
+        match=[
+            matchers.query_param_matcher({"name": search_with_no_uri_dict["project"]})
+        ],
+        status=200,
+        json=(project_response_dict),
+    )
+    assert factory.get_project_uri(search_with_no_uri_dict["project"]) == [
+        "/api/v1/project/1/"
+    ]
+
+
+@responses.activate
+def test_get_project_uri_not_found(
+    factory,
+    config_dict,
+    search_with_no_uri_dict,
+    response_dict_not_found,
+):
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/project",
+        match=[
+            matchers.query_param_matcher({"pids": search_with_no_uri_dict["project"]})
+        ],
+        status=200,
+        json=(response_dict_not_found),
+    )
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/project",
+        match=[
+            matchers.query_param_matcher({"name": search_with_no_uri_dict["project"]})
+        ],
+        status=200,
+        json=(response_dict_not_found),
+    )
+    assert factory.get_project_uri(search_with_no_uri_dict["project"]) == None
+
+
+@responses.activate
+def test_get_experiment_uri(
+    factory,
+    config_dict,
+    experiment_response_dict,
+    search_with_no_uri_dict,
+):
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/experiment",
+        match=[
+            matchers.query_param_matcher(
+                {"pids": search_with_no_uri_dict["experiment"]}
+            )
+        ],
+        status=200,
+        json=(experiment_response_dict),
+    )
+    assert factory.get_experiment_uri(search_with_no_uri_dict["experiment"]) == [
+        "/api/v1/experiment/1/"
+    ]
+
+
+@responses.activate
+def test_get_experiment_uri_fall_back_search(
+    factory,
+    config_dict,
+    experiment_response_dict,
+    search_with_no_uri_dict,
+    response_dict_not_found,
+):
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/experiment",
+        match=[
+            matchers.query_param_matcher(
+                {"pids": search_with_no_uri_dict["experiment"]}
+            )
+        ],
+        status=200,
+        json=(response_dict_not_found),
+    )
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/experiment",
+        match=[
+            matchers.query_param_matcher(
+                {"title": search_with_no_uri_dict["experiment"]}
+            )
+        ],
+        status=200,
+        json=(experiment_response_dict),
+    )
+    assert factory.get_experiment_uri(search_with_no_uri_dict["experiment"]) == [
+        "/api/v1/experiment/1/"
+    ]
+
+
+@responses.activate
+def test_get_experiment_uri_not_found(
+    factory,
+    config_dict,
+    search_with_no_uri_dict,
+    response_dict_not_found,
+):
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/experiment",
+        match=[
+            matchers.query_param_matcher(
+                {"pids": search_with_no_uri_dict["experiment"]}
+            )
+        ],
+        status=200,
+        json=(response_dict_not_found),
+    )
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/experiment",
+        match=[
+            matchers.query_param_matcher(
+                {"title": search_with_no_uri_dict["experiment"]}
+            )
+        ],
+        status=200,
+        json=(response_dict_not_found),
+    )
+    assert factory.get_experiment_uri(search_with_no_uri_dict["experiment"]) == None
+
+
+@responses.activate
+def test_get_dataset_uri(
+    factory,
+    config_dict,
+    dataset_response_dict,
+    search_with_no_uri_dict,
+):
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/dataset",
+        match=[
+            matchers.query_param_matcher({"pids": search_with_no_uri_dict["dataset"]})
+        ],
+        status=200,
+        json=(dataset_response_dict),
+    )
+    assert factory.get_dataset_uri(search_with_no_uri_dict["dataset"]) == [
+        "/api/v1/dataset/1/"
+    ]
+
+
+@responses.activate
+def test_get_dataset_uri_fall_back_search(
+    factory,
+    config_dict,
+    dataset_response_dict,
+    search_with_no_uri_dict,
+    response_dict_not_found,
+):
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/dataset",
+        match=[
+            matchers.query_param_matcher({"pids": search_with_no_uri_dict["dataset"]})
+        ],
+        status=200,
+        json=(response_dict_not_found),
+    )
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/dataset",
+        match=[
+            matchers.query_param_matcher(
+                {"description": search_with_no_uri_dict["dataset"]}
+            )
+        ],
+        status=200,
+        json=(dataset_response_dict),
+    )
+    assert factory.get_dataset_uri(search_with_no_uri_dict["dataset"]) == [
+        "/api/v1/dataset/1/"
+    ]
+
+
+@responses.activate
+def test_get_dataset_uri_not_found(
+    factory,
+    config_dict,
+    search_with_no_uri_dict,
+    response_dict_not_found,
+):
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/dataset",
+        match=[
+            matchers.query_param_matcher({"pids": search_with_no_uri_dict["dataset"]})
+        ],
+        status=200,
+        json=(response_dict_not_found),
+    )
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/dataset",
+        match=[
+            matchers.query_param_matcher(
+                {"description": search_with_no_uri_dict["dataset"]}
+            )
+        ],
+        status=200,
+        json=(response_dict_not_found),
+    )
+    assert factory.get_dataset_uri(search_with_no_uri_dict["dataset"]) == None
+
+
+@responses.activate
+def test_get_instrument_uri(
+    factory,
+    config_dict,
+    instrument_response_dict,
+    search_with_no_uri_dict,
+):
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/instrument",
+        match=[
+            matchers.query_param_matcher(
+                {"pids": search_with_no_uri_dict["instrument"]}
+            )
+        ],
+        status=200,
+        json=(instrument_response_dict),
+    )
+    assert factory.get_instrument_uri(search_with_no_uri_dict["instrument"]) == [
+        "/api/v1/instrument/1/"
+    ]
+
+
+@responses.activate
+def test_get_instrument_uri_fall_back_search(
+    factory,
+    config_dict,
+    instrument_response_dict,
+    search_with_no_uri_dict,
+    response_dict_not_found,
+):
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/instrument",
+        match=[
+            matchers.query_param_matcher(
+                {"pids": search_with_no_uri_dict["instrument"]}
+            )
+        ],
+        status=200,
+        json=(response_dict_not_found),
+    )
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/instrument",
+        match=[
+            matchers.query_param_matcher(
+                {"name": search_with_no_uri_dict["instrument"]}
+            )
+        ],
+        status=200,
+        json=(instrument_response_dict),
+    )
+    assert factory.get_instrument_uri(search_with_no_uri_dict["instrument"]) == [
+        "/api/v1/instrument/1/"
+    ]
+
+
+@responses.activate
+def test_get_instrument_uri_not_found(
+    factory,
+    config_dict,
+    search_with_no_uri_dict,
+    response_dict_not_found,
+):
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/instrument",
+        match=[
+            matchers.query_param_matcher(
+                {"pids": search_with_no_uri_dict["instrument"]}
+            )
+        ],
+        status=200,
+        json=(response_dict_not_found),
+    )
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/instrument",
+        match=[
+            matchers.query_param_matcher(
+                {"name": search_with_no_uri_dict["instrument"]}
+            )
+        ],
+        status=200,
+        json=(response_dict_not_found),
+    )
+    assert factory.get_instrument_uri(search_with_no_uri_dict["instrument"]) == None
