@@ -84,13 +84,21 @@ class Overseer:
         try:
             response = self.rest_factory.mytardis_api_request("GET", url)
         except HTTPError as error:
-            logger.exception("Failed HTTP request from Overseer.get_mytardis_set_up")
+            logger.error(
+                "Failed HTTP request from Overseer.get_mytardis_set_up", exc_info=True
+            )
             raise error
         except Exception as error:
-            logger.exception("Non-HTTP exception in Overseer.get_mytardis_set_up")
+            logger.error(
+                "Non-HTTP exception in Overseer.get_mytardis_set_up", exc_info=True
+            )
             raise error
         response_dict = response.json()
         if response_dict == {} or response_dict["objects"] == []:
+            logger.error(
+                "MyTardis introspection did not return any data when called from "
+                "Overseer.get_mytardis_set_up"
+            )
             raise ValueError(
                 (
                     "MyTardis introspection did not return any data when called from "
@@ -123,7 +131,10 @@ class Overseer:
         return return_dict
 
     def get_objects(
-        self, object_type: str, search_target: str, search_string: str
+        self,
+        object_type: str,
+        search_target: str,
+        search_string: str,
     ) -> Union[list, None]:
         """Gets a list of objects matching the search parameters passed
 

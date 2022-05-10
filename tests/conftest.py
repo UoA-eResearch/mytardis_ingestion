@@ -262,6 +262,22 @@ def tidied_datafile_dictionary():
 
 
 @fixture
+def mytardis_setup_dict():
+    return {
+        "old_acls": False,
+        "projects_enabled": True,
+        "objects_with_ids": [
+            "dataset",
+            "experiment",
+            "facility",
+            "instrument",
+            "project",
+            "institution",
+        ],
+    }
+
+
+@fixture
 def mytardis_config(config_dict):
     configuration = config_dict
     configuration["projects_enabled"] = True

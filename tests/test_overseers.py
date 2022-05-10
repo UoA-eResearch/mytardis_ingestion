@@ -3,9 +3,23 @@
 """Tests of the Overseer class and its functions"""
 import logging
 
+import mock
+import pytest
 import responses
+from pytest import fixture
+from requests.exceptions import HTTPError
+from responses import matchers
 
 from src.overseers import Overseer
+
+from .conftest import (
+    config_dict,
+    institution_response_dict,
+    introspection_response_dict,
+    mytardis_setup_dict,
+    project_response_dict,
+    response_dict_not_found,
+)
 
 # from requests import Response
 
@@ -13,12 +27,18 @@ from src.overseers import Overseer
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
-config_dict = {
-    "username": "Test User",
-    "api_key": "Test API Key",
-    "hostname": "https://test.mytardis.nectar.auckland.ac.nz",
-    "verify_certificate": True,
-}
+
+@fixture
+@responses.activate
+def overseer(config_dict, introspection_response_dict):
+    responses.add(
+        responses.GET,
+        "https://test.mytardis.nectar.auckland.ac.nz/api/v1/introspection",
+        json=(introspection_response_dict),
+        status=200,
+    )
+
+    return Overseer(config_dict)
 
 
 def test_staticmethod_resource_uri_to_id():
@@ -27,68 +47,129 @@ def test_staticmethod_resource_uri_to_id():
 
 
 @responses.activate
-def test_get_uris():
-    institution_response_dict = {
-        "meta": {
-            "limit": 20,
-            "next": None,
-            "offset": 0,
-            "previous": None,
-            "total_count": 1,
-        },
-        "objects": [
-            {
-                "address": "words",
-                "aliases": 1,
-                "alternate_ids": ["fruit", "apples"],
-                "country": "NZ",
-                "name": "University of Auckland",
-                "persistent_id": "Uni ROR",
-                "resource_uri": "/api/v1/institution/1/",
-            }
-        ],
-    }
-    introspection_response_dict = {
-        "meta": {
-            "limit": 20,
-            "next": None,
-            "offset": 0,
-            "previous": None,
-            "total_count": 1,
-        },
-        "objects": [
-            {
-                "experiment_only_acls": False,
-                "identified_objects": [
-                    "dataset",
-                    "experiment",
-                    "facility",
-                    "instrument",
-                    "project",
-                    "institution",
-                ],
-                "identifiers_enabled": True,
-                "profiled_objects": [],
-                "profiles_enabled": False,
-                "projects_enabled": True,
-                "resource_uri": "/api/v1/introspection/None/",
-            }
-        ],
-    }
+def test_get_mytardis_setup(
+    config_dict,
+    overseer,
+    introspection_response_dict,
+    mytardis_setup_dict,
+):
     responses.add(
         responses.GET,
-        "https://test.mytardis.nectar.auckland.ac.nz/api/v1/institution",
-        json=(institution_response_dict),
-        status=200,
-    )
-    responses.add(
-        responses.GET,
-        "https://test.mytardis.nectar.auckland.ac.nz/api/v1/introspection",
+        f"{config_dict['hostname']}/api/v1/introspection",
         json=(introspection_response_dict),
         status=200,
     )
 
-    test_overseer = Overseer(config_dict)
-    assert test_overseer.get_uris("institution", "pids", "Uni ROR") == [
-        "/api/v1/institution/1/"
-    ]
+    assert overseer.get_mytardis_set_up() == mytardis_setup_dict
+
+
+@responses.activate
+def test_get_mytardis_setup_http_error(
+    caplog,
+    config_dict,
+    overseer,
+):
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/introspection",
+        status=504,
+    )
+    caplog.set_level(logging.ERROR)
+    error_str = "Failed HTTP request from Overseer.get_mytardis_set_up"
+    with pytest.raises(HTTPError):
+        _ = overseer.get_mytardis_set_up()
+        assert error_str in caplog.text
+
+
+@mock.patch("src.helpers.mt_rest.MyTardisRESTFactory.mytardis_api_request")
+def test_get_mytardis_setup_general_error(mock_mytardis_api_request, caplog, overseer):
+    mock_mytardis_api_request.side_effect = IOError()
+    error_str = "Non-HTTP exception in Overseer.get_mytardis_set_up"
+    with pytest.raises(IOError):
+        _ = overseer.get_mytardis_set_up()
+        assert error_str in caplog.text
+
+
+@responses.activate
+def test_get_mytardis_setup_no_objects(
+    caplog,
+    config_dict,
+    overseer,
+    response_dict_not_found,
+):
+
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/introspection",
+        json=(response_dict_not_found),
+        status=200,
+    )
+    caplog.set_level(logging.ERROR)
+    error_str = (
+        "MyTardis introspection did not return any data when called from "
+        "Overseer.get_mytardis_set_up"
+    )
+    with pytest.raises(ValueError, match=error_str):
+        _ = overseer.get_mytardis_set_up()
+        assert error_str in caplog.text
+
+
+@responses.activate
+def test_get_mytardis_setup_too_many_objects(
+    caplog,
+    config_dict,
+    overseer,
+    introspection_response_dict,
+):
+    test_dict = introspection_response_dict
+    test_dict["objects"].append("Some Fake Data")
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/introspection",
+        json=(test_dict),
+        status=200,
+    )
+    caplog.set_level(logging.ERROR)
+    log_error_str = (
+        "MyTardis introspection returned more than one object when called from "
+        "Overseer.get_mytardis_set_up\n"
+        f"Returned response was: {test_dict}"
+    )
+    error_str = (
+        "MyTardis introspection returned more than one object when called from "
+        "Overseer.get_mytardis_set_up"
+    )
+    with pytest.raises(ValueError, match=error_str):
+        _ = overseer.get_mytardis_set_up()
+        assert log_error_str in caplog.text
+
+
+@responses.activate
+def test_get_object(
+    config_dict,
+    overseer,
+    project_response_dict,
+):
+    object_type = "project"
+    search_target = "pids"
+    search_string = "Project_1"
+    responses.add(
+        responses.GET,
+        f"{config_dict['hostname']}/api/v1/{object_type}",
+        json=(project_response_dict),
+        match=[
+            matchers.query_param_matcher(
+                {search_target: search_string},
+            ),
+        ],
+        status=200,
+    )
+
+    assert (
+        overseer.get_objects(
+            object_type,
+            search_target,
+            search_string,
+        )
+        == project_response_dict["objects"]
+    )
