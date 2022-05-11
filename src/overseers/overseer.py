@@ -4,6 +4,7 @@ for the Forge class."""
 
 import logging
 import os
+import re
 from typing import Union
 from urllib.parse import urljoin, urlparse
 
@@ -159,23 +160,25 @@ class Overseer:
                 "GET", url, params=query_params
             )
         except HTTPError:
-            logger.exception(
+            logger.warning(
                 (
                     "Failed HTTP request from Overseer.get_objects call\n"
                     f"object_type = {object_type}\n"
                     f"search_target = {search_target}\n"
-                    f"serach_string = {search_string}"
-                )
+                    f"search_string = {search_string}"
+                ),
+                exc_info=True,
             )
             return None
         except Exception as error:
-            logger.exception(
+            logger.error(
                 (
                     "Non-HTTP exception in Overseer.get_objects call\n"
                     f"object_type = {object_type}\n"
                     f"search_target = {search_target}\n"
-                    f"serach_string = {search_string}"
-                )
+                    f"search_string = {search_string}"
+                ),
+                exc_info=True,
             )
             raise error
         response_dict = response.json()
@@ -205,8 +208,15 @@ class Overseer:
             for obj in objects:
                 try:
                     uri = obj["resource_uri"]
-                except KeyError:
-                    uri = None
+                except KeyError as error:
+                    logger.error(
+                        (
+                            "Malformed return from MyTardis. No resource_uri found for "
+                            f"{object_type} searching on {search_target} with {search_string}"
+                        ),
+                        exc_info=True,
+                    )
+                    raise error
                 except Exception as error:
                     raise error
                 return_list.append(uri)
@@ -225,8 +235,14 @@ class Overseer:
         Returns:
            True if the test string is formatted correctly for URIs, False otherwise
         """
-        if uri_string.startswith(f"/api/v1/{object_type}/"):
-            return True
+        regex_pattern = rf"^/api/v1/{object_type}/\d*/$"
+        try:
+            if re.match(regex_pattern, uri_string):
+                return True
+        except TypeError:
+            return False
+        except Exception as error:
+            raise error
         return False
 
     def get_uris_by_identifier(
