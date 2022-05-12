@@ -187,7 +187,10 @@ class Overseer:
         return response_dict["objects"]
 
     def get_uris(
-        self, object_type: str, search_target: str, search_string: str
+        self,
+        object_type: str,
+        search_target: str,
+        search_string: str,
     ) -> Union[list, None]:
         """Calls self.get_objects() to get a list of objects matching search then extracts URIs
 

@@ -106,6 +106,8 @@ class Smelter(ABC):
             to create the object in MyTardis, and a parameter dictionary containing the
             additional metadata.
         """
+        if isinstance(object_keys, str):
+            object_keys = [object_keys]
         object_dict = {}
         parameter_dict = {}
         schema = cleaned_dict.pop("schema")
@@ -136,6 +138,12 @@ class Smelter(ABC):
         Returns:
             A list of tuples containing the access controls.
         """
+        if isinstance(combined_names, str):
+            combined_names = [combined_names]
+        if isinstance(download_names, str):
+            combined_names = [download_names]
+        if isinstance(sensitive_names, str):
+            combined_names = [sensitive_names]
         return_list = []
         for name in combined_names:
             download = False

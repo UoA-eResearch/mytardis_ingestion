@@ -184,6 +184,19 @@ def test_set_access_control():
     )
 
 
+def test_set_access_control_strings():
+    combined_names = "user1"
+    download_names = "user1"
+    sensitive_names = "user1"
+    expected_output = [
+        ("user1", False, True, True),
+    ]
+    assert (
+        Smelter.set_access_controls(combined_names, download_names, sensitive_names)
+        == expected_output
+    )
+
+
 def test_verify_project_with_bad_dictionary(
     caplog,
     smelter,
