@@ -21,20 +21,13 @@ from src.helpers import (
 )
 from src.helpers.mt_rest import MyTardisAuth
 
+from .conftest import config_dict
+
 KB = 1024
 MB = KB**2
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
-
-config_dict = {
-    "username": "Test_User",
-    "api_key": "Test_API_Key",
-    "hostname": "https://test.mytardis.nectar.auckland.ac.nz",
-    "verify_certificate": True,
-    "proxy_http": "http://myproxy.com",
-    "proxy_https": "http://myproxy.com",
-}
 
 test_dict = {"key1": "data1", "key2": "data2", "key3": "data3"}
 good_keys = ["key1", "key2"]
@@ -69,6 +62,15 @@ def test_sanity_checker_bad():
         sanity_check("Bad_Test", test_dict, bad_keys)
 
 
+def test_santity_checekr_str_not_list():
+    assert sanity_check("Good Test", test_dict, "key1")
+
+
+def test_sanity_checker_bad_str_not_list():
+    with pytest.raises(SanityCheckError):
+        sanity_check("Bad_Test", test_dict, "key4")
+
+
 @pytest.mark.dependency()
 def test_read_json(datadir):  # pylint: disable=redefined-outer-name
     test_file = Path(datadir / "known.json")
@@ -82,7 +84,7 @@ def test_write_json(datadir):  # pylint: disable=redefined-outer-name
     assert read_json(output_file) == json_dict
 
 
-def test_mytardis_auth_header_injection():
+def test_mytardis_auth_header_injection(config_dict):
     test_auth = MyTardisAuth(
         username=config_dict["username"], api_key=config_dict["api_key"]
     )
@@ -93,7 +95,7 @@ def test_mytardis_auth_header_injection():
     }
 
 
-def test_mytardis_rest_factory_setup():
+def test_mytardis_rest_factory_setup(config_dict):
     test_factory = MyTardisRESTFactory(config_dict)
     test_auth = MyTardisAuth(
         username=config_dict["username"], api_key=config_dict["api_key"]
@@ -115,6 +117,7 @@ def test_mytardis_rest_factory_setup():
 @mock.patch("requests.request")
 def test_backoff_on_mytardis_rest_factory_doesnt_trigger_on_httperror(
     mock_requests_request,
+    config_dict,
 ):
     mock_response = Response()
     mock_response.status_code = 504
@@ -126,7 +129,10 @@ def test_backoff_on_mytardis_rest_factory_doesnt_trigger_on_httperror(
 
 
 @mock.patch("requests.request")
-def test_backoff_on_mytardis_rest_factory(mock_requests_request):
+def test_backoff_on_mytardis_rest_factory(
+    mock_requests_request,
+    config_dict,
+):
     backoff_max_tries = 8
     # See backoff decorator on the mytardis_api_request function in MyTardisRESTFactory
     mock_response = Response()

@@ -235,6 +235,8 @@ class IngestionFactory(ABC):
                     )
                     name = object_dict["title"]
                     project_id = object_dict["projects"]
+                    if isinstance(project_id, str):
+                        project_id = [project_id]
                     project_uris = []
                     for project in project_id:
                         project_uris.append(self.get_project_uri(project))
@@ -276,6 +278,8 @@ class IngestionFactory(ABC):
                     )
                     name = object_dict["description"]
                     experiments = object_dict["experiments"]
+                    if isinstance(experiments, str):
+                        experiments = [experiments]
                     experiment_uris = []
                     for experiment in experiments:
                         experiment_uris.append(self.get_experiment_uri(experiment))

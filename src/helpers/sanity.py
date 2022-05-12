@@ -20,6 +20,8 @@ def sanity_check(dictionary_name: str, input_dict: dict, required_keys: list) ->
     Raises:
         SanityCheckError: if there are missing keys
     """
+    if isinstance(required_keys, str):
+        required_keys = [required_keys]
     if not required_keys - input_dict.keys():
         return True
     missing_keys = list(required_keys - input_dict.keys())
