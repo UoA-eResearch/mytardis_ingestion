@@ -1,0 +1,14 @@
+---
+dataset_name: Test Dataset
+experiment_id:
+  - Experiment_1
+  - Test_Experiment
+dataset_id: Dataset_1
+alternate_ids:
+  - Test_Dataset
+  - Dataset_Test_1
+instrument_id: Instrument_1
+metadata:
+  My Test Key 1: Test Value
+  My Test Key 2: Test Value 2
+

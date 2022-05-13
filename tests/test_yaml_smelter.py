@@ -1,5 +1,6 @@
 # import pytest
 
+from src.smelters import YAMLSmelter
 import logging
 import shutil
 from pathlib import Path
@@ -13,7 +14,6 @@ from .conftest import config_dict, datadir, raw_project_dictionary
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
-from src.smelters import YAMLSmelter
 
 test_malformed_ingestion_dict_no_object = {"project_files": "some-data"}
 
@@ -67,14 +67,10 @@ def project_dictionary_from_yaml_file():
 
 @pytest.mark.dependency()
 def test_tidy_up_metadata_keys(smelter, raw_project_dictionary):
-    cleaned_dict = smelter._tidy_up_metadata_keys(raw_project_dictionary, "project")
+    cleaned_dict = smelter._tidy_up_metadata_keys(
+        raw_project_dictionary, "project")
     assert cleaned_dict["project_my_test_key_1"] == "Test Value"
     assert cleaned_dict["project_my_test_key_2"] == "Test Value 2"
-
-
-def test_get_file_type_for_input_files(YAML_config_dict):
-    smelter = YAMLSmelter(YAML_config_dict)
-    assert smelter.get_file_type_for_input_files() == "*.yaml"
 
 
 @mock.patch("src.smelters.yaml_smelter.YAMLSmelter.read_file")
@@ -134,7 +130,8 @@ def test_get_objects_in_input_file_with_two_objects(
 @pytest.mark.dependency()
 def test_read_file(datadir, smelter, project_dictionary_from_yaml_file):
     input_file = Path(datadir / "test_project.yaml")
-    assert smelter.read_file(input_file) == (project_dictionary_from_yaml_file,)
+    assert smelter.read_file(input_file) == (
+        project_dictionary_from_yaml_file,)
 
 
 @pytest.mark.dependency(depends=["test_read_file"])
@@ -172,7 +169,8 @@ def test_rebase_file_path(datadir, smelter):
 
 
 @pytest.mark.dependency(
-    depends=["test_read_file", "test_tidy_up_metadata_keys", "test_rebase_file_path"]
+    depends=["test_read_file", "test_tidy_up_metadata_keys",
+             "test_rebase_file_path"]
 )
 def test_expand_datafile_entry(datadir, smelter):
     input_file = Path(datadir / "test_datafile.yaml")
@@ -271,3 +269,25 @@ def test_get_object_from_dictionary(smelter):
     assert smelter.get_object_from_dictionary(experiment_dict) == "experiment"
     assert smelter.get_object_from_dictionary(dataset_dict) == "dataset"
     assert smelter.get_object_from_dictionary(datafile_dict) == "datafile"
+
+
+def test_get_input_file_paths(datadir, smelter):
+    def as_posix(path: Path): return path.as_posix()
+    file_list = list(map(
+        as_posix,
+        [
+            Path(datadir / "test_datafile.yaml"),
+            Path(datadir / "Pathtest_datafile.yml"),
+            Path(datadir / "test_dataset.yaml"),
+            Path(datadir / "test_dataset.yml"),
+            Path(datadir / "test_experiment.yaml"),
+            Path(datadir / "test_experiment.yml"),
+            Path(datadir / "test_mixed.yaml"),
+            Path(datadir / "test_mixed.yml"),
+            Path(datadir / "test_project.yaml"),
+            Path(datadir / "test_project.yml")
+        ]
+    ))
+    path_list = list(map(as_posix, smelter.get_input_file_paths(datadir)))
+    assert len(path_list) == len(file_list)
+    assert path_list.sort() == file_list.sort()
