@@ -184,7 +184,8 @@ class Smelter(ABC):
                     cleaned_dict["principal_investigator"]
                 )
             else:
-                cleaned_dict["admin_users"] = [cleaned_dict["principal_investigator"]]
+                cleaned_dict["admin_users"] = [
+                    cleaned_dict["principal_investigator"]]
         if "admin_users" in cleaned_dict.keys():
             for user in set(cleaned_dict.pop("admin_users")):
                 users.append((user, True, True, True))
@@ -218,7 +219,8 @@ class Smelter(ABC):
         combined_users = set(read_users + download_users + sensitive_users)
         combined_groups = set(read_groups + download_groups + sensitive_groups)
         users.extend(
-            Smelter.set_access_controls(combined_users, download_users, sensitive_users)
+            Smelter.set_access_controls(
+                combined_users, download_users, sensitive_users)
         )
         groups.extend(
             Smelter.set_access_controls(
@@ -577,7 +579,8 @@ class Smelter(ABC):
         cleaned_dict = self._create_replica(cleaned_dict)
         if not Smelter._verify_datafile(cleaned_dict):
             return (None, None)
-        object_dict, parameter_dict = self._smelt_object(object_keys, cleaned_dict)
+        object_dict, parameter_dict = self._smelt_object(
+            object_keys, cleaned_dict)
         return (object_dict, parameter_dict)
 
     @staticmethod
@@ -628,7 +631,8 @@ class Smelter(ABC):
         """
         uri = cleaned_dict.pop("file_path")
         location = self.storage_box
-        replica = {"uri": uri.as_posix(), "location": location, "protocol": "file"}
+        replica = {"uri": uri.as_posix(), "location": location,
+                   "protocol": "file"}
         cleaned_dict["replicas"] = [replica]
         return cleaned_dict
 
@@ -665,12 +669,22 @@ class Smelter(ABC):
         """Placeholder function"""
         return {}
 
-    @abstractmethod  # pragma: no cover
-    def get_file_type_for_input_files(self) -> str:  # pragma: no cover
-        """Function to return a string that can be used by Path.glob() to
-        get all of the input files in a directory"""
+    @abstractmethod
+    def get_input_file_paths(self, file_path: Path) -> list[Path]:  # pragma: no cover
+        """
+        Function to return a list of Paths containing all the relevant input
+        files in the directory
 
-        return ""  # pragma: no cover
+        Args:
+            file_path: a Path object pointing to the directory containing the
+            relevant input files
+
+        Returns:
+            A list of Path objects, each element pointing to one possible input
+            file
+        """
+
+        return [Path()]
 
     @abstractmethod  # pragma: no cover
     def get_objects_in_input_file(self, file_path: Path) -> tuple:  # pragma: no cover
