@@ -416,36 +416,6 @@ def test_get_uris_general_error(
         )
 
 
-def test_is_uri_true():
-    object_type = "project"
-    uri_string = f"/api/v1/{object_type}/1/"
-    assert Overseer.is_uri(uri_string, object_type)
-
-
-def test_is_uri_false_text_before_uri():
-    object_type = "project"
-    uri_string = f"http://test.com/api/v1/{object_type}/1/"
-    assert Overseer.is_uri(uri_string, object_type) is False
-
-
-def test_is_uri_false_text_after_uri():
-    object_type = "project"
-    uri_string = f"/api/v1/{object_type}/1/edit/"
-    assert Overseer.is_uri(uri_string, object_type) is False
-
-
-def test_is_uri_false():
-    object_type = "project"
-    uri_string = "Some other text"
-    assert Overseer.is_uri(uri_string, object_type) is False
-
-
-def test_is_uri_int_not_string():
-    object_type = "project"
-    uri_string = 1
-    assert Overseer.is_uri(uri_string, object_type) is False
-
-
 @responses.activate
 def test_get_uris_by_identifier(
     config_dict,

@@ -1,14 +1,18 @@
-# pylint: disable=consider-using-set-comprehension
+# pylint: disable=consider-using-set-comprehension,logging-fstring-interpolation
 """IngestionFactory is a base class for specific instances of MyTardis
 Ingestion scripts. The base class contains mostly concrete functions but
 needs to determine the Smelter class that is used by the Factory"""
 
+import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union
 
 from src.forges import Forge
+from src.helpers import is_uri
 from src.overseers import Overseer
+
+logger = logging.getLogger(__name__)
 
 
 class IngestionFactory(ABC):
@@ -106,7 +110,7 @@ class IngestionFactory(ABC):
             key_name = object_type
         objects: Union[list, None] = []
         if key_name in cleaned_dict.keys():
-            if not Overseer.is_uri(cleaned_dict[key_name], object_type):
+            if not is_uri(cleaned_dict[key_name], object_type):
                 if object_type in self.mytardis_setup["objects_with_ids"]:
                     objects = self.overseer.get_uris_by_identifier(
                         object_type, cleaned_dict[key_name]
@@ -218,6 +222,25 @@ class IngestionFactory(ABC):
                             )
                         )
         return return_list
+
+    def process_object(self, parsed_dict: dict) -> tuple:
+        """Placeholder for now"""
+        object_type = self.smelter.get_object_from_dictionary(parsed_dict)
+        if object_type is None:
+            logger.warning(
+                "The dictionary passed to be processed is not recognised as a "
+                "MyTardis input dictionary\nThe dictionary in question is: "
+                f"{parsed_dict}"
+            )
+            return (None, None)
+        smelter_functions = {
+            "project": self.smelter.smelt_project,
+            "experiment": self.smelter.smelt_experiment,
+            "dataset": self.smelter.smelt_dataset,
+            "datafile": self.smelter.smelt_datafile,
+        }
+        print(smelter_functions)
+        return (None, None)
 
     def process_experiments(  # pylint: disable=too-many-locals
         self, file_path: Path
