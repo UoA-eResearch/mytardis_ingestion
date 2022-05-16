@@ -1,4 +1,4 @@
-# pylint: disable=logging-fstring-interpolation,consider-iterating-dictionary
+# pylint: disable=logging-fstring-interpolation,consider-iterating-dictionary,pointless-string-statement
 """Smelter base class. A class that provides functions to split input dictionaries into
 dictionaries suited to be passed into an instance of the Forge class for creating
 objects in MyTardis."""
@@ -59,8 +59,8 @@ class Smelter(ABC):
             self.default_institution = mytardis_config["default_institution"]
         except KeyError:
             self.default_institution = None
-        self.mount_dir = Path(mytardis_config["mount_directory"])
-        self.remote_dir = Path(mytardis_config["remote_directory"])
+        self.source_dir = Path(mytardis_config["source_directory"])
+        self.target_dir = Path(mytardis_config["target_directory"])
         self.storage_box = mytardis_config["storage_box"]
 
     def tidy_up_dictionary_keys(self, parsed_dict: dict) -> tuple:
@@ -687,11 +687,11 @@ class Smelter(ABC):
 
         return tuple()  # pragma: no cover
 
-    @abstractmethod  # pragma: no cover
+    '''@abstractmethod  # pragma: no cover
     def rebase_file_path(self, parsed_dict: dict) -> dict:  # pragma: no cover
         """Function to fix up the file path to take into account where it is
         mounted."""
-        return parsed_dict  # pragma: no cover
+        return parsed_dict  # pragma: no cover'''
 
     @abstractmethod  # pragma: no cover
     def expand_datafile_entry(self, parsed_dict) -> list:  # pragma: no cover

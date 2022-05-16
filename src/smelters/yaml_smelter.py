@@ -1,4 +1,4 @@
-# pylint: disable=logging-fstring-interpolation
+# pylint: disable=logging-fstring-interpolation,pointless-string-statement
 """YAML smelter. A class that processes YAML files into dictionaries suitable to be passed to an
 instance of the Forge class for creating objects in MyTardis."""
 
@@ -159,20 +159,18 @@ class YAMLSmelter(Smelter):
             return_list.append(dictionary)
         return tuple(return_list)
 
-    def rebase_file_path(self, parsed_dict: dict) -> dict:
+    '''def rebase_file_path(self, parsed_dict: dict) -> dict:
         """Function to redirect the file path to account for the directory
         that the research drive is mounted on"""
         cleaned_dict = deepcopy(parsed_dict)
         cleaned_dict["datafiles"]["files"] = []
         for file_path in parsed_dict["datafiles"]["files"]:
-            remote_path = Path(file_path["name"])
-            mounted_path = self.mount_dir / remote_path.relative_to(self.remote_dir)
             file_dict = {}
             if "metadata" in file_path.keys():
                 file_dict["metadata"] = file_path["metadata"]
-            file_dict["name"] = mounted_path
+            file_dict["name"] = Path(file_path["name"])
             cleaned_dict["datafiles"]["files"].append(file_dict)
-        return cleaned_dict
+        return cleaned_dict'''
 
     def expand_datafile_entry(  # pylint: disable=too-many-nested-blocks
         self, parsed_dict: dict
@@ -205,7 +203,7 @@ class YAMLSmelter(Smelter):
                         cleaned_dict["md5sum"] = Smelter.get_file_checksum(filename)
                         cleaned_dict["size"] = filename.stat().st_size
                         cleaned_dict["file_path"] = Path(filename).relative_to(
-                            self.mount_dir
+                            self.source_dir
                         )
                         cleaned_dict = self._create_replica(cleaned_dict)
                         file_list.append(cleaned_dict)
@@ -221,7 +219,7 @@ class YAMLSmelter(Smelter):
                 cleaned_dict["md5sum"] = Smelter.get_file_checksum(file_dict["name"])
                 cleaned_dict["size"] = file_dict["name"].stat().st_size
                 cleaned_dict["file_path"] = Path(file_dict["name"]).relative_to(
-                    self.mount_dir
+                    self.source_dir
                 )
                 cleaned_dict = self._create_replica(cleaned_dict)
                 file_list.append(cleaned_dict)

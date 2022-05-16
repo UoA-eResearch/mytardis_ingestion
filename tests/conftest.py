@@ -32,8 +32,8 @@ def config_dict():
         "verify_certificate": True,
         "proxy_http": "http://myproxy.com",
         "proxy_https": "http://myproxy.com",
-        "remote_directory": "/remote/path",
-        "mount_directory": "/mount/path",
+        "source_directory": "/source/path",
+        "target_directory": "/target/path",
         "storage_box": "Test_storage_box",
         "default_institution": "Test Institution",
         "default_schema": {
@@ -209,9 +209,9 @@ def raw_datafile_dictionary():
     return {
         "dataset": ["Dataset_1"],
         "filename": "test_data.dat",
-        "file_path": Path("/mount/remote/test_data.dat"),
+        "file_path": Path("/source/path/test_data.dat"),
         "md5sum": "0d32909e86e422d04a053d1ba26a990e",
-        "full_path": "/mount/remote/test_data.dat",
+        "full_path": "/source/path/test_data.dat",
         "metadata": {
             "My Test Key 1": "Test Value",
             "My Test Key 2": "Test Value 2",
@@ -621,7 +621,7 @@ def storage_box_response_dict():
                     "id": 1,
                     "key": "location",
                     "resource_uri": "/api/v1/storageboxoption/1/",
-                    "value": "/remote/path",
+                    "value": "/target/path",
                     "value_type": "string",
                 },
                 "resource_uri": "/api/v1/storagebox/1/",
