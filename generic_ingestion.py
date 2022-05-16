@@ -37,8 +37,8 @@ config_dict = {
         "dataset": "https://test.com/dataset/v1",
         "datafile": "https://test.com/datafile/v1",
     },
-    "mount_directory": "Directory path to where the data files are mounted",
-    "remote_directory": "Directory stub to the file",
+    "source_directory": "Directory path to where the data files are mounted",
+    "target_directory": "Directory stub to the file target in MyTardis",
     "storage_box": "MyTardis storage pathe",
 }
 yaml_path = Path("path to YAML files")
@@ -62,10 +62,10 @@ for datafile_file in datafile_files:
     for dictionary in factory.smelter.read_file(datafile_file):
         for filename in dictionary["datafiles"]["files"]:
             raw_path = Path(filename["name"]).relative_to(
-                Path("Root directory of the remote host")
+                Path("Root directory of the source host")
             )
             file_path = (  # pylint: disable=invalid-name
-                Path("mount directory").as_posix() + "/./" + raw_path.as_posix()
+                Path("target directory").as_posix() + "/./" + raw_path.as_posix()
             )
             target_path = Path("root directory of MyTardis storage") / raw_path
             command_string = (
