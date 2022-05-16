@@ -339,11 +339,10 @@ class IngestionFactory(ABC):
             for parsed_dict in parsed_dictionaries:
                 object_type = self.smelter.get_object_from_dictionary(parsed_dict)
                 if object_type == "datafile":
-                    cleaned_dict = self.smelter.rebase_file_path(parsed_dict)
-                    cleaned_dict["datafiles"]["dataset_id"] = self.get_dataset_uri(
-                        cleaned_dict["datafiles"]["dataset_id"]
+                    parsed_dict["datafiles"]["dataset_id"] = self.get_dataset_uri(
+                        parsed_dict["datafiles"]["dataset_id"]
                     )
-                    cleaned_list = self.smelter.expand_datafile_entry(cleaned_dict)
+                    cleaned_list = self.smelter.expand_datafile_entry(parsed_dict)
                     for cleaned_dict in cleaned_list:
                         name = cleaned_dict["filename"]
                         object_dict, parameter_dict = self.smelter.smelt_datafile(
