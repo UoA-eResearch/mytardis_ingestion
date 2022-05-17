@@ -187,8 +187,18 @@ class YAMLSmelter(Smelter):
         """
         file_list = []
         for file_dict in parsed_dict["datafiles"]["files"]:
-            if not file_dict["name"].is_file():
-                for filename in file_dict["name"].iterdir():
+            try:
+                file_dict["file_path"] = Path(file_dict["file_path"])
+            except KeyError:
+                logger.warning(
+                    (
+                        "Parsed datafile dictionary is missing a 'file_path' field. "
+                        f"The dictionary passed in was {file_dict}."
+                    )
+                )
+                continue
+            if not file_dict["file_path"].is_file():
+                for filename in file_dict["file_path"].iterdir():
                     if filename.is_file():
                         cleaned_dict = {}
                         cleaned_dict["dataset"] = parsed_dict["datafiles"][
@@ -214,11 +224,13 @@ class YAMLSmelter(Smelter):
                     for key in file_dict["metadata"].keys():
                         cleaned_dict[key] = file_dict["metadata"][key]
                 cleaned_dict["filename"] = Smelter.get_filename_from_filepath(
-                    file_dict["name"]
+                    file_dict["file_path"]
                 )
-                cleaned_dict["md5sum"] = Smelter.get_file_checksum(file_dict["name"])
-                cleaned_dict["size"] = file_dict["name"].stat().st_size
-                cleaned_dict["file_path"] = Path(file_dict["name"]).relative_to(
+                cleaned_dict["md5sum"] = Smelter.get_file_checksum(
+                    file_dict["file_path"]
+                )
+                cleaned_dict["size"] = file_dict["file_path"].stat().st_size
+                cleaned_dict["file_path"] = Path(file_dict["file_path"]).relative_to(
                     self.source_dir
                 )
                 cleaned_dict = self._create_replica(cleaned_dict)
