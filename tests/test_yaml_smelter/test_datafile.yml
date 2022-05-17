@@ -14,8 +14,8 @@ datafiles:
     - Test-dataset
   # schema: <value> - un-comment if multiple schema have been defined and set the appropriate type of schema
   files:
-    - name: /remote/path/test_data.dat
+    - file_path: ./test_data.dat
       metadata:
           My Test Key 1: Test Value
           My Test Key 2: Test Value 2
-    - name: /remote/path/test_data2.dat
+    - file_path: ./test_data2.dat

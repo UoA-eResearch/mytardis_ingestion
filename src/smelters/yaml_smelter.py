@@ -104,7 +104,11 @@ class YAMLSmelter(Smelter):
             A list of Path objects, one for each yaml file contained in file_path
         """
 
-        return [input_path for generator in (file_path.rglob("*.yml"), file_path.rglob("*.yaml")) for input_path in generator]
+        return [
+            input_path
+            for generator in (file_path.rglob("*.yml"), file_path.rglob("*.yaml"))
+            for input_path in generator
+        ]
 
     def get_objects_in_input_file(self, file_path: Path) -> tuple:
         """Takes a file path for a YAML file and returns a tuple of object types contained with the
@@ -123,8 +127,7 @@ class YAMLSmelter(Smelter):
         object_types: list = []
         parsed_dictionaries = self.read_file(file_path)
         for parsed_dict in parsed_dictionaries:
-            object_type_key = list(
-                set(parsed_dict).intersection(self.OBJECT_TYPES))
+            object_type_key = list(set(parsed_dict).intersection(self.OBJECT_TYPES))
             if len(object_type_key) == 0:
                 logger.warning(
                     f"File {file_path} was not recognised as a MyTardis ingestion file"
@@ -197,8 +200,9 @@ class YAMLSmelter(Smelter):
         """
         file_list = []
         for file_dict in parsed_dict["datafiles"]["files"]:
-            if not file_dict["name"].is_file():
-                for filename in file_dict["name"].iterdir():
+            file_dict["file_path"] = Path(file_dict["file_path"])
+            if not file_dict["file_path"].is_file():
+                for filename in file_dict["file_path"].iterdir():
                     if filename.is_file():
                         cleaned_dict = {}
                         cleaned_dict["dataset"] = parsed_dict["datafiles"][
@@ -210,13 +214,11 @@ class YAMLSmelter(Smelter):
                         cleaned_dict["filename"] = Smelter.get_filename_from_filepath(
                             filename
                         )
-                        cleaned_dict["md5sum"] = Smelter.get_file_checksum(
-                            filename)
+                        cleaned_dict["md5sum"] = Smelter.get_file_checksum(filename)
                         cleaned_dict["size"] = filename.stat().st_size
                         cleaned_dict["file_path"] = Path(filename).relative_to(
                             self.source_dir
                         )
-                        cleaned_dict = self._create_replica(cleaned_dict)
                         file_list.append(cleaned_dict)
             else:
                 cleaned_dict = {}
@@ -225,15 +227,15 @@ class YAMLSmelter(Smelter):
                     for key in file_dict["metadata"].keys():
                         cleaned_dict[key] = file_dict["metadata"][key]
                 cleaned_dict["filename"] = Smelter.get_filename_from_filepath(
-                    file_dict["name"]
+                    file_dict["file_path"]
                 )
                 cleaned_dict["md5sum"] = Smelter.get_file_checksum(
-                    file_dict["name"])
-                cleaned_dict["size"] = file_dict["name"].stat().st_size
-                cleaned_dict["file_path"] = Path(file_dict["name"]).relative_to(
+                    file_dict["file_path"]
+                )
+                cleaned_dict["size"] = file_dict["file_path"].stat().st_size
+                cleaned_dict["file_path"] = Path(file_dict["file_path"]).relative_to(
                     self.source_dir
                 )
-                cleaned_dict = self._create_replica(cleaned_dict)
                 file_list.append(cleaned_dict)
         return file_list
 

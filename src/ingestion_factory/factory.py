@@ -51,7 +51,7 @@ class IngestionFactory(ABC):
         self.forge = Forge(config_dict)
         self.smelter = self.get_smelter(config_dict)
         self.default_institution = config_dict["default_institution"]
-        self.input_file_list = []
+        self.input_file_list: list = []
 
     @abstractmethod  # pragma: no cover
     def get_smelter(self, config_dict: dict):  # pragma: no cover
@@ -66,7 +66,7 @@ class IngestionFactory(ABC):
     def build_object_dict(
         self,
         input_file_directory: Path,
-        object_types: Union[tuple[str], None] = None,
+        object_types: Union[list, None] = None,
     ) -> dict:
         """Function to iterate through a list of input files and return a dictionary of
         files that have objects defined within them, keyed to the object type
@@ -79,14 +79,14 @@ class IngestionFactory(ABC):
         Returns:
             A list of files that have inputs of type object_type
         """
-        return_dict = {}
+        return_dict: dict = {}
         if not object_types:
-            object_types = (
+            object_types = [
                 "project",
                 "experiment",
                 "dataset",
                 "datafile",
-            )
+            ]
         file_paths = self.smelter.get_input_file_paths(input_file_directory)
         for object_type in object_types:
             return_dict[object_type] = []
@@ -202,8 +202,7 @@ class IngestionFactory(ABC):
     def compare_object_from_mytardis_with_object_dictionary():
         pass
 
-
-     @staticmethod
+    @staticmethod
     def invalid_object_passed_to_process_object(parsed_dict: dict) -> tuple:
         """Handler to create logger warning and return a non-breaking return
         in case a non-MyTardis object is passed to process_object. NB: This should
@@ -216,7 +215,7 @@ class IngestionFactory(ABC):
             A tuple of (None, None) representing the inability of the processing
                 script to handle the invalid object
         """
-        logger.WARNING(
+        logger.warning(
             (
                 "IngestionFactory._process_object was unable to process the parsed "
                 "dictionary due to an invalid object key being extracted from the "
@@ -243,7 +242,7 @@ class IngestionFactory(ABC):
         }
         print(smelter_functions)
         return (None, None)
-    
+
     def process_projects(self, file_path: Path) -> list:
         """Wrapper function to create the projects from input files"""
         project_files = self.build_object_lists(file_path, "project")  # refactor
@@ -270,14 +269,12 @@ class IngestionFactory(ABC):
                         parameter_dict["project"] = uri
                         return_list.append(
                             self.forge.forge_object(
-                                f"{object_dict["name"]} - Parameters",
+                                f"{object_dict['name']} - Parameters",
                                 "projectparameterset",
                                 parameter_dict,
                             )
                         )
         return return_list
-
-   
 
     def process_experiments(  # pylint: disable=too-many-locals
         self, file_path: Path
