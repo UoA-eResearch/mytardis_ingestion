@@ -1,4 +1,4 @@
-# pylint: disable=logging-fstring-interpolation,pointless-string-statement
+# pylint: disable=logging-fstring-interpolation,pointless-string-statement,R0801
 """YAML smelter. A class that processes YAML files into dictionaries suitable to be passed to an
 instance of the Forge class for creating objects in MyTardis."""
 
@@ -79,15 +79,15 @@ class YAMLSmelter(Smelter):
         }
 
     def _tidy_up_metadata_keys(  # pylint: disable=no-self-use
-        self, parsed_dict: dict, object_type: str
+        self,
+        parsed_dict: dict,
     ) -> dict:
         """Function to get rid of spaces and convert human readable metadata keys to snakecase"""
         cleaned_dict = deepcopy(parsed_dict)
         if "metadata" in parsed_dict.keys():
             for key in parsed_dict["metadata"].keys():
                 value = cleaned_dict["metadata"].pop(key)
-                new_key = object_type + "_" + key.replace(" ", "_").lower()
-                cleaned_dict[new_key] = value
+                cleaned_dict[key] = value
             cleaned_dict.pop("metadata")
         return cleaned_dict
 

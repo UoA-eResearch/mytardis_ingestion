@@ -73,7 +73,7 @@ def project_dictionary_from_yaml_file():
 @pytest.mark.dependency()
 def test_tidy_up_metadata_keys(smelter, raw_project_dictionary):
     cleaned_dict = smelter._tidy_up_metadata_keys(  # pylint: disable=protected-access
-        raw_project_dictionary, "project"
+        raw_project_dictionary,
     )
     assert cleaned_dict["project_my_test_key_1"] == "Test Value"  # nosec
     assert cleaned_dict["project_my_test_key_2"] == "Test Value 2"  # nosec
