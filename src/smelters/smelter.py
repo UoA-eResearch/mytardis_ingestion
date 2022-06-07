@@ -1,4 +1,5 @@
 # pylint: disable=logging-fstring-interpolation,consider-iterating-dictionary,pointless-string-statement,R0801
+
 """Smelter base class. A class that provides functions to split input dictionaries into
 dictionaries suited to be passed into an instance of the Forge class for creating
 objects in MyTardis."""

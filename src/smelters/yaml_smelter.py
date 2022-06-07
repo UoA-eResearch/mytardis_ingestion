@@ -1,4 +1,5 @@
 # pylint: disable=logging-fstring-interpolation,pointless-string-statement,R0801
+
 """YAML smelter. A class that processes YAML files into dictionaries suitable to be passed to an
 instance of the Forge class for creating objects in MyTardis."""
 
@@ -200,7 +201,16 @@ class YAMLSmelter(Smelter):
         """
         file_list = []
         for file_dict in parsed_dict["datafiles"]["files"]:
-            file_dict["file_path"] = Path(file_dict["file_path"])
+            try:
+                file_dict["file_path"] = Path(file_dict["file_path"])
+            except KeyError:
+                logger.warning(
+                    (
+                        "Parsed datafile dictionary is missing a 'file_path' field. "
+                        f"The dictionary passed in was {file_dict}."
+                    )
+                )
+                continue
             if not file_dict["file_path"].is_file():
                 for filename in file_dict["file_path"].iterdir():
                     if filename.is_file():
