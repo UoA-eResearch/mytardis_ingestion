@@ -1,14 +1,18 @@
-# pylint: disable=consider-using-set-comprehension
+# pylint: disable=consider-using-set-comprehension,logging-fstring-interpolation,unnecessary-comprehension
 """IngestionFactory is a base class for specific instances of MyTardis
 Ingestion scripts. The base class contains mostly concrete functions but
 needs to determine the Smelter class that is used by the Factory"""
 
+import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union
 
 from src.forges import Forge
+from src.helpers import is_uri
 from src.overseers import Overseer
+
+logger = logging.getLogger(__name__)
 
 
 class IngestionFactory(ABC):
@@ -26,8 +30,6 @@ class IngestionFactory(ABC):
             set up.
         self.forge: An instance of the Forge class
         self.smelter: An instance of a smelter class that varies for different ingestion approaches
-        self.glob_string: For smelters that use files, what is the extension or similar to search
-            for. See pathlib documentations for glob details.
         self.default_institution: Either a name, or an identifier for an Institution to use as the
             default for Project and Experiment creation.
     """
@@ -48,8 +50,8 @@ class IngestionFactory(ABC):
         config_dict.update(self.mytardis_setup)
         self.forge = Forge(config_dict)
         self.smelter = self.get_smelter(config_dict)
-        self.glob_string = self.smelter.get_file_type_for_input_files()
         self.default_institution = config_dict["default_institution"]
+        self.input_file_list: list = []
 
     @abstractmethod  # pragma: no cover
     def get_smelter(self, config_dict: dict):  # pragma: no cover
@@ -61,27 +63,39 @@ class IngestionFactory(ABC):
         """
         return None  # pragma: no cover
 
-    def build_object_lists(self, file_path: Path, object_type: str) -> list:
-        """General function to glob for files and return a list with the files that
-        have objects of object_type defined within them
+    def build_object_dict(
+        self,
+        input_file_directory: Path,
+        object_types: Union[list, None] = None,
+    ) -> dict:
+        """Function to iterate through a list of input files and return a dictionary of
+        files that have objects defined within them, keyed to the object type
 
         Args:
-            file_path: A Path object, ideally to the directory containing the input files
-               but which can also be a parent directory or a single file.
-            object_type: The object that is being sought.
+            input_file_directory: A Path object pointing to the parent directory that contains
+                the input files for creating the MyTardis objects.
+            object_types: A tuple of object types that are being sought.
 
         Returns:
             A list of files that have inputs of type object_type
         """
-        return_list = []
-        if file_path.is_file():
-            if object_type in self.smelter.get_objects_in_input_file(file_path):
-                return [file_path]
-            return []
-        for input_file in file_path.rglob(self.glob_string):
-            if object_type in self.smelter.get_objects_in_input_file(input_file):
-                return_list.append(input_file)
-        return return_list
+        return_dict: dict = {}
+        if not object_types:
+            object_types = [
+                "project",
+                "experiment",
+                "dataset",
+                "datafile",
+            ]
+        file_paths = self.smelter.get_input_file_paths(input_file_directory)
+        for object_type in object_types:
+            return_dict[object_type] = []
+        for file_path in file_paths:
+            objects = self.smelter.get_objects_in_input_file(file_path)
+            objects = [object_types for object_types in objects]
+            for object_type in objects:
+                return_dict[object_type].append(file_path)
+        return return_dict
 
     def replace_search_term_with_uri(
         self,
@@ -106,7 +120,7 @@ class IngestionFactory(ABC):
             key_name = object_type
         objects: Union[list, None] = []
         if key_name in cleaned_dict.keys():
-            if not Overseer.is_uri(cleaned_dict[key_name], object_type):
+            if not is_uri(cleaned_dict[key_name], object_type):
                 if object_type in self.mytardis_setup["objects_with_ids"]:
                     objects = self.overseer.get_uris_by_identifier(
                         object_type, cleaned_dict[key_name]
@@ -185,9 +199,53 @@ class IngestionFactory(ABC):
             uri = self.overseer.get_uris("instrument", "name", instrument)
         return uri
 
+    def compare_object_from_mytardis_with_object_dictionary():
+        pass
+
+    @staticmethod
+    def invalid_object_passed_to_process_object(parsed_dict: dict) -> tuple:
+        """Handler to create logger warning and return a non-breaking return
+        in case a non-MyTardis object is passed to process_object. NB: This should
+        never be called.
+
+        Args:
+            parsed_dict: the dictionary parsed from the smelter.read_file function
+
+        Returns:
+            A tuple of (None, None) representing the inability of the processing
+                script to handle the invalid object
+        """
+        logger.warning(
+            (
+                "IngestionFactory._process_object was unable to process the parsed "
+                "dictionary due to an invalid object key being extracted from the "
+                f"dictionary. Input dictionary was: {parsed_dict}."
+            )
+        )
+        return (None, None)
+
+    def _process_object(self, parsed_dict: dict) -> tuple:
+        """Placeholder for now"""
+        object_type = self.smelter.get_object_from_dictionary(parsed_dict)
+        if object_type is None:
+            logger.warning(
+                "The dictionary passed to be processed is not recognised as a "
+                "MyTardis input dictionary\nThe dictionary in question is: "
+                f"{parsed_dict}"
+            )
+            return (None, None)
+        smelter_functions = {
+            "project": self.smelter.smelt_project,
+            "experiment": self.smelter.smelt_experiment,
+            "dataset": self.smelter.smelt_dataset,
+            "datafile": self.smelter.smelt_datafile,
+        }
+        print(smelter_functions)
+        return (None, None)
+
     def process_projects(self, file_path: Path) -> list:
         """Wrapper function to create the projects from input files"""
-        project_files = self.build_object_lists(file_path, "project")
+        project_files = self.build_object_lists(file_path, "project")  # refactor
         return_list = []
         for project_file in project_files:
             parsed_dictionaries = self.smelter.read_file(project_file)
@@ -197,12 +255,11 @@ class IngestionFactory(ABC):
                     object_dict, parameter_dict = self.smelter.smelt_project(
                         parsed_dict
                     )
-                    name = object_dict["name"]
                     object_dict = self.replace_search_term_with_uri(
                         "institution", object_dict, "name"
                     )
                     forged_object = self.forge.forge_object(
-                        name, "project", object_dict
+                        object_dict["name"], "project", object_dict
                     )
                     return_list.append(forged_object)
                     uri = None
@@ -212,7 +269,7 @@ class IngestionFactory(ABC):
                         parameter_dict["project"] = uri
                         return_list.append(
                             self.forge.forge_object(
-                                f"{name} - Parameters",
+                                f"{object_dict['name']} - Parameters",
                                 "projectparameterset",
                                 parameter_dict,
                             )
@@ -223,7 +280,7 @@ class IngestionFactory(ABC):
         self, file_path: Path
     ) -> list:
         """Wrapper function to create the experiments from input files"""
-        experiment_files = self.build_object_lists(file_path, "experiment")
+        experiment_files = self.build_object_lists(file_path, "experiment")  # refactor
         return_list = []
         for experiment_file in experiment_files:
             parsed_dictionaries = self.smelter.read_file(experiment_file)
@@ -266,7 +323,7 @@ class IngestionFactory(ABC):
         self, file_path: Path
     ) -> list:
         """Wrapper function to create the experiments from input files"""
-        dataset_files = self.build_object_lists(file_path, "dataset")
+        dataset_files = self.build_object_lists(file_path, "dataset")  # refactor
         return_list = []
         for dataset_file in dataset_files:
             parsed_dictionaries = self.smelter.read_file(dataset_file)
@@ -309,7 +366,7 @@ class IngestionFactory(ABC):
 
     def process_datafiles(self, file_path: Path) -> list:
         """Wrapper function to create the experiments from input files"""
-        datafile_files = self.build_object_lists(file_path, "datafile")
+        datafile_files = self.build_object_lists(file_path, "datafile")  # refactor
         return_list = []
         for datafile_file in datafile_files:
             parsed_dictionaries = self.smelter.read_file(datafile_file)

@@ -30,8 +30,6 @@ from .conftest import (
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
-GLOB_STRING = "*.test"
-
 
 @fixture
 def factory(
@@ -43,16 +41,12 @@ def factory(
         "src.ingestion_factory.factory.IngestionFactory.get_smelter"
     ) as mock_get_smelter:
         mock_get_smelter.return_value = smelter
-        with mock.patch.object(
-            smelter, "get_file_type_for_input_files"
-        ) as mock_get_file_type_for_input_files:
-            mock_get_file_type_for_input_files.return_value = GLOB_STRING
-            with mock.patch(
-                "src.overseers.overseer.Overseer.get_mytardis_set_up"
-            ) as mock_get_mytardis_setup:
-                mock_get_mytardis_setup.return_value = processed_introspection_response
-                IngestionFactory.__abstractmethods__ = set()
-                return IngestionFactory(config_dict)
+        with mock.patch(
+            "src.overseers.overseer.Overseer.get_mytardis_set_up"
+        ) as mock_get_mytardis_setup:
+            mock_get_mytardis_setup.return_value = processed_introspection_response
+            IngestionFactory.__abstractmethods__ = set()
+            return IngestionFactory(config_dict)
 
 
 @fixture
@@ -81,36 +75,36 @@ def mock_smelter_get_objects_in_input_file(file_path):
     return [None]
 
 
-def test_build_object_lists(datadir, factory):
+def test_build_object_dict(datadir, factory):
     with mock.patch.object(
-        factory.smelter, "get_objects_in_input_file"
-    ) as mock_get_inputs_in_input_file:
-        mock_get_inputs_in_input_file.side_effect = (
-            mock_smelter_get_objects_in_input_file
-        )
-        assert factory.build_object_lists(
-            Path(datadir / "projects.test"), "project"
-        ) == [Path(datadir / "projects.test")]
-        assert (
-            factory.build_object_lists(Path(datadir / "projects.test"), "experiment")
-            == []
-        )
-        assert set(factory.build_object_lists(datadir, "project")) == set(
-            [
-                Path(datadir / "projects.test"),
-                Path(datadir / "projects_2.test"),
-                Path(datadir / "projects_3.test"),
-            ]
-        )
-        assert factory.build_object_lists(datadir, "experiment") == [
-            Path(datadir / "experiment.test")
+        factory.smelter, "get_input_file_paths"
+    ) as mock_get_input_file_paths:
+        mock_get_input_file_paths.return_value = [
+            Path(datadir / "datafile.test"),
+            Path(datadir / "dataset.test"),
+            Path(datadir / "experiment.test"),
+            Path(datadir / "projects_2.test"),
+            Path(datadir / "projects_3.test"),
+            Path(datadir / "projects.test"),
         ]
-        assert factory.build_object_lists(datadir, "dataset") == [
-            Path(datadir / "dataset.test")
-        ]
-        assert factory.build_object_lists(datadir, "datafile") == [
-            Path(datadir / "datafile.test")
-        ]
+        with mock.patch.object(
+            factory.smelter, "get_objects_in_input_file"
+        ) as mock_get_inputs_in_input_file:
+            mock_get_inputs_in_input_file.side_effect = (
+                mock_smelter_get_objects_in_input_file
+            )
+            object_types = ("project", "experiment", "dataset", "datafile")
+            expected_dict = {
+                "datafile": [Path(datadir / "datafile.test")],
+                "dataset": [Path(datadir / "dataset.test")],
+                "experiment": [Path(datadir / "experiment.test")],
+                "project": [
+                    Path(datadir / "projects_2.test"),
+                    Path(datadir / "projects_3.test"),
+                    Path(datadir / "projects.test"),
+                ],
+            }
+            assert factory.build_object_dict(datadir, object_types) == expected_dict
 
 
 @responses.activate
