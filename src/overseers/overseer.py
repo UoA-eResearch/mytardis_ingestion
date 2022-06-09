@@ -4,12 +4,13 @@ for the Forge class."""
 
 import logging
 import os
+import re
 from typing import Union
 from urllib.parse import urljoin, urlparse
 
 from requests.exceptions import HTTPError
 
-from src.helpers import MyTardisRESTFactory, is_uri
+from src.helpers import MyTardisRESTFactory
 
 logger = logging.getLogger(__name__)
 
@@ -53,12 +54,6 @@ class Overseer:
         """
         self.rest_factory = MyTardisRESTFactory(config_dict)
         self.mytardis_setup = self.get_mytardis_set_up()
-        self.object_names = {
-            "dataset": "description",
-            "experiment": "title",
-            "instrument": "name",
-            "project": "name",
-        }
 
     @staticmethod
     def resource_uri_to_id(uri: str) -> int:
@@ -231,6 +226,28 @@ class Overseer:
             return return_list
         return None
 
+    @staticmethod
+    def is_uri(uri_string: str, object_type: str) -> bool:
+        """Does a simple assessment to see if the string is appropriately formatted as a
+        URI for the object_type.
+
+        Args:
+            uri_string: the string to be tested as a URI
+            object_type: the object type from which the URI should be generated
+
+        Returns:
+           True if the test string is formatted correctly for URIs, False otherwise
+        """
+        regex_pattern = rf"^/api/v1/{object_type}/\d*/$"
+        try:
+            if re.match(regex_pattern, uri_string):
+                return True
+        except TypeError:
+            return False
+        except Exception as error:
+            raise error
+        return False
+
     def get_uris_by_identifier(
         self, object_type: str, search_string: str
     ) -> Union[list, None]:
@@ -262,72 +279,6 @@ class Overseer:
             )
             return None
         return self.get_uris(object_type, "pids", search_string)
-
-    def replace_search_term_with_uri(
-        self,
-        object_type: str,
-        cleaned_dict: dict,
-        fallback_search: str,
-        key_name: str = None,
-    ) -> dict:
-        """Helper function to carry out a search using an identifier or name
-        and replace it's value with a URI from MyTardis
-
-        Args:
-            object_type: A string representation of the object type in MyTardis to search for
-            cleaned_dict: A dictionary containing the key to be replaced
-            fallback_search: The name of the search key should searching by identifier fail
-            key_name: The name of the key to replace, if it is not the object_type.
-
-        Returns:
-            The cleaned_dict dictionary with the search term replaced by a URI from MyTardis
-        """
-        if not key_name:
-            key_name = object_type
-        objects: Union[list, None] = []
-        if key_name in cleaned_dict.keys():
-            if not is_uri(cleaned_dict[key_name], object_type):
-                if object_type in self.mytardis_setup["objects_with_ids"]:
-                    objects = self.get_uris_by_identifier(
-                        object_type, cleaned_dict[key_name]
-                    )
-                    if (
-                        object_type not in self.mytardis_setup["objects_with_ids"]
-                        or not objects
-                    ):
-                        objects = self.get_uris(
-                            object_type, fallback_search, cleaned_dict[key_name]
-                        )
-                    cleaned_dict[key_name] = objects
-        return cleaned_dict
-
-    def get_object_uri(self, object_type: str, object_id: str) -> Union[list, None]:
-        """Helper function to get an Object URI from MyTardis
-
-        Wrapper function that first searches on an identifier if the identifier app
-        is active. Falls back to searching on the name field (or equivalent)
-
-        Args:
-            object_type: the string representaion of the Object in MyTardis
-            object_id: the identifier used to search for the object
-
-        Returns:
-        The URI from MyTardis for the object searched for or None
-        """
-        uri = None
-        if object_type in self.mytardis_setup["objects_with_ids"]:
-            uri = self.get_uris_by_identifier(object_type, object_id)
-        if not uri:
-            try:
-                uri = self.get_uris(
-                    object_type, self.object_names[object_type], object_id
-                )
-            except KeyError:
-                logger.warning(
-                    f"The name of {object_type} objects has not been defined in the Overseer"
-                )
-                return None
-        return uri
 
 
 # Future functionality

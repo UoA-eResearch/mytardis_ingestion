@@ -1,5 +1,4 @@
-# pylint: disable=logging-fstring-interpolation,pointless-string-statement,R0801
-
+# pylint: disable=logging-fstring-interpolation,pointless-string-statement
 """YAML smelter. A class that processes YAML files into dictionaries suitable to be passed to an
 instance of the Forge class for creating objects in MyTardis."""
 
@@ -80,36 +79,23 @@ class YAMLSmelter(Smelter):
         }
 
     def _tidy_up_metadata_keys(  # pylint: disable=no-self-use
-        self,
-        parsed_dict: dict,
+        self, parsed_dict: dict, object_type: str
     ) -> dict:
         """Function to get rid of spaces and convert human readable metadata keys to snakecase"""
         cleaned_dict = deepcopy(parsed_dict)
         if "metadata" in parsed_dict.keys():
             for key in parsed_dict["metadata"].keys():
                 value = cleaned_dict["metadata"].pop(key)
-                cleaned_dict[key] = value
+                new_key = object_type + "_" + key.replace(" ", "_").lower()
+                cleaned_dict[new_key] = value
             cleaned_dict.pop("metadata")
         return cleaned_dict
 
-    def get_input_file_paths(self, file_path: Path) -> list[Path]:
-        """
-        Function to return a list of Path objects pointing to the yaml files contained in file_path.
+    def get_file_type_for_input_files(self) -> str:  # pylint: disable=no-self-use
+        """Function to return a string that can be used by Path.glob() to
+        get all of the input files in a directory"""
 
-        Yaml files are defined to end in either ".yml" or ".yaml".
-
-        Args:
-            file_path: Path object of the directory containing the yaml files
-
-        Returns:
-            A list of Path objects, one for each yaml file contained in file_path
-        """
-
-        return [
-            input_path
-            for generator in (file_path.rglob("*.yml"), file_path.rglob("*.yaml"))
-            for input_path in generator
-        ]
+        return "*.yaml"
 
     def get_objects_in_input_file(self, file_path: Path) -> tuple:
         """Takes a file path for a YAML file and returns a tuple of object types contained with the
@@ -229,6 +215,7 @@ class YAMLSmelter(Smelter):
                         cleaned_dict["file_path"] = Path(filename).relative_to(
                             self.source_dir
                         )
+                        cleaned_dict = self._create_replica(cleaned_dict)
                         file_list.append(cleaned_dict)
             else:
                 cleaned_dict = {}
@@ -246,6 +233,7 @@ class YAMLSmelter(Smelter):
                 cleaned_dict["file_path"] = Path(file_dict["file_path"]).relative_to(
                     self.source_dir
                 )
+                cleaned_dict = self._create_replica(cleaned_dict)
                 file_list.append(cleaned_dict)
         return file_list
 

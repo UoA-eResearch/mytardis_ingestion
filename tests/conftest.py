@@ -1,5 +1,3 @@
-# pylint: disable=missing-function-docstring,missing-module-docstring,redefined-outer-name
-
 import shutil
 from pathlib import Path
 
@@ -77,8 +75,8 @@ def raw_project_dictionary():
         "admin_groups": ["Test_Group_1"],
         "admin_users": ["upi002", "upi003"],
         "metadata": {
-            "project_my_test_key_1": "Test Value",
-            "project_my_test_key_2": "Test Value 2",
+            "My Test Key 1": "Test Value",
+            "My Test Key 2": "Test Value 2",
         },
     }
 
@@ -139,8 +137,8 @@ def raw_experiment_dictionary():
         ],
         "description": "A test experiment for the purposes of testing",
         "metadata": {
-            "experiment_my_test_key_1": "Test Value",
-            "experiment_my_test_key_2": "Test Value 2",
+            "My Test Key 1": "Test Value",
+            "My Test Key 2": "Test Value 2",
         },
     }
 
@@ -180,8 +178,8 @@ def raw_dataset_dictionary():
         ],
         "instrument": "Instrument_1",
         "metadata": {
-            "dataset_my_test_key_1": "Test Value",
-            "dataset_my_test_key_1": "Test Value 2",
+            "My Test Key 1": "Test Value",
+            "My Test Key 2": "Test Value 2",
         },
     }
 
@@ -215,8 +213,8 @@ def raw_datafile_dictionary():
         "md5sum": "0d32909e86e422d04a053d1ba26a990e",
         "full_path": "/source/path/test_data.dat",
         "metadata": {
-            "datafile_my_test_key_1": "Test Value",
-            "datafile_my_test_key_2": "Test Value 2",
+            "My Test Key 1": "Test Value",
+            "My Test Key 2": "Test Value 2",
         },
         "size": 52428800,
     }
@@ -226,7 +224,6 @@ def raw_datafile_dictionary():
 def preconditioned_datafile_dictionary():
     return {
         "dataset": ["Dataset_1"],
-        "directory": "/stub/relative/to/storage/box/",
         "filename": "test_data.dat",
         "md5sum": "0d32909e86e422d04a053d1ba26a990e",
         "datafile_my_test_key_1": "Test Value",
@@ -248,7 +245,6 @@ def preconditioned_datafile_dictionary():
 def tidied_datafile_dictionary():
     return {
         "dataset": ["Dataset_1"],
-        "directory": "/stub/relative/to/storage/box/",
         "filename": "test_data.dat",
         "md5sum": "0d32909e86e422d04a053d1ba26a990e",
         "datafile_my_test_key_1": "Test Value",
@@ -256,7 +252,7 @@ def tidied_datafile_dictionary():
         "size": 52428800,
         "replicas": [
             {
-                "uri": "stub/relative/to/storage/box/test_data.dat",
+                "uri": "test_data.dat",
                 "location": "Test_storage_box",
                 "protocol": "file",
             },
@@ -299,7 +295,7 @@ def mytardis_config(config_dict):
 @fixture
 def smelter(mytardis_config):
     Smelter.__abstractmethods__ = set()
-    smelter = Smelter(mytardis_config)  # pylint: disable=abstract-class-instantiated
+    smelter = Smelter(mytardis_config)
     smelter.OBJECT_KEY_CONVERSION = {
         "project": {
             "project_name": "name",
@@ -350,52 +346,6 @@ def response_dict_not_found():
 
 
 @fixture
-def datafile_response_dict():
-    return {
-        "meta": {
-            "limit": 20,
-            "next": None,
-            "offset": 0,
-            "previous": None,
-            "total_count": 1,
-        },
-        "objects": [
-            {
-                "created_time": "2000-01-01T00:00:00",
-                "dataset": "/api/v1/dataset/1/1",
-                "deleted": False,
-                "deleted_time": None,
-                "directory": "/stub/relative/to/storage/box/",
-                "filename": "test_data.dat",
-                "id": 1,
-                "md5sum": "0d32909e86e422d04a053d1ba26a990e",
-                "mimetype": "text/dat",
-                "modification_time": None,
-                "parameter_sets": [],
-                "public_access": 1,
-                "replicas": [
-                    {
-                        "created_time": "2000-01-01T00:00:00",
-                        "datafile": "/api/v1/dataset_file/1/",
-                        "id": 1,
-                        "last_verified_time": "2000-01-01T00:00:00",
-                        "location": "Test_storage_box",
-                        "resource_uri": "/api/v1/replica/1/",
-                        "uri": "stub/relative/to/storage/box/test_data.dat",
-                        "verfied": True,
-                    },
-                ],
-                "resource_uri": "/api/v1/dataset_file/1/",
-                "sha512sum": None,
-                "size": 52428800,
-                "tags": [],
-                "version": 1,
-            },
-        ],
-    }
-
-
-@fixture
 def dataset_response_dict():
     return {
         "meta": {
@@ -415,7 +365,7 @@ def dataset_response_dict():
                 "dataset_datafile_count": 2,
                 "dataset_experiment_count": 1,
                 "dataset_size": 1000000,
-                "description": "Test Dataset",
+                "description": "A test dataset for the purposes of testing",
                 "directory": None,
                 "experiments": [
                     "/api/v1/experiment/1",

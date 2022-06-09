@@ -1,5 +1,4 @@
-# pylint: disable=logging-fstring-interpolation,consider-iterating-dictionary,pointless-string-statement,R0801
-
+# pylint: disable=logging-fstring-interpolation,consider-iterating-dictionary,pointless-string-statement
 """Smelter base class. A class that provides functions to split input dictionaries into
 dictionaries suited to be passed into an instance of the Forge class for creating
 objects in MyTardis."""
@@ -239,8 +238,8 @@ class Smelter(ABC):
         Returns:
             A tuple containing the object type and the cleaned dictionary
         """
-        _, cleaned_dict = self.tidy_up_dictionary_keys(parsed_dict)
-        cleaned_dict = self._tidy_up_metadata_keys(cleaned_dict)
+        object_type, cleaned_dict = self.tidy_up_dictionary_keys(parsed_dict)
+        cleaned_dict = self._tidy_up_metadata_keys(cleaned_dict, object_type)
         users, groups = Smelter.parse_groups_and_users_from_separate_access(
             cleaned_dict
         )
@@ -661,28 +660,17 @@ class Smelter(ABC):
 
     @abstractmethod
     def _tidy_up_metadata_keys(
-        self,
-        parsed_dict: dict,
+        self, parsed_dict: dict, object_type: str
     ) -> dict:  # pragma: no cover
         """Placeholder function"""
         return {}
 
-    @abstractmethod
-    def get_input_file_paths(self, file_path: Path) -> list[Path]:  # pragma: no cover
-        """
-        Function to return a list of Paths containing all the relevant input
-        files in the directory
+    @abstractmethod  # pragma: no cover
+    def get_file_type_for_input_files(self) -> str:  # pragma: no cover
+        """Function to return a string that can be used by Path.glob() to
+        get all of the input files in a directory"""
 
-        Args:
-            file_path: a Path object pointing to the directory containing the
-            relevant input files
-
-        Returns:
-            A list of Path objects, each element pointing to one possible input
-            file
-        """
-
-        return [Path()]
+        return ""  # pragma: no cover
 
     @abstractmethod  # pragma: no cover
     def get_objects_in_input_file(self, file_path: Path) -> tuple:  # pragma: no cover
@@ -698,6 +686,12 @@ class Smelter(ABC):
         a tuple and return."""
 
         return tuple()  # pragma: no cover
+
+    '''@abstractmethod  # pragma: no cover
+    def rebase_file_path(self, parsed_dict: dict) -> dict:  # pragma: no cover
+        """Function to fix up the file path to take into account where it is
+        mounted."""
+        return parsed_dict  # pragma: no cover'''
 
     @abstractmethod  # pragma: no cover
     def expand_datafile_entry(self, parsed_dict) -> list:  # pragma: no cover

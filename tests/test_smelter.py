@@ -602,12 +602,11 @@ def test_smelt_datafile(
     assert out_dict == {
         "dataset": ["Dataset_1"],
         "filename": "test_data.dat",
-        "directory": "/stub/relative/to/storage/box/",
         "md5sum": "0d32909e86e422d04a053d1ba26a990e",
         "size": 52428800,
         "replicas": [
             {
-                "uri": "stub/relative/to/storage/box/test_data.dat",
+                "uri": "test_data.dat",
                 "location": "Test_storage_box",
                 "protocol": "file",
             },

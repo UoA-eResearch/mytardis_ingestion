@@ -15,7 +15,6 @@ from requests import HTTPError, Request, RequestException, Response
 from src.helpers import (
     MyTardisRESTFactory,
     SanityCheckError,
-    is_uri,
     read_json,
     sanity_check,
     write_json,
@@ -83,36 +82,6 @@ def test_write_json(datadir):  # pylint: disable=redefined-outer-name
     output_file = Path(datadir / "test.json")
     write_json(json_dict, output_file)
     assert read_json(output_file) == json_dict
-
-
-def test_is_uri_true():
-    object_type = "project"
-    uri_string = f"/api/v1/{object_type}/1/"
-    assert is_uri(uri_string, object_type)
-
-
-def test_is_uri_false_text_before_uri():
-    object_type = "project"
-    uri_string = f"http://test.com/api/v1/{object_type}/1/"
-    assert is_uri(uri_string, object_type) is False
-
-
-def test_is_uri_false_text_after_uri():
-    object_type = "project"
-    uri_string = f"/api/v1/{object_type}/1/edit/"
-    assert is_uri(uri_string, object_type) is False
-
-
-def test_is_uri_false():
-    object_type = "project"
-    uri_string = "Some other text"
-    assert is_uri(uri_string, object_type) is False
-
-
-def test_is_uri_int_not_string():
-    object_type = "project"
-    uri_string = 1
-    assert is_uri(uri_string, object_type) is False
 
 
 def test_mytardis_auth_header_injection(config_dict):
