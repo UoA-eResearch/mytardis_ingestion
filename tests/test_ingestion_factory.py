@@ -4,6 +4,7 @@
 # tested, there is little risk in using this as a test case.
 
 import logging
+from copy import deepcopy
 from pathlib import Path
 
 import mock
@@ -75,7 +76,12 @@ def mock_smelter_get_objects_in_input_file(file_path):
     return [None]
 
 
-def test_build_object_dict(datadir, factory):
+def test_build_object_dict(
+    datadir,
+    factory,
+    smelter,
+):
+    factory.smelter = smelter
     with mock.patch.object(
         factory.smelter, "get_input_file_paths"
     ) as mock_get_input_file_paths:
@@ -104,486 +110,375 @@ def test_build_object_dict(datadir, factory):
                     Path(datadir / "projects.test"),
                 ],
             }
-            assert factory.build_object_dict(datadir, object_types) == expected_dict
+            assert factory._build_object_dict(datadir, object_types) == expected_dict
 
 
-@responses.activate
-def test_replace_search_term_with_uri(
+@pytest.mark.parametrize(
+    "test_values,expected_outcomes", [("Project_1", True), ("Project_2", False)]
+)
+def test_verify_object_unblocked(
     factory,
-    institution_response_dict,
-    config_dict,
-    search_with_no_uri_dict,
+    test_values,
+    expected_outcomes,
 ):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/institution",
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=200,
-        json=(institution_response_dict),
-    )
-    object_type = "institution"
-    test_dict = {object_type: search_with_no_uri_dict[object_type]}
-    assert factory.replace_search_term_with_uri(object_type, test_dict, "name") == {
-        "institution": ["/api/v1/institution/1/"]
-    }
+    factory.blocked_ids["project"] = ["Project_2"]
+    assert factory._verify_object_unblocked("project", test_values) == expected_outcomes
 
 
-@responses.activate
-def test_replace_search_term_with_uri_fallback_search(
+def test_block_object(
     factory,
-    response_dict_not_found,
-    institution_response_dict,
-    config_dict,
-    search_with_no_uri_dict,
+    tidied_project_dictionary,
 ):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/institution",
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
+    expected_output = ["Test Project", "Project_1", "Test_Project", "Project_Test_1"]
+    factory._block_object(
+        "project",
+        tidied_project_dictionary,
     )
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/institution",
-        match=[
-            matchers.query_param_matcher(
-                {"name": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=200,
-        json=(institution_response_dict),
-    )
-    object_type = "institution"
-    test_dict = {object_type: search_with_no_uri_dict[object_type]}
-    assert factory.replace_search_term_with_uri(object_type, test_dict, "name") == {
-        "institution": ["/api/v1/institution/1/"]
-    }
+    for output in expected_output:
+        assert output in factory.blocked_ids["project"]
 
 
-@responses.activate
-def test_replace_search_term_with_uri_not_found(
+def test_match_or_block_object(
     factory,
-    response_dict_not_found,
-    config_dict,
-    search_with_no_uri_dict,
-):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/institution",
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/institution",
-        match=[
-            matchers.query_param_matcher(
-                {"name": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    object_type = "institution"
-    assert (
-        factory.replace_search_term_with_uri(
-            object_type, search_with_no_uri_dict, "name"
-        )
-        == search_with_no_uri_dict
-    )
-
-
-@responses.activate
-def test_replace_search_term_with_uri_http_error(
-    factory,
-    institution_response_dict,
-    config_dict,
-    search_with_no_uri_dict,
-):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/institution",
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=404,
-        json=(institution_response_dict),
-    )
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/institution",
-        match=[
-            matchers.query_param_matcher(
-                {"name": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=404,
-        json=(institution_response_dict),
-    )
-    object_type = "institution"
-    assert (
-        factory.replace_search_term_with_uri(
-            object_type, search_with_no_uri_dict, "name"
-        )
-        == search_with_no_uri_dict
-    )
-
-
-@responses.activate
-def test_get_project_uri(
-    factory,
-    config_dict,
+    tidied_project_dictionary,
     project_response_dict,
-    search_with_no_uri_dict,
 ):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/project",
-        match=[
-            matchers.query_param_matcher({"pids": search_with_no_uri_dict["project"]})
-        ],
-        status=200,
-        json=(project_response_dict),
+    comparison_keys = factory.project_comparison_keys
+    assert (
+        factory._match_or_block_object(
+            "project",
+            tidied_project_dictionary,
+            project_response_dict["objects"][0],
+            comparison_keys,
+        )
+        == "/api/v1/project/1/"
     )
-    assert factory.get_project_uri(search_with_no_uri_dict["project"]) == [
-        "/api/v1/project/1/"
-    ]
 
 
-@responses.activate
-def test_get_project_uri_fall_back_search(
+def test_match_or_block_object_bad_response_with_no_uri(
+    caplog,
     factory,
-    config_dict,
+    tidied_project_dictionary,
     project_response_dict,
-    search_with_no_uri_dict,
-    response_dict_not_found,
 ):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/project",
-        match=[
-            matchers.query_param_matcher({"pids": search_with_no_uri_dict["project"]})
-        ],
-        status=200,
-        json=(response_dict_not_found),
+    caplog.set_level(logging.WARNING)
+    comparison_keys = factory.project_comparison_keys
+    project_response_dict["objects"][0].pop("resource_uri")
+    warning_str = (
+        "Unable to find the resource_uri field in the mytardis project "
+        "dictionary. This suggests an incomplete or malformed dictionary. The "
     )
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/project",
-        match=[
-            matchers.query_param_matcher({"name": search_with_no_uri_dict["project"]})
-        ],
-        status=200,
-        json=(project_response_dict),
+    assert (
+        factory._match_or_block_object(
+            "project",
+            tidied_project_dictionary,
+            project_response_dict["objects"][0],
+            comparison_keys,
+        )
+        is None
     )
-    assert factory.get_project_uri(search_with_no_uri_dict["project"]) == [
-        "/api/v1/project/1/"
+    assert warning_str in caplog.text
+
+
+def test_match_or_block_object_blocked_because_of_mismatch(
+    caplog,
+    factory,
+    tidied_project_dictionary,
+    project_response_dict,
+):
+    caplog.set_level(logging.WARNING)
+    comparison_keys = factory.project_comparison_keys
+    warning_str = (
+        "Mismatch in dictionaries. Since we are unable to uniquely identify the "
+        "project, and given the potential for mis-assigning sensitive data "
+        "this project object will not be created. The ID will also be blocked "
+    )
+    tidied_project_dictionary[
+        "description"
+    ] = "The test project for the purposes of testing"
+    assert (
+        factory._match_or_block_object(
+            "project",
+            tidied_project_dictionary,
+            project_response_dict["objects"][0],
+            comparison_keys,
+        )
+        is None
+    )
+    expected_output = ["Test Project", "Project_1", "Test_Project", "Project_Test_1"]
+    for output in expected_output:
+        assert output in factory.blocked_ids["project"]
+    assert warning_str in caplog.text
+
+
+def test_remove_blocked_parents_from_object_dict_remove_none(
+    factory,
+    tidied_experiment_dictionary,
+):
+    assert (
+        factory._remove_blocked_parents_from_object_dict(
+            "project",
+            "experiment",
+            tidied_experiment_dictionary,
+        )
+        == tidied_experiment_dictionary
+    )
+
+
+def test_remove_blocked_parents_from_object_dict_remove_all(
+    caplog,
+    factory,
+    tidied_experiment_dictionary,
+):
+    caplog.set_level(logging.WARNING)
+    factory.blocked_ids["project"] = ["Project_1", "Test_Project"]
+    warning_str = (
+        f"Some parents of the experiment "
+        f"{tidied_experiment_dictionary['title']} have been removed "
+        "due to previously being blocked. The parents removed are "
+    )
+    assert (
+        factory._remove_blocked_parents_from_object_dict(
+            "project",
+            "experiment",
+            tidied_experiment_dictionary,
+        )
+        is None
+    )
+    assert warning_str in caplog.text
+
+
+def test_remove_blocked_parents_from_object_dict_remove_some(
+    caplog,
+    factory,
+    tidied_experiment_dictionary,
+):
+    caplog.set_level(logging.WARNING)
+    factory.blocked_ids["project"] = ["Project_1"]
+    test_dictionary = deepcopy(tidied_experiment_dictionary)
+    test_dictionary["projects"] = ["Test_Project"]
+    warning_str = (
+        f"Some parents of the experiment "
+        f"{tidied_experiment_dictionary['title']} have been removed "
+        "due to previously being blocked. The parents removed are "
+        f"{['Project_1']}"
+    )
+    assert (
+        factory._remove_blocked_parents_from_object_dict(
+            "project",
+            "experiment",
+            tidied_experiment_dictionary,
+        )
+        == test_dictionary
+    )
+    assert warning_str in caplog.text
+
+
+def test_match_or_block_project(
+    factory,
+    tidied_project_dictionary,
+    project_response_dict,
+):
+    assert (
+        factory._match_or_block_project(
+            tidied_project_dictionary,
+            project_response_dict["objects"][0],
+        )
+        == "/api/v1/project/1/"
+    )
+
+
+def test_match_or_block_project_no_projects_enabled(
+    caplog,
+    factory,
+    tidied_project_dictionary,
+    project_response_dict,
+):
+    caplog.set_level(logging.WARNING)
+    warning_str = (
+        "Projects have not been enabled for this instance of MyTardis. Please contact "
+        "your MyTardis sysadmin for further information."
+    )
+    factory.mytardis_setup["projects_enabled"] = False
+    assert (
+        factory._match_or_block_project(
+            tidied_project_dictionary,
+            project_response_dict["objects"][0],
+        )
+        is None
+    )
+    assert warning_str in caplog.text
+
+
+def test_match_or_block_project_no_persistent_id_when_ids_enabled(
+    caplog,
+    factory,
+    tidied_project_dictionary,
+    project_response_dict,
+):
+    caplog.set_level(logging.WARNING)
+    tidied_project_dictionary.pop("persistent_id")
+    warning_str = (
+        f"No persistent ID found for project {tidied_project_dictionary['name']}"
+    )
+    assert (
+        factory._match_or_block_project(
+            tidied_project_dictionary,
+            project_response_dict["objects"][0],
+        )
+        == "/api/v1/project/1/"
+    )
+    assert warning_str in caplog.text
+
+
+def test_match_or_block_project_mismatch(
+    factory,
+    tidied_project_dictionary,
+    project_response_dict,
+):
+    tidied_project_dictionary[
+        "description"
+    ] = "The test project for the purposes of testing"
+    assert (
+        factory._match_or_block_project(
+            tidied_project_dictionary,
+            project_response_dict["objects"][0],
+        )
+        is None
+    )
+    expected_output = ["Test Project", "Project_1", "Test_Project", "Project_Test_1"]
+    for output in expected_output:
+        assert output in factory.blocked_ids["project"]
+
+
+def test_match_or_block_project_previously_blocked(
+    caplog,
+    factory,
+    tidied_project_dictionary,
+    project_response_dict,
+):
+    caplog.set_level(logging.WARNING)
+    factory.blocked_ids["project"] = [
+        "Test Project",
+        "Project_1",
+        "Test_Project",
+        "Project_Test_1",
     ]
-
-
-@responses.activate
-def test_get_project_uri_not_found(
-    factory,
-    config_dict,
-    search_with_no_uri_dict,
-    response_dict_not_found,
-):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/project",
-        match=[
-            matchers.query_param_matcher({"pids": search_with_no_uri_dict["project"]})
-        ],
-        status=200,
-        json=(response_dict_not_found),
+    warning_str = (
+        f"The project_id, {tidied_project_dictionary['persistent_id']} has been previously "
+        "blocked for ingestion due to a mismatch. Please refer to the log files to identify "
+        "the cause of this issue."
     )
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/project",
-        match=[
-            matchers.query_param_matcher({"name": search_with_no_uri_dict["project"]})
-        ],
-        status=200,
-        json=(response_dict_not_found),
+    assert (
+        factory._match_or_block_project(
+            tidied_project_dictionary,
+            project_response_dict["objects"][0],
+        )
+        is None
     )
-    assert factory.get_project_uri(search_with_no_uri_dict["project"]) == None
+    assert warning_str in caplog.text
 
 
-@responses.activate
-def test_get_experiment_uri(
+def test_match_or_block_experiment(
     factory,
-    config_dict,
+    tidied_experiment_dictionary,
     experiment_response_dict,
-    search_with_no_uri_dict,
 ):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/experiment",
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["experiment"]}
-            )
-        ],
-        status=200,
-        json=(experiment_response_dict),
+    assert (
+        factory._match_or_block_experiment(
+            tidied_experiment_dictionary,
+            experiment_response_dict["objects"][0],
+        )
+        == "/api/v1/experiment/1/"
     )
-    assert factory.get_experiment_uri(search_with_no_uri_dict["experiment"]) == [
-        "/api/v1/experiment/1/"
+
+
+def test_match_or_block_project_no_projects_enabled(
+    caplog,
+    factory,
+    tidied_project_dictionary,
+    project_response_dict,
+):
+    caplog.set_level(logging.WARNING)
+    warning_str = (
+        "Projects have not been enabled for this instance of MyTardis. Please contact "
+        "your MyTardis sysadmin for further information."
+    )
+    factory.mytardis_setup["projects_enabled"] = False
+    assert (
+        factory._match_or_block_project(
+            tidied_project_dictionary,
+            project_response_dict["objects"][0],
+        )
+        is None
+    )
+    assert warning_str in caplog.text
+
+
+def test_match_or_block_project_no_persistent_id_when_ids_enabled(
+    caplog,
+    factory,
+    tidied_project_dictionary,
+    project_response_dict,
+):
+    caplog.set_level(logging.WARNING)
+    tidied_project_dictionary.pop("persistent_id")
+    warning_str = (
+        f"No persistent ID found for project {tidied_project_dictionary['name']}"
+    )
+    assert (
+        factory._match_or_block_project(
+            tidied_project_dictionary,
+            project_response_dict["objects"][0],
+        )
+        == "/api/v1/project/1/"
+    )
+    assert warning_str in caplog.text
+
+
+def test_match_or_block_project_mismatch(
+    factory,
+    tidied_project_dictionary,
+    project_response_dict,
+):
+    tidied_project_dictionary[
+        "description"
+    ] = "The test project for the purposes of testing"
+    assert (
+        factory._match_or_block_project(
+            tidied_project_dictionary,
+            project_response_dict["objects"][0],
+        )
+        is None
+    )
+    expected_output = ["Test Project", "Project_1", "Test_Project", "Project_Test_1"]
+    for output in expected_output:
+        assert output in factory.blocked_ids["project"]
+
+
+def test_match_or_block_project_previously_blocked(
+    caplog,
+    factory,
+    tidied_project_dictionary,
+    project_response_dict,
+):
+    caplog.set_level(logging.WARNING)
+    factory.blocked_ids["project"] = [
+        "Test Project",
+        "Project_1",
+        "Test_Project",
+        "Project_Test_1",
     ]
-
-
-@responses.activate
-def test_get_experiment_uri_fall_back_search(
-    factory,
-    config_dict,
-    experiment_response_dict,
-    search_with_no_uri_dict,
-    response_dict_not_found,
-):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/experiment",
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["experiment"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
+    warning_str = (
+        f"The project_id, {tidied_project_dictionary['persistent_id']} has been previously "
+        "blocked for ingestion due to a mismatch. Please refer to the log files to identify "
+        "the cause of this issue."
     )
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/experiment",
-        match=[
-            matchers.query_param_matcher(
-                {"title": search_with_no_uri_dict["experiment"]}
-            )
-        ],
-        status=200,
-        json=(experiment_response_dict),
+    assert (
+        factory._match_or_block_project(
+            tidied_project_dictionary,
+            project_response_dict["objects"][0],
+        )
+        is None
     )
-    assert factory.get_experiment_uri(search_with_no_uri_dict["experiment"]) == [
-        "/api/v1/experiment/1/"
-    ]
-
-
-@responses.activate
-def test_get_experiment_uri_not_found(
-    factory,
-    config_dict,
-    search_with_no_uri_dict,
-    response_dict_not_found,
-):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/experiment",
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["experiment"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/experiment",
-        match=[
-            matchers.query_param_matcher(
-                {"title": search_with_no_uri_dict["experiment"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    assert factory.get_experiment_uri(search_with_no_uri_dict["experiment"]) == None
-
-
-@responses.activate
-def test_get_dataset_uri(
-    factory,
-    config_dict,
-    dataset_response_dict,
-    search_with_no_uri_dict,
-):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/dataset",
-        match=[
-            matchers.query_param_matcher({"pids": search_with_no_uri_dict["dataset"]})
-        ],
-        status=200,
-        json=(dataset_response_dict),
-    )
-    assert factory.get_dataset_uri(search_with_no_uri_dict["dataset"]) == [
-        "/api/v1/dataset/1/"
-    ]
-
-
-@responses.activate
-def test_get_dataset_uri_fall_back_search(
-    factory,
-    config_dict,
-    dataset_response_dict,
-    search_with_no_uri_dict,
-    response_dict_not_found,
-):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/dataset",
-        match=[
-            matchers.query_param_matcher({"pids": search_with_no_uri_dict["dataset"]})
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/dataset",
-        match=[
-            matchers.query_param_matcher(
-                {"description": search_with_no_uri_dict["dataset"]}
-            )
-        ],
-        status=200,
-        json=(dataset_response_dict),
-    )
-    assert factory.get_dataset_uri(search_with_no_uri_dict["dataset"]) == [
-        "/api/v1/dataset/1/"
-    ]
-
-
-@responses.activate
-def test_get_dataset_uri_not_found(
-    factory,
-    config_dict,
-    search_with_no_uri_dict,
-    response_dict_not_found,
-):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/dataset",
-        match=[
-            matchers.query_param_matcher({"pids": search_with_no_uri_dict["dataset"]})
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/dataset",
-        match=[
-            matchers.query_param_matcher(
-                {"description": search_with_no_uri_dict["dataset"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    assert factory.get_dataset_uri(search_with_no_uri_dict["dataset"]) == None
-
-
-@responses.activate
-def test_get_instrument_uri(
-    factory,
-    config_dict,
-    instrument_response_dict,
-    search_with_no_uri_dict,
-):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/instrument",
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["instrument"]}
-            )
-        ],
-        status=200,
-        json=(instrument_response_dict),
-    )
-    assert factory.get_instrument_uri(search_with_no_uri_dict["instrument"]) == [
-        "/api/v1/instrument/1/"
-    ]
-
-
-@responses.activate
-def test_get_instrument_uri_fall_back_search(
-    factory,
-    config_dict,
-    instrument_response_dict,
-    search_with_no_uri_dict,
-    response_dict_not_found,
-):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/instrument",
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["instrument"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/instrument",
-        match=[
-            matchers.query_param_matcher(
-                {"name": search_with_no_uri_dict["instrument"]}
-            )
-        ],
-        status=200,
-        json=(instrument_response_dict),
-    )
-    assert factory.get_instrument_uri(search_with_no_uri_dict["instrument"]) == [
-        "/api/v1/instrument/1/"
-    ]
-
-
-@responses.activate
-def test_get_instrument_uri_not_found(
-    factory,
-    config_dict,
-    search_with_no_uri_dict,
-    response_dict_not_found,
-):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/instrument",
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["instrument"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/instrument",
-        match=[
-            matchers.query_param_matcher(
-                {"name": search_with_no_uri_dict["instrument"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    assert factory.get_instrument_uri(search_with_no_uri_dict["instrument"]) == None
+    assert warning_str in caplog.text

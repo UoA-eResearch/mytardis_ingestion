@@ -251,7 +251,7 @@ class Smelter(ABC):
         return cleaned_dict
 
     def smelt_project(self, cleaned_dict: dict) -> tuple:
-        """Wrapper to check and create the python dictionaries in a from expected by the
+        """Wrapper to check and create the python dictionaries in a form expected by the
         forge class.
 
         Args:
@@ -531,7 +531,7 @@ class Smelter(ABC):
             return False
         return False
 
-    def smelt_datafile(self, cleaned_dict: dict) -> tuple:
+    def smelt_datafile(self, cleaned_dict: dict) -> dict:
         """Wrapper to check and create the python dictionaries in a from expected by the
         forge class. The smelt_datafile function is somewhat unique as it takes a processed
         dictionary after having been through the rebase_file_path function and the
@@ -579,7 +579,8 @@ class Smelter(ABC):
         if not Smelter._verify_datafile(cleaned_dict):
             return (None, None)
         object_dict, parameter_dict = self._smelt_object(object_keys, cleaned_dict)
-        return (object_dict, parameter_dict)
+        object_dict["parameter_sets"] = parameter_dict
+        return object_dict
 
     @staticmethod
     def _verify_datafile(cleaned_dict: dict) -> bool:
@@ -685,7 +686,18 @@ class Smelter(ABC):
         return [Path()]
 
     @abstractmethod  # pragma: no cover
-    def get_objects_in_input_file(self, file_path: Path) -> tuple:  # pragma: no cover
+    def get_object_types_in_input_file(
+        self, file_path: Path
+    ) -> tuple:  # pragma: no cover
+        """Function to read in an input file and return a tuple containing
+        the object types that are in the file"""
+
+        return tuple()  # pragma: no cover
+
+    @abstractmethod  # pragma: no cover
+    def get_objects_in_input_file(
+        self, file_path: Path, object_type: str
+    ) -> list:  # pragma: no cover
         """Function to read in an input file and return a tuple containing
         the object types that are in the file"""
 

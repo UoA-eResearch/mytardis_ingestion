@@ -14,8 +14,8 @@ from src.helpers import MyTardisRESTFactory, is_uri
 logger = logging.getLogger(__name__)
 
 KB = 1024
-MB = KB**2
-GB = KB**3
+MB = KB ** 2
+GB = KB ** 3
 
 SCHEMA_TYPES = {
     "project": 11,
@@ -58,6 +58,7 @@ class Overseer:
             "experiment": "title",
             "instrument": "name",
             "project": "name",
+            "institution": "name",
         }
 
     @staticmethod
@@ -188,7 +189,7 @@ class Overseer:
             raise error
         response_dict = response.json()
         if response_dict == {} or response_dict["objects"] == []:
-            return None
+            return []
         return response_dict["objects"]
 
     def get_uris(
@@ -212,6 +213,8 @@ class Overseer:
         """
         return_list = []
         objects = self.get_objects(object_type, search_target, search_string)
+        if objects == []:
+            return return_list
         if objects:
             for obj in objects:
                 try:
@@ -262,44 +265,6 @@ class Overseer:
             )
             return None
         return self.get_uris(object_type, "pids", search_string)
-
-    def replace_search_term_with_uri(
-        self,
-        object_type: str,
-        cleaned_dict: dict,
-        fallback_search: str,
-        key_name: str = None,
-    ) -> dict:
-        """Helper function to carry out a search using an identifier or name
-        and replace it's value with a URI from MyTardis
-
-        Args:
-            object_type: A string representation of the object type in MyTardis to search for
-            cleaned_dict: A dictionary containing the key to be replaced
-            fallback_search: The name of the search key should searching by identifier fail
-            key_name: The name of the key to replace, if it is not the object_type.
-
-        Returns:
-            The cleaned_dict dictionary with the search term replaced by a URI from MyTardis
-        """
-        if not key_name:
-            key_name = object_type
-        objects: Union[list, None] = []
-        if key_name in cleaned_dict.keys():
-            if not is_uri(cleaned_dict[key_name], object_type):
-                if object_type in self.mytardis_setup["objects_with_ids"]:
-                    objects = self.get_uris_by_identifier(
-                        object_type, cleaned_dict[key_name]
-                    )
-                    if (
-                        object_type not in self.mytardis_setup["objects_with_ids"]
-                        or not objects
-                    ):
-                        objects = self.get_uris(
-                            object_type, fallback_search, cleaned_dict[key_name]
-                        )
-                    cleaned_dict[key_name] = objects
-        return cleaned_dict
 
     def get_object_uri(self, object_type: str, object_id: str) -> Union[list, None]:
         """Helper function to get an Object URI from MyTardis

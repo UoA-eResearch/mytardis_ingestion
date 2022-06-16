@@ -86,7 +86,7 @@ def test_get_objects_in_input_file(
     project_dictionary_from_yaml_file,
 ):
     mock_read_file.return_value = [project_dictionary_from_yaml_file]
-    assert smelter.get_objects_in_input_file(  # nosec
+    assert smelter.get_object_types_in_input_file(  # nosec
         project_dictionary_from_yaml_file
     ) == ("project",)
 

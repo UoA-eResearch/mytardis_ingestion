@@ -275,7 +275,7 @@ def test_get_objects_no_objects(
             search_target,
             search_string,
         )
-        is None
+        == []
     )
 
 
@@ -299,11 +299,14 @@ def test_get_uris(
         ],
         status=200,
     )
-    assert overseer.get_uris(  # nosec
-        object_type,
-        search_target,
-        search_string,
-    ) == ["/api/v1/project/1/"]
+    assert (
+        overseer.get_uris(  # nosec
+            object_type,
+            search_target,
+            search_string,
+        )
+        == ["/api/v1/project/1/"]
+    )
 
 
 @responses.activate
@@ -332,7 +335,7 @@ def test_get_uris_no_objects(
             search_target,
             search_string,
         )
-        is None
+        == []
     )
 
 
@@ -447,10 +450,13 @@ def test_get_uris_by_identifier(
         ],
         status=200,
     )
-    assert overseer.get_uris_by_identifier(  # nosec
-        object_type,
-        search_string,
-    ) == ["/api/v1/project/1/"]
+    assert (
+        overseer.get_uris_by_identifier(  # nosec
+            object_type,
+            search_string,
+        )
+        == ["/api/v1/project/1/"]
+    )
 
 
 def test_get_uris_by_identifier_app_not_used(
@@ -484,144 +490,6 @@ def test_get_uris_by_identifier_object_not_set_up_for_ids(
     )
     assert overseer.get_uris_by_identifier(object_type, search_string) is None  # nosec
     assert warning_str in caplog.text  # nosec
-
-
-@responses.activate
-def test_replace_search_term_with_uri(
-    overseer,
-    institution_response_dict,
-    config_dict,
-    search_with_no_uri_dict,
-):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/institution",
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=200,
-        json=(institution_response_dict),
-    )
-    object_type = "institution"
-    test_dict = {object_type: search_with_no_uri_dict[object_type]}
-    assert overseer.replace_search_term_with_uri(  # nosec
-        object_type, test_dict, "name"
-    ) == {"institution": ["/api/v1/institution/1/"]}
-
-
-@responses.activate
-def test_replace_search_term_with_uri_fallback_search(
-    overseer,
-    response_dict_not_found,
-    institution_response_dict,
-    config_dict,
-    search_with_no_uri_dict,
-):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/institution",
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/institution",
-        match=[
-            matchers.query_param_matcher(
-                {"name": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=200,
-        json=(institution_response_dict),
-    )
-    object_type = "institution"
-    test_dict = {object_type: search_with_no_uri_dict[object_type]}
-    assert overseer.replace_search_term_with_uri(  # nosec
-        object_type, test_dict, "name"
-    ) == {"institution": ["/api/v1/institution/1/"]}
-
-
-@responses.activate
-def test_replace_search_term_with_uri_not_found(
-    overseer,
-    response_dict_not_found,
-    config_dict,
-    search_with_no_uri_dict,
-):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/institution",
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/institution",
-        match=[
-            matchers.query_param_matcher(
-                {"name": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    object_type = "institution"
-    assert (  # nosec
-        overseer.replace_search_term_with_uri(
-            object_type, search_with_no_uri_dict, "name"
-        )
-        == search_with_no_uri_dict
-    )
-
-
-@responses.activate
-def test_replace_search_term_with_uri_http_error(
-    overseer,
-    institution_response_dict,
-    config_dict,
-    search_with_no_uri_dict,
-):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/institution",
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=404,
-        json=(institution_response_dict),
-    )
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/institution",
-        match=[
-            matchers.query_param_matcher(
-                {"name": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=404,
-        json=(institution_response_dict),
-    )
-    object_type = "institution"
-    assert (  # nosec
-        overseer.replace_search_term_with_uri(
-            object_type, search_with_no_uri_dict, "name"
-        )
-        == search_with_no_uri_dict
-    )
 
 
 @responses.activate
@@ -707,7 +575,7 @@ def test_get_project_uri_not_found(
         json=(response_dict_not_found),
     )
     assert (  # nosec
-        overseer.get_object_uri(object_type, search_with_no_uri_dict["project"]) is None
+        overseer.get_object_uri(object_type, search_with_no_uri_dict["project"]) == []
     )
 
 
@@ -803,7 +671,7 @@ def test_get_experiment_uri_not_found(
     )
     assert (  # nosec
         overseer.get_object_uri(object_type, search_with_no_uri_dict["experiment"])
-        is None
+        == []
     )
 
 
@@ -892,7 +760,7 @@ def test_get_dataset_uri_not_found(
         json=(response_dict_not_found),
     )
     assert (  # nosec
-        overseer.get_object_uri(object_type, search_with_no_uri_dict["dataset"]) is None
+        overseer.get_object_uri(object_type, search_with_no_uri_dict["dataset"]) == []
     )
 
 
@@ -988,5 +856,5 @@ def test_get_instrument_uri_not_found(
     )
     assert (  # nosec
         overseer.get_object_uri(object_type, search_with_no_uri_dict["instrument"])
-        is None
+        == []
     )
