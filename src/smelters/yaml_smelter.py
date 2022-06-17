@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Union
 
 import yaml
+from src.helpers.config import MyTardisSettings
 
 from src.smelters.smelter import Smelter
 
@@ -29,7 +30,7 @@ class YAMLSmelter(Smelter):
             to process the input dictionaries.
     """
 
-    def __init__(self, mytardis_config: dict) -> None:
+    def __init__(self, settings: MyTardisSettings) -> None:
         """Class initialisation to set options for dictionary processing
 
         Stores MyTardis set up information from the introspection API to allow the parser
@@ -41,7 +42,7 @@ class YAMLSmelter(Smelter):
             objects_with_pids: a list of objects that have identifiers. Defaults to empty
             objects_with_profiles: a list of objects that have profiles. Defaults to empty
         """
-        super().__init__(mytardis_config)
+        super().__init__(settings)
         self.OBJECT_TYPES = {  # pylint: disable=invalid-name
             "project_name": "project",
             "experiment_name": "experiment",

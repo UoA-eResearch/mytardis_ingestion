@@ -9,8 +9,8 @@ from urllib.parse import urljoin
 
 import backoff
 import requests
-from requests.auth import AuthBase
 from requests.exceptions import RequestException
+from src.helpers.config import MyTardisAuth, MyTardisConnection
 
 
 class BadGateWayException(RequestException):
@@ -23,32 +23,6 @@ class BadGateWayException(RequestException):
     # Included for clarity even though it is unnecessary
     def __init__(self, response):  # pylint: disable=useless-super-delegation
         super().__init__(response)
-
-
-class MyTardisAuth(AuthBase):  # pylint: disable=R0903
-    """Attaches HTTP headers for Tastypie API key Authentication to the given
-
-    Because this ingestion script will sit inside the private network and
-    will act as the primary source for uploading to myTardis, authentication
-    via a username and api key is used. The class functions to format the
-    HTTP(S) header into an appropriate form for the MyTardis authentication
-    module.
-
-    Attributes:
-        username:
-            A MyTardis specific username. For the UoA instance this is usually a UPI
-        api_key:
-            The API key generated through MyTardis that identifies the user with username
-    """
-
-    def __init__(self, username, api_key):
-        self.username = username
-        self.api_key = api_key
-
-    def __call__(self, r):  # pylint: disable=invalid-name
-        """Return an authorisation header for MyTardis"""
-        r.headers["Authorization"] = f"ApiKey {self.username}:{self.api_key}"
-        return r
 
 
 class MyTardisRESTFactory:  # pylint: disable=R0903
@@ -70,7 +44,7 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
     user_agent_name = __name__
     user_agent_url = "https://github.com/UoA-eResearch/mytardis_ingestion.git"
 
-    def __init__(self, config_dict: dict) -> None:
+    def __init__(self, auth: MyTardisAuth, connection: MyTardisConnection) -> None:
         """MyTardisRESTFactory initialisation using a configuration dictionary.
 
         Defines a set of class attributes that set up access to the MyTardis RESTful API. Includes
@@ -86,15 +60,14 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
             verify_certificate: A boolean to determine if SSL certificates should be validated. True
                 unless debugging"""
 
-        self.auth = MyTardisAuth(config_dict["username"], config_dict["api_key"])
+        self.auth = auth
         self.proxies = None
-        if "proxy_http" in config_dict.keys() or "proxy_https" in config_dict.keys():
-            self.proxies = {
-                "http": config_dict["proxy_http"],
-                "https": config_dict["proxy_https"],
-            }
-        self.verify_certificate = config_dict["verify_certificate"]
-        self.api_template = urljoin(config_dict["hostname"], "/api/v1/")
+        # if "proxy_http" in connection.dict().keys() or "proxy_https" in connection.dict().keys():
+        if connection.proxy is not None:
+            self.proxies = connection.proxy
+
+        self.verify_certificate = connection.verify_certificate
+        self.api_template = urljoin(connection.hostname, "/api/v1/")
         self.user_agent = f"{self.user_agent_name}/2.0 ({self.user_agent_url})"
 
     @backoff.on_exception(backoff.expo, BadGateWayException, max_tries=8)
