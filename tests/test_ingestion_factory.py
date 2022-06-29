@@ -9,7 +9,6 @@ from pathlib import Path
 
 import mock
 import pytest
-import responses
 from pytest import fixture
 from responses import matchers
 
@@ -20,6 +19,7 @@ from .conftest import (
     config_dict,
     dataset_response_dict,
     experiment_response_dict,
+    factory,
     institution_response_dict,
     instrument_response_dict,
     processed_introspection_response,
@@ -33,24 +33,6 @@ logger.propagate = True
 
 
 @fixture
-def factory(
-    smelter,
-    config_dict,
-    processed_introspection_response,
-):
-    with mock.patch(
-        "src.ingestion_factory.factory.IngestionFactory.get_smelter"
-    ) as mock_get_smelter:
-        mock_get_smelter.return_value = smelter
-        with mock.patch(
-            "src.overseers.overseer.Overseer.get_mytardis_set_up"
-        ) as mock_get_mytardis_setup:
-            mock_get_mytardis_setup.return_value = processed_introspection_response
-            IngestionFactory.__abstractmethods__ = set()
-            return IngestionFactory(config_dict)
-
-
-@fixture
 def search_with_no_uri_dict():
     return {
         "institution": "Uni RoR",
@@ -61,7 +43,7 @@ def search_with_no_uri_dict():
     }
 
 
-def mock_smelter_get_objects_in_input_file(file_path):
+def mock_smelter_get_object_types_in_input_file(file_path):
     file_path = Path(file_path)
     with open(file_path) as test_file:
         for line in test_file.readlines():
@@ -94,10 +76,10 @@ def test_build_object_dict(
             Path(datadir / "projects.test"),
         ]
         with mock.patch.object(
-            factory.smelter, "get_objects_in_input_file"
-        ) as mock_get_inputs_in_input_file:
-            mock_get_inputs_in_input_file.side_effect = (
-                mock_smelter_get_objects_in_input_file
+            factory.smelter, "get_object_types_in_input_file"
+        ) as mock_get_object_types_in_input_file:
+            mock_get_object_types_in_input_file.side_effect = (
+                mock_smelter_get_object_types_in_input_file
             )
             object_types = ("project", "experiment", "dataset", "datafile")
             expected_dict = {
@@ -114,7 +96,8 @@ def test_build_object_dict(
 
 
 @pytest.mark.parametrize(
-    "test_values,expected_outcomes", [("Project_1", True), ("Project_2", False)]
+    "test_values,expected_outcomes",
+    [("Project_1", True), ("Project_2", False)],
 )
 def test_verify_object_unblocked(
     factory,
@@ -129,7 +112,12 @@ def test_block_object(
     factory,
     tidied_project_dictionary,
 ):
-    expected_output = ["Test Project", "Project_1", "Test_Project", "Project_Test_1"]
+    expected_output = [
+        "Test Project",
+        "Project_1",
+        "Test_Project",
+        "Project_Test_1",
+    ]
     factory._block_object(
         "project",
         tidied_project_dictionary,
@@ -205,7 +193,12 @@ def test_match_or_block_object_blocked_because_of_mismatch(
         )
         is None
     )
-    expected_output = ["Test Project", "Project_1", "Test_Project", "Project_Test_1"]
+    expected_output = [
+        "Test Project",
+        "Project_1",
+        "Test_Project",
+        "Project_Test_1",
+    ]
     for output in expected_output:
         assert output in factory.blocked_ids["project"]
     assert warning_str in caplog.text
@@ -280,7 +273,7 @@ def test_match_or_block_project(
     project_response_dict,
 ):
     assert (
-        factory._match_or_block_project(
+        factory.match_or_block_project(
             tidied_project_dictionary,
             project_response_dict["objects"][0],
         )
@@ -301,7 +294,7 @@ def test_match_or_block_project_no_projects_enabled(
     )
     factory.mytardis_setup["projects_enabled"] = False
     assert (
-        factory._match_or_block_project(
+        factory.match_or_block_project(
             tidied_project_dictionary,
             project_response_dict["objects"][0],
         )
@@ -322,7 +315,7 @@ def test_match_or_block_project_no_persistent_id_when_ids_enabled(
         f"No persistent ID found for project {tidied_project_dictionary['name']}"
     )
     assert (
-        factory._match_or_block_project(
+        factory.match_or_block_project(
             tidied_project_dictionary,
             project_response_dict["objects"][0],
         )
@@ -340,13 +333,18 @@ def test_match_or_block_project_mismatch(
         "description"
     ] = "The test project for the purposes of testing"
     assert (
-        factory._match_or_block_project(
+        factory.match_or_block_project(
             tidied_project_dictionary,
             project_response_dict["objects"][0],
         )
         is None
     )
-    expected_output = ["Test Project", "Project_1", "Test_Project", "Project_Test_1"]
+    expected_output = [
+        "Test Project",
+        "Project_1",
+        "Test_Project",
+        "Project_Test_1",
+    ]
     for output in expected_output:
         assert output in factory.blocked_ids["project"]
 
@@ -370,7 +368,7 @@ def test_match_or_block_project_previously_blocked(
         "the cause of this issue."
     )
     assert (
-        factory._match_or_block_project(
+        factory.match_or_block_project(
             tidied_project_dictionary,
             project_response_dict["objects"][0],
         )
@@ -385,7 +383,7 @@ def test_match_or_block_experiment(
     experiment_response_dict,
 ):
     assert (
-        factory._match_or_block_experiment(
+        factory.match_or_block_experiment(
             tidied_experiment_dictionary,
             experiment_response_dict["objects"][0],
         )
@@ -406,7 +404,7 @@ def test_match_or_block_project_no_projects_enabled(
     )
     factory.mytardis_setup["projects_enabled"] = False
     assert (
-        factory._match_or_block_project(
+        factory.match_or_block_project(
             tidied_project_dictionary,
             project_response_dict["objects"][0],
         )
@@ -427,7 +425,7 @@ def test_match_or_block_project_no_persistent_id_when_ids_enabled(
         f"No persistent ID found for project {tidied_project_dictionary['name']}"
     )
     assert (
-        factory._match_or_block_project(
+        factory.match_or_block_project(
             tidied_project_dictionary,
             project_response_dict["objects"][0],
         )
@@ -445,13 +443,18 @@ def test_match_or_block_project_mismatch(
         "description"
     ] = "The test project for the purposes of testing"
     assert (
-        factory._match_or_block_project(
+        factory.match_or_block_project(
             tidied_project_dictionary,
             project_response_dict["objects"][0],
         )
         is None
     )
-    expected_output = ["Test Project", "Project_1", "Test_Project", "Project_Test_1"]
+    expected_output = [
+        "Test Project",
+        "Project_1",
+        "Test_Project",
+        "Project_Test_1",
+    ]
     for output in expected_output:
         assert output in factory.blocked_ids["project"]
 
@@ -475,7 +478,7 @@ def test_match_or_block_project_previously_blocked(
         "the cause of this issue."
     )
     assert (
-        factory._match_or_block_project(
+        factory.match_or_block_project(
             tidied_project_dictionary,
             project_response_dict["objects"][0],
         )

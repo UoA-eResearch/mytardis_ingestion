@@ -531,7 +531,7 @@ class Smelter(ABC):
             return False
         return False
 
-    def smelt_datafile(self, cleaned_dict: dict) -> dict:
+    def smelt_datafile(self, cleaned_dict: dict) -> Union[None, dict]:
         """Wrapper to check and create the python dictionaries in a from expected by the
         forge class. The smelt_datafile function is somewhat unique as it takes a processed
         dictionary after having been through the rebase_file_path function and the
@@ -567,17 +567,17 @@ class Smelter(ABC):
                 logger.warning(
                     "Unable to find default datafile schema and no schema provided"
                 )
-                return (None, None)
+                return None
         try:
             _ = cleaned_dict["file_path"]
         except KeyError:
             logger.warning(
                 f"Unable to create file replica for {cleaned_dict['filename']}"
             )
-            return (None, None)
+            return None
         cleaned_dict = self._create_replica(cleaned_dict)
         if not Smelter._verify_datafile(cleaned_dict):
-            return (None, None)
+            return None
         object_dict, parameter_dict = self._smelt_object(object_keys, cleaned_dict)
         object_dict["parameter_sets"] = parameter_dict
         return object_dict
@@ -630,7 +630,11 @@ class Smelter(ABC):
         """
         uri = cleaned_dict.pop("file_path")
         location = self.storage_box
-        replica = {"uri": uri.as_posix(), "location": location, "protocol": "file"}
+        replica = {
+            "uri": uri.as_posix(),
+            "location": location,
+            "protocol": "file",
+        }
         cleaned_dict["replicas"] = [replica]
         return cleaned_dict
 

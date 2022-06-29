@@ -107,7 +107,10 @@ class YAMLSmelter(Smelter):
 
         return [
             input_path
-            for generator in (file_path.rglob("*.yml"), file_path.rglob("*.yaml"))
+            for generator in (
+                file_path.rglob("*.yml"),
+                file_path.rglob("*.yaml"),
+            )
             for input_path in generator
         ]
 
@@ -149,7 +152,7 @@ class YAMLSmelter(Smelter):
             object_types.append(self.OBJECT_TYPES[object_type_key[0]])
         return (*object_types,)
 
-    def get_object_types_in_input_file(self, file_path: Path, object_type: str) -> list:
+    def get_objects_in_input_file(self, file_path: Path, object_type: str) -> list:
         """Takes a file path for a YAML file and returns a list of object of a given type
         contained within the file
 

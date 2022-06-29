@@ -66,7 +66,10 @@ def project_dictionary_from_yaml_file():
             "upi002",
             "upi003",
         ],
-        "metadata": {"My Test Key 1": "Test Value", "My Test Key 2": "Test Value 2"},
+        "metadata": {
+            "My Test Key 1": "Test Value",
+            "My Test Key 2": "Test Value 2",
+        },
     }
 
 
@@ -80,7 +83,7 @@ def test_tidy_up_metadata_keys(smelter, raw_project_dictionary):
 
 
 @mock.patch("src.smelters.yaml_smelter.YAMLSmelter.read_file")
-def test_get_objects_in_input_file(
+def test_get_object_types_in_input_file(
     mock_read_file,
     smelter,
     project_dictionary_from_yaml_file,
@@ -92,7 +95,7 @@ def test_get_objects_in_input_file(
 
 
 @mock.patch("src.smelters.yaml_smelter.YAMLSmelter.read_file")
-def test_get_objects_in_input_file_with_no_objects(
+def test_get_object_types_in_input_file_with_no_objects(
     mock_read_file,
     caplog,
     smelter,
@@ -105,12 +108,14 @@ def test_get_objects_in_input_file_with_no_objects(
     warning_str = (
         f"File {Path('Test_file_path')} was not recognised as a MyTardis ingestion file"
     )
-    assert smelter.get_objects_in_input_file(Path("Test_file_path")) == (None,)  # nosec
+    assert smelter.get_object_types_in_input_file(Path("Test_file_path")) == (
+        None,
+    )  # nosec
     assert warning_str in caplog.text  # nosec
 
 
 @mock.patch("src.smelters.yaml_smelter.YAMLSmelter.read_file")
-def test_get_objects_in_input_file_with_two_objects(
+def test_get_object_types_in_input_file_with_two_objects(
     mock_read_file,
     caplog,
     smelter,
@@ -126,7 +131,9 @@ def test_get_objects_in_input_file_with_two_objects(
         "defined for one object type only i.e. 'project', 'experiment', "
         "'dataset' or 'datafile'."
     )
-    assert smelter.get_objects_in_input_file(Path("Test_file_path")) == (None,)  # nosec
+    assert smelter.get_object_types_in_input_file(Path("Test_file_path")) == (
+        None,
+    )  # nosec
     assert warning_str in caplog.text  # nosec
 
 
@@ -178,7 +185,6 @@ def test_expand_datafile_entry(datadir, smelter):
     assert file_list == test_processed_file_list  # nosec
 
 
-@pytest.mark.xfail
 @pytest.mark.dependency(depends=["test_expand_datafile_entry"])
 @mock.patch("pathlib.Path.iterdir")
 def test_expand_datafile_entry_for_directories(mock_iterdir, datadir, smelter):

@@ -5,7 +5,6 @@ needs to determine the Smelter class that is used by the Factory"""
 
 import logging
 from abc import ABC, abstractmethod
-from copy import deepcopy
 from pathlib import Path
 from typing import Union
 
