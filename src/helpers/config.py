@@ -1,8 +1,12 @@
 """
-# MyTardis configuration module
+MyTardis configuration module
 
 The purpose of this module is to provide data structures that hold information
 required to carry out an ingestion into a specific MyTardis instance.
+
+It uses Pydantic's settings system
+(https://pydantic-docs.helpmanual.io/usage/settings/) to read configuration from
+the environment automatically and verifies their types and values.
 """
 
 from enum import Enum
@@ -54,6 +58,7 @@ class MyTardisProxy(BaseModel):
         https : Optional[HttpUrl] (default: None)
             https proxy address
     """
+
     http: Optional[HttpUrl] = None
     https: Optional[HttpUrl] = None
 
@@ -74,6 +79,7 @@ class MyTardisConnection(BaseModel):
         api_template : str
             Returns the stub of the MyTardis API route
     """
+
     hostname: HttpUrl
     verify_certificate = True
     proxy: Optional[MyTardisProxy] = None
@@ -100,6 +106,7 @@ class MyTardisSchema(BaseModel):
         datafile : Optional[AnyUrl] (default: None)
             default datafile schema
     """
+
     project: Optional[AnyUrl] = None
     experiment: Optional[AnyUrl] = None
     dataset: Optional[AnyUrl] = None
@@ -119,19 +126,22 @@ class MyTardisStorage(BaseModel):
         box : str
             name of the storage box
     """
+
     source_directory: Path
     target_directory: Path
     box: str
 
+
 class MyTardisObject(str, Enum):
     # pylint: disable=invalid-name
     """Enum for possible MyTardis object types"""
-    dataset = 'dataset'
-    experiment = 'experiment'
-    facility = 'facility'
-    instrument = 'instrument'
-    project = 'project'
-    institution = 'institution'
+    dataset = "dataset"
+    experiment = "experiment"
+    facility = "facility"
+    instrument = "instrument"
+    project = "project"
+    institution = "institution"
+
 
 class MyTardisIntrospection(BaseModel):
     """MyTardis introspection data.
@@ -146,15 +156,16 @@ class MyTardisIntrospection(BaseModel):
         projects_enabled : bool
             the MyTardis instance uses projects if `True`
         objects_with_ids : Optional[list[MyTardisObject]]
-
     """
+
     old_acls: bool
     projects_enabled: bool
     objects_with_ids: Optional[list[MyTardisObject]]
     objects_with_profiles: Optional[list[MyTardisObject]]
 
-    class Config: #pylint: disable=missing-class-docstring
+    class Config:  # pylint: disable=missing-class-docstring
         use_enum_values = True
+
 
 class MyTardisSettings(BaseSettings):
     """Full MyTardis settings model.
@@ -208,6 +219,7 @@ class MyTardisSettings(BaseSettings):
     setup = settings.mytardis_setup # <- only has value after first call
     ```
     """
+
     default_institution: Optional[str]
     auth: MyTardisAuth
     connection: MyTardisConnection
@@ -222,8 +234,9 @@ class MyTardisSettings(BaseSettings):
 
     class Config:
         """Pydantic config to enable .env file support"""
-        env_file = '.env' # this path must be relative to the current working directory, i.e. if this class needs to be instantiated in a script running in the root directory
-        env_file_encoding = 'utf-8'
+
+        env_file = ".env"  # this path must be relative to the current working directory, i.e. if this class needs to be instantiated in a script running in the root directory
+        env_file_encoding = "utf-8"
         env_nested_delimiter = "__"
 
     def get_mytardis_setup(self) -> MyTardisIntrospection:
@@ -231,7 +244,9 @@ class MyTardisSettings(BaseSettings):
 
         Requests introspection info from MyTardis instance configured in connection
         """
-        user_agent = f"{__name__}/2.0 (https://github.com/UoA-eResearch/mytardis_ingestion.git)"
+        user_agent = (
+            f"{__name__}/2.0 (https://github.com/UoA-eResearch/mytardis_ingestion.git)"
+        )
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -255,33 +270,33 @@ class MyTardisSettings(BaseSettings):
                     verify=self.connection.verify_certificate,
                 )
         except HTTPError as error:
-            # TODO add logging
+            logger.error("Introspection returned error: %s", error.response)
             raise error
         response_dict = response.json()
         if response_dict == {} or response_dict["objects"] == []:
             logger.error(
-                "MyTardis introspection did not return any data when called from "
-                "MyTardisConfig.get_mytardis_set_up"
+                """MyTardis introspection did not return any data when called from
+                MyTardisConfig.get_mytardis_set_up"""
             )
             raise ValueError(
                 (
-                    "MyTardis introspection did not return any data when called from "
-                    "MyTardisConfig.get_mytardis_set_up"
+                    """MyTardis introspection did not return any data when called from
+                    MyTardisConfig.get_mytardis_set_up"""
                 )
             )
         if len(response_dict["objects"]) > 1:
             logger.error(
                 (
-                    "MyTardis introspection returned more than one object when called from "
-                    "Overseer.get_mytardis_set_up\n"
-                    "Returned response was: %s",
+                    """MyTardis introspection returned more than one object when called from
+                    MyTardisConfig.get_mytardis_set_up\n
+                    Returned response was: %s""",
                     response_dict,
                 )
             )
             raise ValueError(
                 (
-                    "MyTardis introspection returned more than one object when called from "
-                    "Overseer.get_mytardis_set_up"
+                    """MyTardis introspection returned more than one object when called from
+                    MyTardisConfig.get_mytardis_set_up"""
                 )
             )
         response_dict = response_dict["objects"][0]
