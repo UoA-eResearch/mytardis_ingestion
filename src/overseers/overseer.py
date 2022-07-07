@@ -9,13 +9,13 @@ from urllib.parse import urljoin, urlparse
 
 from requests.exceptions import HTTPError
 
-from src.helpers import MyTardisRESTFactory, is_uri
+from src.helpers import MyTardisRESTFactory
 
 logger = logging.getLogger(__name__)
 
 KB = 1024
-MB = KB ** 2
-GB = KB ** 3
+MB = KB**2
+GB = KB**3
 
 SCHEMA_TYPES = {
     "project": 11,
@@ -92,12 +92,14 @@ class Overseer:
             response = self.rest_factory.mytardis_api_request("GET", url)
         except HTTPError as error:
             logger.error(
-                "Failed HTTP request from Overseer.get_mytardis_set_up", exc_info=True
+                "Failed HTTP request from Overseer.get_mytardis_set_up",
+                exc_info=True,
             )
             raise error
         except Exception as error:
             logger.error(
-                "Non-HTTP exception in Overseer.get_mytardis_set_up", exc_info=True
+                "Non-HTTP exception in Overseer.get_mytardis_set_up",
+                exc_info=True,
             )
             raise error
         response_dict = response.json()
@@ -211,7 +213,7 @@ class Overseer:
         Returns:
             A list of object URIs from the search request made.
         """
-        return_list = []
+        return_list: list = []
         objects = self.get_objects(object_type, search_target, search_string)
         if objects == []:
             return return_list

@@ -2,6 +2,7 @@
 """Defines Forge class which is a class that creates MyTardis objects."""
 
 import logging
+from typing import Union
 from urllib.parse import urljoin
 
 from requests.exceptions import HTTPError, JSONDecodeError
@@ -38,7 +39,7 @@ class Forge:
         object_name: str,
         object_type: str,
         object_dict: dict,
-        object_id: int = None,
+        object_id: Union[int, None] = None,
         overwrite_objects: bool = False,
     ) -> tuple:
         """POSTs a request to create an object in MyTardis
@@ -175,7 +176,7 @@ class Forge:
         if forged_object[1]:
             object_uri = forged_object[2]
             if parameter_dict["parameters"] != []:
-                parameter_dict["project"] = uri
+                parameter_dict["project"] = object_uri
                 forged_parameters = self.forge_object(
                     f"{project_name} - Parameters",
                     "projectparameterset",
@@ -214,7 +215,7 @@ class Forge:
         if forged_object[1]:
             object_uri = forged_object[2]
             if parameter_dict["parameters"] != []:
-                parameter_dict["experiment"] = uri
+                parameter_dict["experiment"] = object_uri
                 forged_parameters = self.forge_object(
                     f"{experiment_name} - Parameters",
                     "experimentparameterset",
@@ -253,7 +254,7 @@ class Forge:
         if forged_object[1]:
             object_uri = forged_object[2]
             if parameter_dict["parameters"] != []:
-                parameter_dict["dataset"] = uri
+                parameter_dict["dataset"] = object_uri
                 forged_parameters = self.forge_object(
                     f"{dataset_name} - Parameters",
                     "datasetparameterset",
