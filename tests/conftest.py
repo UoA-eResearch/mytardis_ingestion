@@ -1,7 +1,19 @@
+# pylint: disable=missing-function-docstring
+
 import shutil
 from pathlib import Path
 
 from pytest import fixture
+from src.helpers.config import (
+    MyTardisAuth,
+    MyTardisConnection,
+    MyTardisGeneral,
+    MyTardisIntrospection,
+    MyTardisProxy,
+    MyTardisSchema,
+    MyTardisSettings,
+    MyTardisStorage,
+)
 
 from src.smelters import Smelter
 
@@ -24,25 +36,70 @@ def datadir(tmpdir, request):
 
 
 @fixture
-def config_dict():
-    return {
-        "username": "Test_User",
-        "api_key": "Test_API_Key",
-        "hostname": "https://test.mytardis.nectar.auckland.ac.nz",
-        "verify_certificate": True,
-        "proxy_http": "http://myproxy.com",
-        "proxy_https": "http://myproxy.com",
-        "source_directory": "/source/path",
-        "target_directory": "/target/path",
-        "storage_box": "Test_storage_box",
-        "default_institution": "Test Institution",
-        "default_schema": {
-            "project": "https://test.mytardis.nectar.auckland.ac.nz/project/v1",
-            "experiment": "https://test.mytardis.nectar.auckland.ac.nz/experiment/v1",
-            "dataset": "https://test.mytardis.nectar.auckland.ac.nz/dataset/v1",
-            "datafile": "https://test.mytardis.nectar.auckland.ac.nz/datafile/v1",
-        },
-    }
+def general() -> MyTardisGeneral:
+    return MyTardisGeneral(default_institution="Test Institution")
+
+
+@fixture
+def auth() -> MyTardisAuth:
+    return MyTardisAuth(username="Test_User", api_key="Test_API_Key")
+
+
+@fixture
+def connection() -> MyTardisConnection:
+    return MyTardisConnection(
+        hostname="https://test.mytardis.nectar.auckland.ac.nz",
+        proxy=MyTardisProxy(http="http://myproxy.com", https="https://myproxy.com"),
+    )
+
+
+@fixture
+def storage() -> MyTardisStorage:
+    return MyTardisStorage(
+        box="Test_storage_box",
+        source_directory="/source/path",
+        target_directory="/target/path",
+    )
+
+
+@fixture
+def default_schema() -> MyTardisSchema:
+    return MyTardisSchema(
+        project="https://test.mytardis.nectar.auckland.ac.nz/project/v1",
+        experiment="https://test.mytardis.nectar.auckland.ac.nz/experiment/v1",
+        dataset="https://test.mytardis.nectar.auckland.ac.nz/dataset/v1",
+        datafile="https://test.mytardis.nectar.auckland.ac.nz/datafile/v1",
+    )
+
+
+@fixture
+def mytardis_setup() -> MyTardisIntrospection:
+    return MyTardisIntrospection(
+        old_acls=False,
+        projects_enabled=True,
+        objects_with_ids=[
+            "dataset",
+            "experiment",
+            "facility",
+            "instrument",
+            "project",
+            "institution",
+        ],
+    )
+
+
+@fixture
+def mytardis_settings(
+    general: MyTardisGeneral,
+    auth: MyTardisAuth,
+    connection: MyTardisConnection,
+    storage: MyTardisStorage,
+    default_schema: MyTardisSchema,
+    mytardis_setup: MyTardisIntrospection,
+) -> MyTardisSettings:
+    return MyTardisSettings(
+        general, auth, connection, storage, default_schema, mytardis_setup
+    )
 
 
 @fixture
@@ -262,40 +319,19 @@ def tidied_datafile_dictionary():
 
 
 @fixture
-def mytardis_setup_dict():
-    return {
-        "old_acls": False,
-        "projects_enabled": True,
-        "objects_with_ids": [
-            "dataset",
-            "experiment",
-            "facility",
-            "instrument",
-            "project",
-            "institution",
-        ],
-    }
-
-
-@fixture
-def mytardis_config(config_dict):
-    configuration = config_dict
-    configuration["projects_enabled"] = True
-    configuration["objects_with_ids"] = [
-        "dataset",
-        "experiment",
-        "facility",
-        "instrument",
-        "project",
-        "institution",
-    ]
-    return configuration
-
-
-@fixture
-def smelter(mytardis_config):
+def smelter(
+    general: MyTardisGeneral,
+    default_schema: MyTardisSchema,
+    storage: MyTardisStorage,
+    mytardis_setup: MyTardisIntrospection,
+):
     Smelter.__abstractmethods__ = set()
-    smelter = Smelter(mytardis_config)
+    smelter = Smelter(
+        general,
+        default_schema,
+        storage,
+        mytardis_setup,
+    )
     smelter.OBJECT_KEY_CONVERSION = {
         "project": {
             "project_name": "name",

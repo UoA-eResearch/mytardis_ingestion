@@ -21,6 +21,17 @@ from requests.auth import AuthBase
 logger = logging.getLogger(__name__)
 
 
+class MyTardisGeneral(BaseModel):
+    """MyTardis general config
+
+    Attributes:
+        default_institution : Optional[str]
+            name of the default institution
+    """
+
+    default_institution: Optional[str]
+
+
 class MyTardisAuth(BaseModel, AuthBase):
     """Attaches HTTP headers for Tastypie API key Authentication to the given
 
@@ -175,8 +186,8 @@ class MyTardisSettings(BaseSettings):
     mytardis_setup property.
 
     Attributes:
-        default_institution : Optional[str]
-            name of the default institution
+        general : MyTardisGeneral
+            instance of Pydantic general model
         auth : MyTardisAuth
             instance of Pydantic auth model
         connection : MyTardisConnection
@@ -195,7 +206,7 @@ class MyTardisSettings(BaseSettings):
     Requires a .env file in the current working direction:
     ```
     # Genral
-    DEFAULT_INSTITUTION=University of Auckland
+    GENERAL__DEFAULT_INSTITUTION=University of Auckland
     #Auth, prefix with AUTH__
     AUTH__USERNAME=ltro982
     AUTH__API_KEY=lukas-test-key
@@ -220,7 +231,7 @@ class MyTardisSettings(BaseSettings):
     ```
     """
 
-    default_institution: Optional[str]
+    general: Optional[MyTardisGeneral]
     auth: MyTardisAuth
     connection: MyTardisConnection
     storage: MyTardisStorage

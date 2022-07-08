@@ -19,9 +19,8 @@ from src.helpers import (
     sanity_check,
     write_json,
 )
+from src.helpers.config import MyTardisConnection
 from src.helpers.mt_rest import MyTardisAuth
-
-from .conftest import config_dict
 
 KB = 1024
 MB = KB**2
@@ -84,29 +83,27 @@ def test_write_json(datadir):  # pylint: disable=redefined-outer-name
     assert read_json(output_file) == json_dict
 
 
-def test_mytardis_auth_header_injection(config_dict):
-    test_auth = MyTardisAuth(
-        username=config_dict["username"], api_key=config_dict["api_key"]
-    )
+def test_mytardis_auth_header_injection(auth: MyTardisAuth):
+    test_auth = MyTardisAuth(username=auth.username, api_key=auth.api_key)
     test_request = Request()
     test_auth(test_request)
     assert test_request.headers == {
-        "Authorization": f"ApiKey {config_dict['username']}:{config_dict['api_key']}"
+        "Authorization": f"ApiKey {auth.username}:{auth.api_key}"
     }
 
 
-def test_mytardis_rest_factory_setup(config_dict):
-    test_factory = MyTardisRESTFactory(config_dict)
-    test_auth = MyTardisAuth(
-        username=config_dict["username"], api_key=config_dict["api_key"]
-    )
+def test_mytardis_rest_factory_setup(
+    auth: MyTardisAuth, connection: MyTardisConnection
+):
+    test_factory = MyTardisRESTFactory(auth, connection)
+    test_auth = MyTardisAuth(username=auth.username, api_key=auth.api_key)
     test_request = Request()
     assert test_factory.auth(test_request) == test_auth(test_request)
-    assert test_factory.verify_certificate == config_dict["verify_certificate"]
-    assert test_factory.api_template == urljoin(config_dict["hostname"], "/api/v1/")
+    assert test_factory.verify_certificate == connection.verify_certificate
+    assert test_factory.api_template == urljoin(connection.hostname, "/api/v1/")
     assert test_factory.proxies == {
         "http": "http://myproxy.com",
-        "https": "http://myproxy.com",
+        "https": "https://myproxy.com",
     }
     assert (
         test_factory.user_agent
@@ -116,13 +113,12 @@ def test_mytardis_rest_factory_setup(config_dict):
 
 @mock.patch("requests.request")
 def test_backoff_on_mytardis_rest_factory_doesnt_trigger_on_httperror(
-    mock_requests_request,
-    config_dict,
+    mock_requests_request, auth: MyTardisAuth, connection: MyTardisConnection
 ):
     mock_response = Response()
     mock_response.status_code = 504
     mock_requests_request.return_value = mock_response
-    test_factory = MyTardisRESTFactory(config_dict)
+    test_factory = MyTardisRESTFactory(auth, connection)
     with pytest.raises(HTTPError):
         _ = test_factory.mytardis_api_request("GET", "http://example.com")
         assert mock_requests_request.call_count == 1
@@ -130,8 +126,7 @@ def test_backoff_on_mytardis_rest_factory_doesnt_trigger_on_httperror(
 
 @mock.patch("requests.request")
 def test_backoff_on_mytardis_rest_factory(
-    mock_requests_request,
-    config_dict,
+    mock_requests_request, auth: MyTardisAuth, connection: MyTardisConnection
 ):
     backoff_max_tries = 8
     # See backoff decorator on the mytardis_api_request function in MyTardisRESTFactory
@@ -139,7 +134,7 @@ def test_backoff_on_mytardis_rest_factory(
     mock_response.status_code = 502
     mock_response.reason = "Test reason"
     mock_requests_request.return_value = mock_response
-    test_factory = MyTardisRESTFactory(config_dict)
+    test_factory = MyTardisRESTFactory(auth, connection)
     with pytest.raises(RequestException):
         _ = test_factory.mytardis_api_request("GET", "http://example.com")
     assert mock_requests_request.call_count == backoff_max_tries

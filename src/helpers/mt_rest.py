@@ -61,10 +61,8 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
                 unless debugging"""
 
         self.auth = auth
-        self.proxies = None
-        # if "proxy_http" in connection.dict().keys() or "proxy_https" in connection.dict().keys():
-        if connection.proxy is not None:
-            self.proxies = connection.proxy
+
+        self.proxies = connection.proxy.dict() if connection.proxy else None
 
         self.verify_certificate = connection.verify_certificate
         self.api_template = urljoin(connection.hostname, "/api/v1/")

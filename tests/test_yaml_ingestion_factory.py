@@ -5,8 +5,6 @@ from pytest import fixture
 from src.smelters import YAMLSmelter
 from src.specific_implementations import YAMLIngestionFactory
 
-from .conftest import config_dict, processed_introspection_response
-
 
 @fixture
 @mock.patch("src.overseers.overseer.Overseer.get_mytardis_set_up")

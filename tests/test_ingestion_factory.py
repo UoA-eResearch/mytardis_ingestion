@@ -15,17 +15,6 @@ from responses import matchers
 from src.ingestion_factory import IngestionFactory
 from src.smelters import Smelter
 
-from .conftest import (
-    config_dict,
-    dataset_response_dict,
-    experiment_response_dict,
-    institution_response_dict,
-    instrument_response_dict,
-    processed_introspection_response,
-    project_response_dict,
-    response_dict_not_found,
-    smelter,
-)
 
 logger = logging.getLogger(__name__)
 logger.propagate = True

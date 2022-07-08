@@ -10,7 +10,12 @@ from pathlib import Path
 from typing import Union
 
 from src.helpers import SanityCheckError, calculate_md5sum, sanity_check
-from src.helpers.config import MyTardisSettings
+from src.helpers.config import (
+    MyTardisGeneral,
+    MyTardisIntrospection,
+    MyTardisSchema,
+    MyTardisStorage,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +31,13 @@ class Smelter(ABC):
 
     """
 
-    def __init__(self, settings: MyTardisSettings) -> None:
+    def __init__(
+        self,
+        general: MyTardisGeneral,
+        default_schema: MyTardisSchema,
+        storage: MyTardisStorage,
+        mytardis_setup: MyTardisIntrospection = None,
+    ) -> None:
         """Class initialisation to set options for dictionary processing
 
         Stores MyTardis set up information from the introspection API to allow the parser
@@ -41,20 +52,20 @@ class Smelter(ABC):
                 experiments, datasets and datafiles
         """
 
-        if settings.mytardis_setup:
-            self.projects_enabled = settings.mytardis_setup.projects_enabled
-            self.objects_with_ids = settings.mytardis_setup.objects_with_ids
-            self.objects_with_profiles = settings.mytardis_setup.objects_with_profiles
+        if mytardis_setup:
+            self.projects_enabled = mytardis_setup.projects_enabled
+            self.objects_with_ids = mytardis_setup.objects_with_ids
+            self.objects_with_profiles = mytardis_setup.objects_with_profiles
 
         self.OBJECT_KEY_CONVERSION = (  # pylint: disable=invalid-name
             self.get_key_conversions()
         )
 
-        self.default_schema = settings.default_schema
-        self.default_institution = settings.default_institution
-        self.source_dir = settings.storage.source_directory
-        self.target_dir = settings.storage.target_directory
-        self.storage_box = settings.storage.box
+        self.default_schema = default_schema
+        self.default_institution = general.default_institution
+        self.source_dir = storage.source_directory
+        self.target_dir = storage.target_directory
+        self.storage_box = storage.box
 
     def tidy_up_dictionary_keys(self, parsed_dict: dict) -> tuple:
         """A helper function to ensure that the dictionary keys in a parsed dictionary
@@ -279,7 +290,7 @@ class Smelter(ABC):
             "users",
             "groups",
         ]
-        if self. objects_with_ids and "project" in self.objects_with_ids:
+        if self.objects_with_ids and "project" in self.objects_with_ids:
             object_keys.append("persistent_id")
             object_keys.append("alternate_ids")
         if "schema" not in cleaned_dict.keys():
@@ -318,9 +329,9 @@ class Smelter(ABC):
         Raises:
             SanityCheckError if no default schema can be found for this object type
         """
-        if object_type not in self.default_schema.keys():
+        if not hasattr(self.default_schema, object_type):
             raise SanityCheckError(name, cleaned_dict, "default schema")
-        cleaned_dict["schema"] = self.default_schema[object_type]
+        cleaned_dict["schema"] = getattr(self.default_schema, object_type)
         return cleaned_dict
 
     def _verify_project(self, cleaned_dict: dict) -> bool:
