@@ -8,7 +8,16 @@ from pathlib import Path
 from typing import Union
 
 from src.forges import Forge
+from src.helpers.config import (
+    MyTardisAuth,
+    MyTardisConnection,
+    MyTardisGeneral,
+    MyTardisIntrospection,
+    MyTardisSchema,
+    MyTardisStorage,
+)
 from src.overseers import Overseer
+from src.smelters import Smelter
 
 
 class IngestionFactory(ABC):
@@ -32,7 +41,15 @@ class IngestionFactory(ABC):
             default for Project and Experiment creation.
     """
 
-    def __init__(self, config_dict: dict) -> None:
+    def __init__(
+        self,
+        general: MyTardisGeneral,
+        auth: MyTardisAuth,
+        connection: MyTardisConnection,
+        default_schema: MyTardisSchema,
+        storage: MyTardisStorage,
+        mytardis_setup: MyTardisIntrospection,
+    ) -> None:
         """Initialises the Factory with the configuration found in the config_dict.
 
         Passes the config_dict to the overseer and forge instances to ensure that the
@@ -43,23 +60,29 @@ class IngestionFactory(ABC):
                 initialise the IngestionFactory and it's sub-classes. See documenation
                 for more details.
         """
-        self.overseer = Overseer(config_dict)
-        self.mytardis_setup = self.overseer.get_mytardis_set_up()
-        config_dict.update(self.mytardis_setup)
-        self.forge = Forge(config_dict)
-        self.smelter = self.get_smelter(config_dict)
+        self.overseer = Overseer(auth, connection, mytardis_setup)
+        self.mytardis_setup = mytardis_setup
+        self.forge = Forge(auth, connection)
+        self.smelter = self.get_smelter(
+            general, default_schema, storage, mytardis_setup
+        )
         self.glob_string = self.smelter.get_file_type_for_input_files()
-        self.default_institution = config_dict["default_institution"]
+        self.default_institution = general.default_institution
 
     @abstractmethod  # pragma: no cover
-    def get_smelter(self, config_dict: dict):  # pragma: no cover
+    def get_smelter(
+        self,
+        general: MyTardisGeneral,
+        default_schema: MyTardisSchema,
+        storage: MyTardisStorage,
+        mytardis_setup: MyTardisIntrospection,
+    ) -> Smelter:  # pragma: no cover
         """Abstract method to return the specific instance of a smelter for the
         concrete instance of the IngestionFactory.
 
         Returns:
             None
         """
-        return None  # pragma: no cover
 
     def build_object_lists(self, file_path: Path, object_type: str) -> list:
         """General function to glob for files and return a list with the files that
@@ -107,12 +130,15 @@ class IngestionFactory(ABC):
         objects: Union[list, None] = []
         if key_name in cleaned_dict.keys():
             if not Overseer.is_uri(cleaned_dict[key_name], object_type):
-                if object_type in self.mytardis_setup["objects_with_ids"]:
+                if (
+                    self.mytardis_setup.objects_with_ids
+                    and object_type in self.mytardis_setup.objects_with_ids
+                ):
                     objects = self.overseer.get_uris_by_identifier(
                         object_type, cleaned_dict[key_name]
                     )
                     if (
-                        object_type not in self.mytardis_setup["objects_with_ids"]
+                        object_type not in self.mytardis_setup.objects_with_ids
                         or not objects
                     ):
                         objects = self.overseer.get_uris(
