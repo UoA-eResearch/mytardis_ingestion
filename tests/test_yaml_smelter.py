@@ -26,6 +26,8 @@ test_malformed_ingestion_dict_too_many_objects = {
     "experiment_name": "test_name_2",
 }
 
+# pylint: disable=missing-function-docstring
+
 
 @fixture
 def smelter(
@@ -138,27 +140,27 @@ def test_read_file_exceptions_log_error(caplog, datadir, smelter: YAMLSmelter):
         assert "FileNotFoundError" in caplog.text
 
 
-"""@pytest.mark.dependency(depends=["test_read_file", "test_tidy_up_metadata_keys"])
-def test_rebase_file_path(datadir, smelter):
-    input_file = Path(datadir / "test_datafile.yaml")
-    parsed_dict = smelter.read_file(input_file)
-    cleaned_dict = smelter.rebase_file_path(parsed_dict[0])
-    test_dict = {
-        "datafiles": {
-            "dataset_id": ["Test-dataset"],
-            "files": [
-                {
-                    "metadata": {
-                        "My Test Key 1": "Test Value",
-                        "My Test Key 2": "Test Value 2",
-                    },
-                    "name": Path("/target/path/test_data.dat"),
-                },
-                {"name": Path("/target/path/test_data2.dat")},
-            ],
-        }
-    }
-    assert cleaned_dict == test_dict"""
+# @pytest.mark.dependency(depends=["test_read_file", "test_tidy_up_metadata_keys"])
+# def test_rebase_file_path(datadir, smelter):
+#     input_file = Path(datadir / "test_datafile.yaml")
+#     parsed_dict = smelter.read_file(input_file)
+#     cleaned_dict = smelter.rebase_file_path(parsed_dict[0])
+#     test_dict = {
+#         "datafiles": {
+#             "dataset_id": ["Test-dataset"],
+#             "files": [
+#                 {
+#                     "metadata": {
+#                         "My Test Key 1": "Test Value",
+#                         "My Test Key 2": "Test Value 2",
+#                     },
+#                     "name": Path("/target/path/test_data.dat"),
+#                 },
+#                 {"name": Path("/target/path/test_data2.dat")},
+#             ],
+#         }
+#     }
+#     assert cleaned_dict == test_dict
 
 
 @pytest.mark.xfail

@@ -271,7 +271,7 @@ class MyTardisSettings(BaseSettings):
                     url,
                     headers=headers,
                     verify=self.connection.verify_certificate,
-                    proxies=self.connection.proxy,
+                    proxies=self.connection.proxy.dict(),
                 )
             else:
                 response = request(
@@ -280,34 +280,40 @@ class MyTardisSettings(BaseSettings):
                     headers=headers,
                     verify=self.connection.verify_certificate,
                 )
+            response.raise_for_status()
         except HTTPError as error:
-            logger.error("Introspection returned error: %s", error.response)
+            logger.error(
+                "Introspection returned error: %s", error.response, exc_info=True
+            )
+            raise error
+        except Exception as error:
+            logger.error(
+                "Non-HTTP exception in MyTardisSettings.get_mytardis_setup",
+                exc_info=True,
+            )
             raise error
         response_dict = response.json()
         if response_dict == {} or response_dict["objects"] == []:
             logger.error(
-                """MyTardis introspection did not return any data when called from
-                MyTardisConfig.get_mytardis_set_up"""
+                "MyTardis introspection did not return any data when called from MyTardisSettings.get_mytardis_setup"
             )
             raise ValueError(
                 (
-                    """MyTardis introspection did not return any data when called from
-                    MyTardisConfig.get_mytardis_set_up"""
+                    "MyTardis introspection did not return any data when called from MyTardisSettings.get_mytardis_setup"
                 )
             )
         if len(response_dict["objects"]) > 1:
             logger.error(
                 (
                     """MyTardis introspection returned more than one object when called from
-                    MyTardisConfig.get_mytardis_set_up\n
+                    MyTardisSettings.get_mytardis_setup\n
                     Returned response was: %s""",
                     response_dict,
                 )
             )
             raise ValueError(
                 (
-                    """MyTardis introspection returned more than one object when called from
-                    MyTardisConfig.get_mytardis_set_up"""
+                    "MyTardis introspection returned more than one object when called from MyTardisSettings.get_mytardis_setup"
                 )
             )
         response_dict = response_dict["objects"][0]

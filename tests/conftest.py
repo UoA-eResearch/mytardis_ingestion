@@ -30,7 +30,8 @@ def datadir(tmpdir, request):
 
     if test_dir.is_dir():
         for source in test_dir.glob("*"):
-            shutil.copy(source, tmpdir)
+            if not source.is_dir():
+                shutil.copy(source, tmpdir)
 
     return Path(tmpdir)
 
@@ -89,17 +90,29 @@ def mytardis_setup() -> MyTardisIntrospection:
 
 
 @fixture
-def mytardis_settings(
+def mytardis_settings_no_introspection(
     general: MyTardisGeneral,
     auth: MyTardisAuth,
     connection: MyTardisConnection,
     storage: MyTardisStorage,
     default_schema: MyTardisSchema,
-    mytardis_setup: MyTardisIntrospection,
 ) -> MyTardisSettings:
     return MyTardisSettings(
-        general, auth, connection, storage, default_schema, mytardis_setup
+        general=general,
+        auth=auth,
+        connection=connection,
+        storage=storage,
+        default_schema=default_schema,
     )
+
+
+@fixture
+def mytardis_settings(
+    mytardis_settings_no_introspection: MyTardisSettings,
+    mytardis_setup: MyTardisIntrospection,
+) -> MyTardisSettings:
+    mytardis_settings_no_introspection.mytardis_setup = mytardis_setup
+    return mytardis_settings_no_introspection
 
 
 @fixture

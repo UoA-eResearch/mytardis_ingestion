@@ -35,23 +35,6 @@ bad_keys = ["key1", "key2", "key4", "key5"]
 json_dict = {"key1": "value1", "key2": "value2", "list1": ["a", "b", "c"], "int1": 1}
 
 
-@fixture
-def datadir(tmpdir, request):
-    """
-    Fixture responsible for searching a folder with the same name of test
-    module and, if available, moving all contents to a temporary directory so
-    tests can use them freely.
-    """
-    filename = request.module.__file__
-    test_dir = Path(filename).with_suffix("")
-
-    if test_dir.is_dir():
-        for source in test_dir.glob("*"):
-            shutil.copy(source, tmpdir)
-
-    return tmpdir
-
-
 def test_sanity_checker_good():
     assert sanity_check("Good_Test", test_dict, good_keys)
 
@@ -100,7 +83,7 @@ def test_mytardis_rest_factory_setup(
     test_request = Request()
     assert test_factory.auth(test_request) == test_auth(test_request)
     assert test_factory.verify_certificate == connection.verify_certificate
-    assert test_factory.api_template == urljoin(connection.hostname, "/api/v1/")
+    assert test_factory.api_template == connection.api_template
     assert test_factory.proxies == {
         "http": "http://myproxy.com",
         "https": "https://myproxy.com",
