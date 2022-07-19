@@ -231,11 +231,11 @@ class MyTardisSettings(BaseSettings):
     ```
     """
 
-    general: Optional[MyTardisGeneral]
+    general: MyTardisGeneral
     auth: MyTardisAuth
     connection: MyTardisConnection
     storage: MyTardisStorage
-    default_schema: Optional[MyTardisSchema] = None
+    default_schema: MyTardisSchema
     _mytardis_setup: Optional[MyTardisIntrospection] = PrivateAttr(None)
 
     @property

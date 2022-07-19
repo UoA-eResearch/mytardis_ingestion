@@ -3,7 +3,6 @@
 Ingestion scripts. The base class contains mostly concrete functions but
 needs to determine the Smelter class that is used by the Factory"""
 
-from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union
 
@@ -13,14 +12,12 @@ from src.helpers.config import (
     MyTardisConnection,
     MyTardisGeneral,
     MyTardisIntrospection,
-    MyTardisSchema,
-    MyTardisStorage,
 )
 from src.overseers import Overseer
 from src.smelters import Smelter
 
 
-class IngestionFactory(ABC):
+class IngestionFactory:
     """Ingestion Factory base class to orchestrate the Smelting, and Forging of
     objects within MyTardis.
 
@@ -46,9 +43,8 @@ class IngestionFactory(ABC):
         general: MyTardisGeneral,
         auth: MyTardisAuth,
         connection: MyTardisConnection,
-        default_schema: MyTardisSchema,
-        storage: MyTardisStorage,
         mytardis_setup: MyTardisIntrospection,
+        smelter: Smelter,
     ) -> None:
         """Initialises the Factory with the configuration found in the config_dict.
 
@@ -63,26 +59,18 @@ class IngestionFactory(ABC):
         self.overseer = Overseer(auth, connection, mytardis_setup)
         self.mytardis_setup = mytardis_setup
         self.forge = Forge(auth, connection)
-        self.smelter = self.get_smelter(
-            general, default_schema, storage, mytardis_setup
-        )
+        self.smelter = smelter
         self.glob_string = self.smelter.get_file_type_for_input_files()
         self.default_institution = general.default_institution
 
-    @abstractmethod  # pragma: no cover
-    def get_smelter(
-        self,
-        general: MyTardisGeneral,
-        default_schema: MyTardisSchema,
-        storage: MyTardisStorage,
-        mytardis_setup: MyTardisIntrospection,
-    ) -> Smelter:  # pragma: no cover
+    def get_smelter(self) -> Smelter:  # pragma: no cover
         """Abstract method to return the specific instance of a smelter for the
         concrete instance of the IngestionFactory.
 
         Returns:
             None
         """
+        return self.smelter
 
     def build_object_lists(self, file_path: Path, object_type: str) -> list:
         """General function to glob for files and return a list with the files that
@@ -157,7 +145,10 @@ class IngestionFactory(ABC):
             The URI from MyTardis for the project searched for.
         """
         uri = None
-        if "project" in self.mytardis_setup["objects_with_ids"]:
+        if (
+            self.mytardis_setup.objects_with_ids
+            and "project" in self.mytardis_setup.objects_with_ids
+        ):
             uri = self.overseer.get_uris_by_identifier("project", project_id)
         if not uri:
             uri = self.overseer.get_uris("project", "name", project_id)
@@ -173,7 +164,10 @@ class IngestionFactory(ABC):
             The URI from MyTardis for the experiment searched for.
         """
         uri = None
-        if "experiment" in self.mytardis_setup["objects_with_ids"]:
+        if (
+            self.mytardis_setup.objects_with_ids
+            and "experiment" in self.mytardis_setup.objects_with_ids
+        ):
             uri = self.overseer.get_uris_by_identifier("experiment", experiment_id)
         if not uri:
             uri = self.overseer.get_uris("experiment", "title", experiment_id)
@@ -189,7 +183,10 @@ class IngestionFactory(ABC):
             The URI from MyTardis for the dataset searched for.
         """
         uri = None
-        if "dataset" in self.mytardis_setup["objects_with_ids"]:
+        if (
+            self.mytardis_setup.objects_with_ids
+            and "dataset" in self.mytardis_setup.objects_with_ids
+        ):
             uri = self.overseer.get_uris_by_identifier("dataset", dataset_id)
         if not uri:
             uri = self.overseer.get_uris("dataset", "description", dataset_id)
@@ -205,7 +202,10 @@ class IngestionFactory(ABC):
             The URI from MyTardis for the instrument searched for.
         """
         uri = None
-        if "instrument" in self.mytardis_setup["objects_with_ids"]:
+        if (
+            self.mytardis_setup.objects_with_ids
+            and "instrument" in self.mytardis_setup.objects_with_ids
+        ):
             uri = self.overseer.get_uris_by_identifier("instrument", instrument)
         if not uri:
             uri = self.overseer.get_uris("instrument", "name", instrument)

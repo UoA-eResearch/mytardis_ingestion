@@ -111,7 +111,7 @@ def mytardis_settings(
     mytardis_settings_no_introspection: MyTardisSettings,
     mytardis_setup: MyTardisIntrospection,
 ) -> MyTardisSettings:
-    mytardis_settings_no_introspection.mytardis_setup = mytardis_setup
+    mytardis_settings_no_introspection._mytardis_setup = mytardis_setup
     return mytardis_settings_no_introspection
 
 
