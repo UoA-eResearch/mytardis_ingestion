@@ -7,7 +7,7 @@ import responses
 
 from src.forges import Forge
 from src.helpers import dict_to_json
-from src.helpers.config import MyTardisAuth, MyTardisConnection, MyTardisSettings
+from src.helpers.config import MyTardisAuth, MyTardisConnection
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
