@@ -194,11 +194,11 @@ class MyTardisSettings(BaseSettings):
             instance of Pydantic connection model
         storage : MyTardisStorage
             instance of Pydantic storage model
-        default_schema : Optional[MyTardisSchema] (default: None)
+        default_schema : MyTardisSchema
             instance of Pydantic schema model
 
     Properties:
-        mytardis_setup : MyTardisIntrospection
+        mytardis_setup : Optional[MyTardisIntrospection] (default: None)
             instance of Pydantic introspection model either from private
             attribute or new request
 
