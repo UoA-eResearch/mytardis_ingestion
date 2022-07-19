@@ -13,7 +13,6 @@ from src.helpers.config import (
     MyTardisGeneral,
     MyTardisIntrospection,
     MyTardisSchema,
-    MyTardisSettings,
     MyTardisStorage,
 )
 from src.smelters import Smelter

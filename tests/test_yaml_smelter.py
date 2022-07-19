@@ -12,7 +12,6 @@ from src.helpers.config import (
     MyTardisSchema,
     MyTardisStorage,
 )
-from src.smelters.smelter import Smelter
 
 logger = logging.getLogger(__name__)
 logger.propagate = True

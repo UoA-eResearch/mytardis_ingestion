@@ -3,13 +3,10 @@
 
 
 import logging
-import shutil
 from pathlib import Path
-from urllib.parse import urljoin
 
 import mock
 import pytest
-from pytest import fixture
 from requests import HTTPError, Request, RequestException, Response
 
 from src.helpers import (

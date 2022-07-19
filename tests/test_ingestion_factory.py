@@ -8,7 +8,6 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 import mock
-import pytest
 import responses
 from pytest import fixture
 from responses import matchers
