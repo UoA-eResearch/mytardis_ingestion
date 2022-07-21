@@ -149,14 +149,14 @@ testing = ["covdefaults (>=1.2.0)", "coverage (>=4)", "pytest (>=4)", "pytest-co
 
 [[package]]
 name = "genbadge"
-version = "1.0.6"
+version = "1.1.0"
 description = "Generate badges for tools that do not provide one."
 category = "dev"
 optional = false
 python-versions = "*"
 
 [package.dependencies]
-click = "*"
+click = ">7.0"
 defusedxml = {version = "*", optional = true, markers = "extra == \"coverage\""}
 pillow = "*"
 requests = "*"
@@ -666,7 +666,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "0aff8963ce486cee344b04934bafe0a14edb975071baf782fe9d909908ffbc3b"
+content-hash = "80ff94107bdaeebc6bdbfdcd66198326534f7745ef149cc0afc52a74103488d6"
 
 [metadata.files]
 astroid = [
@@ -765,8 +765,8 @@ filelock = [
     {file = "filelock-3.6.0.tar.gz", hash = "sha256:9cd540a9352e432c7246a48fe4e8712b10acb1df2ad1f30e8c070b82ae1fed85"},
 ]
 genbadge = [
-    {file = "genbadge-1.0.6-py2.py3-none-any.whl", hash = "sha256:a47e6996a8a4223132ab08e3ad9bade2cb997e68a03162ff5d122469e9d6a5c6"},
-    {file = "genbadge-1.0.6.tar.gz", hash = "sha256:7c52589f596bccf39cc7b9a70f5855985580911c978e7d3e5351701c4c21aaa7"},
+    {file = "genbadge-1.1.0-py2.py3-none-any.whl", hash = "sha256:add6a6beea812a8e35c612e0ea0f784bee5b984029b6a4b990721d0901fdb3c8"},
+    {file = "genbadge-1.1.0.tar.gz", hash = "sha256:a061187d49c78fc54c94410af201e873178d1bf1877701846c89341360bf79dc"},
 ]
 gitdb = [
     {file = "gitdb-4.0.9-py3-none-any.whl", hash = "sha256:8033ad4e853066ba6ca92050b9df2f89301b8fc8bf7e9324d412a63f8bf1a8fd"},
