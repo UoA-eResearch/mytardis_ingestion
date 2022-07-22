@@ -10,7 +10,7 @@ from urllib.parse import urljoin
 import backoff
 import requests
 from requests.exceptions import RequestException
-from src.helpers.config import MyTardisAuth, MyTardisConnection
+from src.helpers.config import AuthConfig, ConnectionConfig
 
 
 class BadGateWayException(RequestException):
@@ -34,7 +34,7 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
     Attributes:
         user_agent_name: The module __name__ used to identify the agent that is making the request
         user_agent_url: A URL to this module's github repo as a source of the user agent
-        auth: A MyTardisAuth instance that generates the authentication header for the user
+        auth: A AuthConfig instance that generates the authentication header for the user
         api_template: A string containing the stub of the URL tailored for the API calls as defined
             in MyTardis
         proxies: A dictionary containing HTTP(s) proxy addresses when necessary
@@ -44,16 +44,16 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
     user_agent_name = __name__
     user_agent_url = "https://github.com/UoA-eResearch/mytardis_ingestion.git"
 
-    def __init__(self, auth: MyTardisAuth, connection: MyTardisConnection) -> None:
+    def __init__(self, auth: AuthConfig, connection: ConnectionConfig) -> None:
         """MyTardisRESTFactory initialisation using a configuration dictionary.
 
         Defines a set of class attributes that set up access to the MyTardis RESTful API. Includes
-        authentication by means of a MyTardisAuth instance.
+        authentication by means of a AuthConfig instance.
 
         Args:
-            auth : MyTardisAuth
+            auth : AuthConfig
             Pydantic config class containing information about authenticating with a MyTardis instance
-            connection : MyTardisConnection
+            connection : ConnectionConfig
             Pydantic config class containing information about connecting to a MyTardis instance
         """
 

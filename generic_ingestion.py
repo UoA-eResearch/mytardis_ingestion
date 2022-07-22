@@ -20,7 +20,7 @@ The workflow for these scripts are as follows:
 import logging
 import subprocess
 from pathlib import Path
-from src.helpers.config import MyTardisSettings
+from src.helpers.config import ConfigFromEnv
 from src.ingestion_factory.factory import IngestionFactory
 from src.smelters.yaml_smelter import YAMLSmelter
 
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 yaml_path = Path("path to YAML files")
 
-config = MyTardisSettings()
+config = ConfigFromEnv()
 
 smelter = YAMLSmelter(
     general=config.general,

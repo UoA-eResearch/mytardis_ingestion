@@ -5,14 +5,14 @@ from pathlib import Path
 
 from pytest import fixture
 from src.helpers.config import (
-    MyTardisAuth,
-    MyTardisConnection,
-    MyTardisGeneral,
-    MyTardisIntrospection,
-    MyTardisProxy,
-    MyTardisSchema,
-    MyTardisSettings,
-    MyTardisStorage,
+    AuthConfig,
+    ConnectionConfig,
+    GeneralConfig,
+    IntrospectionConfig,
+    ProxyConfig,
+    SchemaConfig,
+    ConfigFromEnv,
+    StorageConfig,
 )
 
 from src.smelters import Smelter
@@ -37,26 +37,26 @@ def datadir(tmpdir, request):
 
 
 @fixture
-def general() -> MyTardisGeneral:
-    return MyTardisGeneral(default_institution="Test Institution")
+def general() -> GeneralConfig:
+    return GeneralConfig(default_institution="Test Institution")
 
 
 @fixture
-def auth() -> MyTardisAuth:
-    return MyTardisAuth(username="Test_User", api_key="Test_API_Key")
+def auth() -> AuthConfig:
+    return AuthConfig(username="Test_User", api_key="Test_API_Key")
 
 
 @fixture
-def connection() -> MyTardisConnection:
-    return MyTardisConnection(
+def connection() -> ConnectionConfig:
+    return ConnectionConfig(
         hostname="https://test.mytardis.nectar.auckland.ac.nz",
-        proxy=MyTardisProxy(http="http://myproxy.com", https="https://myproxy.com"),
+        proxy=ProxyConfig(http="http://myproxy.com", https="https://myproxy.com"),
     )
 
 
 @fixture
-def storage() -> MyTardisStorage:
-    return MyTardisStorage(
+def storage() -> StorageConfig:
+    return StorageConfig(
         box="Test_storage_box",
         source_directory="/source/path",
         target_directory="/target/path",
@@ -64,8 +64,8 @@ def storage() -> MyTardisStorage:
 
 
 @fixture
-def default_schema() -> MyTardisSchema:
-    return MyTardisSchema(
+def default_schema() -> SchemaConfig:
+    return SchemaConfig(
         project="https://test.mytardis.nectar.auckland.ac.nz/project/v1",
         experiment="https://test.mytardis.nectar.auckland.ac.nz/experiment/v1",
         dataset="https://test.mytardis.nectar.auckland.ac.nz/dataset/v1",
@@ -74,8 +74,8 @@ def default_schema() -> MyTardisSchema:
 
 
 @fixture
-def mytardis_setup() -> MyTardisIntrospection:
-    return MyTardisIntrospection(
+def mytardis_setup() -> IntrospectionConfig:
+    return IntrospectionConfig(
         old_acls=False,
         projects_enabled=True,
         objects_with_ids=[
@@ -91,13 +91,13 @@ def mytardis_setup() -> MyTardisIntrospection:
 
 @fixture
 def mytardis_settings_no_introspection(
-    general: MyTardisGeneral,
-    auth: MyTardisAuth,
-    connection: MyTardisConnection,
-    storage: MyTardisStorage,
-    default_schema: MyTardisSchema,
-) -> MyTardisSettings:
-    return MyTardisSettings(
+    general: GeneralConfig,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
+    storage: StorageConfig,
+    default_schema: SchemaConfig,
+) -> ConfigFromEnv:
+    return ConfigFromEnv(
         general=general,
         auth=auth,
         connection=connection,
@@ -108,9 +108,9 @@ def mytardis_settings_no_introspection(
 
 @fixture
 def mytardis_settings(
-    mytardis_settings_no_introspection: MyTardisSettings,
-    mytardis_setup: MyTardisIntrospection,
-) -> MyTardisSettings:
+    mytardis_settings_no_introspection: ConfigFromEnv,
+    mytardis_setup: IntrospectionConfig,
+) -> ConfigFromEnv:
     mytardis_settings_no_introspection._mytardis_setup = mytardis_setup
     return mytardis_settings_no_introspection
 
@@ -333,10 +333,10 @@ def tidied_datafile_dictionary():
 
 @fixture
 def smelter(
-    general: MyTardisGeneral,
-    default_schema: MyTardisSchema,
-    storage: MyTardisStorage,
-    mytardis_setup: MyTardisIntrospection,
+    general: GeneralConfig,
+    default_schema: SchemaConfig,
+    storage: StorageConfig,
+    mytardis_setup: IntrospectionConfig,
 ):
     Smelter.__abstractmethods__ = set()
     smelter = Smelter(

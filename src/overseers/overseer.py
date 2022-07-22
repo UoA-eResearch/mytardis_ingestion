@@ -11,7 +11,7 @@ from urllib.parse import urljoin, urlparse
 from requests.exceptions import HTTPError
 
 from src.helpers import MyTardisRESTFactory
-from src.helpers.config import MyTardisAuth, MyTardisConnection, MyTardisIntrospection
+from src.helpers.config import AuthConfig, ConnectionConfig, IntrospectionConfig
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +45,9 @@ class Overseer:
 
     def __init__(
         self,
-        auth: MyTardisAuth,
-        connection: MyTardisConnection,
-        mytardis_setup: MyTardisIntrospection,
+        auth: AuthConfig,
+        connection: ConnectionConfig,
+        mytardis_setup: IntrospectionConfig,
     ) -> None:
         """Class initialisation using a configuration dictionary.
 
@@ -55,11 +55,11 @@ class Overseer:
         inspection of the database.
 
         Args:
-            auth : MyTardisAuth
+            auth : AuthConfig
             Pydantic config class containing information about authenticating with a MyTardis instance
-            connection : MyTardisConnection
+            connection : ConnectionConfig
             Pydantic config class containing information about connecting to a MyTardis instance
-            mytardis_setup : MyTardisIntrospection
+            mytardis_setup : IntrospectionConfig
         """
         self.rest_factory = MyTardisRESTFactory(auth, connection)
         self.mytardis_setup = mytardis_setup

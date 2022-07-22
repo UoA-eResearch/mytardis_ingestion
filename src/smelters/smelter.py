@@ -11,10 +11,10 @@ from typing import Union
 
 from src.helpers import SanityCheckError, calculate_md5sum, sanity_check
 from src.helpers.config import (
-    MyTardisGeneral,
-    MyTardisIntrospection,
-    MyTardisSchema,
-    MyTardisStorage,
+    GeneralConfig,
+    IntrospectionConfig,
+    SchemaConfig,
+    StorageConfig,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,10 +33,10 @@ class Smelter(ABC):
 
     def __init__(
         self,
-        general: MyTardisGeneral,
-        default_schema: MyTardisSchema,
-        storage: MyTardisStorage,
-        mytardis_setup: MyTardisIntrospection = None,
+        general: GeneralConfig,
+        default_schema: SchemaConfig,
+        storage: StorageConfig,
+        mytardis_setup: IntrospectionConfig = None,
     ) -> None:
         """Class initialisation to set options for dictionary processing
 
@@ -45,13 +45,13 @@ class Smelter(ABC):
         gracefully.
 
         Args:
-            general : MyTardisGeneral
+            general : GeneralConfig
             Pydantic config class containing general information
-            default_schema : MyTardisSchema
+            default_schema : SchemaConfig
             Pydantic config class containing information about default meta data schemas
-            storage : MyTardisStorage
+            storage : StorageConfig
             Pydantic config class containing information about storage (box, source and target paths)
-            mytardis_setup : MyTardisIntrospection
+            mytardis_setup : IntrospectionConfig
             Pydantic config class containing information from the introspection API
         """
 

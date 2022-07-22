@@ -10,10 +10,10 @@ import pytest
 
 from src.helpers import SanityCheckError
 from src.helpers.config import (
-    MyTardisGeneral,
-    MyTardisIntrospection,
-    MyTardisSchema,
-    MyTardisStorage,
+    GeneralConfig,
+    IntrospectionConfig,
+    SchemaConfig,
+    StorageConfig,
 )
 from src.smelters import Smelter
 
@@ -49,10 +49,10 @@ def test_tidy_up_dictionary_keys_with_no_translation_dict(caplog, smelter):
 
 
 def test_mytardis_setup_with_no_ids(
-    general: MyTardisGeneral,
-    default_schema: MyTardisSchema,
-    storage: MyTardisStorage,
-    mytardis_setup: MyTardisIntrospection,
+    general: GeneralConfig,
+    default_schema: SchemaConfig,
+    storage: StorageConfig,
+    mytardis_setup: IntrospectionConfig,
 ):
     mytardis_setup.objects_with_ids = None
     Smelter.__abstractmethods__ = set()
@@ -230,10 +230,10 @@ def test_verify_project_with_good_dictionary(
 
 def test_smelt_project_no_projects(
     caplog,
-    general: MyTardisGeneral,
-    default_schema: MyTardisSchema,
-    storage: MyTardisStorage,
-    mytardis_setup: MyTardisIntrospection,
+    general: GeneralConfig,
+    default_schema: SchemaConfig,
+    storage: StorageConfig,
+    mytardis_setup: IntrospectionConfig,
 ):
     caplog.set_level(logging.WARNING)
     mytardis_setup.projects_enabled = False

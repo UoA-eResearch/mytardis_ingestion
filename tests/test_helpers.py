@@ -16,8 +16,8 @@ from src.helpers import (
     sanity_check,
     write_json,
 )
-from src.helpers.config import MyTardisConnection
-from src.helpers.mt_rest import MyTardisAuth
+from src.helpers.config import ConnectionConfig
+from src.helpers.mt_rest import AuthConfig
 
 KB = 1024
 MB = KB**2
@@ -63,8 +63,8 @@ def test_write_json(datadir):  # pylint: disable=redefined-outer-name
     assert read_json(output_file) == json_dict
 
 
-def test_mytardis_auth_header_injection(auth: MyTardisAuth):
-    test_auth = MyTardisAuth(username=auth.username, api_key=auth.api_key)
+def test_mytardis_auth_header_injection(auth: AuthConfig):
+    test_auth = AuthConfig(username=auth.username, api_key=auth.api_key)
     test_request = Request()
     test_auth(test_request)
     assert test_request.headers == {
@@ -72,11 +72,9 @@ def test_mytardis_auth_header_injection(auth: MyTardisAuth):
     }
 
 
-def test_mytardis_rest_factory_setup(
-    auth: MyTardisAuth, connection: MyTardisConnection
-):
+def test_mytardis_rest_factory_setup(auth: AuthConfig, connection: ConnectionConfig):
     test_factory = MyTardisRESTFactory(auth, connection)
-    test_auth = MyTardisAuth(username=auth.username, api_key=auth.api_key)
+    test_auth = AuthConfig(username=auth.username, api_key=auth.api_key)
     test_request = Request()
     assert test_factory.auth(test_request) == test_auth(test_request)
     assert test_factory.verify_certificate == connection.verify_certificate
@@ -93,7 +91,7 @@ def test_mytardis_rest_factory_setup(
 
 @mock.patch("requests.request")
 def test_backoff_on_mytardis_rest_factory_doesnt_trigger_on_httperror(
-    mock_requests_request, auth: MyTardisAuth, connection: MyTardisConnection
+    mock_requests_request, auth: AuthConfig, connection: ConnectionConfig
 ):
     mock_response = Response()
     mock_response.status_code = 504
@@ -106,7 +104,7 @@ def test_backoff_on_mytardis_rest_factory_doesnt_trigger_on_httperror(
 
 @mock.patch("requests.request")
 def test_backoff_on_mytardis_rest_factory(
-    mock_requests_request, auth: MyTardisAuth, connection: MyTardisConnection
+    mock_requests_request, auth: AuthConfig, connection: ConnectionConfig
 ):
     backoff_max_tries = 8
     # See backoff decorator on the mytardis_api_request function in MyTardisRESTFactory

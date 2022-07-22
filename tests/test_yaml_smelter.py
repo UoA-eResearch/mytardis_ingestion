@@ -7,10 +7,10 @@ import mock
 import pytest
 from pytest import fixture
 from src.helpers.config import (
-    MyTardisGeneral,
-    MyTardisIntrospection,
-    MyTardisSchema,
-    MyTardisStorage,
+    GeneralConfig,
+    IntrospectionConfig,
+    SchemaConfig,
+    StorageConfig,
 )
 
 logger = logging.getLogger(__name__)
@@ -30,10 +30,10 @@ test_malformed_ingestion_dict_too_many_objects = {
 
 @fixture
 def smelter(
-    general: MyTardisGeneral,
-    default_schema: MyTardisSchema,
-    storage: MyTardisStorage,
-    mytardis_setup: MyTardisIntrospection,
+    general: GeneralConfig,
+    default_schema: SchemaConfig,
+    storage: StorageConfig,
+    mytardis_setup: IntrospectionConfig,
 ):
     return YAMLSmelter(general, default_schema, storage, mytardis_setup)
 

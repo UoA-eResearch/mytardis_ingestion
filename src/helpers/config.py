@@ -21,7 +21,7 @@ from requests.auth import AuthBase
 logger = logging.getLogger(__name__)
 
 
-class MyTardisGeneral(BaseModel):
+class GeneralConfig(BaseModel):
     """MyTardis general config
 
     Attributes:
@@ -32,7 +32,7 @@ class MyTardisGeneral(BaseModel):
     default_institution: Optional[str]
 
 
-class MyTardisAuth(BaseModel, AuthBase):
+class AuthConfig(BaseModel, AuthBase):
     """Attaches HTTP headers for Tastypie API key Authentication to the given
 
     Because this ingestion script will sit inside the private network and will
@@ -58,7 +58,7 @@ class MyTardisAuth(BaseModel, AuthBase):
         return r
 
 
-class MyTardisProxy(BaseModel):
+class ProxyConfig(BaseModel):
     """MyTardis proxy configuration.
 
     Pydantic model for holding MyTardis proxy configuration.
@@ -74,7 +74,7 @@ class MyTardisProxy(BaseModel):
     https: Optional[HttpUrl] = None
 
 
-class MyTardisConnection(BaseModel):
+class ConnectionConfig(BaseModel):
     """MyTardis connection configuration.
 
     Pydantic model for MyTardis connection configuration.
@@ -84,7 +84,7 @@ class MyTardisConnection(BaseModel):
             MyTardis instance base URL
         verify_certificate : bool (default: True)
             Checks the validity of the host certificate if `True`
-        proxy : MyTardisProxy (default: None)
+        proxy : ProxyConfig (default: None)
 
     Properties:
         api_template : str
@@ -93,7 +93,7 @@ class MyTardisConnection(BaseModel):
 
     hostname: HttpUrl
     verify_certificate = True
-    proxy: Optional[MyTardisProxy] = None
+    proxy: Optional[ProxyConfig] = None
     _api_stub: str = PrivateAttr("/api/v1/")
 
     @property
@@ -102,7 +102,7 @@ class MyTardisConnection(BaseModel):
         return urljoin(self.hostname, self._api_stub)
 
 
-class MyTardisSchema(BaseModel):
+class SchemaConfig(BaseModel):
     """MyTardis default schema configuration.
 
     Pydantic model for MyTardis default schema configuration.
@@ -124,7 +124,7 @@ class MyTardisSchema(BaseModel):
     datafile: Optional[AnyUrl] = None
 
 
-class MyTardisStorage(BaseModel):
+class StorageConfig(BaseModel):
     """MyTardis storage configuration.
 
     Pydantic model for Mytardis storage configuration.
@@ -154,7 +154,7 @@ class MyTardisObject(str, Enum):
     institution = "institution"
 
 
-class MyTardisIntrospection(BaseModel):
+class IntrospectionConfig(BaseModel):
     """MyTardis introspection data.
 
     Pydantic model for MyTardis introspection data. NOTE: this class relies on
@@ -178,7 +178,7 @@ class MyTardisIntrospection(BaseModel):
         use_enum_values = True
 
 
-class MyTardisSettings(BaseSettings):
+class ConfigFromEnv(BaseSettings):
     """Full MyTardis settings model.
 
     This class holds the configuration to access and run an ingestion on
@@ -186,19 +186,19 @@ class MyTardisSettings(BaseSettings):
     mytardis_setup property.
 
     Attributes:
-        general : MyTardisGeneral
+        general : GeneralConfig
             instance of Pydantic general model
-        auth : MyTardisAuth
+        auth : AuthConfig
             instance of Pydantic auth model
-        connection : MyTardisConnection
+        connection : ConnectionConfig
             instance of Pydantic connection model
-        storage : MyTardisStorage
+        storage : StorageConfig
             instance of Pydantic storage model
-        default_schema : MyTardisSchema
+        default_schema : SchemaConfig
             instance of Pydantic schema model
 
     Properties:
-        mytardis_setup : Optional[MyTardisIntrospection] (default: None)
+        mytardis_setup : Optional[IntrospectionConfig] (default: None)
             instance of Pydantic introspection model either from private
             attribute or new request
 
@@ -226,20 +226,20 @@ class MyTardisSettings(BaseSettings):
     ```
     ## Example
     ```python
-    settings = MyTardisSettings()
+    settings = ConfigFromEnv()
     setup = settings.mytardis_setup # <- only has value after first call
     ```
     """
 
-    general: MyTardisGeneral
-    auth: MyTardisAuth
-    connection: MyTardisConnection
-    storage: MyTardisStorage
-    default_schema: MyTardisSchema
-    _mytardis_setup: Optional[MyTardisIntrospection] = PrivateAttr(None)
+    general: GeneralConfig
+    auth: AuthConfig
+    connection: ConnectionConfig
+    storage: StorageConfig
+    default_schema: SchemaConfig
+    _mytardis_setup: Optional[IntrospectionConfig] = PrivateAttr(None)
 
     @property
-    def mytardis_setup(self) -> MyTardisIntrospection:
+    def mytardis_setup(self) -> IntrospectionConfig:
         """Getter for mytardis_setup. Sends API request if self._mytardis_setup is None"""
         return self._mytardis_setup or self.get_mytardis_setup()
 
@@ -250,7 +250,7 @@ class MyTardisSettings(BaseSettings):
         env_file_encoding = "utf-8"
         env_nested_delimiter = "__"
 
-    def get_mytardis_setup(self) -> MyTardisIntrospection:
+    def get_mytardis_setup(self) -> IntrospectionConfig:
         """Query introspection API
 
         Requests introspection info from MyTardis instance configured in connection
@@ -288,36 +288,36 @@ class MyTardisSettings(BaseSettings):
             raise error
         except Exception as error:
             logger.error(
-                "Non-HTTP exception in MyTardisSettings.get_mytardis_setup",
+                "Non-HTTP exception in ConfigFromEnv.get_mytardis_setup",
                 exc_info=True,
             )
             raise error
         response_dict = response.json()
         if response_dict == {} or response_dict["objects"] == []:
             logger.error(
-                "MyTardis introspection did not return any data when called from MyTardisSettings.get_mytardis_setup"
+                "MyTardis introspection did not return any data when called from ConfigFromEnv.get_mytardis_setup"
             )
             raise ValueError(
                 (
-                    "MyTardis introspection did not return any data when called from MyTardisSettings.get_mytardis_setup"
+                    "MyTardis introspection did not return any data when called from ConfigFromEnv.get_mytardis_setup"
                 )
             )
         if len(response_dict["objects"]) > 1:
             logger.error(
                 (
                     """MyTardis introspection returned more than one object when called from
-                    MyTardisSettings.get_mytardis_setup\n
+                    ConfigFromEnv.get_mytardis_setup\n
                     Returned response was: %s""",
                     response_dict,
                 )
             )
             raise ValueError(
                 (
-                    "MyTardis introspection returned more than one object when called from MyTardisSettings.get_mytardis_setup"
+                    "MyTardis introspection returned more than one object when called from ConfigFromEnv.get_mytardis_setup"
                 )
             )
         response_dict = response_dict["objects"][0]
-        mytardis_setup = MyTardisIntrospection(
+        mytardis_setup = IntrospectionConfig(
             old_acls=response_dict["experiment_only_acls"],
             projects_enabled=response_dict["projects_enabled"],
             objects_with_ids=response_dict["identified_objects"]

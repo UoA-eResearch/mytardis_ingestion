@@ -8,10 +8,10 @@ from typing import Union
 
 from src.forges import Forge
 from src.helpers.config import (
-    MyTardisAuth,
-    MyTardisConnection,
-    MyTardisGeneral,
-    MyTardisIntrospection,
+    AuthConfig,
+    ConnectionConfig,
+    GeneralConfig,
+    IntrospectionConfig,
 )
 from src.overseers import Overseer
 from src.smelters import Smelter
@@ -40,10 +40,10 @@ class IngestionFactory:
 
     def __init__(
         self,
-        general: MyTardisGeneral,
-        auth: MyTardisAuth,
-        connection: MyTardisConnection,
-        mytardis_setup: MyTardisIntrospection,
+        general: GeneralConfig,
+        auth: AuthConfig,
+        connection: ConnectionConfig,
+        mytardis_setup: IntrospectionConfig,
         smelter: Smelter,
     ) -> None:
         """Initialises the Factory with the configuration found in the config_dict.
@@ -52,13 +52,13 @@ class IngestionFactory:
         specific MyTardis configuration is shared across all classes
 
         Args:
-            general : MyTardisGeneral
+            general : GeneralConfig
             Pydantic config class containing general information
-            auth : MyTardisAuth
+            auth : AuthConfig
             Pydantic config class containing information about authenticating with a MyTardis instance
-            connection : MyTardisConnection
+            connection : ConnectionConfig
             Pydantic config class containing information about connecting to a MyTardis instance
-            mytardis_setup : MyTardisIntrospection
+            mytardis_setup : IntrospectionConfig
             Pydantic config class containing information from the introspection API
             smelter : Smelter
             class instance of Smelter

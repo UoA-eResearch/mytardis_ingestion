@@ -5,7 +5,7 @@ import pytest
 import responses
 from requests.exceptions import HTTPError
 
-from src.helpers.config import MyTardisSettings
+from src.helpers.config import ConfigFromEnv
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -15,7 +15,7 @@ logger.propagate = True
 
 @responses.activate
 def test_get_mytardis_setup(
-    mytardis_settings_no_introspection: MyTardisSettings,
+    mytardis_settings_no_introspection: ConfigFromEnv,
     introspection_response_dict,
     mytardis_setup,
 ):
@@ -36,7 +36,7 @@ def test_get_mytardis_setup(
 
 @responses.activate
 def test_get_mytardis_setup_http_error(
-    caplog, mytardis_settings_no_introspection: MyTardisSettings
+    caplog, mytardis_settings_no_introspection: ConfigFromEnv
 ):
     responses.add(
         responses.GET,
@@ -53,14 +53,14 @@ def test_get_mytardis_setup_http_error(
         assert error_str in caplog.text
 
 
-@mock.patch("src.helpers.config.MyTardisSettings.get_mytardis_setup")
+@mock.patch("src.helpers.config.ConfigFromEnv.get_mytardis_setup")
 def test_get_mytardis_setup_general_error(
     mock_get_mytardis_setup,
     caplog,
-    mytardis_settings_no_introspection: MyTardisSettings,
+    mytardis_settings_no_introspection: ConfigFromEnv,
 ):
     mock_get_mytardis_setup.side_effect = IOError()
-    error_str = "Non-HTTP exception in MyTardisSettings.get_mytardis_setup"
+    error_str = "Non-HTTP exception in ConfigFromEnv.get_mytardis_setup"
     with pytest.raises(IOError):
         _ = mytardis_settings_no_introspection.get_mytardis_setup()
         assert error_str in caplog.text
@@ -69,7 +69,7 @@ def test_get_mytardis_setup_general_error(
 @responses.activate
 def test_get_mytardis_setup_no_objects(
     caplog,
-    mytardis_settings_no_introspection: MyTardisSettings,
+    mytardis_settings_no_introspection: ConfigFromEnv,
     response_dict_not_found,
 ):
 
@@ -83,7 +83,7 @@ def test_get_mytardis_setup_no_objects(
         status=200,
     )
     caplog.set_level(logging.ERROR)
-    error_str = "MyTardis introspection did not return any data when called from MyTardisSettings.get_mytardis_setup"
+    error_str = "MyTardis introspection did not return any data when called from ConfigFromEnv.get_mytardis_setup"
     with pytest.raises(ValueError, match=error_str):
         _ = mytardis_settings_no_introspection.get_mytardis_setup()
         assert error_str in caplog.text
@@ -92,7 +92,7 @@ def test_get_mytardis_setup_no_objects(
 @responses.activate
 def test_get_mytardis_setup_too_many_objects(
     caplog,
-    mytardis_settings_no_introspection: MyTardisSettings,
+    mytardis_settings_no_introspection: ConfigFromEnv,
     introspection_response_dict,
 ):
     test_dict = introspection_response_dict
@@ -108,9 +108,9 @@ def test_get_mytardis_setup_too_many_objects(
     )
     caplog.set_level(logging.ERROR)
     log_error_str = f"""MyTardis introspection returned more than one object when called from
-        MyTardisSettings.get_mytardis_setup\n
+        ConfigFromEnv.get_mytardis_setup\n
         Returned response was: {test_dict}"""
-    error_str = "MyTardis introspection returned more than one object when called from MyTardisSettings.get_mytardis_setup"
+    error_str = "MyTardis introspection returned more than one object when called from ConfigFromEnv.get_mytardis_setup"
 
     with pytest.raises(ValueError, match=error_str):
         _ = mytardis_settings_no_introspection.get_mytardis_setup()

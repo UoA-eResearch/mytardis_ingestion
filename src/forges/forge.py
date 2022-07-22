@@ -7,7 +7,7 @@ from urllib.parse import urljoin
 from requests.exceptions import HTTPError, JSONDecodeError
 
 from src.helpers import BadGateWayException, MyTardisRESTFactory, dict_to_json
-from src.helpers.config import MyTardisAuth, MyTardisConnection
+from src.helpers.config import AuthConfig, ConnectionConfig
 
 logger = logging.getLogger(__name__)
 
@@ -22,16 +22,16 @@ class Forge:
         rest_factory: An instance of MyTardisRESTFactory providing access to the API
     """
 
-    def __init__(self, auth: MyTardisAuth, connection: MyTardisConnection) -> None:
+    def __init__(self, auth: AuthConfig, connection: ConnectionConfig) -> None:
         """Class initialisation using a configuration dictionary.
 
         Creates an instance of MyTardisRESTFactory to provide access to MyTardis for
         creating MyTardis objects.
 
         Args:
-            auth : MyTardisAuth
+            auth : AuthConfig
             Pydantic config class containing information about authenticating with a MyTardis instance
-            connection : MyTardisConnection
+            connection : ConnectionConfig
             Pydantic config class containing information about connecting to a MyTardis instance
         """
         self.rest_factory = MyTardisRESTFactory(auth, connection)

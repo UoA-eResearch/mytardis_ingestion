@@ -11,7 +11,7 @@ import mock
 import responses
 from pytest import fixture
 from responses import matchers
-from src.helpers.config import MyTardisConnection, MyTardisSettings
+from src.helpers.config import ConnectionConfig, ConfigFromEnv
 
 from src.ingestion_factory import IngestionFactory
 from src.smelters import Smelter
@@ -28,7 +28,7 @@ GLOB_STRING = "*.test"
 @fixture
 def factory(
     smelter: Smelter,
-    mytardis_settings: MyTardisSettings,
+    mytardis_settings: ConfigFromEnv,
 ) -> IngestionFactory:
     IngestionFactory.__abstractmethods__ = set()
     return IngestionFactory(
@@ -103,7 +103,7 @@ def test_build_object_lists(datadir, factory: IngestionFactory):
 def test_replace_search_term_with_uri(
     factory: IngestionFactory,
     institution_response_dict,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     search_with_no_uri_dict,
 ):
     responses.add(
@@ -129,7 +129,7 @@ def test_replace_search_term_with_uri_fallback_search(
     factory: IngestionFactory,
     response_dict_not_found,
     institution_response_dict,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     search_with_no_uri_dict,
 ):
     responses.add(
@@ -165,7 +165,7 @@ def test_replace_search_term_with_uri_fallback_search(
 def test_replace_search_term_with_uri_not_found(
     factory: IngestionFactory,
     response_dict_not_found,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     search_with_no_uri_dict,
 ):
     responses.add(
@@ -203,7 +203,7 @@ def test_replace_search_term_with_uri_not_found(
 def test_replace_search_term_with_uri_http_error(
     factory: IngestionFactory,
     institution_response_dict,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     search_with_no_uri_dict,
 ):
     responses.add(
@@ -240,7 +240,7 @@ def test_replace_search_term_with_uri_http_error(
 @responses.activate
 def test_get_project_uri(
     factory: IngestionFactory,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     project_response_dict,
     search_with_no_uri_dict,
 ):
@@ -261,7 +261,7 @@ def test_get_project_uri(
 @responses.activate
 def test_get_project_uri_fall_back_search(
     factory: IngestionFactory,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     project_response_dict,
     search_with_no_uri_dict,
     response_dict_not_found,
@@ -292,7 +292,7 @@ def test_get_project_uri_fall_back_search(
 @responses.activate
 def test_get_project_uri_not_found(
     factory: IngestionFactory,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     search_with_no_uri_dict,
     response_dict_not_found,
 ):
@@ -320,7 +320,7 @@ def test_get_project_uri_not_found(
 @responses.activate
 def test_get_experiment_uri(
     factory: IngestionFactory,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     experiment_response_dict,
     search_with_no_uri_dict,
 ):
@@ -343,7 +343,7 @@ def test_get_experiment_uri(
 @responses.activate
 def test_get_experiment_uri_fall_back_search(
     factory: IngestionFactory,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     experiment_response_dict,
     search_with_no_uri_dict,
     response_dict_not_found,
@@ -378,7 +378,7 @@ def test_get_experiment_uri_fall_back_search(
 @responses.activate
 def test_get_experiment_uri_not_found(
     factory: IngestionFactory,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     search_with_no_uri_dict,
     response_dict_not_found,
 ):
@@ -410,7 +410,7 @@ def test_get_experiment_uri_not_found(
 @responses.activate
 def test_get_dataset_uri(
     factory: IngestionFactory,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     dataset_response_dict,
     search_with_no_uri_dict,
 ):
@@ -431,7 +431,7 @@ def test_get_dataset_uri(
 @responses.activate
 def test_get_dataset_uri_fall_back_search(
     factory: IngestionFactory,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     dataset_response_dict,
     search_with_no_uri_dict,
     response_dict_not_found,
@@ -464,7 +464,7 @@ def test_get_dataset_uri_fall_back_search(
 @responses.activate
 def test_get_dataset_uri_not_found(
     factory: IngestionFactory,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     search_with_no_uri_dict,
     response_dict_not_found,
 ):
@@ -494,7 +494,7 @@ def test_get_dataset_uri_not_found(
 @responses.activate
 def test_get_instrument_uri(
     factory: IngestionFactory,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     instrument_response_dict,
     search_with_no_uri_dict,
 ):
@@ -517,7 +517,7 @@ def test_get_instrument_uri(
 @responses.activate
 def test_get_instrument_uri_fall_back_search(
     factory: IngestionFactory,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     instrument_response_dict,
     search_with_no_uri_dict,
     response_dict_not_found,
@@ -552,7 +552,7 @@ def test_get_instrument_uri_fall_back_search(
 @responses.activate
 def test_get_instrument_uri_not_found(
     factory: IngestionFactory,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     search_with_no_uri_dict,
     response_dict_not_found,
 ):

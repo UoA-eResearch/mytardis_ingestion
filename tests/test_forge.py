@@ -7,7 +7,7 @@ import responses
 
 from src.forges import Forge
 from src.helpers import dict_to_json
-from src.helpers.config import MyTardisAuth, MyTardisConnection
+from src.helpers.config import AuthConfig, ConnectionConfig
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -22,8 +22,8 @@ test_object_id = 1
 @responses.activate
 def test_post_returns_expected_tuple(
     caplog,
-    auth: MyTardisAuth,
-    connection: MyTardisConnection,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
     project_object_dictionary,
     project_creation_response_dict,
 ):
@@ -51,8 +51,8 @@ def test_post_returns_expected_tuple(
 @responses.activate
 def test_post_returns_expected_tuple_when_no_json_return(
     caplog,
-    auth: MyTardisAuth,
-    connection: MyTardisConnection,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
     project_object_dictionary,
 ):
     caplog.set_level(logging.INFO)
@@ -76,8 +76,8 @@ def test_post_returns_expected_tuple_when_no_json_return(
 @responses.activate
 def test_overwrite_updates_action(
     caplog,
-    auth: MyTardisAuth,
-    connection: MyTardisConnection,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
     project_object_dictionary,
     project_creation_response_dict,
 ):
@@ -112,8 +112,8 @@ def test_overwrite_updates_action(
 
 def test_overwrite_without_object_id_logs_warning(
     caplog,
-    auth: MyTardisAuth,
-    connection: MyTardisConnection,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
     project_object_dictionary,
 ):
     caplog.set_level(logging.WARNING)
@@ -135,8 +135,8 @@ def test_overwrite_without_object_id_logs_warning(
 @responses.activate
 def test_HTTPError_logs_warning(
     caplog,
-    auth: MyTardisAuth,
-    connection: MyTardisConnection,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
     project_object_dictionary,
 ):
     responses.add(
@@ -164,8 +164,8 @@ def test_HTTPError_logs_warning(
 @responses.activate
 def test_HTTPError_fully_logs_error_at_error(
     caplog,
-    auth: MyTardisAuth,
-    connection: MyTardisConnection,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
     project_object_dictionary,
 ):
     responses.add(
@@ -191,8 +191,8 @@ def side_effect_raise_value_error(action, url, **kwargs):
 
 def test_non_HTTPError_logs_error(
     caplog,
-    auth: MyTardisAuth,
-    connection: MyTardisConnection,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
     project_object_dictionary,
 ):
     caplog.set_level(logging.WARNING)
@@ -218,8 +218,8 @@ def test_non_HTTPError_logs_error(
 def test_response_status_larger_than_300_logs_error(
     caplog,
     status_code,
-    auth: MyTardisAuth,
-    connection: MyTardisConnection,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
     project_object_dictionary,
 ):
     responses.add(
@@ -245,8 +245,8 @@ def test_response_status_larger_than_300_logs_error(
 @responses.activate
 def test_no_uri_returns_warning(
     caplog,
-    auth: MyTardisAuth,
-    connection: MyTardisConnection,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
     project_object_dictionary,
     project_creation_response_dict,
 ):

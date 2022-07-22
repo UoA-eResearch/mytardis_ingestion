@@ -9,7 +9,7 @@ import pytest
 import responses
 from pytest import fixture
 from responses import matchers
-from src.helpers.config import MyTardisAuth, MyTardisConnection, MyTardisIntrospection
+from src.helpers.config import AuthConfig, ConnectionConfig, IntrospectionConfig
 
 from src.overseers import Overseer
 
@@ -21,9 +21,9 @@ logger.propagate = True
 @fixture
 @responses.activate
 def overseer(
-    auth: MyTardisAuth,
-    connection: MyTardisConnection,
-    mytardis_setup: MyTardisIntrospection,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
+    mytardis_setup: IntrospectionConfig,
 ) -> Overseer:
     return Overseer(auth, connection, mytardis_setup)
 
@@ -35,7 +35,7 @@ def test_staticmethod_resource_uri_to_id():
 
 @responses.activate
 def test_get_objects(
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     overseer: Overseer,
     project_response_dict,
 ):
@@ -67,7 +67,7 @@ def test_get_objects(
 @responses.activate
 def test_get_objects_http_error(
     caplog,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     overseer: Overseer,
 ):
     object_type = "project"
@@ -128,7 +128,7 @@ def test_get_objects_general_error(
 
 @responses.activate
 def test_get_objects_no_objects(
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     overseer: Overseer,
     response_dict_not_found,
 ):
@@ -159,7 +159,7 @@ def test_get_objects_no_objects(
 
 @responses.activate
 def test_get_uris(
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     overseer: Overseer,
     project_response_dict,
 ):
@@ -186,7 +186,7 @@ def test_get_uris(
 
 @responses.activate
 def test_get_uris_no_objects(
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     overseer: Overseer,
     response_dict_not_found,
 ):
@@ -217,7 +217,7 @@ def test_get_uris_no_objects(
 @responses.activate
 def test_get_uris_malformed_return_dict(
     caplog,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     overseer: Overseer,
     project_response_dict,
 ):
@@ -254,7 +254,7 @@ def test_get_uris_malformed_return_dict(
 @responses.activate
 def test_get_uris_ensure_http_errors_caught_by_get_objects(
     caplog,
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     overseer: Overseer,
 ):
     caplog.set_level(logging.WARNING)
@@ -337,7 +337,7 @@ def test_is_uri_int_not_string():
 
 @responses.activate
 def test_get_uris_by_identifier(
-    connection: MyTardisConnection,
+    connection: ConnectionConfig,
     overseer: Overseer,
     project_response_dict,
 ):
