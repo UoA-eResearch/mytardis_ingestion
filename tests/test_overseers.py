@@ -2,26 +2,16 @@
 
 """Tests of the Overseer class and its functions"""
 import logging
+from urllib.parse import urljoin
 
 import mock
 import pytest
 import responses
 from pytest import fixture
-from requests.exceptions import HTTPError
 from responses import matchers
+from src.helpers.config import AuthConfig, ConnectionConfig, IntrospectionConfig
 
 from src.overseers import Overseer
-
-from .conftest import (
-    config_dict,
-    institution_response_dict,
-    introspection_response_dict,
-    mytardis_setup_dict,
-    project_response_dict,
-    response_dict_not_found,
-)
-
-# from requests import Response
 
 
 logger = logging.getLogger(__name__)
@@ -30,15 +20,12 @@ logger.propagate = True
 
 @fixture
 @responses.activate
-def overseer(config_dict, introspection_response_dict):
-    responses.add(
-        responses.GET,
-        "https://test.mytardis.nectar.auckland.ac.nz/api/v1/introspection",
-        json=(introspection_response_dict),
-        status=200,
-    )
-
-    return Overseer(config_dict)
+def overseer(
+    auth: AuthConfig,
+    connection: ConnectionConfig,
+    mytardis_setup: IntrospectionConfig,
+) -> Overseer:
+    return Overseer(auth, connection, mytardis_setup)
 
 
 def test_staticmethod_resource_uri_to_id():
@@ -47,107 +34,9 @@ def test_staticmethod_resource_uri_to_id():
 
 
 @responses.activate
-def test_get_mytardis_setup(
-    config_dict,
-    overseer,
-    introspection_response_dict,
-    mytardis_setup_dict,
-):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/introspection",
-        json=(introspection_response_dict),
-        status=200,
-    )
-
-    assert overseer.get_mytardis_set_up() == mytardis_setup_dict
-
-
-@responses.activate
-def test_get_mytardis_setup_http_error(
-    caplog,
-    config_dict,
-    overseer,
-):
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/introspection",
-        status=504,
-    )
-    caplog.set_level(logging.ERROR)
-    error_str = "Failed HTTP request from Overseer.get_mytardis_set_up"
-    with pytest.raises(HTTPError):
-        _ = overseer.get_mytardis_set_up()
-        assert error_str in caplog.text
-
-
-@mock.patch("src.helpers.mt_rest.MyTardisRESTFactory.mytardis_api_request")
-def test_get_mytardis_setup_general_error(mock_mytardis_api_request, caplog, overseer):
-    mock_mytardis_api_request.side_effect = IOError()
-    error_str = "Non-HTTP exception in Overseer.get_mytardis_set_up"
-    with pytest.raises(IOError):
-        _ = overseer.get_mytardis_set_up()
-        assert error_str in caplog.text
-
-
-@responses.activate
-def test_get_mytardis_setup_no_objects(
-    caplog,
-    config_dict,
-    overseer,
-    response_dict_not_found,
-):
-
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/introspection",
-        json=(response_dict_not_found),
-        status=200,
-    )
-    caplog.set_level(logging.ERROR)
-    error_str = (
-        "MyTardis introspection did not return any data when called from "
-        "Overseer.get_mytardis_set_up"
-    )
-    with pytest.raises(ValueError, match=error_str):
-        _ = overseer.get_mytardis_set_up()
-        assert error_str in caplog.text
-
-
-@responses.activate
-def test_get_mytardis_setup_too_many_objects(
-    caplog,
-    config_dict,
-    overseer,
-    introspection_response_dict,
-):
-    test_dict = introspection_response_dict
-    test_dict["objects"].append("Some Fake Data")
-    responses.add(
-        responses.GET,
-        f"{config_dict['hostname']}/api/v1/introspection",
-        json=(test_dict),
-        status=200,
-    )
-    caplog.set_level(logging.ERROR)
-    log_error_str = (
-        "MyTardis introspection returned more than one object when called from "
-        "Overseer.get_mytardis_set_up\n"
-        f"Returned response was: {test_dict}"
-    )
-    error_str = (
-        "MyTardis introspection returned more than one object when called from "
-        "Overseer.get_mytardis_set_up"
-    )
-    with pytest.raises(ValueError, match=error_str):
-        _ = overseer.get_mytardis_set_up()
-        assert log_error_str in caplog.text
-
-
-@responses.activate
 def test_get_objects(
-    config_dict,
-    overseer,
+    connection: ConnectionConfig,
+    overseer: Overseer,
     project_response_dict,
 ):
     object_type = "project"
@@ -155,7 +44,7 @@ def test_get_objects(
     search_string = "Project_1"
     responses.add(
         responses.GET,
-        f"{config_dict['hostname']}/api/v1/{object_type}",
+        urljoin(connection.api_template, object_type),
         json=(project_response_dict),
         match=[
             matchers.query_param_matcher(
@@ -178,15 +67,15 @@ def test_get_objects(
 @responses.activate
 def test_get_objects_http_error(
     caplog,
-    config_dict,
-    overseer,
+    connection: ConnectionConfig,
+    overseer: Overseer,
 ):
     object_type = "project"
     search_target = "pids"
     search_string = "Project_1"
     responses.add(
         responses.GET,
-        f"{config_dict['hostname']}/api/v1/{object_type}",
+        urljoin(connection.api_template, object_type),
         match=[
             matchers.query_param_matcher(
                 {search_target: search_string},
@@ -216,7 +105,7 @@ def test_get_objects_http_error(
 def test_get_objects_general_error(
     mock_mytardis_api_request,
     caplog,
-    overseer,
+    overseer: Overseer,
 ):
     mock_mytardis_api_request.side_effect = IOError()
     object_type = "project"
@@ -239,8 +128,8 @@ def test_get_objects_general_error(
 
 @responses.activate
 def test_get_objects_no_objects(
-    config_dict,
-    overseer,
+    connection: ConnectionConfig,
+    overseer: Overseer,
     response_dict_not_found,
 ):
     object_type = "project"
@@ -248,7 +137,7 @@ def test_get_objects_no_objects(
     search_string = "Project_1"
     responses.add(
         responses.GET,
-        f"{config_dict['hostname']}/api/v1/{object_type}",
+        urljoin(connection.api_template, object_type),
         json=(response_dict_not_found),
         match=[
             matchers.query_param_matcher(
@@ -270,8 +159,8 @@ def test_get_objects_no_objects(
 
 @responses.activate
 def test_get_uris(
-    config_dict,
-    overseer,
+    connection: ConnectionConfig,
+    overseer: Overseer,
     project_response_dict,
 ):
     object_type = "project"
@@ -279,7 +168,7 @@ def test_get_uris(
     search_string = "Project_1"
     responses.add(
         responses.GET,
-        f"{config_dict['hostname']}/api/v1/{object_type}",
+        urljoin(connection.api_template, object_type),
         json=(project_response_dict),
         match=[
             matchers.query_param_matcher(
@@ -297,8 +186,8 @@ def test_get_uris(
 
 @responses.activate
 def test_get_uris_no_objects(
-    config_dict,
-    overseer,
+    connection: ConnectionConfig,
+    overseer: Overseer,
     response_dict_not_found,
 ):
     object_type = "project"
@@ -306,7 +195,7 @@ def test_get_uris_no_objects(
     search_string = "Project_1"
     responses.add(
         responses.GET,
-        f"{config_dict['hostname']}/api/v1/{object_type}",
+        urljoin(connection.api_template, object_type),
         json=(response_dict_not_found),
         match=[
             matchers.query_param_matcher(
@@ -328,8 +217,8 @@ def test_get_uris_no_objects(
 @responses.activate
 def test_get_uris_malformed_return_dict(
     caplog,
-    config_dict,
-    overseer,
+    connection: ConnectionConfig,
+    overseer: Overseer,
     project_response_dict,
 ):
     caplog.set_level(logging.ERROR)
@@ -340,7 +229,7 @@ def test_get_uris_malformed_return_dict(
     search_string = "Project_1"
     responses.add(
         responses.GET,
-        f"{config_dict['hostname']}/api/v1/{object_type}",
+        urljoin(connection.api_template, object_type),
         json=(project_response_dict),
         match=[
             matchers.query_param_matcher(
@@ -365,8 +254,8 @@ def test_get_uris_malformed_return_dict(
 @responses.activate
 def test_get_uris_ensure_http_errors_caught_by_get_objects(
     caplog,
-    config_dict,
-    overseer,
+    connection: ConnectionConfig,
+    overseer: Overseer,
 ):
     caplog.set_level(logging.WARNING)
     object_type = "project"
@@ -374,7 +263,7 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
     search_string = "Project_1"
     responses.add(
         responses.GET,
-        f"{config_dict['hostname']}/api/v1/{object_type}",
+        urljoin(connection.api_template, object_type),
         match=[
             matchers.query_param_matcher(
                 {search_target: search_string},
@@ -402,7 +291,7 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
 @mock.patch("src.helpers.mt_rest.MyTardisRESTFactory.mytardis_api_request")
 def test_get_uris_general_error(
     mock_mytardis_api_request,
-    overseer,
+    overseer: Overseer,
 ):
     mock_mytardis_api_request.side_effect = IOError()
     object_type = "project"
@@ -448,8 +337,8 @@ def test_is_uri_int_not_string():
 
 @responses.activate
 def test_get_uris_by_identifier(
-    config_dict,
-    overseer,
+    connection: ConnectionConfig,
+    overseer: Overseer,
     project_response_dict,
 ):
     object_type = "project"
@@ -457,7 +346,7 @@ def test_get_uris_by_identifier(
     search_string = "Project_1"
     responses.add(
         responses.GET,
-        f"{config_dict['hostname']}/api/v1/{object_type}",
+        urljoin(connection.api_template, object_type),
         json=(project_response_dict),
         match=[
             matchers.query_param_matcher(
@@ -474,12 +363,12 @@ def test_get_uris_by_identifier(
 
 def test_get_uris_by_identifier_app_not_used(
     caplog,
-    overseer,
+    overseer: Overseer,
 ):
     caplog.set_level(logging.WARNING)
     object_type = "project"
     search_string = "Project_1"
-    overseer.mytardis_setup["objects_with_ids"] = []
+    overseer.mytardis_setup.objects_with_ids = []
     warning_str = (
         "The identifiers app is not installed in the instance of MyTardis, "
         "or there are no objects defined in OBJECTS_WITH_IDENTIFIERS in "
@@ -491,12 +380,12 @@ def test_get_uris_by_identifier_app_not_used(
 
 def test_get_uris_by_identifier_object_not_set_up_for_ids(
     caplog,
-    overseer,
+    overseer: Overseer,
 ):
     caplog.set_level(logging.WARNING)
     object_type = "project"
     search_string = "Project_1"
-    overseer.mytardis_setup["objects_with_ids"] = ["experiment"]
+    overseer.mytardis_setup.objects_with_ids = ["experiment"]
     warning_str = (
         f"The object type, {object_type}, is not present in "
         "OBJECTS_WITH_IDENTIFIERS defined in settings.py"

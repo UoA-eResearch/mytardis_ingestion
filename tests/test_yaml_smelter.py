@@ -1,19 +1,22 @@
 # import pytest
 
 import logging
-import shutil
 from pathlib import Path
 
 import mock
 import pytest
 from pytest import fixture
-
-from .conftest import config_dict, datadir, raw_project_dictionary
+from src.helpers.config import (
+    GeneralConfig,
+    IntrospectionConfig,
+    SchemaConfig,
+    StorageConfig,
+)
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
-from src.smelters import YAMLSmelter
+from src.smelters import YAMLSmelter, yaml_smelter
 
 test_malformed_ingestion_dict_no_object = {"project_files": "some-data"}
 
@@ -22,25 +25,17 @@ test_malformed_ingestion_dict_too_many_objects = {
     "experiment_name": "test_name_2",
 }
 
-
-@fixture
-def YAML_config_dict(config_dict):
-    configuration = config_dict
-    configuration["projects_enabled"] = True
-    configuration["objects_with_ids"] = [
-        "dataset",
-        "experiment",
-        "facility",
-        "instrument",
-        "project",
-        "institution",
-    ]
-    return configuration
+# pylint: disable=missing-function-docstring
 
 
 @fixture
-def smelter(YAML_config_dict):
-    return YAMLSmelter(YAML_config_dict)
+def smelter(
+    general: GeneralConfig,
+    default_schema: SchemaConfig,
+    storage: StorageConfig,
+    mytardis_setup: IntrospectionConfig,
+):
+    return YAMLSmelter(general, default_schema, storage, mytardis_setup)
 
 
 @fixture
@@ -66,22 +61,20 @@ def project_dictionary_from_yaml_file():
 
 
 @pytest.mark.dependency()
-def test_tidy_up_metadata_keys(smelter, raw_project_dictionary):
+def test_tidy_up_metadata_keys(smelter: YAMLSmelter, raw_project_dictionary):
     cleaned_dict = smelter._tidy_up_metadata_keys(raw_project_dictionary, "project")
     assert cleaned_dict["project_my_test_key_1"] == "Test Value"
     assert cleaned_dict["project_my_test_key_2"] == "Test Value 2"
 
 
-def test_get_file_type_for_input_files(YAML_config_dict):
-    smelter = YAMLSmelter(YAML_config_dict)
+def test_get_file_type_for_input_files(smelter: YAMLSmelter):
     assert smelter.get_file_type_for_input_files() == "*.yaml"
 
 
 @mock.patch("src.smelters.yaml_smelter.YAMLSmelter.read_file")
 def test_get_objects_in_input_file(
     mock_read_file,
-    YAML_config_dict,
-    smelter,
+    smelter: YAMLSmelter,
     project_dictionary_from_yaml_file,
 ):
     mock_read_file.return_value = [project_dictionary_from_yaml_file]
@@ -94,8 +87,7 @@ def test_get_objects_in_input_file(
 def test_get_objects_in_input_file_with_no_objects(
     mock_read_file,
     caplog,
-    YAML_config_dict,
-    smelter,
+    smelter: YAMLSmelter,
     project_dictionary_from_yaml_file,
 ):
     caplog.set_level(logging.WARNING)
@@ -113,8 +105,7 @@ def test_get_objects_in_input_file_with_no_objects(
 def test_get_objects_in_input_file_with_two_objects(
     mock_read_file,
     caplog,
-    YAML_config_dict,
-    smelter,
+    smelter: YAMLSmelter,
     project_dictionary_from_yaml_file,
 ):
     caplog.set_level(logging.WARNING)
@@ -132,13 +123,13 @@ def test_get_objects_in_input_file_with_two_objects(
 
 
 @pytest.mark.dependency()
-def test_read_file(datadir, smelter, project_dictionary_from_yaml_file):
+def test_read_file(datadir, smelter: YAMLSmelter, project_dictionary_from_yaml_file):
     input_file = Path(datadir / "test_project.yaml")
     assert smelter.read_file(input_file) == (project_dictionary_from_yaml_file,)
 
 
 @pytest.mark.dependency(depends=["test_read_file"])
-def test_read_file_exceptions_log_error(caplog, datadir, smelter):
+def test_read_file_exceptions_log_error(caplog, datadir, smelter: YAMLSmelter):
     caplog.set_level(logging.ERROR)
     input_file = Path(datadir / "no_such_file.dat")
     with pytest.raises(FileNotFoundError):
@@ -148,32 +139,32 @@ def test_read_file_exceptions_log_error(caplog, datadir, smelter):
         assert "FileNotFoundError" in caplog.text
 
 
-"""@pytest.mark.dependency(depends=["test_read_file", "test_tidy_up_metadata_keys"])
-def test_rebase_file_path(datadir, smelter):
-    input_file = Path(datadir / "test_datafile.yaml")
-    parsed_dict = smelter.read_file(input_file)
-    cleaned_dict = smelter.rebase_file_path(parsed_dict[0])
-    test_dict = {
-        "datafiles": {
-            "dataset_id": ["Test-dataset"],
-            "files": [
-                {
-                    "metadata": {
-                        "My Test Key 1": "Test Value",
-                        "My Test Key 2": "Test Value 2",
-                    },
-                    "name": Path("/target/path/test_data.dat"),
-                },
-                {"name": Path("/target/path/test_data2.dat")},
-            ],
-        }
-    }
-    assert cleaned_dict == test_dict"""
+# @pytest.mark.dependency(depends=["test_read_file", "test_tidy_up_metadata_keys"])
+# def test_rebase_file_path(datadir, smelter):
+#     input_file = Path(datadir / "test_datafile.yaml")
+#     parsed_dict = smelter.read_file(input_file)
+#     cleaned_dict = smelter.rebase_file_path(parsed_dict[0])
+#     test_dict = {
+#         "datafiles": {
+#             "dataset_id": ["Test-dataset"],
+#             "files": [
+#                 {
+#                     "metadata": {
+#                         "My Test Key 1": "Test Value",
+#                         "My Test Key 2": "Test Value 2",
+#                     },
+#                     "name": Path("/target/path/test_data.dat"),
+#                 },
+#                 {"name": Path("/target/path/test_data2.dat")},
+#             ],
+#         }
+#     }
+#     assert cleaned_dict == test_dict
 
 
 @pytest.mark.xfail
 @pytest.mark.dependency(depends=["test_read_file", "test_tidy_up_metadata_keys"])
-def test_expand_datafile_entry(datadir, smelter):
+def test_expand_datafile_entry(datadir, smelter: YAMLSmelter):
     input_file = Path(datadir / "test_datafile.yaml")
     smelter.source_dir = Path(datadir)
     cleaned_dict = smelter.read_file(input_file)
@@ -216,7 +207,9 @@ def test_expand_datafile_entry(datadir, smelter):
 @pytest.mark.xfail
 @pytest.mark.dependency(depends=["test_expand_datafile_entry"])
 @mock.patch("pathlib.Path.iterdir")
-def test_expand_datafile_entry_for_directories(mock_iterdir, datadir, smelter):
+def test_expand_datafile_entry_for_directories(
+    mock_iterdir, datadir, smelter: YAMLSmelter
+):
     iter_dir_return_list = [
         Path(datadir / "test_data.dat"),
         Path(datadir / "test_data2.dat"),
@@ -263,7 +256,7 @@ def test_expand_datafile_entry_for_directories(mock_iterdir, datadir, smelter):
     assert test_processed_file_list == file_list
 
 
-def test_get_object_from_dictionary(smelter):
+def test_get_object_from_dictionary(smelter: YAMLSmelter):
     project_dict = {"project_name": "Name"}
     experiment_dict = {"experiment_name": "Name"}
     dataset_dict = {"dataset_name": "Name"}

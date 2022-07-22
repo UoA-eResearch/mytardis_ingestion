@@ -4,16 +4,10 @@ import logging
 
 import pytest
 import responses
-from requests.exceptions import HTTPError
 
 from src.forges import Forge
 from src.helpers import dict_to_json
-
-from .conftest import (
-    config_dict,
-    project_creation_response_dict,
-    project_object_dictionary,
-)
+from src.helpers.config import AuthConfig, ConnectionConfig
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -28,7 +22,8 @@ test_object_id = 1
 @responses.activate
 def test_post_returns_expected_tuple(
     caplog,
-    config_dict,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
     project_object_dictionary,
     project_creation_response_dict,
 ):
@@ -39,7 +34,7 @@ def test_post_returns_expected_tuple(
         status=200,
         json=(project_creation_response_dict),
     )
-    forge = Forge(config_dict)
+    forge = Forge(auth, connection)
     test_value = forge.forge_object(
         test_object_name,
         test_object_type,
@@ -56,7 +51,8 @@ def test_post_returns_expected_tuple(
 @responses.activate
 def test_post_returns_expected_tuple_when_no_json_return(
     caplog,
-    config_dict,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
     project_object_dictionary,
 ):
     caplog.set_level(logging.INFO)
@@ -65,7 +61,7 @@ def test_post_returns_expected_tuple_when_no_json_return(
         f"https://test.mytardis.nectar.auckland.ac.nz/api/v1/{test_object_type}/",
         status=201,
     )
-    forge = Forge(config_dict)
+    forge = Forge(auth, connection)
     test_value = forge.forge_object(
         test_object_name, test_object_type, project_object_dictionary
     )
@@ -80,7 +76,8 @@ def test_post_returns_expected_tuple_when_no_json_return(
 @responses.activate
 def test_overwrite_updates_action(
     caplog,
-    config_dict,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
     project_object_dictionary,
     project_creation_response_dict,
 ):
@@ -97,7 +94,7 @@ def test_overwrite_updates_action(
         status=200,
         json=(project_creation_response_dict),
     )
-    forge = Forge(config_dict)
+    forge = Forge(auth, connection)
     test_value = forge.forge_object(
         test_object_name,
         test_object_type,
@@ -115,11 +112,12 @@ def test_overwrite_updates_action(
 
 def test_overwrite_without_object_id_logs_warning(
     caplog,
-    config_dict,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
     project_object_dictionary,
 ):
     caplog.set_level(logging.WARNING)
-    forge = Forge(config_dict)
+    forge = Forge(auth, connection)
     forge.forge_object(
         test_object_name,
         test_object_type,
@@ -137,7 +135,8 @@ def test_overwrite_without_object_id_logs_warning(
 @responses.activate
 def test_HTTPError_logs_warning(
     caplog,
-    config_dict,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
     project_object_dictionary,
 ):
     responses.add(
@@ -147,7 +146,7 @@ def test_HTTPError_logs_warning(
     )
     test_object_json = dict_to_json(project_object_dictionary)
     caplog.set_level(logging.WARNING)
-    forge = Forge(config_dict)
+    forge = Forge(auth, connection)
     test_value = forge.forge_object(
         test_object_name, test_object_type, project_object_dictionary
     )
@@ -165,7 +164,8 @@ def test_HTTPError_logs_warning(
 @responses.activate
 def test_HTTPError_fully_logs_error_at_error(
     caplog,
-    config_dict,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
     project_object_dictionary,
 ):
     responses.add(
@@ -174,7 +174,7 @@ def test_HTTPError_fully_logs_error_at_error(
         status=504,
     )
     caplog.set_level(logging.ERROR)
-    forge = Forge(config_dict)
+    forge = Forge(auth, connection)
     _ = forge.forge_object(
         test_object_name, test_object_type, project_object_dictionary
     )
@@ -189,9 +189,14 @@ def side_effect_raise_value_error(action, url, **kwargs):
     raise ValueError
 
 
-def test_non_HTTPError_logs_error(caplog, config_dict, project_object_dictionary):
+def test_non_HTTPError_logs_error(
+    caplog,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
+    project_object_dictionary,
+):
     caplog.set_level(logging.WARNING)
-    forge = Forge(config_dict)
+    forge = Forge(auth, connection)
     test_object_json = dict_to_json(project_object_dictionary)
     forge.rest_factory.mytardis_api_request = side_effect_raise_value_error
     warning_str = (
@@ -213,7 +218,8 @@ def test_non_HTTPError_logs_error(caplog, config_dict, project_object_dictionary
 def test_response_status_larger_than_300_logs_error(
     caplog,
     status_code,
-    config_dict,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
     project_object_dictionary,
 ):
     responses.add(
@@ -222,7 +228,7 @@ def test_response_status_larger_than_300_logs_error(
         status=status_code,
     )
     caplog.set_level(logging.WARNING)
-    forge = Forge(config_dict)
+    forge = Forge(auth, connection)
     test_value = forge.forge_object(
         test_object_name, test_object_type, project_object_dictionary
     )
@@ -239,7 +245,8 @@ def test_response_status_larger_than_300_logs_error(
 @responses.activate
 def test_no_uri_returns_warning(
     caplog,
-    config_dict,
+    auth: AuthConfig,
+    connection: ConnectionConfig,
     project_object_dictionary,
     project_creation_response_dict,
 ):
@@ -253,7 +260,7 @@ def test_no_uri_returns_warning(
         json=test_response_dict_without_uri,
     )
     caplog.set_level(logging.WARNING)
-    forge = Forge(config_dict)
+    forge = Forge(auth, connection)
     test_value = forge.forge_object(
         test_object_name, test_object_type, project_object_dictionary
     )

@@ -10,6 +10,12 @@ from pathlib import Path
 from typing import Union
 
 from src.helpers import SanityCheckError, calculate_md5sum, sanity_check
+from src.helpers.config import (
+    GeneralConfig,
+    IntrospectionConfig,
+    SchemaConfig,
+    StorageConfig,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +31,13 @@ class Smelter(ABC):
 
     """
 
-    def __init__(self, mytardis_config: dict) -> None:
+    def __init__(
+        self,
+        general: GeneralConfig,
+        default_schema: SchemaConfig,
+        storage: StorageConfig,
+        mytardis_setup: IntrospectionConfig = None,
+    ) -> None:
         """Class initialisation to set options for dictionary processing
 
         Stores MyTardis set up information from the introspection API to allow the parser
@@ -33,35 +45,30 @@ class Smelter(ABC):
         gracefully.
 
         Args:
-            projects_enabled: a boolean flag indicating whether or not to process projects
-            objects_with_pids: a list of objects that have identifiers. Defaults to empty
-            objects_with_profiles: a list of objects that have profiles. Defaults to empty
-            default_schema: a dictionary of schema namespaces to use for projects,
-                experiments, datasets and datafiles
+            general : GeneralConfig
+            Pydantic config class containing general information
+            default_schema : SchemaConfig
+            Pydantic config class containing information about default meta data schemas
+            storage : StorageConfig
+            Pydantic config class containing information about storage (box, source and target paths)
+            mytardis_setup : IntrospectionConfig
+            Pydantic config class containing information from the introspection API
         """
-        self.projects_enabled = mytardis_config["projects_enabled"]
-        try:
-            self.objects_with_ids = mytardis_config["objects_with_ids"]
-        except KeyError:
-            self.objects_with_ids = []
-        try:
-            self.objects_with_profiles = mytardis_config["objects_with_profiles"]
-        except KeyError:
-            self.objects_with_profiles = []
+
+        if mytardis_setup:
+            self.projects_enabled = mytardis_setup.projects_enabled
+            self.objects_with_ids = mytardis_setup.objects_with_ids
+            self.objects_with_profiles = mytardis_setup.objects_with_profiles
+
         self.OBJECT_KEY_CONVERSION = (  # pylint: disable=invalid-name
             self.get_key_conversions()
         )
-        try:
-            self.default_schema = mytardis_config["default_schema"]
-        except KeyError:
-            self.default_schema = None
-        try:
-            self.default_institution = mytardis_config["default_institution"]
-        except KeyError:
-            self.default_institution = None
-        self.source_dir = Path(mytardis_config["source_directory"])
-        self.target_dir = Path(mytardis_config["target_directory"])
-        self.storage_box = mytardis_config["storage_box"]
+
+        self.default_schema = default_schema
+        self.default_institution = general.default_institution
+        self.source_dir = storage.source_directory
+        self.target_dir = storage.target_directory
+        self.storage_box = storage.box
 
     def tidy_up_dictionary_keys(self, parsed_dict: dict) -> tuple:
         """A helper function to ensure that the dictionary keys in a parsed dictionary
@@ -286,7 +293,7 @@ class Smelter(ABC):
             "users",
             "groups",
         ]
-        if "project" in self.objects_with_ids:
+        if self.objects_with_ids and "project" in self.objects_with_ids:
             object_keys.append("persistent_id")
             object_keys.append("alternate_ids")
         if "schema" not in cleaned_dict.keys():
@@ -325,9 +332,9 @@ class Smelter(ABC):
         Raises:
             SanityCheckError if no default schema can be found for this object type
         """
-        if object_type not in self.default_schema.keys():
+        if not hasattr(self.default_schema, object_type):
             raise SanityCheckError(name, cleaned_dict, "default schema")
-        cleaned_dict["schema"] = self.default_schema[object_type]
+        cleaned_dict["schema"] = getattr(self.default_schema, object_type)
         return cleaned_dict
 
     def _verify_project(self, cleaned_dict: dict) -> bool:
@@ -352,7 +359,7 @@ class Smelter(ABC):
             "principal_investigator",
             "institution",
         ]
-        if "project" in self.objects_with_ids:
+        if self.objects_with_ids and "project" in self.objects_with_ids:
             required_keys.append("persistent_id")
         try:
             return sanity_check("project", cleaned_dict, required_keys)
@@ -397,7 +404,7 @@ class Smelter(ABC):
             "users",
             "groups",
         ]
-        if "experiment" in self.objects_with_ids:
+        if self.objects_with_ids and "experiment" in self.objects_with_ids:
             object_keys.append("persistent_id")
             object_keys.append("alternate_ids")
         if self.projects_enabled:
@@ -436,7 +443,7 @@ class Smelter(ABC):
             "description",
             "schema",
         ]
-        if "experiment" in self.objects_with_ids:
+        if self.objects_with_ids and "experiment" in self.objects_with_ids:
             required_keys.append("persistent_id")
         if self.projects_enabled:
             required_keys.append("projects")
@@ -477,7 +484,7 @@ class Smelter(ABC):
             "users",
             "groups",
         ]
-        if "dataset" in self.objects_with_ids:
+        if self.objects_with_ids and "dataset" in self.objects_with_ids:
             object_keys.append("persistent_id")
             object_keys.append("alternate_ids")
         if "schema" not in cleaned_dict.keys():
@@ -515,7 +522,7 @@ class Smelter(ABC):
             "experiments",
             "instrument",
         ]
-        if "dataset" in self.objects_with_ids:
+        if self.objects_with_ids and "dataset" in self.objects_with_ids:
             required_keys.append("persistent_id")
         try:
             return sanity_check("dataset", cleaned_dict, required_keys)

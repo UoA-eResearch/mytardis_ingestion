@@ -7,28 +7,18 @@ from pathlib import Path
 
 import mock
 import pytest
-from pytest import fixture
 
 from src.helpers import SanityCheckError
+from src.helpers.config import (
+    GeneralConfig,
+    IntrospectionConfig,
+    SchemaConfig,
+    StorageConfig,
+)
 from src.smelters import Smelter
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
-
-from .conftest import (
-    config_dict,
-    mytardis_config,
-    preconditioned_datafile_dictionary,
-    raw_datafile_dictionary,
-    raw_dataset_dictionary,
-    raw_experiment_dictionary,
-    raw_project_dictionary,
-    smelter,
-    tidied_datafile_dictionary,
-    tidied_dataset_dictionary,
-    tidied_experiment_dictionary,
-    tidied_project_dictionary,
-)
 
 
 def test_tidy_up_dictionary_keys_with_good_inputs(smelter):
@@ -58,12 +48,21 @@ def test_tidy_up_dictionary_keys_with_no_translation_dict(caplog, smelter):
     )
 
 
-def test_mytardis_setup_with_no_ids(mytardis_config):
-    mytardis_setup_no_ids = mytardis_config
-    mytardis_setup_no_ids.pop("objects_with_ids")
+def test_mytardis_setup_with_no_ids(
+    general: GeneralConfig,
+    default_schema: SchemaConfig,
+    storage: StorageConfig,
+    mytardis_setup: IntrospectionConfig,
+):
+    mytardis_setup.objects_with_ids = None
     Smelter.__abstractmethods__ = set()
-    smelter_no_id = Smelter(mytardis_setup_no_ids)
-    assert smelter_no_id.objects_with_ids == []
+    smelter_no_id = Smelter(
+        general,
+        default_schema,
+        storage,
+        mytardis_setup,
+    )
+    assert smelter_no_id.objects_with_ids is None
 
 
 def test_parse_groups_and_users_from_separate_access():
@@ -229,13 +228,23 @@ def test_verify_project_with_good_dictionary(
     assert smelter._verify_project(project_dict) == True
 
 
-def test_smelt_project_no_projects(caplog, mytardis_config):
+def test_smelt_project_no_projects(
+    caplog,
+    general: GeneralConfig,
+    default_schema: SchemaConfig,
+    storage: StorageConfig,
+    mytardis_setup: IntrospectionConfig,
+):
     caplog.set_level(logging.WARNING)
-    mytardis_setup_no_projects = mytardis_config
-    mytardis_setup_no_projects["projects_enabled"] = False
+    mytardis_setup.projects_enabled = False
     cleaned_dict = {}
     Smelter.__abstractmethods__ = set()
-    smelter = Smelter(mytardis_setup_no_projects)
+    smelter = Smelter(
+        general,
+        default_schema,
+        storage,
+        mytardis_setup,
+    )
     warning_str = (
         "MyTardis is not currently set up to use projects. Please check settings.py "
         "and ensure that the 'projects' app is enabled. This may require rerunning "

@@ -20,30 +20,30 @@ The workflow for these scripts are as follows:
 import logging
 import subprocess
 from pathlib import Path
-
-from src.specific_implementations import YAMLIngestionFactory
+from src.helpers.config import ConfigFromEnv
+from src.ingestion_factory.factory import IngestionFactory
+from src.smelters.yaml_smelter import YAMLSmelter
 
 logger = logging.getLogger(__name__)
 
-config_dict = {
-    "username": "MyTardis username",
-    "api_key": "TastyPie API key",
-    "hostname": "MyTardis URL",
-    "verify_certificate": True,
-    "default_institution": "Institution ID/Name",
-    "default_schema": {
-        "project": "https://test.com/project/v1",
-        "experiment": "https://test.com/experiment/v1",
-        "dataset": "https://test.com/dataset/v1",
-        "datafile": "https://test.com/datafile/v1",
-    },
-    "source_directory": "Directory path to where the data files are mounted",
-    "target_directory": "Directory stub to the file target in MyTardis",
-    "storage_box": "MyTardis storage pathe",
-}
 yaml_path = Path("path to YAML files")
 
-factory = YAMLIngestionFactory(config_dict)
+config = ConfigFromEnv()
+
+smelter = YAMLSmelter(
+    general=config.general,
+    default_schema=config.default_schema,
+    storage=config.storage,
+    mytardis_setup=config.mytardis_setup,
+)
+
+factory = IngestionFactory(
+    general=config.general,
+    auth=config.auth,
+    connection=config.connection,
+    mytardis_setup=config.mytardis_setup,
+    smelter=smelter,
+)
 
 project_files = factory.build_object_lists(yaml_path, "project")
 for project_file in project_files:

@@ -11,6 +11,7 @@ from urllib.parse import urljoin, urlparse
 from requests.exceptions import HTTPError
 
 from src.helpers import MyTardisRESTFactory
+from src.helpers.config import AuthConfig, ConnectionConfig, IntrospectionConfig
 
 logger = logging.getLogger(__name__)
 
@@ -42,18 +43,26 @@ class Overseer:
         rest_factory: An instance of MyTardisRESTFactory providing access to the API
     """
 
-    def __init__(self, config_dict: dict) -> None:
+    def __init__(
+        self,
+        auth: AuthConfig,
+        connection: ConnectionConfig,
+        mytardis_setup: IntrospectionConfig,
+    ) -> None:
         """Class initialisation using a configuration dictionary.
 
         Creates an instance of MyTardisRESTFactory to provide access to MyTardis for
         inspection of the database.
 
         Args:
-            config_dict: A configuration dictionary containing the keys required to
-                initialise a MyTardisRESTFactory instance.
+            auth : AuthConfig
+            Pydantic config class containing information about authenticating with a MyTardis instance
+            connection : ConnectionConfig
+            Pydantic config class containing information about connecting to a MyTardis instance
+            mytardis_setup : IntrospectionConfig
         """
-        self.rest_factory = MyTardisRESTFactory(config_dict)
-        self.mytardis_setup = self.get_mytardis_set_up()
+        self.rest_factory = MyTardisRESTFactory(auth, connection)
+        self.mytardis_setup = mytardis_setup
 
     @staticmethod
     def resource_uri_to_id(uri: str) -> int:
@@ -70,66 +79,6 @@ class Overseer:
         """
         resource_id = int(urlparse(uri).path.rstrip(os.sep).split(os.sep).pop())
         return resource_id
-
-    def get_mytardis_set_up(self) -> dict:
-        """GETs the information held in the introspection API
-
-        Makes a requests HTTP call to the introspection end-point and processes the returns
-        into an appropriate MyTardis configuration dictionary.
-
-        Returns:
-           a configuration dictionary containing the current set up of the specific instance
-           of MyTardis.
-        """
-        url = urljoin(self.rest_factory.api_template, "introspection")
-        try:
-            response = self.rest_factory.mytardis_api_request("GET", url)
-        except HTTPError as error:
-            logger.error(
-                "Failed HTTP request from Overseer.get_mytardis_set_up", exc_info=True
-            )
-            raise error
-        except Exception as error:
-            logger.error(
-                "Non-HTTP exception in Overseer.get_mytardis_set_up", exc_info=True
-            )
-            raise error
-        response_dict = response.json()
-        if response_dict == {} or response_dict["objects"] == []:
-            logger.error(
-                "MyTardis introspection did not return any data when called from "
-                "Overseer.get_mytardis_set_up"
-            )
-            raise ValueError(
-                (
-                    "MyTardis introspection did not return any data when called from "
-                    "Overseer.get_mytardis_set_up"
-                )
-            )
-        if len(response_dict["objects"]) > 1:
-            logger.error(
-                (
-                    "MyTardis introspection returned more than one object when called from "
-                    "Overseer.get_mytardis_set_up\n"
-                    f"Returned response was: {response_dict}"
-                )
-            )
-            raise ValueError(
-                (
-                    "MyTardis introspection returned more than one object when called from "
-                    "Overseer.get_mytardis_set_up"
-                )
-            )
-        response_dict = response_dict["objects"][0]
-        return_dict = {
-            "old_acls": response_dict["experiment_only_acls"],
-            "projects_enabled": response_dict["projects_enabled"],
-        }
-        if response_dict["identifiers_enabled"]:
-            return_dict["objects_with_ids"] = response_dict["identified_objects"]
-        if response_dict["profiles_enabled"]:
-            return_dict["objects_with_profiles"] = response_dict["profiled_objects"]
-        return return_dict
 
     def get_objects(
         self,
@@ -261,7 +210,7 @@ class Overseer:
         Returns:
             A list of object URIs from the search request made.
         """
-        if self.mytardis_setup["objects_with_ids"] == []:
+        if self.mytardis_setup.objects_with_ids == []:
             logger.warning(
                 (
                     "The identifiers app is not installed in the instance of MyTardis, "
@@ -270,7 +219,10 @@ class Overseer:
                 )
             )
             return None
-        if object_type not in self.mytardis_setup["objects_with_ids"]:
+        if (
+            self.mytardis_setup.objects_with_ids
+            and object_type not in self.mytardis_setup.objects_with_ids
+        ):
             logger.warning(
                 (
                     f"The object type, {object_type}, is not present in "

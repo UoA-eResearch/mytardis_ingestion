@@ -3,15 +3,21 @@
 Ingestion scripts. The base class contains mostly concrete functions but
 needs to determine the Smelter class that is used by the Factory"""
 
-from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union
 
 from src.forges import Forge
+from src.helpers.config import (
+    AuthConfig,
+    ConnectionConfig,
+    GeneralConfig,
+    IntrospectionConfig,
+)
 from src.overseers import Overseer
+from src.smelters import Smelter
 
 
-class IngestionFactory(ABC):
+class IngestionFactory:
     """Ingestion Factory base class to orchestrate the Smelting, and Forging of
     objects within MyTardis.
 
@@ -32,34 +38,37 @@ class IngestionFactory(ABC):
             default for Project and Experiment creation.
     """
 
-    def __init__(self, config_dict: dict) -> None:
+    def __init__(
+        self,
+        general: GeneralConfig,
+        auth: AuthConfig,
+        connection: ConnectionConfig,
+        mytardis_setup: IntrospectionConfig,
+        smelter: Smelter,
+    ) -> None:
         """Initialises the Factory with the configuration found in the config_dict.
 
         Passes the config_dict to the overseer and forge instances to ensure that the
         specific MyTardis configuration is shared across all classes
 
         Args:
-           config_dict: A configuration dictionary containing the keys required to
-                initialise the IngestionFactory and it's sub-classes. See documenation
-                for more details.
+            general : GeneralConfig
+            Pydantic config class containing general information
+            auth : AuthConfig
+            Pydantic config class containing information about authenticating with a MyTardis instance
+            connection : ConnectionConfig
+            Pydantic config class containing information about connecting to a MyTardis instance
+            mytardis_setup : IntrospectionConfig
+            Pydantic config class containing information from the introspection API
+            smelter : Smelter
+            class instance of Smelter
         """
-        self.overseer = Overseer(config_dict)
-        self.mytardis_setup = self.overseer.get_mytardis_set_up()
-        config_dict.update(self.mytardis_setup)
-        self.forge = Forge(config_dict)
-        self.smelter = self.get_smelter(config_dict)
+        self.overseer = Overseer(auth, connection, mytardis_setup)
+        self.mytardis_setup = mytardis_setup
+        self.forge = Forge(auth, connection)
+        self.smelter = smelter
         self.glob_string = self.smelter.get_file_type_for_input_files()
-        self.default_institution = config_dict["default_institution"]
-
-    @abstractmethod  # pragma: no cover
-    def get_smelter(self, config_dict: dict):  # pragma: no cover
-        """Abstract method to return the specific instance of a smelter for the
-        concrete instance of the IngestionFactory.
-
-        Returns:
-            None
-        """
-        return None  # pragma: no cover
+        self.default_institution = general.default_institution
 
     def build_object_lists(self, file_path: Path, object_type: str) -> list:
         """General function to glob for files and return a list with the files that
@@ -107,12 +116,15 @@ class IngestionFactory(ABC):
         objects: Union[list, None] = []
         if key_name in cleaned_dict.keys():
             if not Overseer.is_uri(cleaned_dict[key_name], object_type):
-                if object_type in self.mytardis_setup["objects_with_ids"]:
+                if (
+                    self.mytardis_setup.objects_with_ids
+                    and object_type in self.mytardis_setup.objects_with_ids
+                ):
                     objects = self.overseer.get_uris_by_identifier(
                         object_type, cleaned_dict[key_name]
                     )
                     if (
-                        object_type not in self.mytardis_setup["objects_with_ids"]
+                        object_type not in self.mytardis_setup.objects_with_ids
                         or not objects
                     ):
                         objects = self.overseer.get_uris(
@@ -131,7 +143,10 @@ class IngestionFactory(ABC):
             The URI from MyTardis for the project searched for.
         """
         uri = None
-        if "project" in self.mytardis_setup["objects_with_ids"]:
+        if (
+            self.mytardis_setup.objects_with_ids
+            and "project" in self.mytardis_setup.objects_with_ids
+        ):
             uri = self.overseer.get_uris_by_identifier("project", project_id)
         if not uri:
             uri = self.overseer.get_uris("project", "name", project_id)
@@ -147,7 +162,10 @@ class IngestionFactory(ABC):
             The URI from MyTardis for the experiment searched for.
         """
         uri = None
-        if "experiment" in self.mytardis_setup["objects_with_ids"]:
+        if (
+            self.mytardis_setup.objects_with_ids
+            and "experiment" in self.mytardis_setup.objects_with_ids
+        ):
             uri = self.overseer.get_uris_by_identifier("experiment", experiment_id)
         if not uri:
             uri = self.overseer.get_uris("experiment", "title", experiment_id)
@@ -163,7 +181,10 @@ class IngestionFactory(ABC):
             The URI from MyTardis for the dataset searched for.
         """
         uri = None
-        if "dataset" in self.mytardis_setup["objects_with_ids"]:
+        if (
+            self.mytardis_setup.objects_with_ids
+            and "dataset" in self.mytardis_setup.objects_with_ids
+        ):
             uri = self.overseer.get_uris_by_identifier("dataset", dataset_id)
         if not uri:
             uri = self.overseer.get_uris("dataset", "description", dataset_id)
@@ -179,7 +200,10 @@ class IngestionFactory(ABC):
             The URI from MyTardis for the instrument searched for.
         """
         uri = None
-        if "instrument" in self.mytardis_setup["objects_with_ids"]:
+        if (
+            self.mytardis_setup.objects_with_ids
+            and "instrument" in self.mytardis_setup.objects_with_ids
+        ):
             uri = self.overseer.get_uris_by_identifier("instrument", instrument)
         if not uri:
             uri = self.overseer.get_uris("instrument", "name", instrument)

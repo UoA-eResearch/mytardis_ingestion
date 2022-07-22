@@ -8,6 +8,12 @@ from pathlib import Path
 from typing import Union
 
 import yaml
+from src.helpers.config import (
+    GeneralConfig,
+    IntrospectionConfig,
+    SchemaConfig,
+    StorageConfig,
+)
 
 from src.smelters.smelter import Smelter
 
@@ -29,7 +35,13 @@ class YAMLSmelter(Smelter):
             to process the input dictionaries.
     """
 
-    def __init__(self, mytardis_config: dict) -> None:
+    def __init__(
+        self,
+        general: GeneralConfig,
+        default_schema: SchemaConfig,
+        storage: StorageConfig,
+        mytardis_setup: IntrospectionConfig = None,
+    ) -> None:
         """Class initialisation to set options for dictionary processing
 
         Stores MyTardis set up information from the introspection API to allow the parser
@@ -37,11 +49,16 @@ class YAMLSmelter(Smelter):
         gracefully.
 
         Args:
-            projects_enabled: a boolean flag indicating whether or not to process projects
-            objects_with_pids: a list of objects that have identifiers. Defaults to empty
-            objects_with_profiles: a list of objects that have profiles. Defaults to empty
+            general : GeneralConfig
+            Pydantic config class containing general information
+            default_schema : SchemaConfig
+            Pydantic config class containing information about default meta data schemas
+            storage : StorageConfig
+            Pydantic config class containing information about storage (box, source and target paths)
+            mytardis_setup : IntrospectionConfig
+            Pydantic config class containing information from the introspection API
         """
-        super().__init__(mytardis_config)
+        super().__init__(general, default_schema, storage, mytardis_setup)
         self.OBJECT_TYPES = {  # pylint: disable=invalid-name
             "project_name": "project",
             "experiment_name": "experiment",
