@@ -45,11 +45,14 @@ class Smelter(ABC):
         gracefully.
 
         Args:
-            projects_enabled: a boolean flag indicating whether or not to process projects
-            objects_with_pids: a list of objects that have identifiers. Defaults to empty
-            objects_with_profiles: a list of objects that have profiles. Defaults to empty
-            default_schema: a dictionary of schema namespaces to use for projects,
-                experiments, datasets and datafiles
+            general : MyTardisGeneral
+            Pydantic config class containing general information
+            default_schema : MyTardisSchema
+            Pydantic config class containing information about default meta data schemas
+            storage : MyTardisStorage
+            Pydantic config class containing information about storage (box, source and target paths)
+            mytardis_setup : MyTardisIntrospection
+            Pydantic config class containing information from the introspection API
         """
 
         if mytardis_setup:

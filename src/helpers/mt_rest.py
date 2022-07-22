@@ -51,14 +51,11 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
         authentication by means of a MyTardisAuth instance.
 
         Args:
-            config_dict: A configuration dictionary containing the following keys
-            hostname: The hostname that points to the specific instance of MyTardis being accessed
-            username: A MyTardis specific username. For the UoA instance this is usually a UPI
-            api_key: The API key generated through MyTardis that identifies the user with username
-            proxy_http: A URL pointing to the HTTP proxy address, where needed. Defaults to None
-            proxy_https: A URL pointing to the HTTPS proxy address, where needed. Defaults to None
-            verify_certificate: A boolean to determine if SSL certificates should be validated. True
-                unless debugging"""
+            auth : MyTardisAuth
+            Pydantic config class containing information about authenticating with a MyTardis instance
+            connection : MyTardisConnection
+            Pydantic config class containing information about connecting to a MyTardis instance
+        """
 
         self.auth = auth
 

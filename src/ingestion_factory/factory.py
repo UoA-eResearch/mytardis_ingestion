@@ -52,9 +52,16 @@ class IngestionFactory:
         specific MyTardis configuration is shared across all classes
 
         Args:
-           config_dict: A configuration dictionary containing the keys required to
-                initialise the IngestionFactory and it's sub-classes. See documenation
-                for more details.
+            general : MyTardisGeneral
+            Pydantic config class containing general information
+            auth : MyTardisAuth
+            Pydantic config class containing information about authenticating with a MyTardis instance
+            connection : MyTardisConnection
+            Pydantic config class containing information about connecting to a MyTardis instance
+            mytardis_setup : MyTardisIntrospection
+            Pydantic config class containing information from the introspection API
+            smelter : Smelter
+            class instance of Smelter
         """
         self.overseer = Overseer(auth, connection, mytardis_setup)
         self.mytardis_setup = mytardis_setup
@@ -62,15 +69,6 @@ class IngestionFactory:
         self.smelter = smelter
         self.glob_string = self.smelter.get_file_type_for_input_files()
         self.default_institution = general.default_institution
-
-    def get_smelter(self) -> Smelter:  # pragma: no cover
-        """Abstract method to return the specific instance of a smelter for the
-        concrete instance of the IngestionFactory.
-
-        Returns:
-            None
-        """
-        return self.smelter
 
     def build_object_lists(self, file_path: Path, object_type: str) -> list:
         """General function to glob for files and return a list with the files that

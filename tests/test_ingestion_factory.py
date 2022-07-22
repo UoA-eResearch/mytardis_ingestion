@@ -30,10 +30,6 @@ def factory(
     smelter: Smelter,
     mytardis_settings: MyTardisSettings,
 ) -> IngestionFactory:
-    # with mock.patch(
-    #     "src.ingestion_factory.factory.IngestionFactory.get_smelter"
-    # ) as mock_get_smelter:
-    #     mock_get_smelter.return_value = smelter
     IngestionFactory.__abstractmethods__ = set()
     return IngestionFactory(
         general=mytardis_settings.general,

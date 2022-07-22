@@ -29,8 +29,10 @@ class Forge:
         creating MyTardis objects.
 
         Args:
-            config_dict: A configuration dictionary containing the keys required to
-                initialise a MyTardisRESTFactory instance.
+            auth : MyTardisAuth
+            Pydantic config class containing information about authenticating with a MyTardis instance
+            connection : MyTardisConnection
+            Pydantic config class containing information about connecting to a MyTardis instance
         """
         self.rest_factory = MyTardisRESTFactory(auth, connection)
 
