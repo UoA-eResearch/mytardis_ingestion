@@ -168,15 +168,15 @@ python-versions = "*"
 
 [package.dependencies]
 click = ">7.0"
-defusedxml = {version = "*", optional = true, markers = "extra == \"coverage\""}
+defusedxml = {version = "*", optional = true, markers = "extra == \"tests\""}
 pillow = "*"
 requests = "*"
 
 [package.extras]
-all = ["defusedxml", "flake8-html"]
-coverage = ["defusedxml"]
-flake8 = ["flake8-html"]
 tests = ["defusedxml"]
+flake8 = ["flake8-html"]
+coverage = ["defusedxml"]
+all = ["flake8-html", "defusedxml"]
 
 [[package]]
 name = "gitdb"
@@ -244,10 +244,10 @@ tabulate = "*"
 toml = "*"
 
 [package.extras]
-dev = ["cairosvg", "sphinx", "sphinx-autobuild", "pytest", "pytest-cov", "pytest-mock", "wheel", "pre-commit"]
-docs = ["sphinx", "sphinx-autobuild"]
+tests = ["pytest-mock", "pytest-cov", "pytest"]
 png = ["cairosvg"]
-tests = ["pytest", "pytest-cov", "pytest-mock"]
+docs = ["sphinx-autobuild", "sphinx"]
+dev = ["pre-commit", "wheel", "pytest-mock", "pytest-cov", "pytest", "sphinx-autobuild", "sphinx", "cairosvg"]
 
 [[package]]
 name = "isort"
@@ -378,8 +378,8 @@ optional = false
 python-versions = ">=3.6"
 
 [package.extras]
-dev = ["pre-commit", "tox"]
-testing = ["pytest", "pytest-benchmark"]
+testing = ["pytest-benchmark", "pytest"]
+dev = ["tox", "pre-commit"]
 
 [[package]]
 name = "pre-commit"
@@ -498,7 +498,7 @@ coverage = {version = ">=5.2.1", extras = ["toml"]}
 pytest = ">=4.6"
 
 [package.extras]
-testing = ["fields", "hunter", "process-tests", "six", "pytest-xdist", "virtualenv"]
+testing = ["virtualenv", "pytest-xdist", "six", "process-tests", "hunter", "fields"]
 
 [[package]]
 name = "pytest-dependency"
@@ -632,7 +632,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-pyyaml"
-version = "6.0.10"
+version = "6.0.11"
 description = "Typing stubs for PyYAML"
 category = "main"
 optional = false
@@ -707,7 +707,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "d101841394877163085360b77e855fb47261a6da0622ec86eac6f813c7da86f0"
+content-hash = "81dd8677b6ac828d14adbcf59239364f5811989762a98414c0f3977d62cd342a"
 
 [metadata.files]
 astroid = [
@@ -1145,8 +1145,8 @@ types-mock = [
     {file = "types_mock-4.0.15-py3-none-any.whl", hash = "sha256:4535fbb3912b88a247d43cdb41db0c8b2e187138986f6f01a989717e56105848"},
 ]
 types-pyyaml = [
-    {file = "types-PyYAML-6.0.10.tar.gz", hash = "sha256:a1676caeb098096833fe2f1472e7ea8debf7663222964fa90545cfaafebf3385"},
-    {file = "types_PyYAML-6.0.10-py3-none-any.whl", hash = "sha256:18985a382c93fb12187daae6f57ce7787e3651cd590291c907d3e757919689ff"},
+    {file = "types-PyYAML-6.0.11.tar.gz", hash = "sha256:7f7da2fd11e9bc1e5e9eb3ea1be84f4849747017a59fc2eee0ea34ed1147c2e0"},
+    {file = "types_PyYAML-6.0.11-py3-none-any.whl", hash = "sha256:8f890028123607379c63550179ddaec4517dc751f4c527a52bb61934bf495989"},
 ]
 types-requests = [
     {file = "types-requests-2.28.3.tar.gz", hash = "sha256:fb9ea69311766967f9e91861211ec7449f6484025b766ea709689c0dbb29d7ba"},
