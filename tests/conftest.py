@@ -7,16 +7,6 @@ from typing import List
 import mock
 from _pytest.config import filter_traceback_for_conftest_import_failure
 from pytest import fixture
-from src.helpers.config import (
-    AuthConfig,
-    ConnectionConfig,
-    GeneralConfig,
-    IntrospectionConfig,
-    ProxyConfig,
-    SchemaConfig,
-    ConfigFromEnv,
-    StorageConfig,
-)
 
 from src.blueprints import (
     URI,
@@ -33,6 +23,16 @@ from src.blueprints import (
     Username,
 )
 from src.crucible import Crucible
+from src.helpers.config import (
+    AuthConfig,
+    ConfigFromEnv,
+    ConnectionConfig,
+    GeneralConfig,
+    IntrospectionConfig,
+    ProxyConfig,
+    SchemaConfig,
+    StorageConfig,
+)
 from src.ingestion_factory import IngestionFactory
 from src.overseers import Overseer
 from src.smelters import Smelter

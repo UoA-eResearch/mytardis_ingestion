@@ -258,7 +258,9 @@ class ConfigFromEnv(BaseSettings):
 
         Requests introspection info from MyTardis instance configured in connection
         """
-        user_agent = f"{__name__}/2.0 (https://github.com/UoA-eResearch/mytardis_ingestion.git)"
+        user_agent = (
+            f"{__name__}/2.0 (https://github.com/UoA-eResearch/mytardis_ingestion.git)"
+        )
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",

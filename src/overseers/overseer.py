@@ -70,9 +70,7 @@ class Overseer:
         Returns:
             The integer id that maps to the URI
         """
-        resource_id = int(
-            urlparse(uri).path.rstrip(os.sep).split(os.sep).pop()
-        )
+        resource_id = int(urlparse(uri).path.rstrip(os.sep).split(os.sep).pop())
         return resource_id
 
     def __get_object_from_mytardis(
@@ -132,20 +130,13 @@ class Overseer:
         """
         return_list: list = []
         response_dict = None
-        if (
-            self.objects_with_ids
-            and object_type.value["type"] in self.objects_with_ids
-        ):
+        if self.objects_with_ids and object_type.value["type"] in self.objects_with_ids:
             query_params = {"pids": search_string}
-            response_dict = self.__get_object_from_mytardis(
-                object_type, query_params
-            )
+            response_dict = self.__get_object_from_mytardis(object_type, query_params)
             if response_dict and "objects" in response_dict.keys():
                 return_list.append(*response_dict["objects"])
         query_params = {object_type.value["target"]: search_string}
-        response_dict = self.__get_object_from_mytardis(
-            object_type, query_params
-        )
+        response_dict = self.__get_object_from_mytardis(object_type, query_params)
         if response_dict and "objects" in response_dict.keys():
             return_list.append(*response_dict["objects"])
         return list(set(return_list))
@@ -227,9 +218,7 @@ class Overseer:
             )
             return None
         if not raw_storage_box:
-            logger.warning(
-                f"Unable to locate storage box called {storage_box_name}"
-            )
+            logger.warning(f"Unable to locate storage box called {storage_box_name}")
             return None
         storage_box = raw_storage_box[0]  # Unpack from the list
         location = None
@@ -260,9 +249,7 @@ class Overseer:
             try:
                 description = storage_box["description"]
             except KeyError:
-                logger.info(
-                    f"No description given for Storage Box, {storage_box_name}"
-                )
+                logger.info(f"No description given for Storage Box, {storage_box_name}")
             try:
                 ret_storage_box = StorageBox(
                     name=name,
