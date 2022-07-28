@@ -23,7 +23,20 @@ class DatafileReplica(BaseModel):
 class BaseDatafile(BaseModel, ABC):
     """Abstract base class for a dataset. The two concrete child classes
     validate against different standards, with the Dataset having a more strict
-    validation than the RawDataset class."""
+    validation than the RawDataset class.
+
+    Attributes:
+        filename: str
+            the name of the file to be ingested
+        directory: Path
+            the path to the directory containing the file, RELATIVE to the
+            source directory
+        md5sum: str
+            the md5 checksum of the file to be ingested
+        mimetype: str
+            the MIME type of the file to be ingested
+        size: int
+            the size in bytes of the file to be ingested"""
 
     filename: str
     directory: Path
@@ -32,6 +45,8 @@ class BaseDatafile(BaseModel, ABC):
     size: int
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None
+    # persistent_id: Optional[str] = None
+    # alternate_ids: Optional[List[str]] = None
 
 
 class RawDatafile(BaseDatafile):
