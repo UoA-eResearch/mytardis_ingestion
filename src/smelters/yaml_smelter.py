@@ -152,7 +152,26 @@ class YAMLSmelter(Smelter):
             object_types.append(self.OBJECT_TYPES[object_type_key[0]])
         return (*object_types,)
 
-    def read_file(self, file_path: Path) -> tuple:  # pylint: disable=no-self-use
+    def get_objects_in_input_file(self, file_path: Path, object_type: str) -> list:
+        """Takes a file path for a YAML file and returns a list of object of a given type
+        contained within the file
+
+        Calls YAMLSmelter.read_yaml_file to read in a YAML file into a tuple of dictionaries.
+
+        Args:
+            file_path: a Path to the YAML file to be processed
+
+        Returns:
+            A tuple of object types within the file
+        """
+        objects = []
+        parsed_dictionaries = self.read_file(file_path)
+        for parsed_dict in parsed_dictionaries:
+            if self.get_object_from_dictionary(parsed_dict) == object_type:
+                objects.append(parsed_dict)
+        return objects
+
+    def read_file(self, file_path: Path) -> tuple:
         """Takes a file path for a YAML file and reads it into a tuple of dictionaries.
 
         Reads in a YAML file. As it is possible for multiple YAML documents to be placed in

@@ -8,8 +8,10 @@ import re
 from typing import Union
 from urllib.parse import urljoin, urlparse
 
+from pydantic import ValidationError
 from requests.exceptions import HTTPError
 
+from src.blueprints import StorageBox
 from src.helpers import MyTardisRESTFactory
 from src.helpers.config import AuthConfig, ConnectionConfig, IntrospectionConfig
 
@@ -231,6 +233,106 @@ class Overseer:
             )
             return None
         return self.get_uris(object_type, "pids", search_string)
+
+
+        Wrapper function that first searches on an identifier if the identifier app
+        is active. Falls back to searching on the name field (or equivalent)
+
+        Args:
+            object_type: the string representaion of the Object in MyTardis
+            object_id: the identifier used to search for the object
+
+        Returns:
+        The URI from MyTardis for the object searched for or None
+        """
+        uri = None
+        if object_type in self.mytardis_setup["objects_with_ids"]:
+            uri = self.get_uris_by_identifier(object_type, object_id)
+        if not uri:
+            try:
+                uri = self.get_uris(
+                    object_type, self.object_names[object_type], object_id
+                )
+            except KeyError:
+                logger.warning(
+                    f"The name of {object_type} objects has not been defined in the Overseer"
+                )
+                return None
+        return uri
+
+    def get_storage_box(  # pylint: disable=too-many-return-statements
+        self,
+        storage_box_name: str,
+    ) -> StorageBox | None:
+        """Helper function to get a storage box from MyTardis and to verify that there
+        is a location associated with it.
+
+        Args:
+            storage_box_name: The human readable name that defines the storage box
+
+        Returns:
+            A StorageBox dataclass if the name is found in MyTardis and the storage
+                box is completely defined, or None if this is not the case.
+        """
+        raw_storage_box = self.get_objects("storagebox", "name", storage_box_name)
+        if not raw_storage_box or raw_storage_box == []:
+            logger.warning(f"Unable to locate storage box called {storage_box_name}")
+            return None
+        if len(raw_storage_box) > 1:
+            logger.warning(
+                "Unable to uniquely identify the storage box based on the "
+                f"name provided ({storage_box_name}). Please check with your "
+                "system administrator to identify the source of the issue."
+            )
+            return None
+        raw_storage_box = raw_storage_box[0]  # Unpack from the list
+        location = None
+        for option in raw_storage_box["options"]:
+            try:
+                key = option["key"]
+            except KeyError:
+                continue
+            if key == "location":
+                try:
+                    location = option["value"]
+                except KeyError:
+                    logger.warning(
+                        f"Storage box, {storage_box_name} is misconfigured. Missing location"
+                    )
+                    return None
+        if location:
+            try:
+                name = raw_storage_box["name"]
+                uri = raw_storage_box["resource_uri"]
+            except KeyError:
+                logger.warning(
+                    f"Storage box, {storage_box_name} is misconfigured. Storage box "
+                    f"gathered from MyTardis: {raw_storage_box}"
+                )
+                return None
+            description = "No description"
+            try:
+                description = raw_storage_box["description"]
+            except KeyError:
+                logger.info(f"No description given for Storage Box, {storage_box_name}")
+            try:
+                storage_box = StorageBox(
+                    name=name,
+                    description=description,
+                    uri=uri,
+                    location=location,
+                )
+            except ValidationError:
+                logger.warning(
+                    (
+                        f"Poorly defined Storage Box, {storage_box_name}. Please "
+                        "check configuration in MyTardis"
+                    ),
+                    exc_info=True,
+                )
+                return None
+            return storage_box
+        return None
 
 
 # Future functionality
