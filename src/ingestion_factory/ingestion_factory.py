@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union
 
-from src.crucible import Crucible
+from src.crucible import Crucible  # type: ignore
 from src.forges import Forge
 from src.helpers import match_object_with_dictionary
 from src.overseers import Overseer
@@ -66,7 +66,7 @@ class IngestionFactory(ABC):
         self.forge = Forge(config_dict)
         self.smelter = self.get_smelter(config_dict)
         self.default_institution = config_dict["default_institution"]
-        self.object_dictionary = {}
+        self.object_dictionary: dict = {}
         self.blocked_ids: dict = {
             "experiment": [],
             "dataset": [],
@@ -751,19 +751,22 @@ class IngestionFactory(ABC):
                 if the forging process could not be completed
         """
         object_dict = self.smelter.smelt_datafile(raw_dictionary)
-        datafile_name = object_dict["filename"]
-        potential_matches = self.get_datafile_from_mytardis_if_it_already_exists(
-            datafile_name
-        )
-        if potential_matches is None:
-            return None
-        if potential_matches:
-            for match in potential_matches:
-                uri = self.match_or_block_datafile(
-                    object_dict,
-                    match,
-                )
-            return uri
+        #
+        # Need to think about this a bit more carefully
+        #
+        # datafile_name = object_dict["filename"]
+        # potential_matches = self.get_datafile_from_mytardis_if_it_already_exists(
+        #    datafile_name
+        # )
+        # if potential_matches is None:
+        #    return None
+        # if potential_matches:
+        #    for match in potential_matches:
+        #        uri = self.match_or_block_datafile(
+        #            object_dict,
+        #            match,
+        #        )
+        #    return uri
         object_dict = self.crucible.prepare_datafile(object_dict)
         # pylint: disable=unused-variable
         (
