@@ -4,7 +4,7 @@
 from abc import ABC
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import AnyUrl, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -27,12 +27,29 @@ class BaseDataset(BaseModel, ABC):
 
 
 class RawDataset(BaseDataset):
+    """Concrete class to hold data from the concrete smelter class
+    with a validated format as an entry point into the smelting process."""
+
+    experiments: List[str]
+    instrument: str
+    metadata: Optional[List[Dict[str, str | int | float | bool]]]
+    dataset_schema: Optional[AnyUrl] = None
+    created_time: Optional[datetime | str] = None
+    modified_time: Optional[datetime | str] = None
+
+    class Config:
+        """alias the dataset_scheam field as schema"""
+
+        fields = {"dataset_schema": "schema"}
+
+
+class RefindeDataset(BaseDataset):
     """Concrete class for raw data as read in from the metadata file."""
 
     experiments: List[str]
     instrument: str
-    created_time: Optional[Union[datetime, str]] = None
-    modified_time: Optional[Union[datetime, str]] = None
+    created_time: Optional[datetime | str] = None
+    modified_time: Optional[datetime | str] = None
 
 
 class Dataset(BaseDataset):

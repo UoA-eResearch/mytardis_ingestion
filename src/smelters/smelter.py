@@ -1,11 +1,13 @@
 # pylint: disable=logging-fstring-interpolation
-"""Smelter base class. A class that provides functions to split input dictionaries into
-dictionaries suited to be passed into an instance of the Forge class for creating
-objects in MyTardis."""
+"""Smelter base class. A class that provides functions to split raw dataclasses into
+refined dataclasses suited to be passed into an instance of the Crucible class for
+matching existing objects in MyTardis.
+
+In addition to splitting the raw dataclasses up it also injects some default values
+where appropriate"""
 import logging
-from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Type
 
 from pydantic import ValidationError
 from src.helpers import SanityCheckError, calculate_md5sum, sanity_check
@@ -17,27 +19,77 @@ from src.helpers.config import (
 )
 
 from src.blueprints import (
-    BaseObjectType,
     DatafileReplica,
     ParameterSet,
     RawDatafile,
     RawDataset,
     RawExperiment,
     RawProject,
+    RefindeDataset,
+    RefinedDatafile,
+    RefinedExperiment,
+    RefinedProject,
 )
 from src.helpers import (
     DATAFILE_KEYS,
     DATASET_KEYS,
     EXPERIMENT_KEYS,
     PROJECT_KEYS,
+    MyTardisGeneral,
+    MyTardisIntrospection,
+    MyTardisSchema,
+    MyTardisStorage,
+    SanityCheckError,
     project_enabled,
 )
-from src.helpers.exceptions import SanityCheckError
 
 logger = logging.getLogger(__name__)
 
 
-class Smelter(ABC):
+class Smelter:
+    """The Smelter base class to be subclassed into individual concrete classes for different
+    ingestion approaches.
+    Smelter classes share a number of similar processing routines, especially around dictionary
+    modification and date handling.
+    Attributes:
+    """
+
+    def __init__(
+        self,
+        general: MyTardisGeneral,
+        default_schema: MyTardisSchema,
+        storage: MyTardisStorage,
+        mytardis_setup: MyTardisIntrospection = None,
+    ) -> None:
+        """Class initialisation to set options for dictionary processing
+        Stores MyTardis set up information from the introspection API to allow the parser
+        to prepare only objects that exist and to handle additional keys in the dictionaries
+        gracefully.
+        Args:
+            projects_enabled: a boolean flag indicating whether or not to process projects
+            objects_with_pids: a list of objects that have identifiers. Defaults to empty
+            objects_with_profiles: a list of objects that have profiles. Defaults to empty
+            default_schema: a dictionary of schema namespaces to use for projects,
+                experiments, datasets and datafiles
+        """
+
+        if mytardis_setup:
+            self.projects_enabled = mytardis_setup.projects_enabled
+            self.objects_with_ids = mytardis_setup.objects_with_ids
+            self.objects_with_profiles = mytardis_setup.objects_with_profiles
+
+        self.OBJECT_KEY_CONVERSION = (  # pylint: disable=invalid-name
+            self.get_key_conversions()
+        )
+
+        self.default_schema = default_schema
+        self.default_institution = general.default_institution
+        self.source_dir = storage.source_directory
+        self.target_dir = storage.target_directory
+        self.storage_box = storage.box
+
+
+class Smelter:
     """The Smelter base class to be subclassed into individual concrete classes for different
     ingestion approaches.
 
@@ -83,7 +135,9 @@ class Smelter(ABC):
         except KeyError:
             self.objects_with_ids = []
         try:
-            self.objects_with_profiles = mytardis_config["objects_with_profiles"]
+            self.objects_with_profiles = mytardis_config[
+                "objects_with_profiles"
+            ]
         except KeyError:
             self.objects_with_profiles = []
         try:
@@ -99,91 +153,9 @@ class Smelter(ABC):
         self.storage_box = mytardis_config["storage_box"]
         self.use_project = project_enabled
 
-    def precondition_input_dictionary(self, parsed_dict) -> dict:
-        """Function to precondition the raw input from the file read. This ensures
-        that any key translation is carried out as well as tidying up the metadata
-        keys and user stuff
-
-        Args:
-            parsed_dict: raw dictionary as parsed from its input file
-
-        Returns:
-            A tuple containing the object type and the cleaned dictionary
-        """
-        object_type, cleaned_dict = self.tidy_up_dictionary_keys(parsed_dict)
-        cleaned_dict = self._tidy_up_metadata_keys(cleaned_dict, object_type)
-        users, groups = Smelter.parse_groups_and_users_from_separate_access(
-            cleaned_dict
-        )
-        if users != []:
-            cleaned_dict["users"] = users
-        if groups != []:
-            cleaned_dict["groups"] = groups
-        return cleaned_dict
-
-    def smelt_project(self, cleaned_dict: dict) -> tuple:
-        """Wrapper to check and create the python dictionaries in a form expected by the
-        forge class.
-
-        Args:
-            cleaned_dict: dictionary containing the object data and metadata
-
-        Returns:
-            A tuple containing an object dictionary, which is the minimum metadata required
-            to create the object in MyTardis, and a parameter dictionary containing the
-            additional metadata.
-        """
-        if not self.projects_enabled:
-            logger.warning(
-                (
-                    "MyTardis is not currently set up to use projects. Please check settings.py "
-                    "and ensure that the 'projects' app is enabled. This may require rerunning "
-                    "migrations."
-                )
-            )
-            return (None, None)
-        cleaned_dict = self.precondition_input_dictionary(cleaned_dict)
-        object_keys = [
-            "name",
-            "description",
-            "locked",
-            "public_access",
-            "principal_investigator",
-            "institution",
-            "embargo_until",
-            "start_time",
-            "end_time",
-            "created_by",
-            "url",
-            "users",
-            "groups",
-        ]
-        if self.objects_with_ids and "project" in self.objects_with_ids:
-            object_keys.append("persistent_id")
-            object_keys.append("alternate_ids")
-        if "schema" not in cleaned_dict.keys():
-            try:
-                cleaned_dict = self._inject_schema_from_default_value(
-                    cleaned_dict["name"], "project", cleaned_dict
-                )
-            except SanityCheckError:
-                logger.warning(
-                    "Unable to find default project schema and no schema provided"
-                )
-                return (None, None)
-        if "institution" not in cleaned_dict.keys():
-            if self.default_institution:
-                cleaned_dict["institution"] = self.default_institution
-            else:
-                logger.warning(
-                    "Unable to find default institution and no institution provided"
-                )
-                return (None, None)
-        if not self._verify_project(cleaned_dict):
-            return (None, None)
-        return self._smelt_object(object_keys, cleaned_dict)
-
-    def _inject_schema_from_default_value(self, name, object_type, cleaned_dict):
+    def _inject_schema_from_default_value(
+        self, name, object_type, cleaned_dict
+    ):
         """Generic function to inject the schema into the cleaned dictionary provided
         one exists.
 
@@ -199,7 +171,9 @@ class Smelter(ABC):
             SanityCheckError if no default schema can be found for this object type
         """
         if not self.default_schema:
-            logger.warning("Unable to find default schemas and no schema provided")
+            logger.warning(
+                "Unable to find default schemas and no schema provided"
+            )
             raise SanityCheckError(name, cleaned_dict, "default_schema")
         if object_type not in self.default_schema.keys():
             logger.warning(
@@ -210,7 +184,11 @@ class Smelter(ABC):
         return cleaned_dict
 
     def smelt_object(
-        self, cleaned_input: dict, object_keys: List[str]
+        self,
+        cleaned_input: Type[
+            RawProject | RawExperiment | RawDataset | RawDatafile
+        ],
+        object_keys: List[str],
     ) -> Tuple[dict, Optional[dict]] | None:
         """Split the cleaned input into an object dictionary and a parameter dictionary
         ready to be used to construct Pydantic models for validation"""
@@ -234,7 +212,7 @@ class Smelter(ABC):
 
     def smelt_project(
         self, cleaned_input: dict
-    ) -> Tuple[RawProject, Optional[ParameterSet]] | None:
+    ) -> Tuple[RefinedProject, Optional[ParameterSet]] | None:
         """Inject the schema into the project dictionary if it's not
         already present. Do the same for an institution and convert to
         a RawProject dataclass for validation."""
@@ -266,7 +244,7 @@ class Smelter(ABC):
             return None
         object_dict = refined_object[0]
         try:
-            raw_project = RawProject.parse_obj(object_dict)
+            raw_project = RefinedProject.parse_obj(object_dict)
         except ValidationError:
             logger.warning(
                 f"Unable to parse {object_dict} into a RawProject.",
@@ -289,7 +267,7 @@ class Smelter(ABC):
 
     def smelt_experiment(
         self, cleaned_input: dict
-    ) -> Tuple[RawExperiment, Optional[ParameterSet]] | None:
+    ) -> Tuple[RefinedExperiment, Optional[ParameterSet]] | None:
         """Inject the schema into the experiment dictionary if it's not
         already present.
         Convert to a RawExperiment dataclass for validation."""
@@ -307,13 +285,15 @@ class Smelter(ABC):
         if "institution_name" not in cleaned_input.keys():
             cleaned_input["institution_name"] = self.default_institution
         if isinstance(cleaned_input["institution_name"], list):
-            cleaned_input["institution_name"] = cleaned_input["institution_name"][0]
+            cleaned_input["institution_name"] = cleaned_input[
+                "institution_name"
+            ][0]
         refined_object = self.smelt_object(cleaned_input, experiment_keys)
         if not refined_object:
             return None
         object_dict = refined_object[0]
         try:
-            raw_experiment = RawExperiment.parse_obj(object_dict)
+            raw_experiment = RefinedExperiment.parse_obj(object_dict)
         except ValidationError:
             logger.warning(
                 f"Unable to parse {object_dict} into a RawExperiment.",
@@ -336,7 +316,7 @@ class Smelter(ABC):
 
     def smelt_dataset(
         self, cleaned_input: dict
-    ) -> Tuple[RawDataset, Optional[ParameterSet]] | None:
+    ) -> Tuple[RefindeDataset, Optional[ParameterSet]] | None:
         """Inject the schema into the dataset dictionary if it's not
         already present.
         Convert to a RawDataset dataclass for validation."""
@@ -357,7 +337,7 @@ class Smelter(ABC):
             return None
         object_dict = refined_object[0]
         try:
-            raw_dataset = RawDataset.parse_obj(object_dict)
+            raw_dataset = RefindeDataset.parse_obj(object_dict)
         except ValidationError:
             logger.warning(
                 f"Unable to parse {object_dict} into a RawDataset.",
@@ -397,34 +377,19 @@ class Smelter(ABC):
             )
             return None
 
-    def smelt_datafile(self, cleaned_dict: dict) -> dict:
-        """Wrapper to check and create the python dictionaries in a from expected by the
-        forge class. The smelt_datafile function is somewhat unique as it takes a processed
-        dictionary after having been through the rebase_file_path function and the
-        expand_datafile_entry function processed by the Factory class. Arguably this should
-        be refactored to be all held by the smelter class and an issue has been created in Github.
-
-        Args:
-            cleaned_dict: dictionary containing the object data and metadata
-
-        Returns:
-            A tuple containing an object dictionary, which is the minimum metadata required
-            to create the object in MyTardis, and a parameter dictionary containing the
-            additional metadata.
-        """
-        cleaned_dict = self.precondition_input_dictionary(cleaned_dict)
-        object_keys = [
-            "dataset",
-            "filename",
-            "md5sum",
-            "directory",
-            "mimetype",
-            "size",
-            "replicas",
-            "users",
-            "groups",
-        ]
-        if "schema" not in cleaned_dict.keys():
+    def smelt_datafile(  # pylint: disable=too-many-return-statements
+        self,
+        cleaned_input: dict,
+    ) -> RefinedDatafile | None:
+        """Inject the schema into the datafile dictionary if it's not
+        already present.
+        Process the file path into a replica and append to the dictionary
+        Convert to a RawDatafile dataclass for validation."""
+        datafile_keys = DATAFILE_KEYS
+        if "datafile" in self.objects_with_ids:
+            datafile_keys.append("persistent_id")
+            datafile_keys.append("alternate_ids")
+        if "schema" not in cleaned_input.keys():
             try:
                 cleaned_input = self._inject_schema_from_default_value(
                     cleaned_input["filename"], "datafile", cleaned_input
@@ -473,7 +438,7 @@ class Smelter(ABC):
             "replicas",
         ]
         try:
-            raw_datafile = RawDatafile.parse_obj(object_dict)
+            raw_datafile = RefinedDatafile.parse_obj(object_dict)
         except ValidationError:
             logger.warning(
                 f"Unable to parse {object_dict} into a RawDatafile.",
@@ -498,56 +463,3 @@ class Smelter(ABC):
         if parameters:
             raw_datafile.parameter_sets = parameters
         return raw_datafile
-
-    @abstractmethod
-    def get_input_file_paths(self, file_path: Path) -> List[Path]:  # pragma: no cover
-        """
-        Function to return a list of Paths containing all the relevant input
-        files in the directory
-
-        return ""  # pragma: no cover
-
-    @abstractmethod  # pragma: no cover
-    def get_object_types_in_input_file(
-        self, file_path: Path
-    ) -> tuple:  # pragma: no cover
-        """Function to read in an input file and return a tuple containing
-        the object types that are in the file"""
-
-        return tuple()  # pragma: no cover
-
-    @abstractmethod  # pragma: no cover
-    def get_objects_in_input_file(
-        self, file_path: Path, object_type: str
-    ) -> list:  # pragma: no cover
-        """Function to read in an input file and return a tuple containing
-        the object types that are in the file"""
-
-        return tuple()  # pragma: no cover
-
-    @abstractmethod  # pragma: no cover
-    def read_file(self, file_path: Path) -> tuple:  # pragma: no cover
-        """Function to read in different input files and process into
-        dictionaries. As there may be more than one object in a file, wrap in
-        a tuple and return."""
-
-        return []  # pragma: no cover    @abstractmethod
-
-    @abstractmethod
-    def precondition_input(
-        self, raw_input: dict, object_type: BaseObjectType
-    ) -> dict | None:
-        """Each concrete smelter class will need to process the metadata keys
-        into appropriate formats for creating RawObject dataclasses and Optionally
-        ObjectParameterSets.
-
-        In addition all concrete preconditioning functions will need to call the
-        parse_groups_and_users_from_separate_access function to deal with the user
-        lists and put them into a normalised format.
-
-        The concrete class method should also process the file_path into something
-        that can be used by the __create_replica method to generate a replica.
-
-        This will normally involve tidying up metadata keys
-        """
-        return {}
