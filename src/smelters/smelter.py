@@ -7,16 +7,10 @@ In addition to splitting the raw dataclasses up it also injects some default val
 where appropriate"""
 import logging
 from pathlib import Path
+from time import thread_time_ns
 from typing import List, Optional, Tuple, Type
 
 from pydantic import ValidationError
-from src.helpers import SanityCheckError, calculate_md5sum, sanity_check
-from src.helpers.config import (
-    GeneralConfig,
-    IntrospectionConfig,
-    SchemaConfig,
-    StorageConfig,
-)
 
 from src.blueprints import (
     DatafileReplica,
@@ -25,22 +19,22 @@ from src.blueprints import (
     RawDataset,
     RawExperiment,
     RawProject,
-    RefindeDataset,
     RefinedDatafile,
+    RefinedDataset,
     RefinedExperiment,
     RefinedProject,
 )
+from src.blueprints.common_models import Parameter
 from src.helpers import (
-    DATAFILE_KEYS,
-    DATASET_KEYS,
-    EXPERIMENT_KEYS,
-    PROJECT_KEYS,
     MyTardisGeneral,
     MyTardisIntrospection,
+    MyTardisObjectEnum,
     MyTardisSchema,
     MyTardisStorage,
     SanityCheckError,
-    project_enabled,
+    check_projects_enabled_and_log_if_not,
+    get_object_name,
+    get_object_type,
 )
 
 logger = logging.getLogger(__name__)
@@ -77,286 +71,187 @@ class Smelter:
             self.projects_enabled = mytardis_setup.projects_enabled
             self.objects_with_ids = mytardis_setup.objects_with_ids
             self.objects_with_profiles = mytardis_setup.objects_with_profiles
-
-        self.OBJECT_KEY_CONVERSION = (  # pylint: disable=invalid-name
-            self.get_key_conversions()
-        )
-
         self.default_schema = default_schema
         self.default_institution = general.default_institution
         self.source_dir = storage.source_directory
         self.target_dir = storage.target_directory
         self.storage_box = storage.box
 
-
-class Smelter:
-    """The Smelter base class to be subclassed into individual concrete classes for different
-    ingestion approaches.
-
-    Smelter classes share a number of similar processing routines, especially around dataclass
-    modification and date handling.
-
-    Attributes:
-
-    """
-
-    def __init__(
+    def extract_parameters(
         self,
-        general: GeneralConfig,
-        default_schema: SchemaConfig,
-        storage: StorageConfig,
-        mytardis_setup: IntrospectionConfig = None,
-    ) -> None:
-        """Class initialisation to set options for dictionary processing
-
-        Stores MyTardis set up information from the introspection API to allow the parser
-        to prepare only objects that exist and to handle additional keys in the dictionaries
-        gracefully.
-
-        Args:
-            projects_enabled: a boolean flag indicating whether or not to process projects
-            objects_with_ids: a list of objects that have identifiers. Defaults to empty
-            objects_with_profiles: a list of objects that have profiles. Defaults to empty
-            default_schema: a dictionary of schema namespaces to use for projects,
-                experiments, datasets and datafiles
-            source_dir: a Path object leading to the relative root directory containing
-                the files to be ingested
-            target_dir: a Path object leading to the relatvie root directory containing
-                the files when they have been ingested into MyTardis
-            storage_box: a StorageBox object containing the location of the root
-                directory of the storage box.
-        """
-        # NOTE: This is out of date and should be updated to use the Pydantic Config
-        # prepared by Lukas
-
-        self.projects_enabled = mytardis_config["projects_enabled"]
-        try:
-            self.objects_with_ids = mytardis_config["objects_with_ids"]
-        except KeyError:
-            self.objects_with_ids = []
-        try:
-            self.objects_with_profiles = mytardis_config[
-                "objects_with_profiles"
-            ]
-        except KeyError:
-            self.objects_with_profiles = []
-        try:
-            self.default_schema = mytardis_config["default_schema"]
-        except KeyError:
-            self.default_schema = None
-        try:
-            self.default_institution = mytardis_config["default_institution"]
-        except KeyError:
-            self.default_institution = None
-        self.source_dir = Path(mytardis_config["source_directory"])
-        self.target_dir = Path(mytardis_config["target_directory"])
-        self.storage_box = mytardis_config["storage_box"]
-        self.use_project = project_enabled
-
-    def _inject_schema_from_default_value(
-        self, name, object_type, cleaned_dict
-    ):
-        """Generic function to inject the schema into the cleaned dictionary provided
-        one exists.
-
-        Args:
-            name: the object name
-            object_type: the object type defined by the dictionary
-            cleaned_dict: The dictionary to inject schema into
-
-        Returns:
-            the dictionary with the schema included
-
-        Raises:
-            SanityCheckError if no default schema can be found for this object type
-        """
-        if not self.default_schema:
-            logger.warning(
-                "Unable to find default schemas and no schema provided"
+        raw_object: RawProject | RawExperiment | RawDataset | RawDatafile,
+    ) -> Optional[ParameterSet]:
+        """Extract the metadata field and the schema field from a RawObject dataclass
+        and use it to create a Parameterset"""
+        if not raw_object.metadata:
+            return None
+        parameter_list = []
+        for parameter in raw_object.metadata:
+            for key, value in parameter.items():
+                try:
+                    parameter_list.append(Parameter(name=key, value=value))
+                except ValidationError:
+                    logger.warning(
+                        (
+                            f"Unable to parse paramter {key}: {value} "
+                            "into Parameter"
+                        ),
+                        exc_info=True,
+                    )
+                    continue
+        if parameter_list and raw_object.object_schema:
+            return ParameterSet(
+                schema=raw_object.object_schema, parameters=parameter_list
             )
-            raise SanityCheckError(name, cleaned_dict, "default_schema")
-        if object_type not in self.default_schema.keys():
-            logger.warning(
-                f"Unable to find default {object_type} schema and no schema provided"
-            )
-            raise SanityCheckError(name, cleaned_dict, "default schema")
-        cleaned_dict["schema"] = self.default_schema[object_type]
-        return cleaned_dict
-
-    def smelt_object(
-        self,
-        cleaned_input: Type[
-            RawProject | RawExperiment | RawDataset | RawDatafile
-        ],
-        object_keys: List[str],
-    ) -> Tuple[dict, Optional[dict]] | None:
-        """Split the cleaned input into an object dictionary and a parameter dictionary
-        ready to be used to construct Pydantic models for validation"""
-        object_dict = {}
-        parameter_dict = {"parameters": []}
-        if "schema" in cleaned_input.keys():
-            parameter_dict["schema"] = cleaned_input.pop("schema")
-        for key in cleaned_input.keys():
-            if key in object_keys:
-                object_dict[key] = cleaned_input[key]
-            else:
-                parameter_dict["parameters"].append(
-                    {
-                        "name": key,
-                        "value": cleaned_input[key],
-                    }
-                )
-        if not parameter_dict["parameters"]:
-            return (object_dict, None)
-        return (object_dict, parameter_dict)
+        return None
 
     def smelt_project(
-        self, cleaned_input: dict
+        self, raw_project: RawProject
     ) -> Tuple[RefinedProject, Optional[ParameterSet]] | None:
         """Inject the schema into the project dictionary if it's not
         already present. Do the same for an institution and convert to
         a RawProject dataclass for validation."""
-        if not self.use_project(self):
+        if not check_projects_enabled_and_log_if_not(self):
             return None
-        project_keys = PROJECT_KEYS
-        if "project" in self.objects_with_ids:
-            project_keys.append("persistent_id")
-            project_keys.append("alternate_ids")
-        if "schema" not in cleaned_input.keys():
-            try:
-                cleaned_input = self._inject_schema_from_default_value(
-                    cleaned_input["name"], "project", cleaned_input
+        if not raw_project.object_schema:
+            if not self.default_schema or not self.default_schema.project:
+                logger.warning(
+                    "Unable to find default project schema and no schema provided"
                 )
-            except SanityCheckError:
                 return None
-        if "institution" not in cleaned_input.keys():
-            if self.default_institution:
-                cleaned_input["institution"] = self.default_institution
-            else:
+            raw_project.object_schema = self.default_schema.project
+        if not raw_project.institution:
+            if not self.default_institution:
                 logger.warning(
                     "Unable to find default institution and no institution provided"
                 )
                 return None
-        if isinstance(cleaned_input["institution"], str):
-            cleaned_input["institution"] = [cleaned_input["institution"]]
-        refined_object = self.smelt_object(cleaned_input, project_keys)
-        if not refined_object:
-            return None
-        object_dict = refined_object[0]
-        try:
-            raw_project = RefinedProject.parse_obj(object_dict)
-        except ValidationError:
-            logger.warning(
-                f"Unable to parse {object_dict} into a RawProject.",
-                exc_info=True,
-            )
-            return None
-        try:
-            parameters = refined_object[1]
+            raw_project.instituiton = [self.default_institution]
+        if raw_project.institution:
             try:
-                parameters = ParameterSet.parse_obj(refined_object[1])
+                refined_project = RefinedProject(
+                    name=raw_project.name,
+                    description=raw_project.description,
+                    principal_investigator=raw_project.principal_investigator,
+                    created_by=raw_project.created_by,
+                    url=raw_project.url,
+                    users=raw_project.users,
+                    groups=raw_project.groups,
+                    persistent_id=raw_project.persistent_id,
+                    alternate_ids=raw_project.alternate_ids,
+                    institution=raw_project.institution,
+                    start_time=raw_project.start_time,
+                    end_time=raw_project.end_time,
+                    embargo_until=raw_project.embargo_until,
+                )
             except ValidationError:
                 logger.warning(
-                    f"Unable to parse {parameters} into a ParameterSet.",
+                    (
+                        "Malformed project dataclass produced by smelter. Project "
+                        f"is {raw_project.name}"
+                    ),
                     exc_info=True,
                 )
-                parameters = None
-        except IndexError:
-            parameters = None
-        return (raw_project, parameters)
+                return None
+            parameters = self.extract_parameters(raw_project)
+            return (refined_project, parameters)
+        return None
 
     def smelt_experiment(
-        self, cleaned_input: dict
+        self, raw_experiment: RawExperiment
     ) -> Tuple[RefinedExperiment, Optional[ParameterSet]] | None:
         """Inject the schema into the experiment dictionary if it's not
         already present.
         Convert to a RawExperiment dataclass for validation."""
-        experiment_keys = EXPERIMENT_KEYS
-        if "experiment" in self.objects_with_ids:
-            experiment_keys.append("persistent_id")
-            experiment_keys.append("alternate_ids")
-        if "schema" not in cleaned_input.keys():
-            try:
-                cleaned_input = self._inject_schema_from_default_value(
-                    cleaned_input["title"], "experiment", cleaned_input
+        if not raw_experiment.object_schema:
+            if not self.default_schema or not self.default_schema.experiment:
+                logger.warning(
+                    "Unable to find default experiment schema and no schema provided"
                 )
-            except SanityCheckError:
                 return None
-        if "institution_name" not in cleaned_input.keys():
-            cleaned_input["institution_name"] = self.default_institution
-        if isinstance(cleaned_input["institution_name"], list):
-            cleaned_input["institution_name"] = cleaned_input[
-                "institution_name"
-            ][0]
-        refined_object = self.smelt_object(cleaned_input, experiment_keys)
-        if not refined_object:
+            raw_experiment.object_schema = self.default_schema.experiment
+        if self.projects_enabled and not raw_experiment.projects:
+            logger.warning(
+                "Projects enabled in MyTardis and no projects provided to link this "
+                f"experiment too. Experiment provided {raw_experiment}"
+            )
             return None
-        object_dict = refined_object[0]
+        if not raw_experiment.institution_name:
+            if not self.default_institution:
+                logger.warning(
+                    "Unable to find default institution and no institution provided"
+                )
+                return None
+            raw_experiment.institution_name = self.default_institution
         try:
-            raw_experiment = RefinedExperiment.parse_obj(object_dict)
+            refined_experiment = RefinedExperiment(
+                title=raw_experiment.title,
+                description=raw_experiment.description,
+                created_by=raw_experiment.created_by,
+                url=raw_experiment.url,
+                locked=raw_experiment.locked,
+                users=raw_experiment.users,
+                groups=raw_experiment.groups,
+                persistent_id=raw_experiment.persistent_id,
+                alternate_ids=raw_experiment.alternate_ids,
+                projects=raw_experiment.projects,
+                institution_name=raw_experiment.institution_name,
+                start_time=raw_experiment.start_time,
+                end_time=raw_experiment.end_time,
+                created_time=raw_experiment.created_time,
+                update_time=raw_experiment.update_time,
+                embargo_until=raw_experiment.embargo_until,
+            )
         except ValidationError:
             logger.warning(
-                f"Unable to parse {object_dict} into a RawExperiment.",
+                (
+                    "Malformed experiment dataclass produced by smelter. Experiment "
+                    f"is {raw_experiment.title}"
+                ),
                 exc_info=True,
             )
             return None
-        try:
-            parameters = refined_object[1]
-            try:
-                parameters = ParameterSet.parse_obj(refined_object[1])
-            except ValidationError:
-                logger.warning(
-                    f"Unable to parse {parameters} into a ParameterSet.",
-                    exc_info=True,
-                )
-                parameters = None
-        except IndexError:
-            parameters = None
-        return (raw_experiment, parameters)
+        parameters = self.extract_parameters(raw_experiment)
+        return (refined_experiment, parameters)
 
     def smelt_dataset(
-        self, cleaned_input: dict
-    ) -> Tuple[RefindeDataset, Optional[ParameterSet]] | None:
+        self, raw_dataset: RawDataset
+    ) -> Tuple[RefinedDataset, Optional[ParameterSet]] | None:
         """Inject the schema into the dataset dictionary if it's not
         already present.
-        Convert to a RawDataset dataclass for validation."""
-        dataset_keys = DATASET_KEYS
-        if "dataset" in self.objects_with_ids:
-            dataset_keys.append("persistent_id")
-            dataset_keys.append("alternate_ids")
-        if "schema" not in cleaned_input.keys():
-            try:
-                cleaned_input = self._inject_schema_from_default_value(
-                    cleaned_input["description"], "dataset", cleaned_input
+        Convert to a RefinedDataset dataclass for validation."""
+        if not raw_dataset.object_schema:
+            if not self.default_schema or not self.default_schema.dataset:
+                logger.warning(
+                    "Unable to find default dataset schema and no schema provided"
                 )
-            except SanityCheckError:
                 return None
-        refined_object = self.smelt_object(cleaned_input, dataset_keys)
-        print(refined_object)
-        if not refined_object:
-            return None
-        object_dict = refined_object[0]
+            raw_dataset.object_schema = self.default_schema.dataset
         try:
-            raw_dataset = RefindeDataset.parse_obj(object_dict)
+            refined_dataset = RefinedDataset(
+                description=raw_dataset.description,
+                directory=raw_dataset.directory,
+                users=raw_dataset.users,
+                groups=raw_dataset.groups,
+                immutable=raw_dataset.immutable,
+                persistent_id=raw_dataset.persistent_id,
+                alternate_ids=raw_dataset.alternate_ids,
+                experiments=raw_dataset.experiments,
+                instrument=raw_dataset.instrument,
+                created_time=raw_dataset.created_time,
+                modified_time=raw_dataset.modified_time,
+            )
         except ValidationError:
             logger.warning(
-                f"Unable to parse {object_dict} into a RawDataset.",
+                (
+                    "Malformed dataset dataclass produced by smelter. Dataset "
+                    f"is {raw_dataset.description}"
+                ),
                 exc_info=True,
             )
             return None
-        try:
-            parameters = refined_object[1]
-            try:
-                parameters = ParameterSet.parse_obj(refined_object[1])
-            except ValidationError:
-                logger.warning(
-                    f"Unable to parse {parameters} into a ParameterSet.",
-                    exc_info=True,
-                )
-                parameters = None
-        except IndexError:
-            parameters = None
-        return (raw_dataset, parameters)
+        parameters = self.extract_parameters(raw_dataset)
+        return (refined_dataset, parameters)
 
     def _create_replica(
         self,

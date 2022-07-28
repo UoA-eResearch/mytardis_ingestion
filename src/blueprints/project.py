@@ -31,17 +31,12 @@ class RawProject(BaseProject):
     """Concrete class to hold data from the concrete smelter class
     with a validated format as an entry point into the smelting process."""
 
-    instituiton: Optional[List[str]]
+    institution: Optional[List[str]]
     metadata: Optional[List[Dict[str, str | int | float | bool]]]
-    project_schema: Optional[AnyUrl] = None
+    object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
     start_time: Optional[datetime | str] = None
     end_time: Optional[datetime | str] = None
     embargo_until: Optional[datetime | str] = None
-
-    class Config:
-        """alias the project_scheam field as schema"""
-
-        fields = {"project_schema": "schema"}
 
 
 class RefinedProject(BaseProject):

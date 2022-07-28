@@ -4,9 +4,9 @@
 from abc import ABC
 from datetime import datetime
 from pathlib import Path
-from typing import AnyUrl, Dict, List, Optional
+from typing import Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import AnyUrl, BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime
@@ -33,17 +33,12 @@ class RawDataset(BaseDataset):
     experiments: List[str]
     instrument: str
     metadata: Optional[List[Dict[str, str | int | float | bool]]]
-    dataset_schema: Optional[AnyUrl] = None
+    object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
     created_time: Optional[datetime | str] = None
     modified_time: Optional[datetime | str] = None
 
-    class Config:
-        """alias the dataset_scheam field as schema"""
 
-        fields = {"dataset_schema": "schema"}
-
-
-class RefindeDataset(BaseDataset):
+class RefinedDataset(BaseDataset):
     """Concrete class for raw data as read in from the metadata file."""
 
     experiments: List[str]
