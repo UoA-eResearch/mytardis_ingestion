@@ -20,9 +20,7 @@ class Crucible:
     """The Crucible class reads in a RefinedObject and replaces the identified
     fields with URIs."""
 
-    def __init__(
-        self, overseer: Overseer, mytardis_setup: IntrospectionConfig
-    ) -> None:
+    def __init__(self, overseer: Overseer, mytardis_setup: IntrospectionConfig) -> None:
         self.overseer = overseer
         if mytardis_setup:
             self.projects_enabled = mytardis_setup.projects_enabled
@@ -65,22 +63,16 @@ class Crucible:
         if raw_project.end_time:
             refined_project.end_time = ISODateTime(raw_project.end_time)
         if raw_project.embargo_until:
-            refined_project.embargo_until = ISODateTime(
-                raw_project.embargo_until
-            )
+            refined_project.embargo_until = ISODateTime(raw_project.embargo_until)
         return refined_project
 
-    def refine_experiment(
-        self, raw_experiment: RefinedExperiment
-    ) -> Experiment | None:
+    def refine_experiment(self, raw_experiment: RefinedExperiment) -> Experiment | None:
         """Refine an experiment by getting the objects that need to exist
         in MyTardis and finding their URIs"""
         projects = []
         if raw_experiment.projects and self.projects_enabled:
             for project in raw_experiment.projects:
-                project_uri = self.overseer.get_uris(
-                    ObjectSearchEnum.PROJECT, project
-                )
+                project_uri = self.overseer.get_uris(ObjectSearchEnum.PROJECT, project)
                 if project_uri:
                     projects.append(*project_uri)
             projects = list(set(projects))
@@ -108,23 +100,15 @@ class Crucible:
             institution_name=raw_experiment.institution_name,
         )
         if raw_experiment.start_time:
-            refined_experiment.start_time = ISODateTime(
-                raw_experiment.start_time
-            )
+            refined_experiment.start_time = ISODateTime(raw_experiment.start_time)
         if raw_experiment.end_time:
             refined_experiment.end_time = ISODateTime(raw_experiment.end_time)
         if raw_experiment.created_time:
-            refined_experiment.created_time = ISODateTime(
-                raw_experiment.created_time
-            )
+            refined_experiment.created_time = ISODateTime(raw_experiment.created_time)
         if raw_experiment.update_time:
-            refined_experiment.update_time = ISODateTime(
-                raw_experiment.update_time
-            )
+            refined_experiment.update_time = ISODateTime(raw_experiment.update_time)
         if raw_experiment.embargo_until:
-            refined_experiment.embargo_until = ISODateTime(
-                raw_experiment.embargo_until
-            )
+            refined_experiment.embargo_until = ISODateTime(raw_experiment.embargo_until)
         return refined_experiment
 
     def refine_dataset(self, raw_dataset: RefinedDataset) -> Dataset | None:
@@ -139,9 +123,7 @@ class Crucible:
                 experiments.append(*experiment_uri)
         experiments = list(set(experiments))
         if not experiments:
-            logger.warning(
-                ("Unable to find experiments associated with this dataset.")
-            )
+            logger.warning(("Unable to find experiments associated with this dataset."))
             return None
         instruments = self.overseer.get_uris(
             ObjectSearchEnum.INSTRUMENT, raw_dataset.instrument
@@ -177,18 +159,12 @@ class Crucible:
             instrument=instrument,
         )
         if raw_dataset.created_time:
-            refined_dataset.created_time = ISODateTime(
-                raw_dataset.created_time
-            )
+            refined_dataset.created_time = ISODateTime(raw_dataset.created_time)
         if raw_dataset.modified_time:
-            refined_dataset.modified_time = ISODateTime(
-                raw_dataset.modified_time
-            )
+            refined_dataset.modified_time = ISODateTime(raw_dataset.modified_time)
         return refined_dataset
 
-    def refine_datafile(
-        self, raw_datafile: RefinedDatafile
-    ) -> Datafile | None:
+    def refine_datafile(self, raw_datafile: RefinedDatafile) -> Datafile | None:
         """Refine a datafile by finding URIs from MyTardis for the
         relevant fields of interest."""
         datasets = self.overseer.get_uris(

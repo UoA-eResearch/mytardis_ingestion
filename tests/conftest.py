@@ -6,18 +6,18 @@ from typing import List
 
 import mock
 from pytest import fixture
+
+from src.crucible import Crucible
 from src.helpers.config import (
     AuthConfig,
+    ConfigFromEnv,
     ConnectionConfig,
     GeneralConfig,
     IntrospectionConfig,
     ProxyConfig,
     SchemaConfig,
-    ConfigFromEnv,
     StorageConfig,
 )
-
-from src.crucible import Crucible
 from src.ingestion_factory import IngestionFactory
 from src.overseers import Overseer
 from src.smelters import Smelter

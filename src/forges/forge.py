@@ -54,9 +54,7 @@ class Forge:
     ) -> requests.Response | None:
         """Wrapper around a generic POST request with logging in place."""
         try:
-            response = self.rest_factory.mytardis_api_request(
-                action, url, data=data
-            )
+            response = self.rest_factory.mytardis_api_request(action, url, data=data)
         except (HTTPError, BadGateWayException) as error:
             logger.warning(
                 (
@@ -86,9 +84,7 @@ class Forge:
             return None
         return response
 
-    def __get_uri_from_response(
-        self, response_dict: Dict[str, Any]
-    ) -> URI | None:
+    def __get_uri_from_response(self, response_dict: Dict[str, Any]) -> URI | None:
         """Take a response dictionary parsed from the JSON return
         of a response and extract the URI from it"""
         try:

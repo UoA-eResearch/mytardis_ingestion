@@ -10,19 +10,18 @@ import mock
 import pytest
 from devtools import debug
 
-from src.helpers import SanityCheckError
-from src.helpers.config import (
-    GeneralConfig,
-    IntrospectionConfig,
-    SchemaConfig,
-    StorageConfig,
-)
 from src.helpers import (
     DATAFILE_KEYS,
     DATASET_KEYS,
     EXPERIMENT_KEYS,
     PROJECT_KEYS,
     SanityCheckError,
+)
+from src.helpers.config import (
+    GeneralConfig,
+    IntrospectionConfig,
+    SchemaConfig,
+    StorageConfig,
 )
 from src.smelters import Smelter
 

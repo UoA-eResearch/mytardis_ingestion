@@ -74,9 +74,7 @@ class Smelter:
         self.target_dir = storage.target_directory
         self.storage_box = overseer.get_storage_box(storage.box)
         if not self.storage_box:
-            raise ValueError(
-                "Unable to initalise Smelter due to bad storage box"
-            )
+            raise ValueError("Unable to initalise Smelter due to bad storage box")
 
     def extract_parameters(
         self,
@@ -93,10 +91,7 @@ class Smelter:
                     parameter_list.append(Parameter(name=key, value=value))
                 except ValidationError:
                     logger.warning(
-                        (
-                            f"Unable to parse paramter {key}: {value} "
-                            "into Parameter"
-                        ),
+                        (f"Unable to parse paramter {key}: {value} " "into Parameter"),
                         exc_info=True,
                     )
                     continue

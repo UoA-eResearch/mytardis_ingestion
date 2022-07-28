@@ -175,9 +175,7 @@ class IngestionFactory:
             if len(raw_experiment) == 2:
                 refined_parameters = raw_experiment[1]
             raw_experiment = raw_experiment[0]
-            refined_experiment = self.crucible.refine_experiment(
-                raw_experiment
-            )
+            refined_experiment = self.crucible.refine_experiment(raw_experiment)
             if not refined_experiment:
                 processed_list.append((name,))
                 self.inspector.block_object(experiment)
