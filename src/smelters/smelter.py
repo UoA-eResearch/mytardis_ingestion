@@ -99,6 +99,90 @@ class Smelter(ABC):
         self.storage_box = mytardis_config["storage_box"]
         self.use_project = project_enabled
 
+    def precondition_input_dictionary(self, parsed_dict) -> dict:
+        """Function to precondition the raw input from the file read. This ensures
+        that any key translation is carried out as well as tidying up the metadata
+        keys and user stuff
+
+        Args:
+            parsed_dict: raw dictionary as parsed from its input file
+
+        Returns:
+            A tuple containing the object type and the cleaned dictionary
+        """
+        object_type, cleaned_dict = self.tidy_up_dictionary_keys(parsed_dict)
+        cleaned_dict = self._tidy_up_metadata_keys(cleaned_dict, object_type)
+        users, groups = Smelter.parse_groups_and_users_from_separate_access(
+            cleaned_dict
+        )
+        if users != []:
+            cleaned_dict["users"] = users
+        if groups != []:
+            cleaned_dict["groups"] = groups
+        return cleaned_dict
+
+    def smelt_project(self, cleaned_dict: dict) -> tuple:
+        """Wrapper to check and create the python dictionaries in a form expected by the
+        forge class.
+
+        Args:
+            cleaned_dict: dictionary containing the object data and metadata
+
+        Returns:
+            A tuple containing an object dictionary, which is the minimum metadata required
+            to create the object in MyTardis, and a parameter dictionary containing the
+            additional metadata.
+        """
+        if not self.projects_enabled:
+            logger.warning(
+                (
+                    "MyTardis is not currently set up to use projects. Please check settings.py "
+                    "and ensure that the 'projects' app is enabled. This may require rerunning "
+                    "migrations."
+                )
+            )
+            return (None, None)
+        cleaned_dict = self.precondition_input_dictionary(cleaned_dict)
+        object_keys = [
+            "name",
+            "description",
+            "locked",
+            "public_access",
+            "principal_investigator",
+            "institution",
+            "embargo_until",
+            "start_time",
+            "end_time",
+            "created_by",
+            "url",
+            "users",
+            "groups",
+        ]
+        if self.objects_with_ids and "project" in self.objects_with_ids:
+            object_keys.append("persistent_id")
+            object_keys.append("alternate_ids")
+        if "schema" not in cleaned_dict.keys():
+            try:
+                cleaned_dict = self._inject_schema_from_default_value(
+                    cleaned_dict["name"], "project", cleaned_dict
+                )
+            except SanityCheckError:
+                logger.warning(
+                    "Unable to find default project schema and no schema provided"
+                )
+                return (None, None)
+        if "institution" not in cleaned_dict.keys():
+            if self.default_institution:
+                cleaned_dict["institution"] = self.default_institution
+            else:
+                logger.warning(
+                    "Unable to find default institution and no institution provided"
+                )
+                return (None, None)
+        if not self._verify_project(cleaned_dict):
+            return (None, None)
+        return self._smelt_object(object_keys, cleaned_dict)
+
     def _inject_schema_from_default_value(self, name, object_type, cleaned_dict):
         """Generic function to inject the schema into the cleaned dictionary provided
         one exists.
@@ -313,19 +397,34 @@ class Smelter(ABC):
             )
             return None
 
-    def smelt_datafile(  # pylint: disable=too-many-return-statements
-        self,
-        cleaned_input: dict,
-    ) -> RawDatafile | None:
-        """Inject the schema into the datafile dictionary if it's not
-        already present.
-        Process the file path into a replica and append to the dictionary
-        Convert to a RawDatafile dataclass for validation."""
-        datafile_keys = DATAFILE_KEYS
-        if "datafile" in self.objects_with_ids:
-            datafile_keys.append("persistent_id")
-            datafile_keys.append("alternate_ids")
-        if "schema" not in cleaned_input.keys():
+    def smelt_datafile(self, cleaned_dict: dict) -> dict:
+        """Wrapper to check and create the python dictionaries in a from expected by the
+        forge class. The smelt_datafile function is somewhat unique as it takes a processed
+        dictionary after having been through the rebase_file_path function and the
+        expand_datafile_entry function processed by the Factory class. Arguably this should
+        be refactored to be all held by the smelter class and an issue has been created in Github.
+
+        Args:
+            cleaned_dict: dictionary containing the object data and metadata
+
+        Returns:
+            A tuple containing an object dictionary, which is the minimum metadata required
+            to create the object in MyTardis, and a parameter dictionary containing the
+            additional metadata.
+        """
+        cleaned_dict = self.precondition_input_dictionary(cleaned_dict)
+        object_keys = [
+            "dataset",
+            "filename",
+            "md5sum",
+            "directory",
+            "mimetype",
+            "size",
+            "replicas",
+            "users",
+            "groups",
+        ]
+        if "schema" not in cleaned_dict.keys():
             try:
                 cleaned_input = self._inject_schema_from_default_value(
                     cleaned_input["filename"], "datafile", cleaned_input
@@ -342,14 +441,37 @@ class Smelter(ABC):
                 ),
                 exc_info=True,
             )
-            return None
-        replica = self._create_replica(relative_file_path)
-        if not replica:
-            return None
-        refined_object = self.smelt_object(cleaned_input, datafile_keys)
-        if not refined_object:
-            return None
-        object_dict = refined_object[0]
+            return (None, None)
+        cleaned_dict = self._create_replica(cleaned_dict)
+        if not Smelter._verify_datafile(cleaned_dict):
+            return (None, None)
+        object_dict, parameter_dict = self._smelt_object(object_keys, cleaned_dict)
+        object_dict["parameter_sets"] = parameter_dict
+        return object_dict
+
+    @staticmethod
+    def _verify_datafile(cleaned_dict: dict) -> bool:
+        """Function to make sure that there is a minimum set of
+        data in the object dictionary to ensure that an object can be
+        created in MyTardis
+
+        Args:
+            cleaned_dict: The dictionary that will be used to create
+                the object in MyTardis
+
+        Returns:
+            Boolean value that shows if the minimum subset of data is present
+
+        Raises:
+            SanityCheckError if there is missing data
+        """
+        required_keys = [
+            "dataset",
+            "filename",
+            "md5sum",
+            "schema",
+            "replicas",
+        ]
         try:
             raw_datafile = RawDatafile.parse_obj(object_dict)
         except ValidationError:
@@ -388,7 +510,7 @@ class Smelter(ABC):
     @abstractmethod  # pragma: no cover
     def get_object_types_in_input_file(
         self, file_path: Path
-    ) -> Tuple[str]:  # pragma: no cover
+    ) -> tuple:  # pragma: no cover
         """Function to read in an input file and return a tuple containing
         the object types that are in the file"""
 
@@ -397,9 +519,17 @@ class Smelter(ABC):
     @abstractmethod  # pragma: no cover
     def get_objects_in_input_file(
         self, file_path: Path, object_type: str
-    ) -> List[dict]:  # pragma: no cover
-        """Function to read in an input file and return a list containing
-        the objects, as dictionaries, that are in the file"""
+    ) -> list:  # pragma: no cover
+        """Function to read in an input file and return a tuple containing
+        the object types that are in the file"""
+
+        return tuple()  # pragma: no cover
+
+    @abstractmethod  # pragma: no cover
+    def read_file(self, file_path: Path) -> tuple:  # pragma: no cover
+        """Function to read in different input files and process into
+        dictionaries. As there may be more than one object in a file, wrap in
+        a tuple and return."""
 
         return []  # pragma: no cover    @abstractmethod
 

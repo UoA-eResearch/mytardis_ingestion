@@ -1,2 +1,2 @@
 # pylint: disable=missing-module-docstring
-from .factory import IngestionFactory
+from .ingestion_factory import IngestionFactory
