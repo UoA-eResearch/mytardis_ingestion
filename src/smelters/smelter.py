@@ -1,4 +1,4 @@
-# pylint: disable=logging-fstring-interpolation
+# pylint: disable=logging-fstring-interpolation,duplicate-code
 """Smelter base class. A class that provides functions to split raw dataclasses into
 refined dataclasses suited to be passed into an instance of the Crucible class for
 matching existing objects in MyTardis.
@@ -7,8 +7,7 @@ In addition to splitting the raw dataclasses up it also injects some default val
 where appropriate"""
 import logging
 from pathlib import Path
-from time import thread_time_ns
-from typing import List, Optional, Tuple, Type
+from typing import Optional, Tuple
 
 from pydantic import ValidationError
 
@@ -26,16 +25,13 @@ from src.blueprints import (
 )
 from src.blueprints.common_models import Parameter
 from src.helpers import (
-    MyTardisGeneral,
-    MyTardisIntrospection,
-    MyTardisObjectEnum,
-    MyTardisSchema,
-    MyTardisStorage,
-    SanityCheckError,
+    GeneralConfig,
+    IntrospectionConfig,
+    SchemaConfig,
+    StorageConfig,
     check_projects_enabled_and_log_if_not,
-    get_object_name,
-    get_object_type,
 )
+from src.overseers import Overseer
 
 logger = logging.getLogger(__name__)
 
@@ -50,10 +46,11 @@ class Smelter:
 
     def __init__(
         self,
-        general: MyTardisGeneral,
-        default_schema: MyTardisSchema,
-        storage: MyTardisStorage,
-        mytardis_setup: MyTardisIntrospection = None,
+        general: GeneralConfig,
+        default_schema: SchemaConfig,
+        storage: StorageConfig,
+        overseer: Overseer,  # This is a temporary fix during config processor dev
+        mytardis_setup: IntrospectionConfig,
     ) -> None:
         """Class initialisation to set options for dictionary processing
         Stores MyTardis set up information from the introspection API to allow the parser
@@ -75,7 +72,11 @@ class Smelter:
         self.default_institution = general.default_institution
         self.source_dir = storage.source_directory
         self.target_dir = storage.target_directory
-        self.storage_box = storage.box
+        self.storage_box = overseer.get_storage_box(storage.box)
+        if not self.storage_box:
+            raise ValueError(
+                "Unable to initalise Smelter due to bad storage box"
+            )
 
     def extract_parameters(
         self,
@@ -126,7 +127,7 @@ class Smelter:
                     "Unable to find default institution and no institution provided"
                 )
                 return None
-            raw_project.instituiton = [self.default_institution]
+            raw_project.institution = [self.default_institution]
         if raw_project.institution:
             try:
                 refined_project = RefinedProject(
@@ -259,6 +260,8 @@ class Smelter:
     ) -> DatafileReplica | None:
         """Create a datafile replica using the filepath and the storage
         box"""
+        if not self.storage_box:
+            return None
         try:
             return DatafileReplica(
                 uri=relative_file_path.as_posix(),
@@ -272,110 +275,66 @@ class Smelter:
             )
             return None
 
-    def smelt_datafile(self, cleaned_dict: dict) -> Union[None, dict]:
-        """Wrapper to check and create the python dictionaries in a from expected by the
-        forge class. The smelt_datafile function is somewhat unique as it takes a processed
-        dictionary after having been through the rebase_file_path function and the
-        expand_datafile_entry function processed by the Factory class. Arguably this should
-        be refactored to be all held by the smelter class and an issue has been created in Github.
+    def _generate_relative_file_path_for_datafile(
+        self,
+        filename: str,
+        directory: Path,
+    ) -> Path | None:
+        """Construct a relative file path, relative to the storage box file path
+        for the datafile being ingested."""
+        if not self.storage_box:
+            return None
+        target_dir = self.target_dir
+        return Path(target_dir / directory / filename).relative_to(
+            self.storage_box.location
+        )
 
-        Args:
-            cleaned_dict: dictionary containing the object data and metadata
-
-        Returns:
-            A tuple containing an object dictionary, which is the minimum metadata required
-            to create the object in MyTardis, and a parameter dictionary containing the
-            additional metadata.
-        """
-        cleaned_dict = self.precondition_input_dictionary(cleaned_dict)
-        object_keys = [
-            "dataset",
-            "filename",
-            "md5sum",
-            "directory",
-            "mimetype",
-            "size",
-            "replicas",
-            "users",
-            "groups",
-        ]
-        if "schema" not in cleaned_dict.keys():
-            try:
-                cleaned_input = self._inject_schema_from_default_value(
-                    cleaned_input["filename"], "datafile", cleaned_input
-                )
-            except SanityCheckError:
+    def smelt_datafile(  # pylint: disable=too-many-return-statements
+        self, raw_datafile: RawDatafile
+    ) -> RefinedDatafile | None:
+        """Inject the schema into the datafile dictionary if it's not
+        already present.
+        Process the file path into a replica and append to the dictionary
+        Convert to a RawDatafile dataclass for validation."""
+        if not raw_datafile.object_schema:
+            if not self.default_schema or not self.default_schema.datafile:
                 logger.warning(
                     "Unable to find default datafile schema and no schema provided"
                 )
                 return None
+            raw_datafile.object_schema = self.default_schema.dataset
+        relative_file_path = self._generate_relative_file_path_for_datafile(
+            raw_datafile.filename, raw_datafile.directory
+        )
+        if not relative_file_path:
+            return None
+        replicas = self._create_replica(relative_file_path)
+        if not replicas:
+            return None
+        parameters = self.extract_parameters(raw_datafile)
         try:
-            relative_file_path = Path(cleaned_input.pop("relative_file_path"))
-        except KeyError:
+            refined_datafile = RefinedDatafile(
+                filename=raw_datafile.filename,
+                directory=raw_datafile.directory,
+                md5sum=raw_datafile.md5sum,
+                mimetype=raw_datafile.mimetype,
+                size=raw_datafile.size,
+                users=raw_datafile.users,
+                groups=raw_datafile.groups,
+                dataset=raw_datafile.dataset,
+                replicas=[replicas],
+                parameter_sets=parameters,
+            )
+        except ValidationError:
             logger.warning(
                 (
-                    f"Malformed input dictionary for datafile, {cleaned_input['filename']}. "
-                    "Unable to find realtive_file_path so cannot create replica."
+                    "Malformed datafile dataclass produced by smelter. Datafile "
+                    f"is {raw_datafile.filename}"
                 ),
                 exc_info=True,
             )
             return None
-        cleaned_dict = self._create_replica(cleaned_dict)
-        if not Smelter._verify_datafile(cleaned_dict):
-            return None
-        object_dict, parameter_dict = self._smelt_object(object_keys, cleaned_dict)
-        object_dict["parameter_sets"] = parameter_dict
-        return object_dict
-
-    @staticmethod
-    def _verify_datafile(cleaned_dict: dict) -> bool:
-        """Function to make sure that there is a minimum set of
-        data in the object dictionary to ensure that an object can be
-        created in MyTardis
-
-        Args:
-            cleaned_dict: The dictionary that will be used to create
-                the object in MyTardis
-
-        Returns:
-            Boolean value that shows if the minimum subset of data is present
-
-        Raises:
-            SanityCheckError if there is missing data
-        """
-        required_keys = [
-            "dataset",
-            "filename",
-            "md5sum",
-            "schema",
-            "replicas",
-        ]
-        try:
-            raw_datafile = RefinedDatafile.parse_obj(object_dict)
-        except ValidationError:
-            logger.warning(
-                f"Unable to parse {object_dict} into a RawDatafile.",
-                exc_info=True,
-            )
-            return None
-        try:
-            parameters = refined_object[1]
-            if parameters:
-                try:
-                    parameters = ParameterSet.parse_obj(refined_object[1])
-                except ValidationError:
-                    logger.warning(
-                        f"Unable to parse {parameters} into a ParameterSet.",
-                        exc_info=True,
-                    )
-                    return None
-            else:
-                parameters = None
-        except IndexError:
-            parameters = None
-        if parameters:
-            raw_datafile.parameter_sets = parameters
-        return raw_datafile
+        return refined_datafile
 
     def _create_replica(self, cleaned_dict: dict) -> dict:
         """Function to create a MyTardis replica based on the file_path

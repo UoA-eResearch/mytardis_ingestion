@@ -1,20 +1,23 @@
-# pylint: disable=consider-using-set-comprehension
+# pylint: disable=duplicate-code,logging-fstring-interpolation
 """IngestionFactory is a base class for specific instances of MyTardis
 Ingestion scripts. The base class contains mostly concrete functions but
 needs to determine the Smelter class that is used by the Factory"""
 
-from pathlib import Path
-from typing import Union
+import logging
+from typing import List, Optional, Tuple
 
+from src.blueprints.custom_data_types import URI
+from src.blueprints.datafile import RawDatafile
+from src.blueprints.dataset import RawDataset
+from src.blueprints.experiment import RawExperiment
+from src.blueprints.project import RawProject
+from src.crucible.crucible import Crucible
 from src.forges import Forge
-from src.helpers.config import (
-    AuthConfig,
-    ConnectionConfig,
-    GeneralConfig,
-    IntrospectionConfig,
-)
-from src.overseers import Overseer
+from src.helpers.dataclass import get_object_name
+from src.overseers import Inspector, Overseer
 from src.smelters import Smelter
+
+logger = logging.getLogger(__name__)
 
 
 class IngestionFactory:
@@ -40,11 +43,12 @@ class IngestionFactory:
 
     def __init__(
         self,
-        general: GeneralConfig,
-        auth: AuthConfig,
-        connection: ConnectionConfig,
-        mytardis_setup: IntrospectionConfig,
+        # mytardis_setup: IntrospectionConfig,
         smelter: Smelter,
+        inspector: Inspector,
+        forge: Forge,
+        overseer: Overseer,
+        crucible: Crucible,
     ) -> None:
         """Initialises the Factory with the configuration found in the config_dict.
 
@@ -53,316 +57,255 @@ class IngestionFactory:
 
         Args:
             general : GeneralConfig
-            Pydantic config class containing general information
+                Pydantic config class containing general information
             auth : AuthConfig
-            Pydantic config class containing information about authenticating with a MyTardis instance
+                Pydantic config class containing information about authenticating with a MyTardis
+                instance
             connection : ConnectionConfig
-            Pydantic config class containing information about connecting to a MyTardis instance
+                Pydantic config class containing information about connecting to a MyTardis instance
             mytardis_setup : IntrospectionConfig
-            Pydantic config class containing information from the introspection API
+                Pydantic config class containing information from the introspection API
             smelter : Smelter
-            class instance of Smelter
+                class instance of Smelter
         """
-        self.overseer = Overseer(auth, connection, mytardis_setup)
-        self.mytardis_setup = mytardis_setup
-        self.forge = Forge(auth, connection)
+        self.overseer = overseer
+        # self.mytardis_setup = mytardis_setup
+        self.forge = forge
         self.smelter = smelter
-        self.glob_string = self.smelter.get_file_type_for_input_files()
-        self.default_institution = general.default_institution
+        self.inspector = inspector
+        self.crucible = crucible
 
-    def build_object_lists(self, file_path: Path, object_type: str) -> list:
-        """General function to glob for files and return a list with the files that
-        have objects of object_type defined within them
-
-        Args:
-            file_path: A Path object, ideally to the directory containing the input files
-               but which can also be a parent directory or a single file.
-            object_type: The object that is being sought.
-
-        Returns:
-            A list of files that have inputs of type object_type
-        """
-        return_list = []
-        if file_path.is_file():
-            if object_type in self.smelter.get_objects_in_input_file(file_path):
-                return [file_path]
-            return []
-        for input_file in file_path.rglob(self.glob_string):
-            if object_type in self.smelter.get_objects_in_input_file(input_file):
-                return_list.append(input_file)
-        return return_list
-
-    def replace_search_term_with_uri(
+    def process_projects(
         self,
-        object_type: str,
-        cleaned_dict: dict,
-        fallback_search: str,
-        key_name: str = None,
-    ) -> dict:
-        """Helper function to carry out a search using an identifier or name
-        and replace it's value with a URI from MyTardis
-
-        Args:
-            object_type: A string representation of the object type in MyTardis to search for
-            cleaned_dict: A dictionary containing the key to be replaced
-            fallback_search: The name of the search key should searching by identifier fail
-            key_name: The name of the key to replace, if it is not the object_type.
-
-        Returns:
-            The cleaned_dict dictionary with the search term replaced by a URI from MyTardis
-        """
-        if not key_name:
-            key_name = object_type
-        objects: Union[list, None] = []
-        if key_name in cleaned_dict.keys():
-            if not Overseer.is_uri(cleaned_dict[key_name], object_type):
-                if (
-                    self.mytardis_setup.objects_with_ids
-                    and object_type in self.mytardis_setup.objects_with_ids
-                ):
-                    objects = self.overseer.get_uris_by_identifier(
-                        object_type, cleaned_dict[key_name]
-                    )
-                    if (
-                        object_type not in self.mytardis_setup.objects_with_ids
-                        or not objects
-                    ):
-                        objects = self.overseer.get_uris(
-                            object_type, fallback_search, cleaned_dict[key_name]
-                        )
-                    cleaned_dict[key_name] = objects
-        return cleaned_dict
-
-    def get_project_uri(self, project_id):
-        """Helper function to get a Project URI from MyTardis
-
-        Args:
-            project_id: An identifier or project name to search for
-
-        Returns:
-            The URI from MyTardis for the project searched for.
-        """
-        uri = None
-        if (
-            self.mytardis_setup.objects_with_ids
-            and "project" in self.mytardis_setup.objects_with_ids
-        ):
-            uri = self.overseer.get_uris_by_identifier("project", project_id)
-        if not uri:
-            uri = self.overseer.get_uris("project", "name", project_id)
-        return uri
-
-    def get_experiment_uri(self, experiment_id):
-        """Helper function to get an Experiment URI from MyTardis
-
-        Args:
-            experiment_id: An identifier or experiment name to search for
-
-        Returns:
-            The URI from MyTardis for the experiment searched for.
-        """
-        uri = None
-        if (
-            self.mytardis_setup.objects_with_ids
-            and "experiment" in self.mytardis_setup.objects_with_ids
-        ):
-            uri = self.overseer.get_uris_by_identifier("experiment", experiment_id)
-        if not uri:
-            uri = self.overseer.get_uris("experiment", "title", experiment_id)
-        return uri
-
-    def get_dataset_uri(self, dataset_id):
-        """Helper function to get a Dataset URI from MyTardis
-
-        Args:
-            dataset_id: An identifier or dataset name to search for
-
-        Returns:
-            The URI from MyTardis for the dataset searched for.
-        """
-        uri = None
-        if (
-            self.mytardis_setup.objects_with_ids
-            and "dataset" in self.mytardis_setup.objects_with_ids
-        ):
-            uri = self.overseer.get_uris_by_identifier("dataset", dataset_id)
-        if not uri:
-            uri = self.overseer.get_uris("dataset", "description", dataset_id)
-        return uri
-
-    def get_instrument_uri(self, instrument):
-        """Helper function to get a Instrumentt URI from MyTardis
-
-        Args:
-            instrument_id: An identifier or instrument name to search for
-
-        Returns:
-            The URI from MyTardis for the instrument searched for.
-        """
-        uri = None
-        if (
-            self.mytardis_setup.objects_with_ids
-            and "instrument" in self.mytardis_setup.objects_with_ids
-        ):
-            uri = self.overseer.get_uris_by_identifier("instrument", instrument)
-        if not uri:
-            uri = self.overseer.get_uris("instrument", "name", instrument)
-        return uri
-
-    def process_projects(self, file_path: Path) -> list:
+        projects: List[RawProject],
+    ) -> List[Tuple[str, Optional[URI]]]:
         """Wrapper function to create the projects from input files"""
-        project_files = self.build_object_lists(file_path, "project")
-        return_list = []
-        for project_file in project_files:
-            parsed_dictionaries = self.smelter.read_file(project_file)
-            for parsed_dict in parsed_dictionaries:
-                object_type = self.smelter.get_object_from_dictionary(parsed_dict)
-                if object_type == "project":
-                    object_dict, parameter_dict = self.smelter.smelt_project(
-                        parsed_dict
+        processed_list = []
+        for project in projects:
+            name = get_object_name(project)
+            if not name:
+                logger.warning(
+                    (
+                        "Unable to find the name of the project, skipping "
+                        f"project defined by {project}"
                     )
-                    name = object_dict["name"]
-                    object_dict = self.replace_search_term_with_uri(
-                        "institution", object_dict, "name"
+                )
+                continue
+            is_present = self.inspector.match_or_block_object(project)
+            if is_present:
+                processed_list.append((name, is_present))
+                continue
+            if self.inspector.is_blocked(project):
+                logger.warning(
+                    (
+                        "Project is blocked for ingestion and can't be "
+                        f"processed. Object is {project}"
                     )
-                    forged_object = self.forge.forge_object(
-                        name, "project", object_dict
-                    )
-                    return_list.append(forged_object)
-                    uri = None
-                    if forged_object[1]:
-                        uri = forged_object[2]
-                    if parameter_dict["parameters"] != [] and uri:
-                        parameter_dict["project"] = uri
-                        return_list.append(
-                            self.forge.forge_object(
-                                f"{name} - Parameters",
-                                "projectparameterset",
-                                parameter_dict,
-                            )
-                        )
-        return return_list
+                )
+                processed_list.append((name,))
+                continue
+            raw_project = self.smelter.smelt_project(project)
+            if not raw_project:
+                processed_list.append((name,))
+                self.inspector.block_object(project)
+                continue
+            refined_parameters = None
+            if len(raw_project) == 2:
+                refined_parameters = raw_project[1]
+            raw_project = raw_project[0]
+            refined_project = self.crucible.refine_project(raw_project)
+            if not refined_project:
+                processed_list.append((name,))
+                self.inspector.block_object(project)
+                continue
+            wrought_project = self.forge.forge_project(
+                refined_project, refined_parameters
+            )
+            if isinstance(wrought_project[0], URI):
+                processed_list.append((name, wrought_project[0]))
+                continue
+            processed_list.append((name,))
+            self.inspector.block_object(project)
+        return processed_list
 
     def process_experiments(  # pylint: disable=too-many-locals
-        self, file_path: Path
-    ) -> list:
+        self,
+        experiments: List[RawExperiment],
+    ) -> List[Tuple[str, Optional[URI]]]:
         """Wrapper function to create the experiments from input files"""
-        experiment_files = self.build_object_lists(file_path, "experiment")
-        return_list = []
-        for experiment_file in experiment_files:
-            parsed_dictionaries = self.smelter.read_file(experiment_file)
-            for parsed_dict in parsed_dictionaries:
-                object_type = self.smelter.get_object_from_dictionary(parsed_dict)
-                if object_type == "experiment":
-                    object_dict, parameter_dict = self.smelter.smelt_experiment(
-                        parsed_dict
+        processed_list = []
+        for experiment in experiments:
+            name = get_object_name(experiment)
+            if not name:
+                logger.warning(
+                    (
+                        "Unable to find the name of the experiment, skipping "
+                        f"experiment defined by {experiment}"
                     )
-                    name = object_dict["title"]
-                    project_id = object_dict["projects"]
-                    if isinstance(project_id, str):
-                        project_id = [project_id]
-                    project_uris = []
-                    for project in project_id:
-                        project_uris.append(self.get_project_uri(project))
-                    project_uris = list(
-                        set([item for sublist in project_uris for item in sublist])
+                )
+                continue
+            if self.inspector.is_blocked_by_parents(experiment):
+                logger.warning(
+                    (
+                        "Experiment is blocked by it's parent for ingestion and "
+                        f"can't be processed. Object is {experiment}"
                     )
-                    object_dict["projects"] = project_uris
-                    forged_object = self.forge.forge_object(
-                        name, "experiment", object_dict
+                )
+                processed_list.append((name,))
+                continue
+            is_present = self.inspector.match_or_block_object(experiment)
+            if is_present:
+                processed_list.append((name, is_present))
+                continue
+            if self.inspector.is_blocked(experiment):
+                logger.warning(
+                    (
+                        "Experiment is blocked for ingestion and can't be "
+                        f"processed. Object is {experiment}"
                     )
-                    return_list.append(forged_object)
-                    uri = None
-                    if forged_object[1]:
-                        uri = forged_object[2]
-                    if parameter_dict["parameters"] != [] and uri:
-                        parameter_dict["experiment"] = uri
-                        return_list.append(
-                            self.forge.forge_object(
-                                f"{name} - Parameters",
-                                "experimentparameterset",
-                                parameter_dict,
-                            )
-                        )
-        return return_list
+                )
+                processed_list.append((name,))
+                continue
+            raw_experiment = self.smelter.smelt_experiment(experiment)
+            if not raw_experiment:
+                self.inspector.block_object(experiment)
+                processed_list.append((name,))
+                continue
+            refined_parameters = None
+            if len(raw_experiment) == 2:
+                refined_parameters = raw_experiment[1]
+            raw_experiment = raw_experiment[0]
+            refined_experiment = self.crucible.refine_experiment(
+                raw_experiment
+            )
+            if not refined_experiment:
+                processed_list.append((name,))
+                self.inspector.block_object(experiment)
+                continue
+            wrought_experiment = self.forge.forge_experiment(
+                refined_experiment, refined_parameters
+            )
+            if isinstance(wrought_experiment[0], URI):
+                processed_list.append((name, wrought_experiment[0]))
+                continue
+            processed_list.append((name,))
+            self.inspector.block_object(experiment)
+        return processed_list
 
     def process_datasets(  # pylint: disable=too-many-locals
-        self, file_path: Path
-    ) -> list:
+        self,
+        datasets: List[RawDataset],
+    ) -> List[Tuple[str, Optional[URI]]]:
         """Wrapper function to create the experiments from input files"""
-        dataset_files = self.build_object_lists(file_path, "dataset")
-        return_list = []
-        for dataset_file in dataset_files:
-            parsed_dictionaries = self.smelter.read_file(dataset_file)
-            for parsed_dict in parsed_dictionaries:
-                object_type = self.smelter.get_object_from_dictionary(parsed_dict)
-                if object_type == "dataset":
-                    object_dict, parameter_dict = self.smelter.smelt_dataset(
-                        parsed_dict
+        processed_list = []
+        for dataset in datasets:
+            name = get_object_name(dataset)
+            if not name:
+                logger.warning(
+                    (
+                        "Unable to find the name of the dataset, skipping "
+                        f"dataset defined by {dataset}"
                     )
-                    name = object_dict["description"]
-                    experiments = object_dict["experiments"]
-                    if isinstance(experiments, str):
-                        experiments = [experiments]
-                    experiment_uris = []
-                    for experiment in experiments:
-                        experiment_uris.append(self.get_experiment_uri(experiment))
-                    experiment_uris = list(
-                        set([item for sublist in experiment_uris for item in sublist])
+                )
+                continue
+            if self.inspector.is_blocked_by_parents(dataset):
+                logger.warning(
+                    (
+                        "Dataset is blocked by it's parent for ingestion and "
+                        f"can't be processed. Object is {dataset}"
                     )
-                    object_dict["experiments"] = experiment_uris
-                    instrument = object_dict["instrument"]
-                    object_dict["instrument"] = self.get_instrument_uri(instrument)[0]
-                    forged_object = self.forge.forge_object(
-                        name, "dataset", object_dict
+                )
+                processed_list.append((name,))
+                continue
+            is_present = self.inspector.match_or_block_object(dataset)
+            if is_present:
+                processed_list.append((name, is_present))
+                continue
+            if self.inspector.is_blocked(dataset):
+                logger.warning(
+                    (
+                        "Experiment is blocked for ingestion and can't be "
+                        f"processed. Object is {dataset}"
                     )
-                    return_list.append(forged_object)
-                    uri = None
-                    if forged_object[1]:
-                        uri = forged_object[2]
-                    if parameter_dict["parameters"] != [] and uri:
-                        parameter_dict["dataset"] = uri
-                        return_list.append(
-                            self.forge.forge_object(
-                                f"{name} - Parameters",
-                                "datasetparameterset",
-                                parameter_dict,
-                            )
-                        )
-        return return_list
+                )
+                processed_list.append((name,))
+                continue
+            raw_dataset = self.smelter.smelt_dataset(dataset)
+            if not raw_dataset:
+                self.inspector.block_object(dataset)
+                processed_list.append((name,))
+                continue
+            refined_parameters = None
+            if len(raw_dataset) == 2:
+                refined_parameters = raw_dataset[1]
+            raw_dataset = raw_dataset[0]
+            refined_dataset = self.crucible.refine_dataset(raw_dataset)
+            if not refined_dataset:
+                processed_list.append((name,))
+                self.inspector.block_object(dataset)
+                continue
+            wrought_dataset = self.forge.forge_dataset(
+                refined_dataset, refined_parameters
+            )
+            if isinstance(wrought_dataset[0], URI):
+                processed_list.append((name, wrought_dataset[0]))
+                continue
+            processed_list.append((name,))
+            self.inspector.block_object(dataset)
+        return processed_list
 
-    def process_datafiles(self, file_path: Path) -> list:
+    def process_datafiles(
+        self,
+        datafiles: List[RawDatafile],
+    ) -> List[Tuple[str, Optional[URI]]]:
         """Wrapper function to create the experiments from input files"""
-        datafile_files = self.build_object_lists(file_path, "datafile")
-        return_list = []
-        for datafile_file in datafile_files:
-            parsed_dictionaries = self.smelter.read_file(datafile_file)
-            for parsed_dict in parsed_dictionaries:
-                object_type = self.smelter.get_object_from_dictionary(parsed_dict)
-                if object_type == "datafile":
-                    parsed_dict["datafiles"]["dataset_id"] = self.get_dataset_uri(
-                        parsed_dict["datafiles"]["dataset_id"]
+        processed_list = []
+        for datafile in datafiles:
+            name = get_object_name(datafile)
+            if not name:
+                logger.warning(
+                    (
+                        "Unable to find the name of the datafile, skipping "
+                        f"datafile defined by {datafile}"
                     )
-                    cleaned_list = self.smelter.expand_datafile_entry(parsed_dict)
-                    for cleaned_dict in cleaned_list:
-                        name = cleaned_dict["filename"]
-                        object_dict, parameter_dict = self.smelter.smelt_datafile(
-                            cleaned_dict
-                        )
-                        forged_object = self.forge.forge_object(
-                            name, "dataset_file", object_dict
-                        )
-                        return_list.append(forged_object)
-                        uri = None
-                        if forged_object[1]:
-                            uri = forged_object[2]
-                        if parameter_dict["parameters"] != [] and uri:
-                            parameter_dict["dataset"] = uri
-                            return_list.append(
-                                self.forge.forge_object(
-                                    f"{name} - Parameters",
-                                    "datafileparameterset",
-                                    parameter_dict,
-                                )
-                            )
-        return return_list
+                )
+                continue
+            if self.inspector.is_blocked_by_parents(datafile):
+                logger.warning(
+                    (
+                        "Datafile is blocked by it's parent for ingestion and "
+                        f"can't be processed. Object is {datafile}"
+                    )
+                )
+                processed_list.append((name,))
+                continue
+            is_present = self.inspector.match_or_block_object(datafile)
+            if is_present:
+                processed_list.append((name, is_present))
+                continue
+            if self.inspector.is_blocked(datafile):
+                logger.warning(
+                    (
+                        "Experiment is blocked for ingestion and can't be "
+                        f"processed. Object is {datafile}"
+                    )
+                )
+                processed_list.append((name,))
+                continue
+            raw_datafile = self.smelter.smelt_datafile(datafile)
+            if not raw_datafile:
+                self.inspector.block_object(datafile)
+                processed_list.append((name,))
+                continue
+            refined_datafile = self.crucible.refine_datafile(raw_datafile)
+            if not refined_datafile:
+                processed_list.append((name,))
+                self.inspector.block_object(datafile)
+                continue
+            wrought_datafile = self.forge.forge_datafile(refined_datafile)
+            if isinstance(wrought_datafile, URI):
+                processed_list.append((name, wrought_datafile))
+                continue
+            processed_list.append((name,))
+            self.inspector.block_object(datafile)
+        return processed_list

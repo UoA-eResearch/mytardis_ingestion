@@ -1,4 +1,4 @@
-# pylint: disable=too-few-public-methods,no-name-in-module
+# pylint: disable=too-few-public-methods,no-name-in-module,duplicate-code
 """Pydantic model defining an Experiment for ingestion into MyTardis"""
 
 from abc import ABC
