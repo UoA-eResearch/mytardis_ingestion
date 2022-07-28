@@ -12,11 +12,10 @@ import mock
 import responses
 from pytest import fixture
 from responses import matchers
-from src.helpers.config import ConnectionConfig, ConfigFromEnv
 
+from src.helpers.config import ConfigFromEnv, ConnectionConfig
 from src.ingestion_factory import IngestionFactory
 from src.smelters import Smelter
-
 
 logger = logging.getLogger(__name__)
 logger.propagate = True

@@ -23,9 +23,7 @@ class Inspector:
     """The Inspector class holds a record of blocked objects and blocks
     objects as needed."""
 
-    def __init__(
-        self, overseer: Overseer, mytardis_setup: IntrospectionConfig
-    ) -> None:
+    def __init__(self, overseer: Overseer, mytardis_setup: IntrospectionConfig) -> None:
         """Class initalisation"""
         self.overseer = overseer
         self.blocked: Dict[str, List[Optional[str]]] = {}
@@ -52,10 +50,7 @@ class Inspector:
                 )
             )
             return True  # Default to blocking the object
-        if (
-            object_type.value["name"]
-            in self.blocked[object_type.value["type"]]
-        ):
+        if object_type.value["name"] in self.blocked[object_type.value["type"]]:
             return True
         return False
 
@@ -92,10 +87,7 @@ class Inspector:
                 uri = URI(obj["resource_uri"])
             except ValidationError:
                 logger.warning(
-                    (
-                        "Malformed return from get_objects. Returned "
-                        f"value is {obj}"
-                    ),
+                    ("Malformed return from get_objects. Returned " f"value is {obj}"),
                     exc_info=True,
                 )
                 continue
@@ -174,14 +166,10 @@ class Inspector:
             )
             logger.error(error_message)
             raise ValueError(error_message)
-        self.blocked[object_type.value["type"]].append(
-            get_object_name(raw_object)
-        )
+        self.blocked[object_type.value["type"]].append(get_object_name(raw_object))
         if not isinstance(raw_object, RawDatafile):
             if raw_object.persistent_id:
-                self.blocked[object_type.value["type"]].append(
-                    raw_object.persistent_id
-                )
+                self.blocked[object_type.value["type"]].append(raw_object.persistent_id)
             if raw_object.alternate_ids:
                 for alt_id in raw_object.alternate_ids:
                     self.blocked[object_type.value["type"]].append(alt_id)
@@ -217,14 +205,12 @@ class Inspector:
         if object_type.value["type"] == "project":
             if not check_projects_enabled_and_log_if_not(self):
                 return None
-        if not isinstance(
-            raw_object, RawProject
-        ) and self.is_blocked_by_parents(raw_object):
+        if not isinstance(raw_object, RawProject) and self.is_blocked_by_parents(
+            raw_object
+        ):
             self.block_object(raw_object)
             return None
-        potential_matches = self.__get_objects_that_may_match_from_mytardis(
-            raw_object
-        )
+        potential_matches = self.__get_objects_that_may_match_from_mytardis(raw_object)
         if not potential_matches:
             return None
         for match in potential_matches:
