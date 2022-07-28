@@ -54,7 +54,9 @@ class Forge:
     ) -> requests.Response | None:
         """Wrapper around a generic POST request with logging in place."""
         try:
-            response = self.rest_factory.mytardis_api_request(action, url, data=data)
+            response = self.rest_factory.mytardis_api_request(
+                action, url, data=data
+            )
         except (HTTPError, BadGateWayException) as error:
             logger.warning(
                 (
@@ -84,7 +86,9 @@ class Forge:
             return None
         return response
 
-    def __get_uri_from_response(self, response_dict: Dict[str, Any]) -> URI | None:
+    def __get_uri_from_response(
+        self, response_dict: Dict[str, Any]
+    ) -> URI | None:
         """Take a response dictionary parsed from the JSON return
         of a response and extract the URI from it"""
         try:
@@ -159,15 +163,14 @@ class Forge:
             )
             return None
         # Consider refactoring this as a function to generate the URL?
+        url_substring = object_type.value["url_substring"]
         action = "POST"
-        url = urljoin(self.rest_factory.api_template, object_type["url_substring"])
+        url = urljoin(self.rest_factory.api_template, url_substring)
         url = url + "/"
         if overwrite_objects:
             if object_id:
                 action = "PUT"
-                url = urljoin(
-                    self.rest_factory.api_template, object_type["url_substring"]
-                )
+                url = urljoin(self.rest_factory.api_template, url_substring)
                 url = url + "/"
                 url = urljoin(url, str(object_id))
                 url = url + "/"
@@ -180,7 +183,7 @@ class Forge:
                 )
                 return None
         response = self.__make_api_call(url, action, object_json)
-        if response and object_type["expect_json"]:
+        if response and object_type.value["expect_json"]:
             try:
                 response_dict = response.json()
             except JSONDecodeError:

@@ -12,7 +12,7 @@ from pydantic import ValidationError
 from src.blueprints import URI, RawDatafile, RawDataset, RawExperiment, RawProject
 from src.helpers import IntrospectionConfig
 from src.helpers.dataclass import get_object_name, get_object_parents, get_object_type
-from src.helpers.enumerators import ObjectDict, ObjectEnum
+from src.helpers.enumerators import ObjectEnum
 from src.helpers.project_aware import check_projects_enabled_and_log_if_not
 from src.overseers.overseer import Overseer
 
@@ -23,7 +23,9 @@ class Inspector:
     """The Inspector class holds a record of blocked objects and blocks
     objects as needed."""
 
-    def __init__(self, overseer: Overseer, mytardis_setup: IntrospectionConfig) -> None:
+    def __init__(
+        self, overseer: Overseer, mytardis_setup: IntrospectionConfig
+    ) -> None:
         """Class initalisation"""
         self.overseer = overseer
         self.blocked: Dict[str, List[Optional[str]]] = {}
@@ -50,7 +52,10 @@ class Inspector:
                 )
             )
             return True  # Default to blocking the object
-        if object_type["name"] in self.blocked[object_type["type"]]:
+        if (
+            object_type.value["name"]
+            in self.blocked[object_type.value["type"]]
+        ):
             return True
         return False
 
@@ -72,15 +77,12 @@ class Inspector:
         parents = get_object_parents(raw_object)
         if parents:
             for parent in parents:
-                if (
-                    object_type["parent"]
-                    and parent in self.blocked[object_type["parent"]]
-                ):
+                if parent in self.blocked[object_type.value["parent"]]:
                     return True
         return False
 
     def __validate_objects_returned_from_mytardis(
-        self, object_type: ObjectDict, objects: List[Any]
+        self, object_type: ObjectEnum, objects: List[Any]
     ) -> List[Tuple[URI, List[str]]] | None:
         """Helper function to check that a sensible return comes back from
         the overseer and logs errors if not."""
@@ -90,12 +92,15 @@ class Inspector:
                 uri = URI(obj["resource_uri"])
             except ValidationError:
                 logger.warning(
-                    ("Malformed return from get_objects. Returned " f"value is {obj}"),
+                    (
+                        "Malformed return from get_objects. Returned "
+                        f"value is {obj}"
+                    ),
                     exc_info=True,
                 )
                 continue
             values = []
-            for key in object_type["match_keys"]:
+            for key in object_type.value["match_keys"]:
                 values.append(str(obj[key]))
             return_list.append((uri, values))
         if not return_list:
@@ -127,7 +132,7 @@ class Inspector:
                 )
             )
             return None
-        if object_type["type"] == "project":
+        if object_type.value["type"] == "project":
             if not check_projects_enabled_and_log_if_not(self):
                 return None
         search_list = []
@@ -140,7 +145,7 @@ class Inspector:
         objects: List[Dict[Any, Any]] = []
         for search in search_list:
             found_objs = self.overseer.get_objects(
-                object_type["search_type"].value, search
+                object_type.value["search_type"], search
             )
             if found_objs:
                 objects.append(*found_objs)
@@ -169,13 +174,17 @@ class Inspector:
             )
             logger.error(error_message)
             raise ValueError(error_message)
-        self.blocked[object_type["type"]].append(get_object_name(raw_object))
+        self.blocked[object_type.value["type"]].append(
+            get_object_name(raw_object)
+        )
         if not isinstance(raw_object, RawDatafile):
             if raw_object.persistent_id:
-                self.blocked[object_type["type"]].append(raw_object.persistent_id)
+                self.blocked[object_type.value["type"]].append(
+                    raw_object.persistent_id
+                )
             if raw_object.alternate_ids:
                 for alt_id in raw_object.alternate_ids:
-                    self.blocked[object_type["type"]].append(alt_id)
+                    self.blocked[object_type.value["type"]].append(alt_id)
 
     def match_or_block_object(  # pylint: disable=too-many-return-statements
         self,
@@ -205,21 +214,23 @@ class Inspector:
                 )
             )
             return None
-        if object_type["type"] == "project":
+        if object_type.value["type"] == "project":
             if not check_projects_enabled_and_log_if_not(self):
                 return None
-        if not isinstance(raw_object, RawProject) and self.is_blocked_by_parents(
-            raw_object
-        ):
+        if not isinstance(
+            raw_object, RawProject
+        ) and self.is_blocked_by_parents(raw_object):
             self.block_object(raw_object)
             return None
-        potential_matches = self.__get_objects_that_may_match_from_mytardis(raw_object)
+        potential_matches = self.__get_objects_that_may_match_from_mytardis(
+            raw_object
+        )
         if not potential_matches:
             return None
         for match in potential_matches:
             matched_keys = True
             raw_object_dict = raw_object.dict(by_alias=True)
-            for key in object_type["match_keys"]:
+            for key in object_type.value["match_keys"]:
                 if raw_object_dict[key] not in match:
                     matched_keys = False
             if matched_keys:

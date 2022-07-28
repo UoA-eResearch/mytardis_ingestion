@@ -1,125 +1,95 @@
 """Useful enunmerators for ingestion"""
 
 from enum import Enum
-from typing import TypedDict
 
-
-class MyTardisObject(str, Enum):
-    """Enum for possible MyTardis object types"""
-
-    DATASET = "dataset"
-    EXPERIMENT = "experiment"
-    FACILITY = "facility"
-    INSTRUMENT = "instrument"
-    PROJECT = "project"
-    INSTITUTION = "institution"
-    DATAFILE = "datafile"
-
-
-class ObjectPostDict(TypedDict):
-    url_substring: str
-    expect_json: bool
+from src.helpers.config import MyTardisObject
 
 
 class ObjectPostEnum(Enum):
     """An enumverator for the POST/PUT/PATCH specific
     information used by MyTardis."""
 
-    PROJECT: ObjectPostDict = {
+    PROJECT = {
         "url_substring": "project",
         "expect_json": True,
     }
-    EXPERIMENT: ObjectPostDict = {
+    EXPERIMENT = {
         "url_substring": "experiment",
         "expect_json": True,
     }
-    DATASET: ObjectPostDict = {
+    DATASET = {
         "url_substring": "dataset",
         "expect_json": True,
     }
-    DATAFILE: ObjectPostDict = {
+    DATAFILE = {
         "url_substring": "dataset_file",
         "expect_json": True,
     }
-    PROJECT_PARAMETERS: ObjectPostDict = {
+    PROJECT_PARAMETERS = {
         "url_substring": "projectparameterset",
         "expect_json": False,
     }
-    EXPERIMENT_PARAMETERS: ObjectPostDict = {
+    EXPERIMENT_PARAMETERS = {
         "url_substring": "experimentparameterset",
         "expect_json": False,
     }
-    DATASET_PARAMETERS: ObjectPostDict = {
+    DATASET_PARAMETERS = {
         "url_substring": "datsetparameterset",
         "expect_json": False,
     }
-
-
-class ObjectSearchDict(TypedDict):
-    type: str
-    target: str
-    url_substring: str
 
 
 class ObjectSearchEnum(Enum):
     """An enumerator for objects that can be searched for in
     MyTardis via the API"""
 
-    PROJECT: ObjectSearchDict = {
+    PROJECT = {
         "type": "project",
         "target": "name",
         "url_substring": "project",
     }
-    EXPERIMENT: ObjectSearchDict = {
+    EXPERIMENT = {
         "type": "experiment",
         "target": "title",
         "url_substring": "experiment",
     }
-    DATASET: ObjectSearchDict = {
+    DATASET = {
         "type": "dataset",
         "target": "description",
         "url_substring": "dataset",
     }
-    DATAFILE: ObjectSearchDict = {
+    DATAFILE = {
         "type": "datafile",
         "target": "filename",
         "url_substring": "dataset_file",
     }
-    INSTITUTION: ObjectSearchDict = {
+    INSTITUTION = {
         "type": "institution",
         "target": "name",
         "url_substring": "institution",
     }
-    INSTRUMENT: ObjectSearchDict = {
+    INSTRUMENT = {
         "type": "instrument",
         "target": "name",
         "url_substring": "instrument",
     }
-    FACILITY: ObjectSearchDict = {
+    FACILITY = {
         "type": "facility",
         "target": "name",
         "url_substring": "facility",
     }
-    STORAGE_BOX: ObjectSearchDict = {
+    STORAGE_BOX = {
         "type": "storagebox",
         "target": "name",
         "url_substring": "storagebox",
     }
 
 
-class ObjectDict(TypedDict):
-    type: MyTardisObject
-    name: str
-    match_keys: list[str]
-    parent: str | None
-    search_type: ObjectSearchEnum
-
-
 class ObjectEnum(Enum):
     """An enumerator for hierarchy objects in MyTardis"""
 
-    PROJECT: ObjectDict = {
-        "type": MyTardisObject.PROJECT,
+    PROJECT = {
+        "type": MyTardisObject.project,
         "name": "name",
         "match_keys": [
             "name",
@@ -129,8 +99,8 @@ class ObjectEnum(Enum):
         "parent": None,
         "search_type": ObjectSearchEnum.PROJECT,
     }
-    EXPERIMENT: ObjectDict = {
-        "type": MyTardisObject.EXPERIMENT,
+    EXPERIMENT = {
+        "type": MyTardisObject.experiment,
         "name": "title",
         "match_keys": [
             "title",
@@ -139,8 +109,8 @@ class ObjectEnum(Enum):
         "parent": "project",
         "search_type": ObjectSearchEnum.EXPERIMENT,
     }
-    DATASET: ObjectDict = {
-        "type": MyTardisObject.DATASET,
+    DATASET = {
+        "type": MyTardisObject.dataset,
         "name": "description",
         "match_keys": [
             "description",
@@ -148,8 +118,8 @@ class ObjectEnum(Enum):
         "parent": "experiment",
         "search_type": ObjectSearchEnum.DATASET,
     }
-    DATAFILE: ObjectDict = {
-        "type": MyTardisObject.DATAFILE,
+    DATAFILE = {
+        "type": MyTardisObject.datafile,
         "name": "filename",
         "match_keys": [
             "filename",

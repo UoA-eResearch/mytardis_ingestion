@@ -4,16 +4,17 @@ for the Forge class."""
 
 import logging
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin, urlparse
 
 from pydantic import ValidationError
 from requests.exceptions import HTTPError
 
 from src.blueprints import StorageBox
+from src.blueprints.custom_data_types import URI
 from src.helpers import MyTardisRESTFactory
 from src.helpers.config import IntrospectionConfig
-from src.helpers.enumerators import ObjectSearchDict, ObjectSearchEnum
+from src.helpers.enumerators import ObjectSearchEnum
 
 logger = logging.getLogger(__name__)
 
@@ -69,16 +70,18 @@ class Overseer:
         Returns:
             The integer id that maps to the URI
         """
-        resource_id = int(urlparse(uri).path.rstrip(os.sep).split(os.sep).pop())
+        resource_id = int(
+            urlparse(uri).path.rstrip(os.sep).split(os.sep).pop()
+        )
         return resource_id
 
     def __get_object_from_mytardis(
-        self,
-        object_type: ObjectSearchDict,
-        query_params: Dict[str, str],
+        self, object_type: ObjectSearchEnum, query_params: Dict[str, str]
     ) -> Dict[str, List[Any]] | None:
 
-        url = urljoin(self.rest_factory.api_template, object_type["url_substring"])
+        url = urljoin(
+            self.rest_factory.api_template, object_type.value["url_substring"]
+        )
         try:
             response = self.rest_factory.mytardis_api_request(
                 "GET", url, params=query_params
@@ -108,7 +111,7 @@ class Overseer:
 
     def get_objects(
         self,
-        object_type: ObjectSearchDict,
+        object_type: ObjectSearchEnum,
         search_string: str,
     ) -> List[Dict] | None:
         """Gets a list of objects matching the search parameters passed
@@ -129,20 +132,27 @@ class Overseer:
         """
         return_list: list = []
         response_dict = None
-        if self.objects_with_ids and object_type["type"] in self.objects_with_ids:
+        if (
+            self.objects_with_ids
+            and object_type.value["type"] in self.objects_with_ids
+        ):
             query_params = {"pids": search_string}
-            response_dict = self.__get_object_from_mytardis(object_type, query_params)
+            response_dict = self.__get_object_from_mytardis(
+                object_type, query_params
+            )
             if response_dict and "objects" in response_dict.keys():
                 return_list.append(*response_dict["objects"])
-        query_params = {object_type["target"]: search_string}
-        response_dict = self.__get_object_from_mytardis(object_type, query_params)
+        query_params = {object_type.value["target"]: search_string}
+        response_dict = self.__get_object_from_mytardis(
+            object_type, query_params
+        )
         if response_dict and "objects" in response_dict.keys():
             return_list.append(*response_dict["objects"])
         return list(set(return_list))
 
     def get_uris(
         self,
-        object_type: ObjectSearchDict,
+        object_type: ObjectSearchEnum,
         search_string: str,
     ) -> List[URI] | None:
         """Calls self.get_objects() to get a list of objects matching search then extracts URIs
@@ -207,7 +217,7 @@ class Overseer:
         """
 
         raw_storage_box = self.get_objects(
-            ObjectSearchEnum.STORAGE_BOX.value, storage_box_name
+            ObjectSearchEnum.STORAGE_BOX, storage_box_name
         )
         if raw_storage_box and len(raw_storage_box) > 1:
             logger.warning(
@@ -217,7 +227,9 @@ class Overseer:
             )
             return None
         if not raw_storage_box:
-            logger.warning(f"Unable to locate storage box called {storage_box_name}")
+            logger.warning(
+                f"Unable to locate storage box called {storage_box_name}"
+            )
             return None
         storage_box = raw_storage_box[0]  # Unpack from the list
         location = None
@@ -248,7 +260,9 @@ class Overseer:
             try:
                 description = storage_box["description"]
             except KeyError:
-                logger.info(f"No description given for Storage Box, {storage_box_name}")
+                logger.info(
+                    f"No description given for Storage Box, {storage_box_name}"
+                )
             try:
                 ret_storage_box = StorageBox(
                     name=name,
@@ -266,106 +280,6 @@ class Overseer:
                 )
                 return None
             return ret_storage_box
-        return None
-
-
-        Wrapper function that first searches on an identifier if the identifier app
-        is active. Falls back to searching on the name field (or equivalent)
-
-        Args:
-            object_type: the string representaion of the Object in MyTardis
-            object_id: the identifier used to search for the object
-
-        Returns:
-        The URI from MyTardis for the object searched for or None
-        """
-        uri = None
-        if object_type in self.mytardis_setup["objects_with_ids"]:
-            uri = self.get_uris_by_identifier(object_type, object_id)
-        if not uri:
-            try:
-                uri = self.get_uris(
-                    object_type, self.object_names[object_type], object_id
-                )
-            except KeyError:
-                logger.warning(
-                    f"The name of {object_type} objects has not been defined in the Overseer"
-                )
-                return None
-        return uri
-
-    def get_storage_box(  # pylint: disable=too-many-return-statements
-        self,
-        storage_box_name: str,
-    ) -> StorageBox | None:
-        """Helper function to get a storage box from MyTardis and to verify that there
-        is a location associated with it.
-
-        Args:
-            storage_box_name: The human readable name that defines the storage box
-
-        Returns:
-            A StorageBox dataclass if the name is found in MyTardis and the storage
-                box is completely defined, or None if this is not the case.
-        """
-        raw_storage_box = self.get_objects("storagebox", "name", storage_box_name)
-        if not raw_storage_box or raw_storage_box == []:
-            logger.warning(f"Unable to locate storage box called {storage_box_name}")
-            return None
-        if len(raw_storage_box) > 1:
-            logger.warning(
-                "Unable to uniquely identify the storage box based on the "
-                f"name provided ({storage_box_name}). Please check with your "
-                "system administrator to identify the source of the issue."
-            )
-            return None
-        raw_storage_box = raw_storage_box[0]  # Unpack from the list
-        location = None
-        for option in raw_storage_box["options"]:
-            try:
-                key = option["key"]
-            except KeyError:
-                continue
-            if key == "location":
-                try:
-                    location = option["value"]
-                except KeyError:
-                    logger.warning(
-                        f"Storage box, {storage_box_name} is misconfigured. Missing location"
-                    )
-                    return None
-        if location:
-            try:
-                name = raw_storage_box["name"]
-                uri = raw_storage_box["resource_uri"]
-            except KeyError:
-                logger.warning(
-                    f"Storage box, {storage_box_name} is misconfigured. Storage box "
-                    f"gathered from MyTardis: {raw_storage_box}"
-                )
-                return None
-            description = "No description"
-            try:
-                description = raw_storage_box["description"]
-            except KeyError:
-                logger.info(f"No description given for Storage Box, {storage_box_name}")
-            try:
-                storage_box = StorageBox(
-                    name=name,
-                    description=description,
-                    uri=uri,
-                    location=location,
-                )
-            except ValidationError:
-                logger.warning(
-                    (
-                        f"Poorly defined Storage Box, {storage_box_name}. Please "
-                        "check configuration in MyTardis"
-                    ),
-                    exc_info=True,
-                )
-                return None
-            return storage_box
         return None
 
 

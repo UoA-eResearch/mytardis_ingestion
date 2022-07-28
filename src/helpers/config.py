@@ -147,6 +147,18 @@ class StorageConfig(BaseModel):
     box: str
 
 
+class MyTardisObject(str, Enum):
+    # pylint: disable=invalid-name
+    """Enum for possible MyTardis object types"""
+    dataset = "dataset"
+    experiment = "experiment"
+    facility = "facility"
+    instrument = "instrument"
+    project = "project"
+    institution = "institution"
+    datafile = "datafile"
+
+
 class IntrospectionConfig(BaseModel):
     """MyTardis introspection data.
 
@@ -248,9 +260,7 @@ class ConfigFromEnv(BaseSettings):
 
         Requests introspection info from MyTardis instance configured in connection
         """
-        user_agent = (
-            f"{__name__}/2.0 (https://github.com/UoA-eResearch/mytardis_ingestion.git)"
-        )
+        user_agent = f"{__name__}/2.0 (https://github.com/UoA-eResearch/mytardis_ingestion.git)"
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",

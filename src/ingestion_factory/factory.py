@@ -80,7 +80,7 @@ class IngestionFactory:
         projects: List[RawProject],
     ) -> List[Tuple[str, Optional[URI]]]:
         """Wrapper function to create the projects from input files"""
-        processed_list: list[tuple[str, URI | None]] = []
+        processed_list = []
         for project in projects:
             name = get_object_name(project)
             if not name:
@@ -91,9 +91,7 @@ class IngestionFactory:
                     )
                 )
                 continue
-            is_present = self.inspector.match_or_block_object(
-                project
-            )  # better name ("is" implies a bool)
+            is_present = self.inspector.match_or_block_object(project)
             if is_present:
                 processed_list.append((name, is_present))
                 continue
@@ -104,19 +102,20 @@ class IngestionFactory:
                         f"processed. Object is {project}"
                     )
                 )
-                processed_list.append((name, None))
+                processed_list.append((name,))
                 continue
             raw_project = self.smelter.smelt_project(project)
             if not raw_project:
-                processed_list.append((name, None))
+                processed_list.append((name,))
                 self.inspector.block_object(project)
                 continue
             refined_parameters = None
             if len(raw_project) == 2:
                 refined_parameters = raw_project[1]
-            refined_project = self.crucible.refine_project(raw_project[0])
+            raw_project = raw_project[0]
+            refined_project = self.crucible.refine_project(raw_project)
             if not refined_project:
-                processed_list.append((name, None))
+                processed_list.append((name,))
                 self.inspector.block_object(project)
                 continue
             wrought_project = self.forge.forge_project(
@@ -125,7 +124,7 @@ class IngestionFactory:
             if isinstance(wrought_project[0], URI):
                 processed_list.append((name, wrought_project[0]))
                 continue
-            processed_list.append((name, None))
+            processed_list.append((name,))
             self.inspector.block_object(project)
         return processed_list
 
@@ -134,7 +133,7 @@ class IngestionFactory:
         experiments: List[RawExperiment],
     ) -> List[Tuple[str, Optional[URI]]]:
         """Wrapper function to create the experiments from input files"""
-        processed_list: list[tuple[str, URI | None]] = []
+        processed_list = []
         for experiment in experiments:
             name = get_object_name(experiment)
             if not name:
@@ -152,11 +151,9 @@ class IngestionFactory:
                         f"can't be processed. Object is {experiment}"
                     )
                 )
-                processed_list.append((name, None))
+                processed_list.append((name,))
                 continue
-            is_present = self.inspector.match_or_block_object(
-                experiment
-            )  # better name (see above)
+            is_present = self.inspector.match_or_block_object(experiment)
             if is_present:
                 processed_list.append((name, is_present))
                 continue
@@ -167,19 +164,22 @@ class IngestionFactory:
                         f"processed. Object is {experiment}"
                     )
                 )
-                processed_list.append((name, None))
+                processed_list.append((name,))
                 continue
             raw_experiment = self.smelter.smelt_experiment(experiment)
             if not raw_experiment:
                 self.inspector.block_object(experiment)
-                processed_list.append((name, None))
+                processed_list.append((name,))
                 continue
             refined_parameters = None
             if len(raw_experiment) == 2:
                 refined_parameters = raw_experiment[1]
-            refined_experiment = self.crucible.refine_experiment(raw_experiment[0])
+            raw_experiment = raw_experiment[0]
+            refined_experiment = self.crucible.refine_experiment(
+                raw_experiment
+            )
             if not refined_experiment:
-                processed_list.append((name, None))
+                processed_list.append((name,))
                 self.inspector.block_object(experiment)
                 continue
             wrought_experiment = self.forge.forge_experiment(
@@ -188,7 +188,7 @@ class IngestionFactory:
             if isinstance(wrought_experiment[0], URI):
                 processed_list.append((name, wrought_experiment[0]))
                 continue
-            processed_list.append((name, None))
+            processed_list.append((name,))
             self.inspector.block_object(experiment)
         return processed_list
 
@@ -197,7 +197,7 @@ class IngestionFactory:
         datasets: List[RawDataset],
     ) -> List[Tuple[str, Optional[URI]]]:
         """Wrapper function to create the experiments from input files"""
-        processed_list: list[tuple[str, URI | None]] = []
+        processed_list = []
         for dataset in datasets:
             name = get_object_name(dataset)
             if not name:
@@ -215,7 +215,7 @@ class IngestionFactory:
                         f"can't be processed. Object is {dataset}"
                     )
                 )
-                processed_list.append((name, None))
+                processed_list.append((name,))
                 continue
             is_present = self.inspector.match_or_block_object(dataset)
             if is_present:
@@ -228,19 +228,20 @@ class IngestionFactory:
                         f"processed. Object is {dataset}"
                     )
                 )
-                processed_list.append((name, None))
+                processed_list.append((name,))
                 continue
             raw_dataset = self.smelter.smelt_dataset(dataset)
             if not raw_dataset:
                 self.inspector.block_object(dataset)
-                processed_list.append((name, None))
+                processed_list.append((name,))
                 continue
             refined_parameters = None
             if len(raw_dataset) == 2:
                 refined_parameters = raw_dataset[1]
-            refined_dataset = self.crucible.refine_dataset(raw_dataset[0])
+            raw_dataset = raw_dataset[0]
+            refined_dataset = self.crucible.refine_dataset(raw_dataset)
             if not refined_dataset:
-                processed_list.append((name, None))
+                processed_list.append((name,))
                 self.inspector.block_object(dataset)
                 continue
             wrought_dataset = self.forge.forge_dataset(
@@ -249,7 +250,7 @@ class IngestionFactory:
             if isinstance(wrought_dataset[0], URI):
                 processed_list.append((name, wrought_dataset[0]))
                 continue
-            processed_list.append((name, None))
+            processed_list.append((name,))
             self.inspector.block_object(dataset)
         return processed_list
 
@@ -258,7 +259,7 @@ class IngestionFactory:
         datafiles: List[RawDatafile],
     ) -> List[Tuple[str, Optional[URI]]]:
         """Wrapper function to create the experiments from input files"""
-        processed_list: list[tuple[str, URI | None]] = []
+        processed_list = []
         for datafile in datafiles:
             name = get_object_name(datafile)
             if not name:
@@ -276,7 +277,7 @@ class IngestionFactory:
                         f"can't be processed. Object is {datafile}"
                     )
                 )
-                processed_list.append((name, None))
+                processed_list.append((name,))
                 continue
             is_present = self.inspector.match_or_block_object(datafile)
             if is_present:
@@ -289,22 +290,22 @@ class IngestionFactory:
                         f"processed. Object is {datafile}"
                     )
                 )
-                processed_list.append((name, None))
+                processed_list.append((name,))
                 continue
             raw_datafile = self.smelter.smelt_datafile(datafile)
             if not raw_datafile:
                 self.inspector.block_object(datafile)
-                processed_list.append((name, None))
+                processed_list.append((name,))
                 continue
             refined_datafile = self.crucible.refine_datafile(raw_datafile)
             if not refined_datafile:
-                processed_list.append((name, None))
+                processed_list.append((name,))
                 self.inspector.block_object(datafile)
                 continue
             wrought_datafile = self.forge.forge_datafile(refined_datafile)
             if isinstance(wrought_datafile, URI):
                 processed_list.append((name, wrought_datafile))
                 continue
-            processed_list.append((name, None))
+            processed_list.append((name,))
             self.inspector.block_object(datafile)
         return processed_list
