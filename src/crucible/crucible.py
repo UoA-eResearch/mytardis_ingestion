@@ -4,7 +4,7 @@ fields that exist within the MyTardis Database with their equivalent URIs.
 """
 import logging
 
-from src.blueprints.custom_data_types import ISODateTime
+from src.blueprints.custom_data_types import URI, ISODateTime
 from src.blueprints.datafile import Datafile, RefinedDatafile
 from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
@@ -30,7 +30,7 @@ class Crucible:
     def refine_project(self, raw_project: RefinedProject) -> Project | None:
         """Refine a project by getting the objects that need to exist in
         MyTardis and finding their URIs"""
-        institutions = []
+        institutions: list[URI] = []
         for institution in raw_project.institution:
             institution_uri = self.overseer.get_uris(
                 ObjectSearchEnum.INSTITUTION, institution
@@ -69,7 +69,7 @@ class Crucible:
     def refine_experiment(self, raw_experiment: RefinedExperiment) -> Experiment | None:
         """Refine an experiment by getting the objects that need to exist
         in MyTardis and finding their URIs"""
-        projects = []
+        projects: list[URI] = []
         if raw_experiment.projects and self.projects_enabled:
             for project in raw_experiment.projects:
                 project_uri = self.overseer.get_uris(ObjectSearchEnum.PROJECT, project)
@@ -85,7 +85,6 @@ class Crucible:
                     )
                 )
                 return None
-            projects = None
         refined_experiment = Experiment(
             title=raw_experiment.title,
             description=raw_experiment.description,
@@ -114,7 +113,7 @@ class Crucible:
     def refine_dataset(self, raw_dataset: RefinedDataset) -> Dataset | None:
         """Refine a dataset by finding URIs from MyTardis for the
         relevant fields of interest"""
-        experiments = []
+        experiments: list[URI] = []
         for experiment in raw_dataset.experiments:
             experiment_uri = self.overseer.get_uris(
                 ObjectSearchEnum.PROJECT, experiment
@@ -128,8 +127,9 @@ class Crucible:
         instruments = self.overseer.get_uris(
             ObjectSearchEnum.INSTRUMENT, raw_dataset.instrument
         )
-        instruments = list(set(instruments))
-        if not instruments:
+        if instruments:
+            instruments = list(set(instruments))
+        else:
             logger.warning(
                 (
                     "Unable to find the instrument associated with this "

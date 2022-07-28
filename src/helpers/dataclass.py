@@ -12,7 +12,7 @@ from src.blueprints.experiment import (
 )
 from src.blueprints.project import ProjectParameterSet
 from src.helpers import ObjectEnum
-from src.helpers.enumerators import ObjectPostEnum
+from src.helpers.enumerators import ObjectDict, ObjectPostDict, ObjectPostEnum
 
 
 def get_object_name(
@@ -32,16 +32,16 @@ def get_object_name(
 
 def get_object_type(
     object_class: BaseDatafile | BaseDataset | BaseExperiment | BaseProject,
-) -> ObjectEnum | None:
+) -> ObjectDict | None:
     """Generic helper function to get the name from a MyTardis  dataclass object"""
     if isinstance(object_class, BaseDatafile):
-        return ObjectEnum.DATAFILE
+        return ObjectEnum.DATAFILE.value
     if isinstance(object_class, BaseDataset):
-        return ObjectEnum.DATASET
+        return ObjectEnum.DATASET.value
     if isinstance(object_class, BaseExperiment):
-        return ObjectEnum.EXPERIMENT
+        return ObjectEnum.EXPERIMENT.value
     if isinstance(object_class, BaseProject):
-        return ObjectEnum.PROJECT
+        return ObjectEnum.PROJECT.value
     return None
 
 
@@ -71,21 +71,22 @@ def get_object_post_type(  # pylint: disable=too-many-return-statements
     | ProjectParameterSet
     | ExperimentParameterSet
     | DatasetParameterSet,
-) -> ObjectPostEnum | None:
+) -> ObjectPostDict | None:
     """Generic helper function to return the parameeters needed to correctly
     POST or PUT/PATCH a MyTardis object."""
+
     if isinstance(object_class, BaseDatafile):
-        return ObjectPostEnum.DATAFILE
+        return ObjectPostEnum.DATAFILE.value
     if isinstance(object_class, BaseDataset):
-        return ObjectPostEnum.DATASET
+        return ObjectPostEnum.DATASET.value
     if isinstance(object_class, BaseExperiment):
-        return ObjectPostEnum.EXPERIMENT
+        return ObjectPostEnum.EXPERIMENT.value
     if isinstance(object_class, BaseProject):
-        return ObjectPostEnum.PROJECT
+        return ObjectPostEnum.PROJECT.value
     if isinstance(object_class, ProjectParameterSet):
-        return ObjectPostEnum.PROJECT_PARAMETERS
+        return ObjectPostEnum.PROJECT_PARAMETERS.value
     if isinstance(object_class, ExperimentParameterSet):
-        return ObjectPostEnum.EXPERIMENT_PARAMETERS
+        return ObjectPostEnum.EXPERIMENT_PARAMETERS.value
     if isinstance(object_class, DatasetParameterSet):
-        return ObjectPostEnum.DATASET_PARAMETERS
+        return ObjectPostEnum.DATASET_PARAMETERS.value
     return None

@@ -12,7 +12,7 @@ from pydantic import ValidationError
 from src.blueprints import URI, RawDatafile, RawDataset, RawExperiment, RawProject
 from src.helpers import IntrospectionConfig
 from src.helpers.dataclass import get_object_name, get_object_parents, get_object_type
-from src.helpers.enumerators import ObjectEnum
+from src.helpers.enumerators import ObjectDict, ObjectEnum
 from src.helpers.project_aware import check_projects_enabled_and_log_if_not
 from src.overseers.overseer import Overseer
 
@@ -50,7 +50,7 @@ class Inspector:
                 )
             )
             return True  # Default to blocking the object
-        if object_type.value["name"] in self.blocked[object_type.value["type"]]:
+        if object_type["name"] in self.blocked[object_type["type"]]:
             return True
         return False
 
@@ -72,12 +72,15 @@ class Inspector:
         parents = get_object_parents(raw_object)
         if parents:
             for parent in parents:
-                if parent in self.blocked[object_type.value["parent"]]:
+                if (
+                    object_type["parent"]
+                    and parent in self.blocked[object_type["parent"]]
+                ):
                     return True
         return False
 
     def __validate_objects_returned_from_mytardis(
-        self, object_type: ObjectEnum, objects: List[Any]
+        self, object_type: ObjectDict, objects: List[Any]
     ) -> List[Tuple[URI, List[str]]] | None:
         """Helper function to check that a sensible return comes back from
         the overseer and logs errors if not."""
@@ -92,7 +95,7 @@ class Inspector:
                 )
                 continue
             values = []
-            for key in object_type.value["match_keys"]:
+            for key in object_type["match_keys"]:
                 values.append(str(obj[key]))
             return_list.append((uri, values))
         if not return_list:
@@ -124,7 +127,7 @@ class Inspector:
                 )
             )
             return None
-        if object_type.value["type"] == "project":
+        if object_type["type"] == "project":
             if not check_projects_enabled_and_log_if_not(self):
                 return None
         search_list = []
@@ -136,9 +139,7 @@ class Inspector:
         search_list.append(object_name)
         objects: List[Dict[Any, Any]] = []
         for search in search_list:
-            found_objs = self.overseer.get_objects(
-                object_type.value["search_type"], search
-            )
+            found_objs = self.overseer.get_objects(object_type["search_type"], search)
             if found_objs:
                 objects.append(*found_objs)
         objects = list(set(objects))
@@ -166,13 +167,13 @@ class Inspector:
             )
             logger.error(error_message)
             raise ValueError(error_message)
-        self.blocked[object_type.value["type"]].append(get_object_name(raw_object))
+        self.blocked[object_type["type"]].append(get_object_name(raw_object))
         if not isinstance(raw_object, RawDatafile):
             if raw_object.persistent_id:
-                self.blocked[object_type.value["type"]].append(raw_object.persistent_id)
+                self.blocked[object_type["type"]].append(raw_object.persistent_id)
             if raw_object.alternate_ids:
                 for alt_id in raw_object.alternate_ids:
-                    self.blocked[object_type.value["type"]].append(alt_id)
+                    self.blocked[object_type["type"]].append(alt_id)
 
     def match_or_block_object(  # pylint: disable=too-many-return-statements
         self,
@@ -202,7 +203,7 @@ class Inspector:
                 )
             )
             return None
-        if object_type.value["type"] == "project":
+        if object_type["type"] == "project":
             if not check_projects_enabled_and_log_if_not(self):
                 return None
         if not isinstance(raw_object, RawProject) and self.is_blocked_by_parents(
@@ -216,7 +217,7 @@ class Inspector:
         for match in potential_matches:
             matched_keys = True
             raw_object_dict = raw_object.dict(by_alias=True)
-            for key in object_type.value["match_keys"]:
+            for key in object_type["match_keys"]:
                 if raw_object_dict[key] not in match:
                     matched_keys = False
             if matched_keys:
