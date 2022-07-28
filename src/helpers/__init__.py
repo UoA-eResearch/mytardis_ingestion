@@ -7,6 +7,7 @@ from src.helpers.constants import (
     EXPERIMENT_KEYS,
     PROJECT_KEYS,
 )
+from src.helpers.dataclass import *
 from src.helpers.exceptions import HierarchyError, SanityCheckError
 from src.helpers.mt_json import dict_to_json, read_json, write_json
 from src.helpers.mt_rest import BadGateWayException, MyTardisRESTFactory
