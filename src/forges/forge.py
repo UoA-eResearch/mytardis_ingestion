@@ -159,14 +159,15 @@ class Forge:
             )
             return None
         # Consider refactoring this as a function to generate the URL?
-        url_substring = object_type.value["url_substring"]
         action = "POST"
-        url = urljoin(self.rest_factory.api_template, url_substring)
+        url = urljoin(self.rest_factory.api_template, object_type["url_substring"])
         url = url + "/"
         if overwrite_objects:
             if object_id:
                 action = "PUT"
-                url = urljoin(self.rest_factory.api_template, url_substring)
+                url = urljoin(
+                    self.rest_factory.api_template, object_type["url_substring"]
+                )
                 url = url + "/"
                 url = urljoin(url, str(object_id))
                 url = url + "/"
@@ -179,7 +180,7 @@ class Forge:
                 )
                 return None
         response = self.__make_api_call(url, action, object_json)
-        if response and object_type.value["expect_json"]:
+        if response and object_type["expect_json"]:
             try:
                 response_dict = response.json()
             except JSONDecodeError:
