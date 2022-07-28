@@ -171,7 +171,7 @@ class YAMLSmelter(Smelter):
                 objects.append(parsed_dict)
         return objects
 
-    def read_file(self, file_path: Path) -> tuple:  # pylint: disable=no-self-use
+    def read_file(self, file_path: Path) -> tuple:
         """Takes a file path for a YAML file and reads it into a tuple of dictionaries.
 
         Reads in a YAML file. As it is possible for multiple YAML documents to be placed in

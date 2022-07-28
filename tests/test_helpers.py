@@ -12,6 +12,8 @@ from requests import HTTPError, Request, RequestException, Response
 from src.helpers import (
     MyTardisRESTFactory,
     SanityCheckError,
+    is_uri,
+    project_enabled,
     read_json,
     sanity_check,
     write_json,
@@ -29,7 +31,12 @@ test_dict = {"key1": "data1", "key2": "data2", "key3": "data3"}
 good_keys = ["key1", "key2"]
 bad_keys = ["key1", "key2", "key4", "key5"]
 
-json_dict = {"key1": "value1", "key2": "value2", "list1": ["a", "b", "c"], "int1": 1}
+json_dict = {
+    "key1": "value1",
+    "key2": "value2",
+    "list1": ["a", "b", "c"],
+    "int1": 1,
+}
 
 
 def test_sanity_checker_good():
@@ -116,3 +123,27 @@ def test_backoff_on_mytardis_rest_factory(
     with pytest.raises(RequestException):
         _ = test_factory.mytardis_api_request("GET", "http://example.com")
     assert mock_requests_request.call_count == backoff_max_tries
+
+
+def test_project_enabled_flows_through():
+    @project_enabled(True)
+    def test_function():
+        return "Bob"
+
+    assert test_function() == "Bob"
+
+
+def test_project_not_enabled_logs_warning_and_returns_none(caplog):
+    caplog.set_level(logging.WARNING)
+    warning_str = (
+        "MyTardis is not currently set up to use projects. Please check settings.py "
+        "and ensure that the 'projects' app is enabled. This may require rerunning "
+        "migrations."
+    )
+
+    @project_enabled(False)
+    def test_function():
+        return "Bob"
+
+    assert test_function() is None
+    assert warning_str in caplog.text
