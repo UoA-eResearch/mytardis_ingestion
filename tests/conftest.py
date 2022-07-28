@@ -3,6 +3,7 @@
 import shutil
 from pathlib import Path
 
+import mock
 from pytest import fixture
 from src.helpers.config import (
     AuthConfig,
@@ -15,6 +16,9 @@ from src.helpers.config import (
     StorageConfig,
 )
 
+from src.crucible import Crucible
+from src.ingestion_factory import IngestionFactory
+from src.overseers import Overseer
 from src.smelters import Smelter
 
 
@@ -132,6 +136,68 @@ def processed_introspection_response():
 
 
 @fixture
+def smelter(mytardis_config):
+    Smelter.__abstractmethods__ = set()
+    smelter = Smelter(mytardis_config)  # pylint: disable=abstract-class-instantiated
+    smelter.OBJECT_KEY_CONVERSION = {
+        "project": {
+            "project_name": "name",
+            "lead_researcher": "principal_investigator",
+            "project_id": "persistent_id",
+        },
+        "experiment": {
+            "experiment_name": "title",
+            "experiment_id": "persistent_id",
+            "project_id": "projects",
+        },
+        "dataset": {
+            "dataset_name": "description",
+            "experiment_id": "experiments",
+            "dataset_id": "persistent_id",
+            "instrument_id": "instrument",
+        },
+        "datafile": {},
+    }
+    smelter.OBJECT_TYPES = {
+        "project_name": "project",
+        "experiment_name": "experiment",
+        "dataset_name": "dataset",
+        "datafiles": "datafile",
+    }
+    return smelter
+
+
+@fixture
+def crucible(
+    config_dict,
+    processed_introspection_response,
+):
+    with mock.patch(
+        "src.overseers.overseer.Overseer.get_mytardis_set_up"
+    ) as mock_get_mytardis_setup:
+        mock_get_mytardis_setup.return_value = processed_introspection_response
+        return Crucible(config_dict)
+
+
+@fixture
+def factory(
+    smelter,
+    config_dict,
+    processed_introspection_response,
+):
+    with mock.patch(
+        "src.ingestion_factory.ingestion_factory.IngestionFactory.get_smelter"
+    ) as mock_get_smelter:
+        mock_get_smelter.return_value = smelter
+        with mock.patch(
+            "src.overseers.overseer.Overseer.get_mytardis_set_up"
+        ) as mock_get_mytardis_setup:
+            mock_get_mytardis_setup.return_value = processed_introspection_response
+            IngestionFactory.__abstractmethods__ = set()
+            return IngestionFactory(config_dict)
+
+
+@fixture
 def raw_project_dictionary():
     return {
         "name": "Test Project",
@@ -167,7 +233,7 @@ def tidied_project_dictionary():
         "project_my_test_key_1": "Test Value",
         "project_my_test_key_2": "Test Value 2",
         "schema": "https://test.mytardis.nectar.auckland.ac.nz/project/v1",
-        "institution": "Test Institution",
+        "institution": ["Test Institution"],
     }
 
 

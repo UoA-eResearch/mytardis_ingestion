@@ -313,7 +313,7 @@ def test_smelt_project(
         "name": "Test Project",
         "persistent_id": "Project_1",
         "principal_investigator": "upi001",
-        "institution": "Test Institution",
+        "institution": ["Test Institution"],
     }
 
 
@@ -542,7 +542,11 @@ def test_smelt_dataset_no_schema(
 def test_create_replica(smelter, raw_datafile_dictionary):
     expected_output = raw_datafile_dictionary
     expected_output["replicas"] = [
-        {"uri": "test_data.dat", "storage_box": "Test_storage_box", "protocol": "file"},
+        {
+            "uri": "test_data.dat",
+            "storage_box": "Test_storage_box",
+            "protocol": "file",
+        },
     ]
     raw_datafile_dictionary["file_path"] = Path("test_data.dat")
     assert expected_output == smelter._create_replica(raw_datafile_dictionary)
@@ -594,25 +598,26 @@ def test_smelt_datafile(
     mock_get_object_from_dictionary.return_value = "datafile"
     mock_tidy_up_metadata_keys.return_value = preconditioned_datafile_dictionary
     mock_create_replica.return_value = tidied_datafile_dictionary
-    out_dict, param_dict = smelter.smelt_datafile(raw_datafile_dictionary)
-    assert param_dict == {
-        "schema": "https://test.mytardis.nectar.auckland.ac.nz/datafile/v1",
-        "parameters": [
-            {
-                "name": "datafile_my_test_key_1",
-                "value": "Test Value",
-            },
-            {
-                "name": "datafile_my_test_key_2",
-                "value": "Test Value 2",
-            },
-        ],
-    }
+    out_dict = smelter.smelt_datafile(raw_datafile_dictionary)
+    print(out_dict)
     assert out_dict == {
         "dataset": ["Dataset_1"],
         "filename": "test_data.dat",
         "md5sum": "0d32909e86e422d04a053d1ba26a990e",
         "size": 52428800,
+        "parameter_sets": {
+            "schema": "https://test.mytardis.nectar.auckland.ac.nz/datafile/v1",
+            "parameters": [
+                {
+                    "name": "datafile_my_test_key_1",
+                    "value": "Test Value",
+                },
+                {
+                    "name": "datafile_my_test_key_2",
+                    "value": "Test Value 2",
+                },
+            ],
+        },
         "replicas": [
             {
                 "uri": "test_data.dat",
@@ -639,11 +644,10 @@ def test_smelt_datafile_no_schema(
     test_dict.pop("schema")
     mock_tidy_up_metadata_keys.return_value = tidied_datafile_dictionary
     smelter.default_schema = {}
-    out_dict, param_dict = smelter.smelt_datafile(raw_datafile_dictionary)
+    out_dict = smelter.smelt_datafile(raw_datafile_dictionary)
     warning_str = "Unable to find default datafile schema and no schema provided"
     assert warning_str in caplog.text
-    assert param_dict == None
-    assert out_dict == None
+    assert out_dict is None
 
 
 @mock.patch("src.smelters.smelter.Smelter.get_object_from_dictionary")
@@ -661,9 +665,8 @@ def test_smelt_datafile_no_replica(
     test_dictionary.pop("file_path")
     mock_get_object_from_dictionary.return_value = "datafile"
     mock_tidy_up_metadata_keys.return_value = tidied_datafile_dictionary
-    out_dict, param_dict = smelter.smelt_datafile(test_dictionary)
+    out_dict = smelter.smelt_datafile(test_dictionary)
     filename = test_dictionary["filename"]
     warning_str = f"Unable to create file replica for {filename}"
     assert warning_str in caplog.text
-    assert param_dict == None
-    assert out_dict == None
+    assert out_dict is None
