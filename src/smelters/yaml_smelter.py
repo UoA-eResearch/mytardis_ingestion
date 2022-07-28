@@ -114,7 +114,7 @@ class YAMLSmelter(Smelter):
 
         return "*.yaml"
 
-    def get_objects_in_input_file(self, file_path: Path) -> tuple:
+    def get_object_types_in_input_file(self, file_path: Path) -> tuple:
         """Takes a file path for a YAML file and returns a tuple of object types contained with the
         file
 
@@ -152,6 +152,25 @@ class YAMLSmelter(Smelter):
             object_types.append(self.OBJECT_TYPES[object_type_key[0]])
         return (*object_types,)
 
+    def get_object_types_in_input_file(self, file_path: Path, object_type: str) -> list:
+        """Takes a file path for a YAML file and returns a list of object of a given type
+        contained within the file
+
+        Calls YAMLSmelter.read_yaml_file to read in a YAML file into a tuple of dictionaries.
+
+        Args:
+            file_path: a Path to the YAML file to be processed
+
+        Returns:
+            A tuple of object types within the file
+        """
+        objects = []
+        parsed_dictionaries = self.read_file(file_path)
+        for parsed_dict in parsed_dictionaries:
+            if self.get_object_from_dictionary(parsed_dict) == object_type:
+                objects.append(parsed_dict)
+        return objects
+
     def read_file(self, file_path: Path) -> tuple:  # pylint: disable=no-self-use
         """Takes a file path for a YAML file and reads it into a tuple of dictionaries.
 
@@ -175,19 +194,6 @@ class YAMLSmelter(Smelter):
         for dictionary in parsed_dictionaries:
             return_list.append(dictionary)
         return tuple(return_list)
-
-    '''def rebase_file_path(self, parsed_dict: dict) -> dict:
-        """Function to redirect the file path to account for the directory
-        that the research drive is mounted on"""
-        cleaned_dict = deepcopy(parsed_dict)
-        cleaned_dict["datafiles"]["files"] = []
-        for file_path in parsed_dict["datafiles"]["files"]:
-            file_dict = {}
-            if "metadata" in file_path.keys():
-                file_dict["metadata"] = file_path["metadata"]
-            file_dict["name"] = Path(file_path["name"])
-            cleaned_dict["datafiles"]["files"].append(file_dict)
-        return cleaned_dict'''
 
     def expand_datafile_entry(  # pylint: disable=too-many-nested-blocks
         self, parsed_dict: dict

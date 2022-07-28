@@ -16,8 +16,8 @@ from src.helpers.config import AuthConfig, ConnectionConfig, IntrospectionConfig
 logger = logging.getLogger(__name__)
 
 KB = 1024
-MB = KB**2
-GB = KB**3
+MB = KB ** 2
+GB = KB ** 3
 
 SCHEMA_TYPES = {
     "project": 11,
@@ -132,7 +132,7 @@ class Overseer:
             raise error
         response_dict = response.json()
         if response_dict == {} or response_dict["objects"] == []:
-            return None
+            return []
         return response_dict["objects"]
 
     def get_uris(
@@ -156,6 +156,8 @@ class Overseer:
         """
         return_list = []
         objects = self.get_objects(object_type, search_target, search_string)
+        if objects == []:
+            return return_list
         if objects:
             for obj in objects:
                 try:

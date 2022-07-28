@@ -153,7 +153,7 @@ def test_get_objects_no_objects(
             search_target,
             search_string,
         )
-        is None
+        == []
     )
 
 
@@ -210,7 +210,7 @@ def test_get_uris_no_objects(
             search_target,
             search_string,
         )
-        is None
+        == []
     )
 
 

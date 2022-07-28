@@ -4,6 +4,7 @@
 # tested, there is little risk in using this as a test case.
 
 import logging
+from copy import deepcopy
 from pathlib import Path
 from urllib.parse import urljoin
 
@@ -117,11 +118,8 @@ def test_replace_search_term_with_uri(
         status=200,
         json=(institution_response_dict),
     )
-    object_type = "institution"
-    test_dict = {object_type: search_with_no_uri_dict[object_type]}
-    assert factory.replace_search_term_with_uri(object_type, test_dict, "name") == {
-        "institution": ["/api/v1/institution/1/"]
-    }
+    for output in expected_output:
+        assert output in factory.blocked_ids["project"]
 
 
 @responses.activate
@@ -192,11 +190,15 @@ def test_replace_search_term_with_uri_not_found(
     )
     object_type = "institution"
     assert (
-        factory.replace_search_term_with_uri(
-            object_type, search_with_no_uri_dict, "name"
+        factory._match_or_block_object(
+            "project",
+            tidied_project_dictionary,
+            project_response_dict["objects"][0],
+            comparison_keys,
         )
-        == search_with_no_uri_dict
+        is None
     )
+    assert warning_str in caplog.text
 
 
 @responses.activate
@@ -230,11 +232,18 @@ def test_replace_search_term_with_uri_http_error(
     )
     object_type = "institution"
     assert (
-        factory.replace_search_term_with_uri(
-            object_type, search_with_no_uri_dict, "name"
+        factory._match_or_block_object(
+            "project",
+            tidied_project_dictionary,
+            project_response_dict["objects"][0],
+            comparison_keys,
         )
-        == search_with_no_uri_dict
+        is None
     )
+    expected_output = ["Test Project", "Project_1", "Test_Project", "Project_Test_1"]
+    for output in expected_output:
+        assert output in factory.blocked_ids["project"]
+    assert warning_str in caplog.text
 
 
 @responses.activate
@@ -253,9 +262,6 @@ def test_get_project_uri(
         status=200,
         json=(project_response_dict),
     )
-    assert factory.get_project_uri(search_with_no_uri_dict["project"]) == [
-        "/api/v1/project/1/"
-    ]
 
 
 @responses.activate
@@ -284,9 +290,7 @@ def test_get_project_uri_fall_back_search(
         status=200,
         json=(project_response_dict),
     )
-    assert factory.get_project_uri(search_with_no_uri_dict["project"]) == [
-        "/api/v1/project/1/"
-    ]
+    assert warning_str in caplog.text
 
 
 @responses.activate
@@ -314,7 +318,7 @@ def test_get_project_uri_not_found(
         status=200,
         json=(response_dict_not_found),
     )
-    assert factory.get_project_uri(search_with_no_uri_dict["project"]) == None
+    assert warning_str in caplog.text
 
 
 @responses.activate
@@ -335,9 +339,6 @@ def test_get_experiment_uri(
         status=200,
         json=(experiment_response_dict),
     )
-    assert factory.get_experiment_uri(search_with_no_uri_dict["experiment"]) == [
-        "/api/v1/experiment/1/"
-    ]
 
 
 @responses.activate
@@ -370,9 +371,7 @@ def test_get_experiment_uri_fall_back_search(
         status=200,
         json=(experiment_response_dict),
     )
-    assert factory.get_experiment_uri(search_with_no_uri_dict["experiment"]) == [
-        "/api/v1/experiment/1/"
-    ]
+    assert warning_str in caplog.text
 
 
 @responses.activate
@@ -404,7 +403,7 @@ def test_get_experiment_uri_not_found(
         status=200,
         json=(response_dict_not_found),
     )
-    assert factory.get_experiment_uri(search_with_no_uri_dict["experiment"]) == None
+    assert warning_str in caplog.text
 
 
 @responses.activate
@@ -423,9 +422,9 @@ def test_get_dataset_uri(
         status=200,
         json=(dataset_response_dict),
     )
-    assert factory.get_dataset_uri(search_with_no_uri_dict["dataset"]) == [
-        "/api/v1/dataset/1/"
-    ]
+    expected_output = ["Test Project", "Project_1", "Test_Project", "Project_Test_1"]
+    for output in expected_output:
+        assert output in factory.blocked_ids["project"]
 
 
 @responses.activate
@@ -456,9 +455,7 @@ def test_get_dataset_uri_fall_back_search(
         status=200,
         json=(dataset_response_dict),
     )
-    assert factory.get_dataset_uri(search_with_no_uri_dict["dataset"]) == [
-        "/api/v1/dataset/1/"
-    ]
+    assert warning_str in caplog.text
 
 
 @responses.activate
@@ -509,9 +506,15 @@ def test_get_instrument_uri(
         status=200,
         json=(instrument_response_dict),
     )
-    assert factory.get_instrument_uri(search_with_no_uri_dict["instrument"]) == [
-        "/api/v1/instrument/1/"
-    ]
+    factory.mytardis_setup["projects_enabled"] = False
+    assert (
+        factory._match_or_block_project(
+            tidied_project_dictionary,
+            project_response_dict["objects"][0],
+        )
+        is None
+    )
+    assert warning_str in caplog.text
 
 
 @responses.activate
@@ -544,9 +547,7 @@ def test_get_instrument_uri_fall_back_search(
         status=200,
         json=(instrument_response_dict),
     )
-    assert factory.get_instrument_uri(search_with_no_uri_dict["instrument"]) == [
-        "/api/v1/instrument/1/"
-    ]
+    assert warning_str in caplog.text
 
 
 @responses.activate
