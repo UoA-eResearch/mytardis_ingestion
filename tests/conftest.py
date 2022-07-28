@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import List
 
 import mock
-from _pytest.config import filter_traceback_for_conftest_import_failure
 from pytest import fixture
 from src.helpers.config import (
     AuthConfig,
@@ -18,20 +17,6 @@ from src.helpers.config import (
     StorageConfig,
 )
 
-from src.blueprints import (
-    URI,
-    DatafileReplica,
-    GroupACL,
-    Parameter,
-    ParameterSet,
-    RawDatafile,
-    RawDataset,
-    RawExperiment,
-    RawProject,
-    StorageBox,
-    UserACL,
-    Username,
-)
 from src.crucible import Crucible
 from src.ingestion_factory import IngestionFactory
 from src.overseers import Overseer
@@ -580,26 +565,69 @@ def raw_project_as_dict(
 
 
 @fixture
-def project_parameters_as_dict(
-    project_schema,
-    project_metadata,
-):
-    return_dict = {"schema": project_schema}
-    return_dict["parameters"] = []
-    for key, value in project_metadata.items():
-        return_dict["parameters"].append({"name": key, "value": value})
-    return return_dict
+def smelter(mytardis_config):
+    Smelter.__abstractmethods__ = set()
+    smelter = Smelter(mytardis_config)  # pylint: disable=abstract-class-instantiated
+    smelter.OBJECT_KEY_CONVERSION = {
+        "project": {
+            "project_name": "name",
+            "lead_researcher": "principal_investigator",
+            "project_id": "persistent_id",
+        },
+        "experiment": {
+            "experiment_name": "title",
+            "experiment_id": "persistent_id",
+            "project_id": "projects",
+        },
+        "dataset": {
+            "dataset_name": "description",
+            "experiment_id": "experiments",
+            "dataset_id": "persistent_id",
+            "instrument_id": "instrument",
+        },
+        "datafile": {},
+    }
+    smelter.OBJECT_TYPES = {
+        "project_name": "project",
+        "experiment_name": "experiment",
+        "dataset_name": "dataset",
+        "datafiles": "datafile",
+    }
+    return smelter
 
 
 @fixture
-def raw_experiment_dictionary(
-    experiment_name,
-    experiment_projects,
-    experiment_pid,
-    experiment_ids,
-    experiment_description,
-    experiment_metadata,
+def crucible(
+    config_dict,
+    processed_introspection_response,
 ):
+    with mock.patch(
+        "src.overseers.overseer.Overseer.get_mytardis_set_up"
+    ) as mock_get_mytardis_setup:
+        mock_get_mytardis_setup.return_value = processed_introspection_response
+        return Crucible(config_dict)
+
+
+@fixture
+def factory(
+    smelter,
+    config_dict,
+    processed_introspection_response,
+):
+    with mock.patch(
+        "src.ingestion_factory.ingestion_factory.IngestionFactory.get_smelter"
+    ) as mock_get_smelter:
+        mock_get_smelter.return_value = smelter
+        with mock.patch(
+            "src.overseers.overseer.Overseer.get_mytardis_set_up"
+        ) as mock_get_mytardis_setup:
+            mock_get_mytardis_setup.return_value = processed_introspection_response
+            IngestionFactory.__abstractmethods__ = set()
+            return IngestionFactory(config_dict)
+
+
+@fixture
+def raw_project_dictionary():
     return {
         "title": experiment_name,
         "projects": experiment_projects,
@@ -611,22 +639,22 @@ def raw_experiment_dictionary(
 
 
 @fixture
-def tidied_experiment_dictionary(
-    experiment_name,
-    experiment_projects,
-    experiment_pid,
-    experiment_ids,
-    experiment_description,
-    experiment_metadata,
-    experiment_schema,
-):
-    return_dict = {
-        "title": experiment_name,
-        "projects": experiment_projects,
-        "persistent_id": experiment_pid,
-        "alternate_ids": experiment_ids,
-        "description": experiment_description,
-        "schema": experiment_schema,
+def tidied_project_dictionary():
+    return {
+        "name": "Test Project",
+        "persistent_id": "Project_1",
+        "alternate_ids": [
+            "Test_Project",
+            "Project_Test_1",
+        ],
+        "description": "A test project for the purposes of testing",
+        "principal_investigator": "upi001",
+        "admin_groups": ["Test_Group_1"],
+        "admin_users": ["upi002", "upi003"],
+        "project_my_test_key_1": "Test Value",
+        "project_my_test_key_2": "Test Value 2",
+        "schema": "https://test.mytardis.nectar.auckland.ac.nz/project/v1",
+        "institution": ["Test Institution"],
     }
     for key in experiment_metadata.keys():
         return_dict[key] = experiment_metadata[key]

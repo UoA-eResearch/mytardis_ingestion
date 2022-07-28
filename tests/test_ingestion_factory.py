@@ -52,7 +52,7 @@ def search_with_no_uri_dict():
     }
 
 
-def mock_smelter_get_objects_in_input_file(file_path):
+def mock_smelter_get_object_types_in_input_file(file_path):
     file_path = Path(file_path)
     with open(file_path) as test_file:
         for line in test_file.readlines():
@@ -240,7 +240,12 @@ def test_replace_search_term_with_uri_http_error(
         )
         is None
     )
-    expected_output = ["Test Project", "Project_1", "Test_Project", "Project_Test_1"]
+    expected_output = [
+        "Test Project",
+        "Project_1",
+        "Test_Project",
+        "Project_Test_1",
+    ]
     for output in expected_output:
         assert output in factory.blocked_ids["project"]
     assert warning_str in caplog.text
@@ -422,7 +427,12 @@ def test_get_dataset_uri(
         status=200,
         json=(dataset_response_dict),
     )
-    expected_output = ["Test Project", "Project_1", "Test_Project", "Project_Test_1"]
+    expected_output = [
+        "Test Project",
+        "Project_1",
+        "Test_Project",
+        "Project_Test_1",
+    ]
     for output in expected_output:
         assert output in factory.blocked_ids["project"]
 
@@ -508,7 +518,7 @@ def test_get_instrument_uri(
     )
     factory.mytardis_setup["projects_enabled"] = False
     assert (
-        factory._match_or_block_project(
+        factory.match_or_block_project(
             tidied_project_dictionary,
             project_response_dict["objects"][0],
         )

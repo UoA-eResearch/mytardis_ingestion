@@ -161,12 +161,36 @@ def test_smelt_project_incomplete_dictionary(
     smelter,
     tidied_project_dictionary,
 ):
-    caplog.set_level(logging.WARNING)
-    tidied_project_dictionary.pop("name")
-    warning_str = f"Unable to parse"
-    refined_project = smelter.smelt_project(tidied_project_dictionary)
-    assert warning_str in caplog.text
-    assert refined_project is None
+    mock_get_object_from_dictionary.return_value = "project"
+    mock_tidy_up_metadata_keys.return_value = tidied_project_dictionary
+    out_dict, param_dict = smelter.smelt_project(raw_project_dictionary)
+    assert param_dict == {
+        "schema": "https://test.mytardis.nectar.auckland.ac.nz/project/v1",
+        "parameters": [
+            {
+                "name": "project_my_test_key_1",
+                "value": "Test Value",
+            },
+            {
+                "name": "project_my_test_key_2",
+                "value": "Test Value 2",
+            },
+        ],
+    }
+    assert out_dict == {
+        "users": [
+            ("upi001", True, True, True),
+            ("upi002", True, True, True),
+            ("upi003", True, True, True),
+        ],
+        "groups": [("Test_Group_1", True, True, True)],
+        "alternate_ids": ["Test_Project", "Project_Test_1"],
+        "description": "A test project for the purposes of testing",
+        "name": "Test Project",
+        "persistent_id": "Project_1",
+        "principal_investigator": "upi001",
+        "institution": ["Test Institution"],
+    }
 
 
 def test_smelt_project_no_schema(
@@ -320,17 +344,17 @@ def test_smelt_dataset_incomplete_dictionary(
     assert refined_dataset is None
 
 
-def test_smelt_dataset_no_schema(
-    caplog,
-    smelter,
-    tidied_dataset_dictionary,
-):
-    smelter.default_schema = None
-    tidied_dataset_dictionary.pop("schema")
-    refined_dataset = smelter.smelt_dataset(tidied_dataset_dictionary)
-    warning_str = "Unable to find default schemas and no schema provided"
-    assert refined_dataset is None
-    assert warning_str in caplog.text
+def test_create_replica(smelter, raw_datafile_dictionary):
+    expected_output = raw_datafile_dictionary
+    expected_output["replicas"] = [
+        {
+            "uri": "test_data.dat",
+            "storage_box": "Test_storage_box",
+            "protocol": "file",
+        },
+    ]
+    raw_datafile_dictionary["file_path"] = Path("test_data.dat")
+    assert expected_output == smelter._create_replica(raw_datafile_dictionary)
 
 
 def test_smelt_dataset_no_instrument(
@@ -381,10 +405,37 @@ def test_smelt_datafile(
     raw_datafile_parameterset,
     storage_box,
 ):
-    smelter.storage_box = storage_box
-    out_dict = smelter.smelt_datafile(tidied_datafile_dictionary)
-    assert out_dict == raw_datafile
-    assert out_dict.parameter_sets == raw_datafile_parameterset
+    mock_get_object_from_dictionary.return_value = "datafile"
+    mock_tidy_up_metadata_keys.return_value = preconditioned_datafile_dictionary
+    mock_create_replica.return_value = tidied_datafile_dictionary
+    out_dict = smelter.smelt_datafile(raw_datafile_dictionary)
+    print(out_dict)
+    assert out_dict == {
+        "dataset": ["Dataset_1"],
+        "filename": "test_data.dat",
+        "md5sum": "0d32909e86e422d04a053d1ba26a990e",
+        "size": 52428800,
+        "parameter_sets": {
+            "schema": "https://test.mytardis.nectar.auckland.ac.nz/datafile/v1",
+            "parameters": [
+                {
+                    "name": "datafile_my_test_key_1",
+                    "value": "Test Value",
+                },
+                {
+                    "name": "datafile_my_test_key_2",
+                    "value": "Test Value 2",
+                },
+            ],
+        },
+        "replicas": [
+            {
+                "uri": "test_data.dat",
+                "location": "Test_storage_box",
+                "protocol": "file",
+            },
+        ],
+    }
 
 
 def test_smelt_datafile_no_metadata(
@@ -411,11 +462,15 @@ def test_smelt_datafile_incomplete_dictionary(
 ):
     smelter.storage_box = storage_box
     caplog.set_level(logging.WARNING)
-    tidied_datafile_dictionary.pop("filename")
-    warning_str = f"Unable to parse"
-    refined_datafile = smelter.smelt_datafile(tidied_datafile_dictionary)
+    mock_get_object_from_dictionary.return_value = "datafile"
+    test_dict = tidied_datafile_dictionary
+    test_dict.pop("schema")
+    mock_tidy_up_metadata_keys.return_value = tidied_datafile_dictionary
+    smelter.default_schema = {}
+    out_dict = smelter.smelt_datafile(raw_datafile_dictionary)
+    warning_str = "Unable to find default datafile schema and no schema provided"
     assert warning_str in caplog.text
-    assert refined_datafile is None
+    assert out_dict is None
 
 
 def test_smelt_datafile_no_schema(
@@ -438,8 +493,12 @@ def test_smelt_datafile_no_replica(
 ):
     smelter.storage_box = storage_box
     caplog.set_level(logging.WARNING)
-    tidied_datafile_dictionary.pop("replicas")
-    warning_str = f"Unable to parse"
-    refined_datafile = smelter.smelt_datafile(tidied_datafile_dictionary)
+    test_dictionary = raw_datafile_dictionary
+    test_dictionary.pop("file_path")
+    mock_get_object_from_dictionary.return_value = "datafile"
+    mock_tidy_up_metadata_keys.return_value = tidied_datafile_dictionary
+    out_dict = smelter.smelt_datafile(test_dictionary)
+    filename = test_dictionary["filename"]
+    warning_str = f"Unable to create file replica for {filename}"
     assert warning_str in caplog.text
-    assert refined_datafile is None
+    assert out_dict is None

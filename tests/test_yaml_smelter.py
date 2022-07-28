@@ -56,7 +56,10 @@ def project_dictionary_from_yaml_file():
             "upi002",
             "upi003",
         ],
-        "metadata": {"My Test Key 1": "Test Value", "My Test Key 2": "Test Value 2"},
+        "metadata": {
+            "My Test Key 1": "Test Value",
+            "My Test Key 2": "Test Value 2",
+        },
     }
 
 
@@ -72,7 +75,7 @@ def test_get_file_type_for_input_files(smelter: YAMLSmelter):
 
 
 @mock.patch("src.smelters.yaml_smelter.YAMLSmelter.read_file")
-def test_get_objects_in_input_file(
+def test_get_object_types_in_input_file(
     mock_read_file,
     smelter: YAMLSmelter,
     project_dictionary_from_yaml_file,
@@ -84,7 +87,7 @@ def test_get_objects_in_input_file(
 
 
 @mock.patch("src.smelters.yaml_smelter.YAMLSmelter.read_file")
-def test_get_objects_in_input_file_with_no_objects(
+def test_get_object_types_in_input_file_with_no_objects(
     mock_read_file,
     caplog,
     smelter: YAMLSmelter,
@@ -102,7 +105,7 @@ def test_get_objects_in_input_file_with_no_objects(
 
 
 @mock.patch("src.smelters.yaml_smelter.YAMLSmelter.read_file")
-def test_get_objects_in_input_file_with_two_objects(
+def test_get_object_types_in_input_file_with_two_objects(
     mock_read_file,
     caplog,
     smelter: YAMLSmelter,
@@ -204,7 +207,6 @@ def test_expand_datafile_entry(datadir, smelter: YAMLSmelter):
     assert file_list == test_processed_file_list
 
 
-@pytest.mark.xfail
 @pytest.mark.dependency(depends=["test_expand_datafile_entry"])
 @mock.patch("pathlib.Path.iterdir")
 def test_expand_datafile_entry_for_directories(

@@ -377,24 +377,42 @@ class Smelter:
             )
             return None
 
-    def smelt_datafile(  # pylint: disable=too-many-return-statements
-        self,
-        cleaned_input: dict,
-    ) -> RefinedDatafile | None:
-        """Inject the schema into the datafile dictionary if it's not
-        already present.
-        Process the file path into a replica and append to the dictionary
-        Convert to a RawDatafile dataclass for validation."""
-        datafile_keys = DATAFILE_KEYS
-        if "datafile" in self.objects_with_ids:
-            datafile_keys.append("persistent_id")
-            datafile_keys.append("alternate_ids")
-        if "schema" not in cleaned_input.keys():
+    def smelt_datafile(self, cleaned_dict: dict) -> Union[None, dict]:
+        """Wrapper to check and create the python dictionaries in a from expected by the
+        forge class. The smelt_datafile function is somewhat unique as it takes a processed
+        dictionary after having been through the rebase_file_path function and the
+        expand_datafile_entry function processed by the Factory class. Arguably this should
+        be refactored to be all held by the smelter class and an issue has been created in Github.
+
+        Args:
+            cleaned_dict: dictionary containing the object data and metadata
+
+        Returns:
+            A tuple containing an object dictionary, which is the minimum metadata required
+            to create the object in MyTardis, and a parameter dictionary containing the
+            additional metadata.
+        """
+        cleaned_dict = self.precondition_input_dictionary(cleaned_dict)
+        object_keys = [
+            "dataset",
+            "filename",
+            "md5sum",
+            "directory",
+            "mimetype",
+            "size",
+            "replicas",
+            "users",
+            "groups",
+        ]
+        if "schema" not in cleaned_dict.keys():
             try:
                 cleaned_input = self._inject_schema_from_default_value(
                     cleaned_input["filename"], "datafile", cleaned_input
                 )
             except SanityCheckError:
+                logger.warning(
+                    "Unable to find default datafile schema and no schema provided"
+                )
                 return None
         try:
             relative_file_path = Path(cleaned_input.pop("relative_file_path"))
@@ -406,10 +424,10 @@ class Smelter:
                 ),
                 exc_info=True,
             )
-            return (None, None)
+            return None
         cleaned_dict = self._create_replica(cleaned_dict)
         if not Smelter._verify_datafile(cleaned_dict):
-            return (None, None)
+            return None
         object_dict, parameter_dict = self._smelt_object(object_keys, cleaned_dict)
         object_dict["parameter_sets"] = parameter_dict
         return object_dict
@@ -463,3 +481,105 @@ class Smelter:
         if parameters:
             raw_datafile.parameter_sets = parameters
         return raw_datafile
+
+    def _create_replica(self, cleaned_dict: dict) -> dict:
+        """Function to create a MyTardis replica based on the file_path
+        passed in the cleaned dictionary
+
+        Args:
+            cleaned_dict: a dictionary containing the file_path key word
+
+        Returns:
+            The cleaned_dict including the replica ready for ingestion
+        """
+        uri = cleaned_dict.pop("file_path")
+        location = self.storage_box
+        replica = {
+            "uri": uri.as_posix(),
+            "location": location,
+            "protocol": "file",
+        }
+        cleaned_dict["replicas"] = [replica]
+        return cleaned_dict
+
+    @staticmethod
+    def get_filename_from_filepath(  # pylint: disable=missing-function-docstring
+        file_path: Path,
+    ) -> str:
+        """Wrapper around Pathlib Path .name attribute for disambiguation"""
+        return file_path.name  # pragma: no cover
+
+    @staticmethod
+    def get_file_size(  # pylint: disable=missing-function-docstring
+        file_path: Path,
+    ) -> int:
+        """Wrapper around Pathlib Path .stat().size attribute for diambiguation"""
+        return file_path.stat().st_size  # pragma: no cover
+
+    @staticmethod
+    def get_file_checksum(  # pylint: disable=missing-function-docstring
+        file_path: Path,
+    ) -> int:
+        """Wrapper around calculate_md5sum function for disambiguation"""
+        return calculate_md5sum(file_path)
+
+    @abstractmethod
+    def get_key_conversions(self) -> dict:
+        """Wrapper function to fill the OBJECT_KEY_CONVERSION dictionary"""
+        return {}
+
+    @abstractmethod
+    def _tidy_up_metadata_keys(
+        self, parsed_dict: dict, object_type: str
+    ) -> dict:  # pragma: no cover
+        """Placeholder function"""
+        return {}
+
+    @abstractmethod  # pragma: no cover
+    def get_file_type_for_input_files(self) -> str:  # pragma: no cover
+        """Function to return a string that can be used by Path.glob() to
+        get all of the input files in a directory"""
+
+        return ""  # pragma: no cover
+
+    @abstractmethod  # pragma: no cover
+    def get_object_types_in_input_file(
+        self, file_path: Path
+    ) -> tuple:  # pragma: no cover
+        """Function to read in an input file and return a tuple containing
+        the object types that are in the file"""
+
+        return tuple()  # pragma: no cover
+
+    @abstractmethod  # pragma: no cover
+    def get_objects_in_input_file(
+        self, file_path: Path, object_type: str
+    ) -> list:  # pragma: no cover
+        """Function to read in an input file and return a tuple containing
+        the object types that are in the file"""
+
+        return tuple()  # pragma: no cover
+
+    @abstractmethod  # pragma: no cover
+    def read_file(self, file_path: Path) -> tuple:  # pragma: no cover
+        """Function to read in different input files and process into
+        dictionaries. As there may be more than one object in a file, wrap in
+        a tuple and return."""
+
+        return tuple()  # pragma: no cover
+
+    '''@abstractmethod  # pragma: no cover
+    def rebase_file_path(self, parsed_dict: dict) -> dict:  # pragma: no cover
+        """Function to fix up the file path to take into account where it is
+        mounted."""
+        return parsed_dict  # pragma: no cover'''
+
+    @abstractmethod  # pragma: no cover
+    def expand_datafile_entry(self, parsed_dict) -> list:  # pragma: no cover
+        """Function to add the additional fields (size, checksum etc.) from files"""
+        return []  # pragma: no cover
+
+    @abstractmethod  # pragma: no cover
+    def get_object_from_dictionary(self, parsed_dict: dict) -> Union[str, None]:
+        """Helper function to get the object type from a parsed dictionary"""
+        return None  # pragma: no cover
