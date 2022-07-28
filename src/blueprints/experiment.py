@@ -5,7 +5,7 @@ from abc import ABC
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from pydantic import AnyUrl, BaseModel, HttpUrl
+from pydantic import AnyUrl, BaseModel, Field, HttpUrl
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime
@@ -34,17 +34,12 @@ class RawExperiment(BaseExperiment):
     projects: Optional[List[str]] = None
     institution_name: Optional[str]
     metadata: Optional[List[Dict[str, str | int | float | bool]]]
-    experiment_schema: Optional[AnyUrl] = None
+    object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
     start_time: Optional[datetime | str] = None
     end_time: Optional[datetime | str] = None
     created_time: Optional[datetime | str] = None
     update_time: Optional[datetime | str] = None
     embargo_until: Optional[datetime | str] = None
-
-    class Config:
-        """alias the experiment_scheam field as schema"""
-
-        fields = {"experiment_schema": "schema"}
 
 
 class RefinedExperiment(BaseExperiment):

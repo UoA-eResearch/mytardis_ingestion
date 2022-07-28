@@ -5,7 +5,7 @@ from abc import ABC
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from pydantic import AnyUrl, BaseModel
+from pydantic import AnyUrl, BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI
@@ -40,12 +40,7 @@ class RawDatafile(BaseDatafile):
 
     dataset: str
     metadata: Optional[List[Dict[str, str | int | float | bool]]]
-    datafile_schema: Optional[AnyUrl] = None
-
-    class Config:
-        """alias the datafile_scheam field as schema"""
-
-        fields = {"datafile_schema": "schema"}
+    object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
 
 
 class RefinedDatafile(BaseDatafile):
