@@ -18,8 +18,8 @@ from src.helpers.config import AuthConfig, ConnectionConfig, IntrospectionConfig
 logger = logging.getLogger(__name__)
 
 KB = 1024
-MB = KB ** 2
-GB = KB ** 3
+MB = KB**2
+GB = KB**3
 
 SCHEMA_TYPES = {
     "project": 11,
@@ -156,7 +156,7 @@ class Overseer:
         Returns:
             A list of object URIs from the search request made.
         """
-        return_list = []
+        return_list: list = []
         objects = self.get_objects(object_type, search_target, search_string)
         if objects == []:
             return return_list

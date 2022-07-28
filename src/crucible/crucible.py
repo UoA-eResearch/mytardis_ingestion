@@ -1,4 +1,7 @@
 # pylint: disable=logging-fstring-interpolation,fixme,consider-using-set-comprehension
+# type: ignore
+# Disabled mypy checks as migration to dataclasses iminent
+#
 """Crucible is a ingestion class that is used to process a cleaned dictionary from the smelter
 and prepare it for ingestion into MyTardis. The concrete IngestionFactory class that is used
 will call the crucible after ensuring that an object is whitelisted for ingestion."""
@@ -81,9 +84,7 @@ class Crucible:
                 project_id = [project_id]
             projects = []
             for project in project_id:
-                projects.append(
-                    self.overseer.get_object_uri("project", project)
-                )
+                projects.append(self.overseer.get_object_uri("project", project))
             prepared_dict["projects"] = list(
                 set([item for sublist in projects for item in sublist])
             )
@@ -110,9 +111,7 @@ class Crucible:
         if isinstance(experiment_id, str):
             experiment_id = [experiment_id]
         for experiment in experiment_id:
-            experiments.append(
-                self.overseer.get_object_uri("experiment", experiment)
-            )
+            experiments.append(self.overseer.get_object_uri("experiment", experiment))
         prepared_dict["experiments"] = experiments
         # TODO error checking here and log return empty dict
         instrument_id = prepared_dict["instrument"]

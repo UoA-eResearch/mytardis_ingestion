@@ -453,7 +453,7 @@ class Smelter:
         """Function to read in an input file and return a tuple containing
         the object types that are in the file"""
 
-        return tuple()  # pragma: no cover
+        return []  # pragma: no cover
 
     @abstractmethod  # pragma: no cover
     def read_file(self, file_path: Path) -> tuple:  # pragma: no cover
