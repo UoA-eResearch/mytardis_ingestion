@@ -1,3 +1,4 @@
+# pylint: disable=line-too-long,too-few-public-methods
 """
 MyTardis configuration module
 
@@ -9,11 +10,12 @@ It uses Pydantic's settings system
 the environment automatically and verifies their types and values.
 """
 
-from enum import Enum
 import logging
+from enum import Enum
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urljoin
+
 from pydantic import AnyUrl, BaseModel, BaseSettings, HttpUrl, PrivateAttr
 from requests import HTTPError, request
 from requests.auth import AuthBase
@@ -152,6 +154,7 @@ class MyTardisObject(str, Enum):
     instrument = "instrument"
     project = "project"
     institution = "institution"
+    datafile = "datafile"
 
 
 class IntrospectionConfig(BaseModel):
@@ -255,9 +258,7 @@ class ConfigFromEnv(BaseSettings):
 
         Requests introspection info from MyTardis instance configured in connection
         """
-        user_agent = (
-            f"{__name__}/2.0 (https://github.com/UoA-eResearch/mytardis_ingestion.git)"
-        )
+        user_agent = f"{__name__}/2.0 (https://github.com/UoA-eResearch/mytardis_ingestion.git)"
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -283,7 +284,9 @@ class ConfigFromEnv(BaseSettings):
             response.raise_for_status()
         except HTTPError as error:
             logger.error(
-                "Introspection returned error: %s", error.response, exc_info=True
+                "Introspection returned error: %s",
+                error.response,
+                exc_info=True,
             )
             raise error
         except Exception as error:

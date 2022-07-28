@@ -5,11 +5,13 @@ is heavily based on the NGS ingestor for MyTardis found at
     https://github.com/mytardis/mytardis_ngs_ingestor
 """
 
+from typing import Dict, Optional
 from urllib.parse import urljoin
 
 import backoff
 import requests
 from requests.exceptions import RequestException
+
 from src.helpers.config import AuthConfig, ConnectionConfig
 
 
@@ -52,7 +54,8 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
 
         Args:
             auth : AuthConfig
-            Pydantic config class containing information about authenticating with a MyTardis instance
+            Pydantic config class containing information about authenticating with a MyTardis
+                 instance
             connection : ConnectionConfig
             Pydantic config class containing information about connecting to a MyTardis instance
         """
@@ -70,9 +73,9 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
         self,
         method: str,  # REST api method
         url: str,
-        data: str = None,
-        params: str = None,
-        extra_headers: dict = None,
+        data: Optional[str] = None,
+        params: Optional[Dict[str, str]] = None,
+        extra_headers: Optional[Dict[str, str]] = None,
     ) -> requests.Response:
         """Function to handle the REST API calls
 
