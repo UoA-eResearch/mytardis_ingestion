@@ -284,7 +284,7 @@ files = [
 
 [[package]]
 name = "executing"
-version = "0.9.1"
+version = "0.8.3"
 description = "Get the currently executing AST node of a frame, and other information"
 category = "dev"
 optional = false
@@ -857,7 +857,7 @@ diagrams = ["jinja2", "railroad-diagrams"]
 
 [[package]]
 name = "pyright"
-version = "1.1.264"
+version = "1.1.262"
 description = "Command line wrapper for pyright"
 category = "dev"
 optional = false
@@ -1372,10 +1372,7 @@ distlib = [
     {file = "distlib-0.3.5-py2.py3-none-any.whl", hash = "sha256:b710088c59f06338ca514800ad795a132da19fda270e3ce4affc74abf955a26c"},
     {file = "distlib-0.3.5.tar.gz", hash = "sha256:a7f75737c70be3b25e2bee06288cec4e4c221de18455b2dd037fe2a795cab2fe"},
 ]
-executing = [
-    {file = "executing-0.9.1-py2.py3-none-any.whl", hash = "sha256:4ce4d6082d99361c0231fc31ac1a0f56979363cc6819de0b1410784f99e49105"},
-    {file = "executing-0.9.1.tar.gz", hash = "sha256:ea278e2cf90cbbacd24f1080dd1f0ac25b71b2e21f50ab439b7ba45dd3195587"},
-]
+executing = []
 filelock = [
     {file = "filelock-3.7.1-py3-none-any.whl", hash = "sha256:37def7b658813cda163b56fc564cdc75e86d338246458c4c28ae84cabefa2404"},
     {file = "filelock-3.7.1.tar.gz", hash = "sha256:3a0fd85166ad9dbab54c9aec96737b744106dc5f15c0b09a6744a445299fcf04"},
@@ -1583,8 +1580,8 @@ pyparsing = [
     {file = "pyparsing-3.0.9.tar.gz", hash = "sha256:2b020ecf7d21b687f219b71ecad3631f644a47f01403fa1d1036b0c6416d70fb"},
 ]
 pyright = [
-    {file = "pyright-1.1.264-py3-none-any.whl", hash = "sha256:845c0bfa77695e81b19980fe4777a771016cbc6a18b821aa492a516a2df2fae1"},
-    {file = "pyright-1.1.264.tar.gz", hash = "sha256:93ffceb70c0f817d89122bf133583a41842c466d941aa4e92a4bb6a06bd3cd9a"},
+    {file = "pyright-1.1.262-py3-none-any.whl", hash = "sha256:ad9f6dd33f0039e0f0f9bc81e5c07a445d14a65e6dcf67c5ca1c75b5d9ae9f9f"},
+    {file = "pyright-1.1.262.tar.gz", hash = "sha256:3c77ccaca6e273b0f3a7b13efd0d0a225616e8334c428c4dc0d03453896645b5"},
 ]
 pysnooper = [
     {file = "PySnooper-1.1.1-py2.py3-none-any.whl", hash = "sha256:378f13d731a3e04d3d0350e5f295bdd0f1b49fc8a8b8bf2067fe1e5290bd20be"},

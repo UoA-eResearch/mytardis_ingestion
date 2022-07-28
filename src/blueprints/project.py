@@ -1,11 +1,11 @@
-# pylint: disable=too-few-public-methods,no-name-in-module,duplicate-code
+# pylint: disable=too-few-public-methods,no-name-in-module
 """ Pydantic model defining a Project for ingestion into MyTardis."""
 
 from abc import ABC
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import List, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, Field, HttpUrl
+from pydantic import BaseModel, HttpUrl
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime, Username
@@ -28,26 +28,14 @@ class BaseProject(BaseModel, ABC):
 
 
 class RawProject(BaseProject):
-    """Concrete class to hold data from the concrete smelter class
-    with a validated format as an entry point into the smelting process."""
-
-    institution: Optional[List[str]]
-    metadata: Optional[List[Dict[str, str | int | float | bool]]]
-    object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
-    start_time: Optional[datetime | str] = None
-    end_time: Optional[datetime | str] = None
-    embargo_until: Optional[datetime | str] = None
-
-
-class RefinedProject(BaseProject):
     """Concrete class for raw data as read in from the metadata file.
     The difference between the RawProject and the Project is that the RawProject
     model has more general string hinting."""
 
-    institution: List[str]
-    start_time: Optional[datetime | str] = None
-    end_time: Optional[datetime | str] = None
-    embargo_until: Optional[datetime | str] = None
+    institution: List[str] = ["The University of Auckland"]
+    start_time: Optional[Union[datetime, str]] = None
+    end_time: Optional[Union[datetime, str]] = None
+    embargo_until: Optional[Union[datetime, str]] = None
 
 
 class Project(BaseProject):

@@ -1,12 +1,12 @@
-# pylint: disable=too-few-public-methods,no-name-in-module,duplicate-code
+# pylint: disable=too-few-public-methods,no-name-in-module
 """Pydantic model defining a Dataset for ingestion into MyTardis"""
 
 from abc import ABC
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, Field
+from pydantic import BaseModel
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime
@@ -27,24 +27,12 @@ class BaseDataset(BaseModel, ABC):
 
 
 class RawDataset(BaseDataset):
-    """Concrete class to hold data from the concrete smelter class
-    with a validated format as an entry point into the smelting process."""
-
-    experiments: List[str]
-    instrument: str
-    metadata: Optional[List[Dict[str, str | int | float | bool]]]
-    object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
-    created_time: Optional[datetime | str] = None
-    modified_time: Optional[datetime | str] = None
-
-
-class RefinedDataset(BaseDataset):
     """Concrete class for raw data as read in from the metadata file."""
 
     experiments: List[str]
     instrument: str
-    created_time: Optional[datetime | str] = None
-    modified_time: Optional[datetime | str] = None
+    created_time: Optional[Union[datetime, str]] = None
+    modified_time: Optional[Union[datetime, str]] = None
 
 
 class Dataset(BaseDataset):

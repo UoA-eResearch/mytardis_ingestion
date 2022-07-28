@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List
 
 import mock
+from _pytest.config import filter_traceback_for_conftest_import_failure
 from pytest import fixture
 
 from src.crucible import Crucible
@@ -19,7 +20,22 @@ from src.helpers.config import (
     SchemaConfig,
     StorageConfig,
 )
-from src.helpers.mt_rest import MyTardisRESTFactory
+
+from src.blueprints import (
+    URI,
+    DatafileReplica,
+    GroupACL,
+    Parameter,
+    ParameterSet,
+    RawDatafile,
+    RawDataset,
+    RawExperiment,
+    RawProject,
+    StorageBox,
+    UserACL,
+    Username,
+)
+from src.crucible import Crucible
 from src.ingestion_factory import IngestionFactory
 from src.overseers import Overseer
 from src.overseers.inspector import Inspector
@@ -436,6 +452,41 @@ def split_and_parse_groups(
 
 
 @fixture
+def split_and_parse_groups(
+    admin_groups, read_groups, download_groups, sensitive_groups
+):
+    return_list: List[GroupACL] = []
+    for admin_group in admin_groups:
+        return_list.append(
+            GroupACL(
+                group=admin_group,
+                is_owner=True,
+                can_download=True,
+                see_sensitive=True,
+            )
+        )
+    combined_groups = list(set(read_groups + download_groups + sensitive_groups))
+    for group in combined_groups:
+        if group in admin_groups:
+            continue
+        download = False
+        sensitive = False
+        if group in download_groups:
+            download = True
+        if group in sensitive_groups:
+            sensitive = True
+        return_list.append(
+            GroupACL(
+                group=group,
+                is_owner=False,
+                can_download=download,
+                see_sensitive=sensitive,
+            )
+        )
+    return return_list
+
+
+@fixture
 def storage_box(storage_box_dir):
     return StorageBox(
         name="Test_storage_box",
@@ -565,69 +616,26 @@ def raw_project_as_dict(
 
 
 @fixture
-def smelter(mytardis_config):
-    Smelter.__abstractmethods__ = set()
-    smelter = Smelter(mytardis_config)  # pylint: disable=abstract-class-instantiated
-    smelter.OBJECT_KEY_CONVERSION = {
-        "project": {
-            "project_name": "name",
-            "lead_researcher": "principal_investigator",
-            "project_id": "persistent_id",
-        },
-        "experiment": {
-            "experiment_name": "title",
-            "experiment_id": "persistent_id",
-            "project_id": "projects",
-        },
-        "dataset": {
-            "dataset_name": "description",
-            "experiment_id": "experiments",
-            "dataset_id": "persistent_id",
-            "instrument_id": "instrument",
-        },
-        "datafile": {},
-    }
-    smelter.OBJECT_TYPES = {
-        "project_name": "project",
-        "experiment_name": "experiment",
-        "dataset_name": "dataset",
-        "datafiles": "datafile",
-    }
-    return smelter
-
-
-@fixture
-def crucible(
-    config_dict,
-    processed_introspection_response,
+def project_parameters_as_dict(
+    project_schema,
+    project_metadata,
 ):
-    with mock.patch(
-        "src.overseers.overseer.Overseer.get_mytardis_set_up"
-    ) as mock_get_mytardis_setup:
-        mock_get_mytardis_setup.return_value = processed_introspection_response
-        return Crucible(config_dict)
+    return_dict = {"schema": project_schema}
+    return_dict["parameters"] = []
+    for key, value in project_metadata.items():
+        return_dict["parameters"].append({"name": key, "value": value})
+    return return_dict
 
 
 @fixture
-def factory(
-    smelter,
-    config_dict,
-    processed_introspection_response,
+def raw_experiment_dictionary(
+    experiment_name,
+    experiment_projects,
+    experiment_pid,
+    experiment_ids,
+    experiment_description,
+    experiment_metadata,
 ):
-    with mock.patch(
-        "src.ingestion_factory.ingestion_factory.IngestionFactory.get_smelter"
-    ) as mock_get_smelter:
-        mock_get_smelter.return_value = smelter
-        with mock.patch(
-            "src.overseers.overseer.Overseer.get_mytardis_set_up"
-        ) as mock_get_mytardis_setup:
-            mock_get_mytardis_setup.return_value = processed_introspection_response
-            IngestionFactory.__abstractmethods__ = set()
-            return IngestionFactory(config_dict)
-
-
-@fixture
-def raw_project_dictionary():
     return {
         "title": experiment_name,
         "projects": experiment_projects,
@@ -639,22 +647,22 @@ def raw_project_dictionary():
 
 
 @fixture
-def tidied_project_dictionary():
-    return {
-        "name": "Test Project",
-        "persistent_id": "Project_1",
-        "alternate_ids": [
-            "Test_Project",
-            "Project_Test_1",
-        ],
-        "description": "A test project for the purposes of testing",
-        "principal_investigator": "upi001",
-        "admin_groups": ["Test_Group_1"],
-        "admin_users": ["upi002", "upi003"],
-        "project_my_test_key_1": "Test Value",
-        "project_my_test_key_2": "Test Value 2",
-        "schema": "https://test.mytardis.nectar.auckland.ac.nz/project/v1",
-        "institution": ["Test Institution"],
+def tidied_experiment_dictionary(
+    experiment_name,
+    experiment_projects,
+    experiment_pid,
+    experiment_ids,
+    experiment_description,
+    experiment_metadata,
+    experiment_schema,
+):
+    return_dict = {
+        "title": experiment_name,
+        "projects": experiment_projects,
+        "persistent_id": experiment_pid,
+        "alternate_ids": experiment_ids,
+        "description": experiment_description,
+        "schema": experiment_schema,
     }
     for key in experiment_metadata.keys():
         return_dict[key] = experiment_metadata[key]
@@ -747,6 +755,9 @@ def raw_dataset_as_dict(
         "alternate_ids": dataset_ids,
         "instrument": dataset_instrument,
     }
+    for key in dataset_metadata.keys():
+        return_dict[key] = dataset_metadata[key]
+    return return_dict
 
 
 @fixture
@@ -880,9 +891,7 @@ def preconditioned_datafile_dictionary():
 
 @fixture
 def raw_project_parameterset(project_schema, project_metadata_processed):
-    return ParameterSet(
-        schema=project_schema, parameters=project_metadata_processed
-    )
+    return ParameterSet(schema=project_schema, parameters=project_metadata_processed)
 
 
 @fixture
@@ -914,9 +923,7 @@ def raw_project(
 
 
 @fixture
-def raw_experiment_parameterset(
-    experiment_schema, experiment_metadata_processed
-):
+def raw_experiment_parameterset(experiment_schema, experiment_metadata_processed):
     return ParameterSet(
         schema=experiment_schema, parameters=experiment_metadata_processed
     )
@@ -953,9 +960,7 @@ def raw_experiment(
 
 @fixture
 def raw_dataset_parameterset(dataset_schema, dataset_metadata_processed):
-    return ParameterSet(
-        schema=dataset_schema, parameters=dataset_metadata_processed
-    )
+    return ParameterSet(schema=dataset_schema, parameters=dataset_metadata_processed)
 
 
 @fixture
@@ -983,9 +988,7 @@ def raw_dataset(
 
 @fixture
 def raw_datafile_parameterset(datafile_schema, datafile_metadata_processed):
-    return ParameterSet(
-        schema=datafile_schema, parameters=datafile_metadata_processed
-    )
+    return ParameterSet(schema=datafile_schema, parameters=datafile_metadata_processed)
 
 
 @fixture
@@ -1057,13 +1060,17 @@ def config_dict(
 
 
 @fixture
-def processed_introspection_response(
-    old_acls, projects_enabled, objects_with_ids
-):
+def processed_introspection_response(old_acls, projects_enabled, objects_with_ids):
     return {
         "old_acls": old_acls,
         "projects_enabled": projects_enabled,
         "objects_with_ids": objects_with_ids,
+    }
+    smelter.OBJECT_TYPES = {
+        "project_name": "project",
+        "experiment_name": "experiment",
+        "dataset_name": "dataset",
+        "datafiles": "datafile",
     }
 
 
@@ -1073,6 +1080,15 @@ def mytardis_config(config_dict, projects_enabled, objects_with_ids):
     configuration["projects_enabled"] = projects_enabled
     configuration["objects_with_ids"] = objects_with_ids
     return configuration
+
+
+@fixture
+def mytardis_setup_dict(old_acls, projects_enabled, objects_with_ids):
+    return {
+        "old_acls": old_acls,
+        "projects_enabled": projects_enabled,
+        "objects_with_ids": objects_with_ids,
+    }
 
 
 # =========================================
@@ -1415,87 +1431,6 @@ def project_creation_response_dict():
         "url": None,
     }
 
-    # =========================================
-    #
-    # config from env classes
-    #
-    # =========================================
-
-
-@fixture
-def general(default_institution) -> GeneralConfig:
-    return GeneralConfig(default_institution=default_institution)
-
-
-@fixture
-def auth(username, api_key) -> AuthConfig:
-    return AuthConfig(username=username, api_key=api_key)
-
-
-@fixture
-def connection(hostname, proxies, verify_certificate) -> ConnectionConfig:
-    return ConnectionConfig(
-        hostname=hostname,
-        proxy=ProxyConfig(http=proxies["http"], https=proxies["https"]),
-        verify_certificate=verify_certificate,
-    )
-
-
-@fixture
-def storage(storage_box, source_dir, target_dir) -> StorageConfig:
-    return StorageConfig(
-        box=storage_box.name,
-        source_directory=source_dir,
-        target_directory=target_dir,
-    )
-
-
-@fixture
-def default_schema(
-    project_schema, experiment_schema, dataset_schema, datafile_schema
-) -> SchemaConfig:
-    return SchemaConfig(
-        project=project_schema,
-        experiment=experiment_schema,
-        dataset=dataset_schema,
-        datafile=datafile_schema,
-    )
-
-
-@fixture
-def mytardis_setup(processed_introspection_response) -> IntrospectionConfig:
-    return IntrospectionConfig(
-        old_acls=processed_introspection_response["old_acls"],
-        projects_enabled=processed_introspection_response["projects_enabled"],
-        objects_with_ids=processed_introspection_response["objects_with_ids"],
-    )
-
-
-@fixture
-def mytardis_settings_no_introspection(
-    general: GeneralConfig,
-    auth: AuthConfig,
-    connection: ConnectionConfig,
-    storage: StorageConfig,
-    default_schema: SchemaConfig,
-) -> ConfigFromEnv:
-    return ConfigFromEnv(
-        general=general,
-        auth=auth,
-        connection=connection,
-        storage=storage,
-        default_schema=default_schema,
-    )
-
-
-@fixture
-def mytardis_settings(
-    mytardis_settings_no_introspection: ConfigFromEnv,
-    mytardis_setup: IntrospectionConfig,
-) -> ConfigFromEnv:
-    mytardis_settings_no_introspection._mytardis_setup = mytardis_setup
-    return mytardis_settings_no_introspection
-
 
 # =========================================
 #
@@ -1505,49 +1440,46 @@ def mytardis_settings(
 
 
 @fixture
-def rest_factory(auth: AuthConfig, connection: ConnectionConfig):
-    return MyTardisRESTFactory(auth, connection)
+def smelter(mytardis_config):
+    Smelter.__abstractmethods__ = set()
+    smelter = Smelter(mytardis_config)  # pylint: disable=abstract-class-instantiated
+    return smelter
 
 
 @fixture
-def overseer(
-    rest_factory: MyTardisRESTFactory, mytardis_setup: IntrospectionConfig
+def overseer(config_dict, processed_introspection_response):
+    with mock.patch(
+        "src.overseers.overseer.Overseer.get_mytardis_set_up"
+    ) as mock_get_mytardis_setup:
+        mock_get_mytardis_setup.return_value = processed_introspection_response
+        return Overseer(config_dict)
+
+
+@fixture
+def crucible(
+    config_dict,
+    processed_introspection_response,
 ):
-    return Overseer(rest_factory, mytardis_setup)
-
-
-@fixture
-def smelter(
-    general: GeneralConfig,
-    default_schema: SchemaConfig,
-    storage: StorageConfig,
-    overseer: Overseer,
-    mytardis_setup: IntrospectionConfig,
-):
-    return Smelter(general, default_schema, storage, overseer, mytardis_setup)
-
-
-@fixture
-def forge(rest_factory: MyTardisRESTFactory):
-    return Forge(rest_factory)
-
-
-@fixture
-def crucible(overseer: Overseer, mytardis_setup: IntrospectionConfig):
-    return Crucible(overseer, mytardis_setup)
-
-
-@fixture
-def inspector(overseer: Overseer, mytardis_setup: IntrospectionConfig):
-    return Inspector(overseer, mytardis_setup)
+    with mock.patch(
+        "src.overseers.overseer.Overseer.get_mytardis_set_up"
+    ) as mock_get_mytardis_setup:
+        mock_get_mytardis_setup.return_value = processed_introspection_response
+        return Crucible(config_dict)
 
 
 @fixture
 def factory(
-    smelter: Smelter,
-    inspector: Inspector,
-    forge: Forge,
-    overseer: Overseer,
-    crucible: Crucible,
+    smelter,
+    config_dict,
+    processed_introspection_response,
 ):
-    return IngestionFactory(smelter, inspector, forge, overseer, crucible)
+    with mock.patch(
+        "src.ingestion_factory.ingestion_factory.IngestionFactory.get_smelter"
+    ) as mock_get_smelter:
+        mock_get_smelter.return_value = smelter
+        with mock.patch(
+            "src.overseers.overseer.Overseer.get_mytardis_set_up"
+        ) as mock_get_mytardis_setup:
+            mock_get_mytardis_setup.return_value = processed_introspection_response
+            IngestionFactory.__abstractmethods__ = set()
+            return IngestionFactory(config_dict)

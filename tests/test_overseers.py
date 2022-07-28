@@ -11,7 +11,6 @@ from pytest import fixture
 from responses import matchers
 
 from src.blueprints import StorageBox
-from src.helpers.config import AuthConfig, ConnectionConfig, IntrospectionConfig
 from src.overseers import Overseer
 
 logger = logging.getLogger(__name__)

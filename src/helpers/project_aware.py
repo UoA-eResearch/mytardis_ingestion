@@ -3,7 +3,7 @@
 import logging
 
 
-def check_projects_enabled_and_log_if_not(self) -> bool:
+def project_enabled(self) -> bool:
     """Test if projects are enabled and return the function if so,
     otherwise log a warning and return None"""
     if not self.projects_enabled:
