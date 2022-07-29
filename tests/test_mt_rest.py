@@ -24,17 +24,17 @@ def test_mytardis_auth_header_injection(auth: AuthConfig):
     }
 
 
-def test_mytardis_rest_factory_setup(auth: AuthConfig, connection: ConnectionConfig):
+def test_mytardis_rest_factory_setup(
+    auth: AuthConfig, connection: ConnectionConfig
+):
     test_factory = MyTardisRESTFactory(auth, connection)
     test_auth = AuthConfig(username=auth.username, api_key=auth.api_key)
     test_request = Request()
     assert test_factory.auth(test_request) == test_auth(test_request)
     assert test_factory.verify_certificate == connection.verify_certificate
     assert test_factory.api_template == connection.api_template
-    assert test_factory.proxies == {
-        "http": "http://myproxy.com",
-        "https": "https://myproxy.com",
-    }
+    assert test_factory.proxies["http"] == "http://myproxy.com"
+    assert test_factory.proxies["https"] == "http://myproxy.com"
     assert (
         test_factory.user_agent
         == "src.helpers.mt_rest/2.0 (https://github.com/UoA-eResearch/mytardis_ingestion.git)"
