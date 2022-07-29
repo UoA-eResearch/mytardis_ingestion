@@ -4,7 +4,7 @@ for the Forge class."""
 
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from urllib.parse import urljoin, urlparse
 
 from pydantic import ValidationError
@@ -14,7 +14,7 @@ from src.blueprints import StorageBox
 from src.blueprints.custom_data_types import URI
 from src.helpers import MyTardisRESTFactory
 from src.helpers.config import IntrospectionConfig
-from src.helpers.enumerators import ObjectSearchEnum
+from src.helpers.enumerators import ObjectSearchDict, ObjectSearchEnum
 
 logger = logging.getLogger(__name__)
 
@@ -74,12 +74,12 @@ class Overseer:
         return resource_id
 
     def __get_object_from_mytardis(
-        self, object_type: ObjectSearchEnum, query_params: Dict[str, str]
+        self,
+        object_type: ObjectSearchDict,
+        query_params: Dict[str, str],
     ) -> Dict[str, List[Any]] | None:
 
-        url = urljoin(
-            self.rest_factory.api_template, object_type.value["url_substring"]
-        )
+        url = urljoin(self.rest_factory.api_template, object_type["url_substring"])
         try:
             response = self.rest_factory.mytardis_api_request(
                 "GET", url, params=query_params
@@ -109,7 +109,7 @@ class Overseer:
 
     def get_objects(
         self,
-        object_type: ObjectSearchEnum,
+        object_type: ObjectSearchDict,
         search_string: str,
     ) -> List[Dict] | None:
         """Gets a list of objects matching the search parameters passed
@@ -130,12 +130,12 @@ class Overseer:
         """
         return_list: list = []
         response_dict = None
-        if self.objects_with_ids and object_type.value["type"] in self.objects_with_ids:
+        if self.objects_with_ids and object_type["type"] in self.objects_with_ids:
             query_params = {"pids": search_string}
             response_dict = self.__get_object_from_mytardis(object_type, query_params)
             if response_dict and "objects" in response_dict.keys():
                 return_list.append(*response_dict["objects"])
-        query_params = {object_type.value["target"]: search_string}
+        query_params = {object_type["target"]: search_string}
         response_dict = self.__get_object_from_mytardis(object_type, query_params)
         if response_dict and "objects" in response_dict.keys():
             return_list.append(*response_dict["objects"])
@@ -143,7 +143,7 @@ class Overseer:
 
     def get_uris(
         self,
-        object_type: ObjectSearchEnum,
+        object_type: ObjectSearchDict,
         search_string: str,
     ) -> List[URI] | None:
         """Calls self.get_objects() to get a list of objects matching search then extracts URIs
@@ -208,7 +208,7 @@ class Overseer:
         """
 
         raw_storage_box = self.get_objects(
-            ObjectSearchEnum.STORAGE_BOX, storage_box_name
+            ObjectSearchEnum.STORAGE_BOX.value, storage_box_name
         )
         if raw_storage_box and len(raw_storage_box) > 1:
             logger.warning(
