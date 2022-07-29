@@ -747,6 +747,14 @@ pyyaml = ">=5.1"
 virtualenv = ">=20.10.0"
 
 [[package]]
+name = "pthreading"
+version = "0.1.3-3"
+description = "Reimplement threading.Lock, RLock and Condition with libpthread"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "py"
 version = "1.11.0"
 description = "library with cross-python path, ini-parsing, io, code, log facilities"
@@ -943,6 +951,17 @@ files = [
 pytest = ">=3.6.0"
 
 [[package]]
+name = "python-dateutil"
+version = "2.8.2"
+description = "Extensions to the standard Python datetime module"
+category = "main"
+optional = false
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
+
+[package.dependencies]
+six = ">=1.5"
+
+[[package]]
 name = "python-decouple"
 version = "3.7"
 description = "Strict separation of settings from code."
@@ -1051,7 +1070,7 @@ tests = ["coverage (>=6.0.0)", "flake8", "mypy", "pytest (>=7.0.0)", "pytest-asy
 name = "six"
 version = "1.16.0"
 description = "Python 2 and 3 compatibility utilities"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -1262,7 +1281,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "5bae6f0115b1c5726374b1181f747de313c68f2f7e2bafa836bbc417e1beee68"
+content-hash = "f6c1452ee4a8ade38737b1698c735f27beb364097677239a19da84c61910f7ed"
 
 [metadata.files]
 astroid = []
@@ -1303,6 +1322,7 @@ pillow = []
 platformdirs = []
 pluggy = []
 pre-commit = []
+pthreading = []
 py = []
 pydantic = []
 pylint = []
@@ -1312,6 +1332,7 @@ pysnooper = []
 pytest = []
 pytest-cov = []
 pytest-dependency = []
+python-dateutil = []
 python-decouple = []
 pyyaml = []
 requests = []

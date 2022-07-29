@@ -13,8 +13,6 @@ from requests import HTTPError, Request, RequestException, Response
 from src.helpers import (
     MyTardisRESTFactory,
     SanityCheckError,
-    is_uri,
-    project_enabled,
     read_json,
     sanity_check,
     write_json,
