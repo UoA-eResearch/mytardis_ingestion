@@ -6,10 +6,6 @@ import logging
 
 import pytest
 
-from src.helpers import (
-    SanityCheckError,
-)
-
 from src.smelters import Smelter
 
 logger = logging.getLogger(__name__)
