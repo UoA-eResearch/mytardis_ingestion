@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 
-from src.helpers import SanityCheckError
 from src.helpers.config import (
     GeneralConfig,
     IntrospectionConfig,
