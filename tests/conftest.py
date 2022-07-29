@@ -427,7 +427,9 @@ def split_and_parse_groups(
                 see_sensitive=True,
             )
         )
-    combined_groups = list(set(read_groups + download_groups + sensitive_groups))
+    combined_groups = list(
+        set(read_groups + download_groups + sensitive_groups)
+    )
     for group in combined_groups:
         if group in admin_groups:
             continue
@@ -853,7 +855,9 @@ def preconditioned_datafile_dictionary():
 
 @fixture
 def raw_project_parameterset(project_schema, project_metadata_processed):
-    return ParameterSet(schema=project_schema, parameters=project_metadata_processed)
+    return ParameterSet(
+        schema=project_schema, parameters=project_metadata_processed
+    )
 
 
 @fixture
@@ -885,7 +889,9 @@ def raw_project(
 
 
 @fixture
-def raw_experiment_parameterset(experiment_schema, experiment_metadata_processed):
+def raw_experiment_parameterset(
+    experiment_schema, experiment_metadata_processed
+):
     return ParameterSet(
         schema=experiment_schema, parameters=experiment_metadata_processed
     )
@@ -922,7 +928,9 @@ def raw_experiment(
 
 @fixture
 def raw_dataset_parameterset(dataset_schema, dataset_metadata_processed):
-    return ParameterSet(schema=dataset_schema, parameters=dataset_metadata_processed)
+    return ParameterSet(
+        schema=dataset_schema, parameters=dataset_metadata_processed
+    )
 
 
 @fixture
@@ -950,7 +958,9 @@ def raw_dataset(
 
 @fixture
 def raw_datafile_parameterset(datafile_schema, datafile_metadata_processed):
-    return ParameterSet(schema=datafile_schema, parameters=datafile_metadata_processed)
+    return ParameterSet(
+        schema=datafile_schema, parameters=datafile_metadata_processed
+    )
 
 
 @fixture
@@ -1022,7 +1032,9 @@ def config_dict(
 
 
 @fixture
-def processed_introspection_response(old_acls, projects_enabled, objects_with_ids):
+def processed_introspection_response(
+    old_acls, projects_enabled, objects_with_ids
+):
     return {
         "old_acls": old_acls,
         "projects_enabled": projects_enabled,
@@ -1387,18 +1399,18 @@ def project_creation_response_dict():
 
 @fixture
 def general(default_institution) -> GeneralConfig:
-    return GeneralConfig(default_institution)
+    return GeneralConfig(default_institution=default_institution)
 
 
 @fixture
 def auth(username, api_key) -> AuthConfig:
-    return AuthConfig(username, api_key)
+    return AuthConfig(username=username, api_key=api_key)
 
 
 @fixture
 def connection(hostname, proxies, verify_certificate) -> ConnectionConfig:
     return ConnectionConfig(
-        hostname,
+        hostname=hostname,
         proxy=ProxyConfig(http=proxies["http"], https=proxies["https"]),
         verify_certificate=verify_certificate,
     )
@@ -1473,7 +1485,9 @@ def rest_factory(auth: AuthConfig, connection: ConnectionConfig):
 
 
 @fixture
-def overseer(rest_factory: MyTardisRESTFactory, mytardis_setup: IntrospectionConfig):
+def overseer(
+    rest_factory: MyTardisRESTFactory, mytardis_setup: IntrospectionConfig
+):
     return Overseer(rest_factory, mytardis_setup)
 
 
