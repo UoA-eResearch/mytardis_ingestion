@@ -20,6 +20,8 @@ from pydantic import AnyUrl, BaseModel, BaseSettings, HttpUrl, PrivateAttr
 from requests import HTTPError, request
 from requests.auth import AuthBase
 
+from src.helpers.enumerators import MyTardisObject
+
 logger = logging.getLogger(__name__)
 
 
@@ -143,18 +145,6 @@ class StorageConfig(BaseModel):
     source_directory: Path
     target_directory: Path
     box: str
-
-
-class MyTardisObject(str, Enum):
-    # pylint: disable=invalid-name
-    """Enum for possible MyTardis object types"""
-    dataset = "dataset"
-    experiment = "experiment"
-    facility = "facility"
-    instrument = "instrument"
-    project = "project"
-    institution = "institution"
-    datafile = "datafile"
 
 
 class IntrospectionConfig(BaseModel):
