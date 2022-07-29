@@ -3,7 +3,17 @@
 from enum import Enum
 from typing import TypedDict
 
-from src.helpers.config import MyTardisObject
+
+class MyTardisObject(str, Enum):
+    """Enum for possible MyTardis object types"""
+
+    DATASET = "dataset"
+    EXPERIMENT = "experiment"
+    FACILITY = "facility"
+    INSTRUMENT = "instrument"
+    PROJECT = "project"
+    INSTITUTION = "institution"
+    DATAFILE = "datafile"
 
 
 class ObjectPostDict(TypedDict):
@@ -109,7 +119,7 @@ class ObjectEnum(Enum):
     """An enumerator for hierarchy objects in MyTardis"""
 
     PROJECT: ObjectDict = {
-        "type": MyTardisObject.project,
+        "type": MyTardisObject.PROJECT,
         "name": "name",
         "match_keys": [
             "name",
@@ -120,7 +130,7 @@ class ObjectEnum(Enum):
         "search_type": ObjectSearchEnum.PROJECT,
     }
     EXPERIMENT: ObjectDict = {
-        "type": MyTardisObject.experiment,
+        "type": MyTardisObject.EXPERIMENT,
         "name": "title",
         "match_keys": [
             "title",
@@ -130,7 +140,7 @@ class ObjectEnum(Enum):
         "search_type": ObjectSearchEnum.EXPERIMENT,
     }
     DATASET: ObjectDict = {
-        "type": MyTardisObject.dataset,
+        "type": MyTardisObject.DATASET,
         "name": "description",
         "match_keys": [
             "description",
@@ -139,7 +149,7 @@ class ObjectEnum(Enum):
         "search_type": ObjectSearchEnum.DATASET,
     }
     DATAFILE: ObjectDict = {
-        "type": MyTardisObject.datafile,
+        "type": MyTardisObject.DATAFILE,
         "name": "filename",
         "match_keys": [
             "filename",
