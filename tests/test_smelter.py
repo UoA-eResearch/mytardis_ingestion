@@ -3,61 +3,17 @@
 """Tests of the Smelter base class functions"""
 
 import logging
-from pathlib import Path
-from time import pthread_getcpuclockid
 
-import mock
 import pytest
-from devtools import debug
 
 from src.helpers import (
-    DATAFILE_KEYS,
-    DATASET_KEYS,
-    EXPERIMENT_KEYS,
-    PROJECT_KEYS,
     SanityCheckError,
 )
-from src.helpers.config import (
-    GeneralConfig,
-    IntrospectionConfig,
-    SchemaConfig,
-    StorageConfig,
-)
+
 from src.smelters import Smelter
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
-
-from tests.conftest import (
-    config_dict,
-    datafile_metadata,
-    datafile_parameters_as_dict,
-    datafile_replica,
-    dataset_parameters_as_dict,
-    experiment_parameters_as_dict,
-    mytardis_config,
-    project_metadata,
-    project_parameters_as_dict,
-    project_schema,
-    raw_datafile,
-    raw_datafile_as_dict,
-    raw_datafile_dictionary,
-    raw_datafile_parameterset,
-    raw_dataset,
-    raw_dataset_as_dict,
-    raw_experiment,
-    raw_experiment_as_dict,
-    raw_experiment_parameterset,
-    raw_project,
-    raw_project_as_dict,
-    raw_project_parameterset,
-    smelter,
-    storage_box,
-    tidied_datafile_dictionary,
-    tidied_dataset_dictionary,
-    tidied_experiment_dictionary,
-    tidied_project_dictionary,
-)
 
 
 def test_mytardis_setup_with_no_ids(mytardis_config):
