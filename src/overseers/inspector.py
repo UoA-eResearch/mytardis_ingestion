@@ -139,7 +139,9 @@ class Inspector:
         search_list.append(object_name)
         objects: List[Dict[Any, Any]] = []
         for search in search_list:
-            found_objs = self.overseer.get_objects(object_type["search_type"], search)
+            found_objs = self.overseer.get_objects(
+                object_type["search_type"].value, search
+            )
             if found_objs:
                 objects.append(*found_objs)
         objects = list(set(objects))
