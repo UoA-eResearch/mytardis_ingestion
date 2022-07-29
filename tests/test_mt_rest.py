@@ -24,9 +24,7 @@ def test_mytardis_auth_header_injection(auth: AuthConfig):
     }
 
 
-def test_mytardis_rest_factory_setup(
-    auth: AuthConfig, connection: ConnectionConfig
-):
+def test_mytardis_rest_factory_setup(auth: AuthConfig, connection: ConnectionConfig):
     test_factory = MyTardisRESTFactory(auth, connection)
     test_auth = AuthConfig(username=auth.username, api_key=auth.api_key)
     test_request = Request()
