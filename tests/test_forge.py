@@ -6,7 +6,6 @@ import pytest
 import responses
 
 from src.forges import Forge
-from src.helpers import dict_to_json
 from src.helpers.config import AuthConfig, ConnectionConfig
 
 logger = logging.getLogger(__name__)

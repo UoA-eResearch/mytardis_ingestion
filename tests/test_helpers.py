@@ -9,13 +9,8 @@ import mock
 import pytest
 from requests import HTTPError, Request, RequestException, Response
 
-from src.helpers import (
-    MyTardisRESTFactory,
-    SanityCheckError,
-    read_json,
-    sanity_check,
-    write_json,
-)
+from src.helpers import MyTardisRESTFactory
+
 from src.helpers.config import ConnectionConfig
 from src.helpers.mt_rest import AuthConfig
 
