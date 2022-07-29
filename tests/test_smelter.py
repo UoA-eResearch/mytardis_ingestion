@@ -6,6 +6,12 @@ import logging
 
 import pytest
 
+from src.helpers.config import (
+    GeneralConfig,
+    IntrospectionConfig,
+    SchemaConfig,
+    StorageConfig,
+)
 from src.smelters import Smelter
 
 logger = logging.getLogger(__name__)
