@@ -5,7 +5,6 @@
 import logging
 from pathlib import Path
 
-import mock
 import pytest
 
 from src.helpers import SanityCheckError
