@@ -36,8 +36,8 @@ from src.helpers.config import (
 )
 from src.helpers.mt_rest import MyTardisRESTFactory
 from src.ingestion_factory import IngestionFactory
-from src.overseers import Overseer
 from src.overseers.inspector import Inspector
+from src.overseers.overseer import Overseer
 from src.smelters import Smelter
 
 
