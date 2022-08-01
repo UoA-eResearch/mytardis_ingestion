@@ -414,6 +414,44 @@ def datadir(tmpdir, request):
 
 
 @fixture
+def split_and_parse_users(
+    admin_users: List[str],
+    read_users: List[str],
+    download_users: List[str],
+    sensitive_users: List[str],
+) -> List[UserACL]:
+    return_list: List[UserACL] = []
+    for admin_user in admin_users:
+        return_list.append(
+            UserACL(
+                user=Username(admin_user),
+                is_owner=True,
+                can_download=True,
+                see_sensitive=True,
+            )
+        )
+    combined_users = list(set(read_users + download_users + sensitive_users))
+    for user in combined_users:
+        if user in admin_users:
+            continue
+        download = False
+        sensitive = False
+        if user in download_users:
+            download = True
+        if user in sensitive_users:
+            sensitive = True
+        return_list.append(
+            UserACL(
+                user=Username(user),
+                is_owner=False,
+                can_download=download,
+                see_sensitive=sensitive,
+            )
+        )
+    return return_list
+
+
+@fixture
 def split_and_parse_groups(
     admin_groups, read_groups, download_groups, sensitive_groups
 ):
@@ -451,12 +489,29 @@ def split_and_parse_groups(
 
 
 @fixture
-def storage_box(storage_box_dir):
+def storage_box_name():
+    return "Test_storage_box"
+
+
+@fixture
+def storage_box_uri():
+    return "/api/v1/storagebox/1/"
+
+
+@fixture
+def storage_box_description():
+    return "A test storage box"
+
+
+@fixture
+def storage_box(
+    storage_box_name, storage_box_dir, storage_box_uri, storage_box_description
+):
     return StorageBox(
-        name="Test_storage_box",
+        name=storage_box_name,
         location=Path(storage_box_dir),
-        uri=URI("/api/v1/storagebox/1/"),
-        description="A test storage box",
+        uri=URI(storage_box_uri),
+        description=storage_box_description,
     )
 
 
@@ -1326,7 +1381,12 @@ def institution_response_dict():
 
 
 @fixture
-def storage_box_response_dict():
+def storage_box_response_dict(
+    storage_box_description,
+    storage_box_name,
+    storage_box_dir,
+    storage_box_uri,
+):
     return {
         "meta": {
             "limit": 20,
@@ -1338,21 +1398,21 @@ def storage_box_response_dict():
         "objects": [
             {
                 "attributes": [],
-                "description": "Test Storage Box for testing",
+                "description": storage_box_description,
                 "django_storage_class": "django.core.files.storage.FileSystemStorage",
                 "id": 1,
                 "max_size": 1000000,
-                "name": "Test_storage_box",
+                "name": storage_box_name,
                 "options": [
                     {
                         "id": 1,
                         "key": "location",
                         "resource_uri": "/api/v1/storageboxoption/1/",
-                        "value": "/target/path",
+                        "value": storage_box_dir,
                         "value_type": "string",
                     },
                 ],
-                "resource_uri": "/api/v1/storagebox/1/",
+                "resource_uri": storage_box_uri,
                 "status": "online",
             },
         ],
