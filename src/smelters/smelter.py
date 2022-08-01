@@ -1,4 +1,3 @@
-# pylint: disable=logging-fstring-interpolation,duplicate-code
 """Smelter base class. A class that provides functions to split raw dataclasses into
 refined dataclasses suited to be passed into an instance of the Crucible class for
 matching existing objects in MyTardis.
@@ -24,9 +23,9 @@ from src.blueprints import (
     RefinedProject,
 )
 from src.blueprints.common_models import Parameter
+from src.blueprints.storage_boxes import StorageBox
 from src.helpers import (
     GeneralConfig,
-    IntrospectionConfig,
     SchemaConfig,
     StorageConfig,
     check_projects_enabled_and_log_if_not,
@@ -49,8 +48,8 @@ class Smelter:
         general: GeneralConfig,
         default_schema: SchemaConfig,
         storage: StorageConfig,
-        overseer: Overseer,  # This is a temporary fix during config processor dev
-        mytardis_setup: IntrospectionConfig,
+        storage_box: StorageBox,
+        projects_enabled=True,
     ) -> None:
         """Class initialisation to set options for dictionary processing
         Stores MyTardis set up information from the introspection API to allow the parser
@@ -64,19 +63,13 @@ class Smelter:
                 experiments, datasets and datafiles
         """
 
-        if mytardis_setup:
-            self.projects_enabled = mytardis_setup.projects_enabled
-            self.objects_with_ids = mytardis_setup.objects_with_ids
-            self.objects_with_profiles = mytardis_setup.objects_with_profiles
+        self.projects_enabled = projects_enabled
+
         self.default_schema = default_schema
         self.default_institution = general.default_institution
         self.source_dir = storage.source_directory
         self.target_dir = storage.target_directory
-        self.storage_box = overseer.get_storage_box(storage.box)
-        if not self.storage_box:
-            raise ValueError(
-                "Unable to initalise Smelter due to bad storage box"
-            )
+        self.storage_box = storage_box
 
     def extract_parameters(
         self,
@@ -93,10 +86,7 @@ class Smelter:
                 parameter_list.append(Parameter(name=key, value=value))
             except ValidationError:
                 logger.warning(
-                    (
-                        f"Unable to parse paramter {key}: {value} "
-                        "into Parameter"
-                    ),
+                    ("Unable to parse parameter %s: %s into Parameter", key, value),
                     exc_info=True,
                 )
                 continue
@@ -115,7 +105,7 @@ class Smelter:
         if not check_projects_enabled_and_log_if_not(self):
             return None
         if not raw_project.object_schema:
-            if not self.default_schema or not self.default_schema.project:
+            if not self.default_schema.project:
                 logger.warning(
                     "Unable to find default project schema and no schema provided"
                 )
@@ -128,35 +118,33 @@ class Smelter:
                 )
                 return None
             raw_project.institution = [self.default_institution]
-        if raw_project.institution:
-            try:
-                refined_project = RefinedProject(
-                    name=raw_project.name,
-                    description=raw_project.description,
-                    principal_investigator=raw_project.principal_investigator,
-                    created_by=raw_project.created_by,
-                    url=raw_project.url,
-                    users=raw_project.users,
-                    groups=raw_project.groups,
-                    persistent_id=raw_project.persistent_id,
-                    alternate_ids=raw_project.alternate_ids,
-                    institution=raw_project.institution,
-                    start_time=raw_project.start_time,
-                    end_time=raw_project.end_time,
-                    embargo_until=raw_project.embargo_until,
-                )
-            except ValidationError:
-                logger.warning(
-                    (
-                        "Malformed project dataclass produced by smelter. Project "
-                        f"is {raw_project.name}"
-                    ),
-                    exc_info=True,
-                )
-                return None
-            parameters = self.extract_parameters(raw_project)
-            return (refined_project, parameters)
-        return None
+        try:
+            refined_project = RefinedProject(
+                name=raw_project.name,
+                description=raw_project.description,
+                principal_investigator=raw_project.principal_investigator,
+                created_by=raw_project.created_by,
+                url=raw_project.url,
+                users=raw_project.users,
+                groups=raw_project.groups,
+                persistent_id=raw_project.persistent_id,
+                alternate_ids=raw_project.alternate_ids,
+                institution=raw_project.institution,
+                start_time=raw_project.start_time,
+                end_time=raw_project.end_time,
+                embargo_until=raw_project.embargo_until,
+            )
+        except ValidationError:
+            logger.warning(
+                (
+                    "Malformed project dataclass produced by smelter. Project is %s",
+                    raw_project.name,
+                ),
+                exc_info=True,
+            )
+            return None
+        parameters = self.extract_parameters(raw_project)
+        return (refined_project, parameters)
 
     def smelt_experiment(
         self, raw_experiment: RawExperiment
@@ -171,10 +159,10 @@ class Smelter:
                 )
                 return None
             raw_experiment.object_schema = self.default_schema.experiment
-        if self.projects_enabled and not raw_experiment.projects:
+        if self.projects_enabled and not raw_experiment.projects:  # test this
             logger.warning(
-                "Projects enabled in MyTardis and no projects provided to link this "
-                f"experiment too. Experiment provided {raw_experiment}"
+                "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided %s",
+                raw_experiment,
             )
             return None
         if not raw_experiment.institution_name:
@@ -206,8 +194,8 @@ class Smelter:
         except ValidationError:
             logger.warning(
                 (
-                    "Malformed experiment dataclass produced by smelter. Experiment "
-                    f"is {raw_experiment.title}"
+                    "Malformed experiment dataclass produced by smelter. Experiment is %s",
+                    raw_experiment.title,
                 ),
                 exc_info=True,
             )
@@ -245,8 +233,8 @@ class Smelter:
         except ValidationError:
             logger.warning(
                 (
-                    "Malformed dataset dataclass produced by smelter. Dataset "
-                    f"is {raw_dataset.description}"
+                    "Malformed dataset dataclass produced by smelter. Dataset is %s",
+                    raw_dataset.description,
                 ),
                 exc_info=True,
             )
@@ -270,7 +258,8 @@ class Smelter:
             )
         except ValidationError:
             logger.warning(
-                f"Unable to create a replica for {relative_file_path}",
+                "Unable to create a replica for %s",
+                relative_file_path,
                 exc_info=True,
             )
             return None
@@ -329,7 +318,8 @@ class Smelter:
             logger.warning(
                 (
                     "Malformed datafile dataclass produced by smelter. Datafile "
-                    f"is {raw_datafile.filename}"
+                    "is %s",
+                    raw_datafile.filename,
                 ),
                 exc_info=True,
             )

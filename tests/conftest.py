@@ -581,9 +581,7 @@ def config_dict(
 
 
 @fixture
-def processed_introspection_response(
-    old_acls, projects_enabled, objects_with_ids
-):
+def processed_introspection_response(old_acls, projects_enabled, objects_with_ids):
     return {
         "old_acls": old_acls,
         "projects_enabled": projects_enabled,
@@ -1039,9 +1037,7 @@ def rest_factory(auth: AuthConfig, connection: ConnectionConfig):
 
 
 @fixture
-def overseer(
-    rest_factory: MyTardisRESTFactory, mytardis_setup: IntrospectionConfig
-):
+def overseer(rest_factory: MyTardisRESTFactory, mytardis_setup: IntrospectionConfig):
     return Overseer(rest_factory, mytardis_setup)
 
 
@@ -1050,10 +1046,10 @@ def smelter(
     general: GeneralConfig,
     default_schema: SchemaConfig,
     storage: StorageConfig,
-    overseer: Overseer,
+    storage_box: StorageBox,
     mytardis_setup: IntrospectionConfig,
 ):
-    return Smelter(general, default_schema, storage, overseer, mytardis_setup)
+    return Smelter(general, default_schema, storage, storage_box, mytardis_setup)
 
 
 @fixture
