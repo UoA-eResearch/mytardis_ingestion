@@ -1,3 +1,4 @@
+# pylint: disable=missing-class-docstring
 """Useful enunmerators for ingestion"""
 
 from enum import Enum

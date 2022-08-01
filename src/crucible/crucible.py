@@ -33,7 +33,7 @@ class Crucible:
         institutions: list[URI] = []
         for institution in raw_project.institution:
             institution_uri = self.overseer.get_uris(
-                ObjectSearchEnum.INSTITUTION, institution
+                ObjectSearchEnum.INSTITUTION.value, institution
             )
             if institution_uri:
                 institutions.append(*institution_uri)
@@ -72,7 +72,9 @@ class Crucible:
         projects: list[URI] = []
         if raw_experiment.projects and self.projects_enabled:
             for project in raw_experiment.projects:
-                project_uri = self.overseer.get_uris(ObjectSearchEnum.PROJECT, project)
+                project_uri = self.overseer.get_uris(
+                    ObjectSearchEnum.PROJECT.value, project
+                )
                 if project_uri:
                     projects.append(*project_uri)
             projects = list(set(projects))
@@ -116,7 +118,7 @@ class Crucible:
         experiments: list[URI] = []
         for experiment in raw_dataset.experiments:
             experiment_uri = self.overseer.get_uris(
-                ObjectSearchEnum.PROJECT, experiment
+                ObjectSearchEnum.PROJECT.value, experiment
             )
             if experiment_uri:
                 experiments.append(*experiment_uri)
@@ -125,7 +127,7 @@ class Crucible:
             logger.warning(("Unable to find experiments associated with this dataset."))
             return None
         instruments = self.overseer.get_uris(
-            ObjectSearchEnum.INSTRUMENT, raw_dataset.instrument
+            ObjectSearchEnum.INSTRUMENT.value, raw_dataset.instrument
         )
         if instruments:
             instruments = list(set(instruments))
@@ -168,7 +170,7 @@ class Crucible:
         """Refine a datafile by finding URIs from MyTardis for the
         relevant fields of interest."""
         datasets = self.overseer.get_uris(
-            ObjectSearchEnum.DATASET, raw_datafile.dataset
+            ObjectSearchEnum.DATASET.value, raw_datafile.dataset
         )
         if not datasets:
             logger.warning(

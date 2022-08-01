@@ -1,5 +1,6 @@
 import logging
 from urllib.parse import urljoin
+
 import mock
 import pytest
 import responses

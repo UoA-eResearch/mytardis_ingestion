@@ -11,7 +11,6 @@ the environment automatically and verifies their types and values.
 """
 
 import logging
-from enum import Enum
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urljoin

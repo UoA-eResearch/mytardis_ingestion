@@ -1,4 +1,4 @@
-# pylint: disable=logging-fstring-interpolation
+# pylint: disable=logging-fstring-interpolation,unsubscriptable-object
 """Inspector class checks to ensure that the objects to be created don't
 already exist in MyTardis.
 If there is a potential match, then the inspector will assess if it is
@@ -12,7 +12,7 @@ from pydantic import ValidationError
 from src.blueprints import URI, RawDatafile, RawDataset, RawExperiment, RawProject
 from src.helpers import IntrospectionConfig
 from src.helpers.dataclass import get_object_name, get_object_parents, get_object_type
-from src.helpers.enumerators import ObjectDict, ObjectEnum
+from src.helpers.enumerators import ObjectDict
 from src.helpers.project_aware import check_projects_enabled_and_log_if_not
 from src.overseers.overseer import Overseer
 
