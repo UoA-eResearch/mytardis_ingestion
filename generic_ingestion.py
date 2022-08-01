@@ -20,6 +20,7 @@ The workflow for these scripts are as follows:
 import logging
 import subprocess
 from pathlib import Path
+
 from src.helpers.config import ConfigFromEnv
 from src.ingestion_factory.factory import IngestionFactory
 from src.smelters.yaml_smelter import YAMLSmelter
