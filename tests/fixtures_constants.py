@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 
 import pytz
 from pytest import fixture
@@ -38,17 +39,17 @@ def proxies():
 
 @fixture
 def source_dir():
-    return "/a/source/directory"
+    return Path("/a/source/directory")
 
 
 @fixture
 def target_dir():
-    return "/a/target/directory"
+    return Path("/a/target/directory")
 
 
 @fixture
 def storage_box_dir():
-    return "/a/target/"
+    return Path("/a/target/")
 
 
 @fixture
@@ -95,6 +96,16 @@ def start_time_datetime(timezone):
 
 @fixture
 def start_time_str(start_time_datetime: datetime) -> str:
+    return start_time_datetime.strftime("%Y-%m-%d %H:%M:%S%z")
+
+
+@fixture
+def created_time_datetime(timezone):
+    return datetime(2000, 1, 1, 12, 0, 0, tzinfo=timezone)
+
+
+@fixture
+def created_time_str(start_time_datetime: datetime) -> str:
     return start_time_datetime.strftime("%Y-%m-%d %H:%M:%S%z")
 
 
@@ -326,8 +337,11 @@ def experiment_url():
 
 
 @fixture
-def dataset_dir():
-    return "/stub/relative/to/storage/box"
+def dataset_dir(
+    target_dir: Path,
+    storage_box_dir: Path,
+) -> Path:
+    return target_dir.relative_to(storage_box_dir)
 
 
 @fixture
@@ -508,3 +522,14 @@ def storage_box_uri():
 @fixture
 def storage_box_description():
     return "A test storage box"
+
+
+@fixture
+def directory_relative_to_storage_box(
+    storage_box_dir: Path,
+    target_dir: Path,
+    filename: str,
+) -> Path:
+    file_path = Path(target_dir) / Path(filename)
+    location_path = storage_box_dir
+    return file_path.relative_to(location_path)
