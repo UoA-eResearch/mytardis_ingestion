@@ -102,6 +102,8 @@ modified_time_str = const.modified_time_str
 embargo_time_datetime = const.embargo_time_datetime
 embargo_time_str = const.embargo_time_str
 created_by_upi = const.created_by_upi
+created_time_datetime = const.created_time_datetime
+created_time_str = const.created_time_str
 
 # =============================
 #
@@ -138,6 +140,13 @@ storage_box = dcls.storage_box
 datafile_replica = dcls.datafile_replica
 raw_project_parameterset = dcls.raw_project_parameterset
 raw_project = dcls.raw_project
+raw_experiment_parameterset = dcls.raw_experiment_parameterset
+raw_experiment = dcls.raw_experiment
+raw_dataset_parameterset = dcls.raw_dataset_parameterset
+raw_dataset = dcls.raw_dataset
+raw_datafile_parameterset = dcls.raw_datafile_parameterset
+raw_datafile = dcls.raw_datafile
+refined_project = dcls.refined_project
 
 # =============================
 #
@@ -154,17 +163,6 @@ raw_project = dcls.raw_project
 # Helper functions
 #
 # ==============================
-
-
-@fixture
-def directory_relative_to_storage_box(
-    storage_box,
-    target_dir,
-    filename,
-):
-    file_path = Path(target_dir) / Path(filename)
-    location_path = storage_box.location
-    return file_path.relative_to(location_path)
 
 
 # =========================================

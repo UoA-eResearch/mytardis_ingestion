@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from _pytest.config import directory_arg
 from pytest import fixture
 
 import tests.fixtures_constants as const
@@ -16,6 +17,7 @@ from src.blueprints import (
     StorageBox,
     Username,
 )
+from src.blueprints.project import RefinedProject
 
 storage_box_name = const.storage_box_name
 storage_box_uri = const.storage_box_uri
@@ -71,6 +73,7 @@ embargo_time_str = const.embargo_time_str
 created_by_upi = const.created_by_upi
 created_time_datetime = const.created_time_datetime
 created_time_str = const.created_time_str
+directory_relative_to_storage_box = const.directory_relative_to_storage_box
 
 
 @fixture
@@ -115,6 +118,8 @@ def raw_project(
     start_time_datetime,
     end_time_str,
     embargo_time_datetime,
+    project_metadata,
+    project_url,
 ):
     return RawProject(
         name=project_name,
@@ -130,6 +135,7 @@ def raw_project(
         embargo_until=embargo_time_datetime,
         persistent_id=project_pid,
         alternate_ids=project_ids,
+        metadata=project_metadata,
     )
 
 
@@ -159,6 +165,7 @@ def raw_experiment(
     created_time_datetime,
     modified_time_str,
     embargo_time_datetime,
+    experiment_metadata,
 ):
     return RawExperiment(
         title=experiment_name,
@@ -177,6 +184,7 @@ def raw_experiment(
         embargo_until=embargo_time_datetime,
         persistent_id=experiment_pid,
         alternate_ids=experiment_ids,
+        metadata=experiment_metadata,
     )
 
 
@@ -194,19 +202,26 @@ def raw_dataset(
     dataset_instrument,
     dataset_pid,
     dataset_ids,
+    dataset_dir,
+    split_and_parse_users,
+    split_and_parse_groups,
+    created_time_str,
+    modified_time_datetime,
+    dataset_metadata,
 ):
     return RawDataset(
         description=dataset_name,
-        directory=None,
-        users=None,
-        groups=None,
+        directory=dataset_dir,
+        users=split_and_parse_users,
+        groups=split_and_parse_groups,
         immutable=False,
         experiments=dataset_experiments,
         instrument=dataset_instrument,
-        created_time=None,
-        modified_time=None,
+        created_time=created_time_str,
+        modified_time=modified_time_datetime,
         persistent_id=dataset_pid,
         alternate_ids=dataset_ids,
+        metadata=dataset_metadata,
     )
 
 
@@ -225,6 +240,9 @@ def raw_datafile(
     datafile_size,
     datafile_dataset,
     directory_relative_to_storage_box,
+    split_and_parse_users,
+    split_and_parse_groups,
+    datafile_metadata,
 ):
     return RawDatafile(
         filename=filename,
@@ -232,7 +250,41 @@ def raw_datafile(
         mimetype=datafile_mimetype,
         size=datafile_size,
         directory=Path(directory_relative_to_storage_box),
-        users=None,
-        groups=None,
+        users=split_and_parse_users,
+        groups=split_and_parse_groups,
         dataset=datafile_dataset,
+        metadata=datafile_metadata,
+    )
+
+
+@fixture
+def refined_project(
+    project_name,
+    project_description,
+    project_principal_investigator,
+    project_url,
+    split_and_parse_users,
+    split_and_parse_groups,
+    project_institutions,
+    created_by_upi,
+    start_time_datetime,
+    end_time_str,
+    embargo_time_datetime,
+    project_pid,
+    project_ids,
+) -> RefinedProject:
+    return RefinedProject(
+        name=project_name,
+        description=project_description,
+        principal_investigator=Username(project_principal_investigator),
+        url=project_url,
+        users=split_and_parse_users,
+        groups=split_and_parse_groups,
+        institution=project_institutions,
+        created_by=created_by_upi,
+        start_time=start_time_datetime,
+        end_time=end_time_str,
+        embargo_until=embargo_time_datetime,
+        persistent_id=project_pid,
+        alternate_ids=project_ids,
     )
