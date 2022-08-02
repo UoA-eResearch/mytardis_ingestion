@@ -4,6 +4,7 @@ from pathlib import Path
 
 from _pytest.config import directory_arg
 from pytest import fixture
+from src.blueprints.experiment import RefinedExperiment
 
 import tests.fixtures_constants as const
 from src.blueprints import (
@@ -46,9 +47,7 @@ def datafile_replica(storage_box, filename, target_dir):
 
 @fixture
 def raw_project_parameterset(project_schema, project_metadata_processed):
-    return ParameterSet(
-        schema=project_schema, parameters=project_metadata_processed
-    )
+    return ParameterSet(schema=project_schema, parameters=project_metadata_processed)
 
 
 @fixture
@@ -87,9 +86,7 @@ def raw_project(
 
 
 @fixture
-def raw_experiment_parameterset(
-    experiment_schema, experiment_metadata_processed
-):
+def raw_experiment_parameterset(experiment_schema, experiment_metadata_processed):
     return ParameterSet(
         schema=experiment_schema, parameters=experiment_metadata_processed
     )
@@ -137,9 +134,7 @@ def raw_experiment(
 
 @fixture
 def raw_dataset_parameterset(dataset_schema, dataset_metadata_processed):
-    return ParameterSet(
-        schema=dataset_schema, parameters=dataset_metadata_processed
-    )
+    return ParameterSet(schema=dataset_schema, parameters=dataset_metadata_processed)
 
 
 @fixture
@@ -174,9 +169,7 @@ def raw_dataset(
 
 @fixture
 def raw_datafile_parameterset(datafile_schema, datafile_metadata_processed):
-    return ParameterSet(
-        schema=datafile_schema, parameters=datafile_metadata_processed
-    )
+    return ParameterSet(schema=datafile_schema, parameters=datafile_metadata_processed)
 
 
 @fixture
