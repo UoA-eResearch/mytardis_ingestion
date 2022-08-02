@@ -32,7 +32,7 @@ class RawProject(BaseProject):
     with a validated format as an entry point into the smelting process."""
 
     institution: Optional[List[str]]
-    metadata: Optional[List[Dict[str, str | int | float | bool]]]
+    metadata: Optional[Dict[str, str | int | float | bool]] = None
     object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
     start_time: Optional[datetime | str] = None
     end_time: Optional[datetime | str] = None

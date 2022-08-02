@@ -33,7 +33,7 @@ class RawExperiment(BaseExperiment):
 
     projects: Optional[List[str]] = None
     institution_name: Optional[str]
-    metadata: Optional[List[Dict[str, str | int | float | bool]]]
+    metadata: Optional[Dict[str, str | int | float | bool]] = None
     object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
     start_time: Optional[datetime | str] = None
     end_time: Optional[datetime | str] = None
