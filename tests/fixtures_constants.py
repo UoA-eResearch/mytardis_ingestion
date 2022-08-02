@@ -1,5 +1,6 @@
 from datetime import datetime
 from pathlib import Path
+from typing import List
 
 import pytz
 from pytest import fixture
@@ -9,7 +10,7 @@ from src.blueprints import GroupACL, Parameter, UserACL, Username
 
 @fixture
 def timezone():
-    return pytz.timezone("Auckland/Pacific")
+    return pytz.timezone("Pacific/Auckland")
 
 
 @fixture
@@ -486,9 +487,7 @@ def split_and_parse_groups(
                 see_sensitive=True,
             )
         )
-    combined_groups = list(
-        set(read_groups + download_groups + sensitive_groups)
-    )
+    combined_groups = list(set(read_groups + download_groups + sensitive_groups))
     for group in combined_groups:
         if group in admin_groups:
             continue
