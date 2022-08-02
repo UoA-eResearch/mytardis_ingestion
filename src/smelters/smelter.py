@@ -8,7 +8,7 @@ import logging
 from pathlib import Path
 from typing import Optional, Tuple
 
-from pydantic import ValidationError
+from pydantic import AnyUrl, ValidationError
 
 from src.blueprints import (
     DatafileReplica,
@@ -30,7 +30,6 @@ from src.helpers import (
     StorageConfig,
     check_projects_enabled_and_log_if_not,
 )
-from src.overseers import Overseer
 
 logger = logging.getLogger(__name__)
 
@@ -73,13 +72,15 @@ class Smelter:
 
     def extract_parameters(
         self,
+        schema: AnyUrl,
         raw_object: RawProject | RawExperiment | RawDataset | RawDatafile,
     ) -> Optional[ParameterSet]:
         """Extract the metadata field and the schema field from a RawObject dataclass
         and use it to create a Parameterset"""
+
         if not raw_object.metadata:
             return None
-        parameter_list = []
+        parameter_list: list[Parameter] = []
         parameter = raw_object.metadata
         for key, value in parameter.items():
             try:
@@ -90,11 +91,7 @@ class Smelter:
                     exc_info=True,
                 )
                 continue
-        if parameter_list and raw_object.object_schema:
-            return ParameterSet(
-                schema=raw_object.object_schema, parameters=parameter_list
-            )
-        return None
+        return ParameterSet(schema=schema, parameters=parameter_list)
 
     def smelt_project(
         self, raw_project: RawProject
@@ -104,20 +101,22 @@ class Smelter:
         a RawProject dataclass for validation."""
         if not check_projects_enabled_and_log_if_not(self):
             return None
-        if not raw_project.object_schema:
-            if not self.default_schema.project:
-                logger.warning(
-                    "Unable to find default project schema and no schema provided"
-                )
-                return None
-            raw_project.object_schema = self.default_schema.project
-        if not raw_project.institution:
-            if not self.default_institution:
-                logger.warning(
-                    "Unable to find default institution and no institution provided"
-                )
-                return None
-            raw_project.institution = [self.default_institution]
+        schema = raw_project.object_schema or self.default_schema.project
+        if not schema:
+            logger.warning(
+                "Unable to find default project schema and no schema provided"
+            )
+            return None
+        institution = (
+            raw_project.institution or [self.default_institution]
+            if self.default_institution is not None
+            else None
+        )
+        if not institution:
+            logger.warning(
+                "Unable to find default institution and no institution provided"
+            )
+            return None
         try:
             refined_project = RefinedProject(
                 name=raw_project.name,
@@ -129,7 +128,7 @@ class Smelter:
                 groups=raw_project.groups,
                 persistent_id=raw_project.persistent_id,
                 alternate_ids=raw_project.alternate_ids,
-                institution=raw_project.institution,
+                institution=institution,
                 start_time=raw_project.start_time,
                 end_time=raw_project.end_time,
                 embargo_until=raw_project.embargo_until,
@@ -143,7 +142,7 @@ class Smelter:
                 exc_info=True,
             )
             return None
-        parameters = self.extract_parameters(raw_project)
+        parameters = self.extract_parameters(schema, raw_project)
         return (refined_project, parameters)
 
     def smelt_experiment(
@@ -152,26 +151,24 @@ class Smelter:
         """Inject the schema into the experiment dictionary if it's not
         already present.
         Convert to a RawExperiment dataclass for validation."""
-        if not raw_experiment.object_schema:
-            if not self.default_schema or not self.default_schema.experiment:
-                logger.warning(
-                    "Unable to find default experiment schema and no schema provided"
-                )
-                return None
-            raw_experiment.object_schema = self.default_schema.experiment
+        schema = raw_experiment.object_schema or self.default_schema.experiment
+        if not schema:
+            logger.warning(
+                "Unable to find default experiment schema and no schema provided"
+            )
+            return None
         if self.projects_enabled and not raw_experiment.projects:  # test this
             logger.warning(
                 "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided %s",
                 raw_experiment,
             )
             return None
-        if not raw_experiment.institution_name:
-            if not self.default_institution:
-                logger.warning(
-                    "Unable to find default institution and no institution provided"
-                )
-                return None
-            raw_experiment.institution_name = self.default_institution
+        institution_name = raw_experiment.institution_name or self.default_institution
+        if not institution_name:
+            logger.warning(
+                "Unable to find default institution and no institution provided"
+            )
+            return None
         try:
             refined_experiment = RefinedExperiment(
                 title=raw_experiment.title,
@@ -184,7 +181,7 @@ class Smelter:
                 persistent_id=raw_experiment.persistent_id,
                 alternate_ids=raw_experiment.alternate_ids,
                 projects=raw_experiment.projects,
-                institution_name=raw_experiment.institution_name,
+                institution_name=institution_name,
                 start_time=raw_experiment.start_time,
                 end_time=raw_experiment.end_time,
                 created_time=raw_experiment.created_time,
@@ -200,7 +197,7 @@ class Smelter:
                 exc_info=True,
             )
             return None
-        parameters = self.extract_parameters(raw_experiment)
+        parameters = self.extract_parameters(schema, raw_experiment)
         return (refined_experiment, parameters)
 
     def smelt_dataset(
@@ -209,13 +206,12 @@ class Smelter:
         """Inject the schema into the dataset dictionary if it's not
         already present.
         Convert to a RefinedDataset dataclass for validation."""
-        if not raw_dataset.object_schema:
-            if not self.default_schema or not self.default_schema.dataset:
-                logger.warning(
-                    "Unable to find default dataset schema and no schema provided"
-                )
-                return None
-            raw_dataset.object_schema = self.default_schema.dataset
+        schema = raw_dataset.object_schema or self.default_schema.dataset
+        if not schema:
+            logger.warning(
+                "Unable to find default dataset schema and no schema provided"
+            )
+            return None
         try:
             refined_dataset = RefinedDataset(
                 description=raw_dataset.description,
@@ -239,7 +235,7 @@ class Smelter:
                 exc_info=True,
             )
             return None
-        parameters = self.extract_parameters(raw_dataset)
+        parameters = self.extract_parameters(schema, raw_dataset)
         return (refined_dataset, parameters)
 
     def _create_replica(
@@ -285,13 +281,12 @@ class Smelter:
         already present.
         Process the file path into a replica and append to the dictionary
         Convert to a RawDatafile dataclass for validation."""
-        if not raw_datafile.object_schema:
-            if not self.default_schema or not self.default_schema.datafile:
-                logger.warning(
-                    "Unable to find default datafile schema and no schema provided"
-                )
-                return None
-            raw_datafile.object_schema = self.default_schema.dataset
+        schema = raw_datafile.object_schema or self.default_schema.datafile
+        if not schema:
+            logger.warning(
+                "Unable to find default datafile schema and no schema provided"
+            )
+            return None
         relative_file_path = self._generate_relative_file_path_for_datafile(
             raw_datafile.filename, raw_datafile.directory
         )
@@ -300,7 +295,7 @@ class Smelter:
         replicas = self._create_replica(relative_file_path)
         if not replicas:
             return None
-        parameters = self.extract_parameters(raw_datafile)
+        parameters = self.extract_parameters(schema, raw_datafile)
         try:
             refined_datafile = RefinedDatafile(
                 filename=raw_datafile.filename,
