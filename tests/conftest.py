@@ -147,7 +147,9 @@ raw_dataset = dcls.raw_dataset
 raw_datafile_parameterset = dcls.raw_datafile_parameterset
 raw_datafile = dcls.raw_datafile
 refined_project = dcls.refined_project
-
+refined_experiment = dcls.refined_experiment
+refined_datafile = dcls.refined_datafile
+refined_dataset = dcls.refined_dataset
 # =============================
 #
 # Helper functions

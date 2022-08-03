@@ -32,7 +32,7 @@ class RawDataset(BaseDataset):
 
     experiments: List[str]
     instrument: str
-    metadata: Optional[Dict[str, str | int | float | bool]]
+    metadata: Optional[Dict[str, str | int | float | bool]] = None
     object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
     created_time: Optional[datetime | str] = None
     modified_time: Optional[datetime | str] = None
