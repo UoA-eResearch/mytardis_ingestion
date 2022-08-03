@@ -2,11 +2,10 @@
 
 from pathlib import Path
 
-from _pytest.config import directory_arg
 from pytest import fixture
+from src.blueprints.dataset import RefinedDataset
 from src.blueprints.experiment import RefinedExperiment
 
-import tests.fixtures_constants as const
 from src.blueprints import (
     URI,
     DatafileReplica,
@@ -37,9 +36,9 @@ def storage_box(
 
 
 @fixture
-def datafile_replica(storage_box, filename, target_dir):
+def datafile_replica(storage_box, dataset_dir, filename, target_dir):
     return DatafileReplica(
-        uri=Path(Path(target_dir) / Path(filename)).as_posix(),
+        uri=Path(target_dir / dataset_dir / filename).as_posix(),
         location=storage_box.name,
         protocol="file",
     )

@@ -7,6 +7,8 @@ from pydantic import AnyUrl
 
 import pytest
 from src.blueprints.common_models import ParameterSet
+from src.blueprints.datafile import RawDatafile, RefinedDatafile
+from src.blueprints.dataset import RawDataset, RefinedDataset
 from src.blueprints.experiment import RawExperiment, RefinedExperiment
 from src.blueprints.project import RawProject, RefinedProject
 
@@ -76,6 +78,7 @@ def test_smelt_project_projects_disabled(
     assert error_str in caplog.text
 
 
+@pytest.mark.dependency(depends=["test_extract_parameters"])
 def test_smelt_project_object_use_default_schema(
     smelter: Smelter,
     raw_project: RawProject,
@@ -102,6 +105,7 @@ def test_smelt_project_no_schema(caplog, smelter: Smelter, raw_project: RawProje
     assert error_str in caplog.text
 
 
+@pytest.mark.dependency(depends=["test_extract_parameters"])
 def test_smelt_project_use_default_institution(
     smelter: Smelter,
     raw_project: RawProject,
@@ -158,6 +162,7 @@ def test_smelt_experiment_projects_enabled(
     assert error_str in caplog.text
 
 
+@pytest.mark.dependency(depends=["test_extract_parameters"])
 def test_smelt_experiment_object_use_default_schema(
     smelter: Smelter,
     raw_experiment: RawExperiment,
@@ -186,6 +191,7 @@ def test_smelt_experiment_no_schema(
     assert error_str in caplog.text
 
 
+@pytest.mark.dependency(depends=["test_extract_parameters"])
 def test_smelt_experiment_use_default_institution(
     smelter: Smelter,
     raw_experiment: RawExperiment,
@@ -211,4 +217,76 @@ def test_smelt_experiment_no_institution(
     smelter.default_institution = None
 
     assert smelter.smelt_experiment(raw_experiment) is None
+    assert error_str in caplog.text
+
+
+@pytest.mark.dependency(depends=["test_extract_parameters"])
+def test_smelt_dataset(
+    smelter: Smelter,
+    raw_dataset: RawDataset,
+    refined_dataset: RefinedDataset,
+    raw_dataset_parameterset: ParameterSet,
+):
+    assert smelter.smelt_dataset(raw_dataset) == (
+        refined_dataset,
+        raw_dataset_parameterset,
+    )
+
+
+@pytest.mark.dependency(depends=["test_extract_parameters"])
+def test_smelt_dataset_use_default_schema(
+    smelter: Smelter,
+    raw_dataset: RawDataset,
+    refined_dataset: RefinedDataset,
+    raw_dataset_parameterset: ParameterSet,
+):
+    raw_dataset.object_schema = None
+
+    result = smelter.smelt_dataset(raw_dataset)
+
+    assert result is not None
+    (_, parameterset) = result
+    assert parameterset.parameter_schema == smelter.default_schema.dataset
+    assert result == (refined_dataset, raw_dataset_parameterset)
+
+
+def test_smelt_dataset_no_schema(caplog, smelter: Smelter, raw_dataset: RawDataset):
+    caplog.set_level(logging.WARNING)
+    error_str = "Unable to find default dataset schema and no schema provided"
+    raw_dataset.object_schema = None
+    smelter.default_schema.dataset = None
+
+    assert smelter.smelt_dataset(raw_dataset) is None
+    assert error_str in caplog.text
+
+
+@pytest.mark.dependency(depends=["test_extract_parameters"])
+def test_smelt_datafile(
+    smelter: Smelter,
+    raw_datafile: RawDatafile,
+    refined_datafile: RefinedDatafile,
+):
+    assert smelter.smelt_datafile(raw_datafile) == refined_datafile
+
+
+@pytest.mark.dependency(depends=["test_extract_parameters"])
+def test_smelt_datafile_use_default_schema(
+    smelter: Smelter, raw_datafile: RawDatafile, refined_datafile: RefinedDatafile
+):
+    raw_datafile.object_schema = None
+
+    result = smelter.smelt_datafile(raw_datafile)
+
+    assert result is not None
+    assert result.parameter_sets.parameter_schema == smelter.default_schema.datafile
+    assert result == refined_datafile
+
+
+def test_smelt_datafile_no_schema(caplog, smelter: Smelter, raw_datafile: RawDatafile):
+    caplog.set_level(logging.WARNING)
+    error_str = "Unable to find default datafile schema and no schema provided"
+    raw_datafile.object_schema = None
+    smelter.default_schema.datafile = None
+
+    assert smelter.smelt_datafile(raw_datafile) is None
     assert error_str in caplog.text

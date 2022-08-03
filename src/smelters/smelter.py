@@ -27,7 +27,6 @@ from src.blueprints.storage_boxes import StorageBox
 from src.helpers import (
     GeneralConfig,
     SchemaConfig,
-    StorageConfig,
     check_projects_enabled_and_log_if_not,
 )
 
@@ -46,7 +45,6 @@ class Smelter:
         self,
         general: GeneralConfig,
         default_schema: SchemaConfig,
-        storage: StorageConfig,
         storage_box: StorageBox,
         projects_enabled=True,
     ) -> None:
@@ -66,8 +64,6 @@ class Smelter:
 
         self.default_schema = default_schema
         self.default_institution = general.default_institution
-        self.source_dir = storage.source_directory
-        self.target_dir = storage.target_directory
         self.storage_box = storage_box
 
     def extract_parameters(
@@ -260,20 +256,6 @@ class Smelter:
             )
             return None
 
-    def _generate_relative_file_path_for_datafile(
-        self,
-        filename: str,
-        directory: Path,
-    ) -> Path | None:
-        """Construct a relative file path, relative to the storage box file path
-        for the datafile being ingested."""
-        if not self.storage_box:
-            return None
-        target_dir = self.target_dir
-        return Path(target_dir / directory / filename).relative_to(
-            self.storage_box.location
-        )
-
     def smelt_datafile(  # pylint: disable=too-many-return-statements
         self, raw_datafile: RawDatafile
     ) -> RefinedDatafile | None:
@@ -287,12 +269,7 @@ class Smelter:
                 "Unable to find default datafile schema and no schema provided"
             )
             return None
-        relative_file_path = self._generate_relative_file_path_for_datafile(
-            raw_datafile.filename, raw_datafile.directory
-        )
-        if not relative_file_path:
-            return None
-        replicas = self._create_replica(relative_file_path)
+        replicas = self._create_replica(raw_datafile.directory)
         if not replicas:
             return None
         parameters = self.extract_parameters(schema, raw_datafile)

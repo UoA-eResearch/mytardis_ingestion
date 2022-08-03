@@ -40,12 +40,12 @@ def proxies():
 
 @fixture
 def source_dir():
-    return Path("/a/source/directory")
+    return Path("/a/source/directory/")
 
 
 @fixture
 def target_dir():
-    return Path("/a/target/directory")
+    return Path("directory/")
 
 
 @fixture
@@ -338,16 +338,18 @@ def experiment_url():
 
 
 @fixture
-def dataset_dir(
-    target_dir: Path,
-    storage_box_dir: Path,
-) -> Path:
-    return target_dir.relative_to(storage_box_dir)
+def dataset_dir() -> Path:
+    return Path("dataset/")
 
 
 @fixture
 def dataset_name():
     return "Test_Dataset"
+
+
+@fixture
+def dataset_description():
+    return "This is a dataset"
 
 
 @fixture
@@ -377,7 +379,7 @@ def dataset_ids():
 def dataset_metadata():
     return {
         "dataset_my_test_key_1": "Test Value",
-        "dataset_my_test_key_1": "Test Value 2",
+        "dataset_my_test_key_2": "Test Value 2",
     }
 
 
@@ -525,10 +527,8 @@ def storage_box_description():
 
 @fixture
 def directory_relative_to_storage_box(
-    storage_box_dir: Path,
+    dataset_dir: Path,
     target_dir: Path,
     filename: str,
 ) -> Path:
-    file_path = Path(target_dir) / Path(filename)
-    location_path = storage_box_dir
-    return file_path.relative_to(location_path)
+    return Path(target_dir / dataset_dir / filename)
