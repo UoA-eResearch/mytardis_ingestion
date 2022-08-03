@@ -76,9 +76,10 @@ experiment_url = const.experiment_url
 experiment_metadata_processed = const.experiment_metadata_processed
 dataset_dir = const.dataset_dir
 dataset_name = const.dataset_name
+dataset_description = const.dataset_description
 dataset_experiments = const.dataset_experiments
 dataset_instrument = const.dataset_instrument
-datset_pid = const.dataset_pid
+dataset_pid = const.dataset_pid
 dataset_ids = const.dataset_ids
 dataset_metadata = const.dataset_metadata
 dataset_schema = const.dataset_schema
@@ -107,6 +108,7 @@ embargo_time_str = const.embargo_time_str
 created_by_upi = const.created_by_upi
 created_time_datetime = const.created_time_datetime
 created_time_str = const.created_time_str
+directory_relative_to_storage_box = const.directory_relative_to_storage_box
 
 # =============================
 #
@@ -1048,11 +1050,10 @@ def overseer(rest_factory: MyTardisRESTFactory, mytardis_setup: IntrospectionCon
 def smelter(
     general: GeneralConfig,
     default_schema: SchemaConfig,
-    storage: StorageConfig,
     storage_box: StorageBox,
     mytardis_setup: IntrospectionConfig,
 ):
-    return Smelter(general, default_schema, storage, storage_box, mytardis_setup)
+    return Smelter(general, default_schema, storage_box, mytardis_setup)
 
 
 @fixture
