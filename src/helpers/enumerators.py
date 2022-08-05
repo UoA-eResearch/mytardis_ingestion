@@ -15,11 +15,25 @@ class MyTardisObject(str, Enum):
     PROJECT = "project"
     INSTITUTION = "institution"
     DATAFILE = "datafile"
-    STORAGEBOX = "storagebox"
+    STORAGE_BOX = "storagebox"
+
+
+class URLSubstring(str, Enum):
+    PROJECT = "project"
+    EXPERIMENT = "experiment"
+    DATASET = "dataset"
+    DATAFILE = "dataset_file"
+    INSTITUTION = "institution"
+    INSTRUMENT = "instrument"
+    FACILITY = "facility"
+    STORAGE_BOX = "storagebox"
+    PROJECT_PARAMETERS = "projectparameterset"
+    EXPERIMENT_PARAMETERS = "experimentparameterset"
+    DATASET_PARAMETERS = "datsetparameterset"
 
 
 class ObjectPostDict(TypedDict):
-    url_substring: str
+    url_substring: URLSubstring
     expect_json: bool
 
 
@@ -28,31 +42,31 @@ class ObjectPostEnum(Enum):
     information used by MyTardis."""
 
     PROJECT: ObjectPostDict = {
-        "url_substring": "project",
+        "url_substring": URLSubstring.PROJECT,
         "expect_json": True,
     }
     EXPERIMENT: ObjectPostDict = {
-        "url_substring": "experiment",
+        "url_substring": URLSubstring.EXPERIMENT,
         "expect_json": True,
     }
     DATASET: ObjectPostDict = {
-        "url_substring": "dataset",
+        "url_substring": URLSubstring.DATASET,
         "expect_json": True,
     }
     DATAFILE: ObjectPostDict = {
-        "url_substring": "dataset_file",
+        "url_substring": URLSubstring.DATAFILE,
         "expect_json": True,
     }
     PROJECT_PARAMETERS: ObjectPostDict = {
-        "url_substring": "projectparameterset",
+        "url_substring": URLSubstring.PROJECT_PARAMETERS,
         "expect_json": False,
     }
     EXPERIMENT_PARAMETERS: ObjectPostDict = {
-        "url_substring": "experimentparameterset",
+        "url_substring": URLSubstring.EXPERIMENT_PARAMETERS,
         "expect_json": False,
     }
     DATASET_PARAMETERS: ObjectPostDict = {
-        "url_substring": "datsetparameterset",
+        "url_substring": URLSubstring.DATASET_PARAMETERS,
         "expect_json": False,
     }
 
@@ -60,7 +74,7 @@ class ObjectPostEnum(Enum):
 class ObjectSearchDict(TypedDict):
     type: MyTardisObject
     target: str
-    url_substring: str
+    url_substring: URLSubstring
 
 
 # FIXME there is quite a substantial problem with how we search for potential
@@ -74,42 +88,42 @@ class ObjectSearchEnum(Enum):
     PROJECT: ObjectSearchDict = {
         "type": MyTardisObject.PROJECT,
         "target": "name",
-        "url_substring": "project",
+        "url_substring": URLSubstring.PROJECT,
     }
     EXPERIMENT: ObjectSearchDict = {
         "type": MyTardisObject.EXPERIMENT,
         "target": "title",
-        "url_substring": "experiment",
+        "url_substring": URLSubstring.EXPERIMENT,
     }
     DATASET: ObjectSearchDict = {
         "type": MyTardisObject.DATASET,
         "target": "description",
-        "url_substring": "dataset",
+        "url_substring": URLSubstring.DATASET,
     }
     DATAFILE: ObjectSearchDict = {
         "type": MyTardisObject.DATAFILE,
         "target": "filename",
-        "url_substring": "dataset_file",
+        "url_substring": URLSubstring.DATAFILE,
     }
     INSTITUTION: ObjectSearchDict = {
         "type": MyTardisObject.INSTITUTION,
         "target": "name",
-        "url_substring": "institution",
+        "url_substring": URLSubstring.INSTITUTION,
     }
     INSTRUMENT: ObjectSearchDict = {
         "type": MyTardisObject.INSTRUMENT,
         "target": "name",
-        "url_substring": "instrument",
+        "url_substring": URLSubstring.INSTRUMENT,
     }
     FACILITY: ObjectSearchDict = {
         "type": MyTardisObject.FACILITY,
         "target": "name",
-        "url_substring": "facility",
+        "url_substring": URLSubstring.FACILITY,
     }
     STORAGE_BOX: ObjectSearchDict = {
-        "type": MyTardisObject.STORAGEBOX,
+        "type": MyTardisObject.STORAGE_BOX,
         "target": "name",
-        "url_substring": "storagebox",
+        "url_substring": URLSubstring.STORAGE_BOX,
     }
 
 
