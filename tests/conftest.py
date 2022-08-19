@@ -509,66 +509,6 @@ def preconditioned_datafile_dictionary():
 
 # =========================================
 #
-# Config fixtures
-#
-# =========================================
-
-
-@fixture
-def config_dict(
-    username,
-    api_key,
-    hostname,
-    verify_certificate,
-    proxies,
-    source_dir,
-    target_dir,
-    storage_box,
-    default_institution,
-    project_schema,
-    experiment_schema,
-    dataset_schema,
-    datafile_schema,
-):
-    return {
-        "username": username,
-        "api_key": api_key,
-        "hostname": hostname,
-        "verify_certificate": verify_certificate,
-        "proxy_http": proxies["http"],
-        "proxy_https": proxies["https"],
-        "source_directory": source_dir,
-        "target_directory": target_dir,
-        "storage_box": storage_box.name,
-        "default_institution": default_institution,
-        "default_schema": {
-            "project": project_schema,
-            "experiment": experiment_schema,
-            "dataset": dataset_schema,
-            "datafile": datafile_schema,
-        },
-    }
-
-
-@fixture
-def processed_introspection_response(old_acls, projects_enabled, objects_with_ids):
-    return {
-        "old_acls": old_acls,
-        "projects_enabled": projects_enabled,
-        "objects_with_ids": objects_with_ids,
-    }
-
-
-@fixture
-def mytardis_config(config_dict, projects_enabled, objects_with_ids):
-    configuration = config_dict
-    configuration["projects_enabled"] = projects_enabled
-    configuration["objects_with_ids"] = objects_with_ids
-    return configuration
-
-
-# =========================================
-#
 # Mocked responses
 #
 # =========================================
