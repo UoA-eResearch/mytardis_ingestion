@@ -5,12 +5,13 @@ from pathlib import Path
 from typing import List
 
 from pytest import fixture
-from src.blueprints.storage_boxes import StorageBox
 
-import tests.fixtures_constants as const
-import tests.fixtures_dataclasses as dcls
-from src.crucible import Crucible
-from src.forges.forge import Forge
+import tests.fixtures.fixtures_constants as const
+import tests.fixtures.fixtures_dataclasses as dcls
+import tests.fixtures.mock_rest_factory as mock_rest
+import tests.fixtures.fixtures_ingestion_classes as ingestion_classes
+
+
 from src.helpers.config import (
     AuthConfig,
     ConfigFromEnv,
@@ -21,11 +22,7 @@ from src.helpers.config import (
     SchemaConfig,
     StorageConfig,
 )
-from src.helpers.mt_rest import MyTardisRESTFactory
-from src.ingestion_factory import IngestionFactory
-from src.overseers.inspector import Inspector
-from src.overseers.overseer import Overseer
-from src.smelters import Smelter
+
 
 # =============================
 #
@@ -155,21 +152,6 @@ refined_project = dcls.refined_project
 refined_experiment = dcls.refined_experiment
 refined_datafile = dcls.refined_datafile
 refined_dataset = dcls.refined_dataset
-# =============================
-#
-# Helper functions
-#
-# ==============================
-# =============================
-#
-# Helper functions
-#
-# ==============================
-# =============================
-#
-# Helper functions
-#
-# ==============================
 
 
 # =========================================
@@ -536,13 +518,6 @@ def preconditioned_datafile_dictionary():
         "schema": "https://test.mytardis.nectar.auckland.ac.nz/datafile/v1",
         "file_path": "test_data.dat",
     }
-
-
-# =========================================
-#
-# Dataclass fixtures
-#
-# =========================================
 
 
 # =========================================
@@ -1039,47 +1014,12 @@ def mytardis_settings(
 # =========================================
 
 
-@fixture
-def rest_factory(auth: AuthConfig, connection: ConnectionConfig):
-    return MyTardisRESTFactory(auth, connection)
-
-
-@fixture
-def overseer(rest_factory: MyTardisRESTFactory, mytardis_setup: IntrospectionConfig):
-    return Overseer(rest_factory, mytardis_setup)
-
-
-@fixture
-def smelter(
-    general: GeneralConfig,
-    default_schema: SchemaConfig,
-    storage_box: StorageBox,
-    mytardis_setup: IntrospectionConfig,
-):
-    return Smelter(general, default_schema, storage_box, mytardis_setup)
-
-
-@fixture
-def forge(rest_factory: MyTardisRESTFactory):
-    return Forge(rest_factory)
-
-
-@fixture
-def crucible(overseer: Overseer, mytardis_setup: IntrospectionConfig):
-    return Crucible(overseer, mytardis_setup)
-
-
-@fixture
-def inspector(overseer: Overseer, mytardis_setup: IntrospectionConfig):
-    return Inspector(overseer, mytardis_setup)
-
-
-@fixture
-def factory(
-    smelter: Smelter,
-    inspector: Inspector,
-    forge: Forge,
-    overseer: Overseer,
-    crucible: Crucible,
-):
-    return IngestionFactory(smelter, inspector, forge, overseer, crucible)
+rest_factory = ingestion_classes.rest_factory
+mock_mt_rest = mock_rest.mock_mt_rest
+mocked_responses = mock_rest.mocked_responses
+overseer = ingestion_classes.overseer
+smelter = ingestion_classes.smelter
+forge = ingestion_classes.forge
+crucible = ingestion_classes.crucible
+inspector = ingestion_classes.inspector
+factory = ingestion_classes.factory
