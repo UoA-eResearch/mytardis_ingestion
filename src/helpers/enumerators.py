@@ -116,6 +116,7 @@ class ObjectDict(TypedDict):
     search_type: ObjectSearchEnum
 
 
+# TODO do we need more match_keys like pid?
 class ObjectEnum(Enum):
     """An enumerator for hierarchy objects in MyTardis"""
 

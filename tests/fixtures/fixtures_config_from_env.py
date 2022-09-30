@@ -13,6 +13,22 @@ from src.helpers.config import (
 
 
 @fixture
+def processed_introspection_response():
+    return {
+        "old_acls": False,
+        "projects_enabled": True,
+        "objects_with_ids": [
+            "dataset",
+            "experiment",
+            "facility",
+            "instrument",
+            "project",
+            "institution",
+        ],
+    }
+
+
+@fixture
 def general(default_institution) -> GeneralConfig:
     return GeneralConfig(default_institution=default_institution)
 

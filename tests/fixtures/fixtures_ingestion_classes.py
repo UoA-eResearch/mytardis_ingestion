@@ -1,6 +1,7 @@
 from pytest import fixture
-from src.blueprints.storage_boxes import StorageBox
+import responses
 
+from src.blueprints.storage_boxes import StorageBox
 from src.overseers.overseer import Overseer
 from src.overseers.inspector import Inspector
 from src.smelters.smelter import Smelter
@@ -15,6 +16,7 @@ from src.helpers.config import (
     SchemaConfig,
 )
 from src.helpers.mt_rest import MyTardisRESTFactory
+from tests.fixtures.mock_rest_factory import MockMtRest
 
 
 @fixture
@@ -25,6 +27,14 @@ def rest_factory(auth: AuthConfig, connection: ConnectionConfig):
 @fixture
 def overseer(rest_factory: MyTardisRESTFactory, mytardis_setup: IntrospectionConfig):
     return Overseer(rest_factory, mytardis_setup)
+
+
+@fixture
+def mock_overseer(mock_mt_rest: MockMtRest, mytardis_setup: IntrospectionConfig):
+    def _get_mock_overseer(mock_responses: responses.RequestsMock):
+        return Overseer(mock_mt_rest(mock_responses), mytardis_setup)
+
+    return _get_mock_overseer
 
 
 @fixture
@@ -50,6 +60,14 @@ def crucible(overseer: Overseer, mytardis_setup: IntrospectionConfig):
 @fixture
 def inspector(overseer: Overseer):
     return Inspector(overseer)
+
+
+@fixture
+def mock_inspector(mock_overseer: Overseer):
+    def _get_mock_inspector(mock_requests: responses.RequestsMock):
+        return Inspector(mock_overseer(mock_requests))
+
+    return _get_mock_inspector
 
 
 @fixture

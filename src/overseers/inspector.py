@@ -133,7 +133,7 @@ class Inspector:
         search_list = []
         if not isinstance(raw_object, RawDatafile):
             if raw_object.persistent_id:
-                search_list.append(raw_object.persistent_id)
+                search_set.add(raw_object.persistent_id)
             if raw_object.alternate_ids:
                 search_list.append(*raw_object.alternate_ids)
         search_list.append(object_name)

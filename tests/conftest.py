@@ -514,6 +514,7 @@ def preconditioned_datafile_dictionary():
 # =========================================
 
 response_dict_not_found = rsps.response_dict_not_found
+datafile_response_dict = rsps.datafile_response_dict
 dataset_response_dict = rsps.dataset_response_dict
 experiment_response_dict = rsps.experiment_response_dict
 project_response_dict = rsps.project_response_dict
@@ -522,6 +523,7 @@ introspection_response_dict = rsps.introspection_response_dict
 institution_response_dict = rsps.institution_response_dict
 storage_box_response_dict = rsps.storage_box_response_dict
 project_creation_response_dict = rsps.project_creation_response_dict
+response_by_substring = rsps.response_by_substring
 
 
 # =========================================
@@ -530,6 +532,7 @@ project_creation_response_dict = rsps.project_creation_response_dict
 #
 # =========================================
 
+processed_introspection_response = cfg.processed_introspection_response
 general = cfg.general
 auth = cfg.auth
 connection = cfg.connection
@@ -544,15 +547,16 @@ mytardis_settings = cfg.mytardis_settings
 #
 # Ingestion classes
 #
-# =========================================
+# =========================================f
 
 
 rest_factory = ingestion_classes.rest_factory
 mock_mt_rest = mock_rest.mock_mt_rest
-mocked_responses = mock_rest.mocked_responses
 overseer = ingestion_classes.overseer
+mock_overseer = ingestion_classes.mock_overseer
 smelter = ingestion_classes.smelter
 forge = ingestion_classes.forge
 crucible = ingestion_classes.crucible
 inspector = ingestion_classes.inspector
+mock_inspector = ingestion_classes.mock_inspector
 factory = ingestion_classes.factory

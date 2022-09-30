@@ -1,4 +1,7 @@
+from pathlib import Path
 from pytest import fixture
+
+from src.helpers.enumerators import URLSubstring
 
 
 @fixture
@@ -16,7 +19,57 @@ def response_dict_not_found():
 
 
 @fixture
-def dataset_response_dict():
+def datafile_response_dict(
+    filename: str,
+    datafile_md5sum: str,
+    datafile_mimetype: str,
+    datafile_size: int,
+    datafile_dataset: str,
+):
+    return {
+        "meta": {
+            "limit": 20,
+            "next": None,
+            "offset": 0,
+            "previous": None,
+            "total_count": 6,
+        },
+        "objects": [
+            {
+                "created_time": None,
+                "datafile": None,
+                "dataset": datafile_dataset,
+                "deleted": False,
+                "deleted_time": None,
+                "directory": None,
+                "filename": filename,
+                "id": 1,
+                "md5sum": datafile_md5sum,
+                "mimetype": datafile_mimetype,
+                "modification_time": None,
+                "parameter_sets": [],
+                "public_access": 100,
+                "replicas": [],
+                "resource_uri": "/api/v1/dataset_file/1002735/",
+                "sha512sum": "",
+                "size": datafile_size,
+                "tags": [],
+                "version": 1,
+            }
+        ],
+    }
+
+
+@fixture
+def dataset_response_dict(
+    dataset_dir: Path,
+    dataset_name: str,
+    dataset_description: str,
+    dataset_experiments: list[str],
+    dataset_instrument: str,
+    dataset_pid: str,
+    dataset_ids: list[str],
+):
     return {
         "meta": {
             "limit": 20,
@@ -27,19 +80,14 @@ def dataset_response_dict():
         },
         "objects": [
             {
-                "alternate_ids": [
-                    "Test_Dataset",
-                    "Dataset_Test_1",
-                ],
+                "alternate_ids": dataset_ids,
                 "created_time": "2000-01-01T00:00:00",
                 "dataset_datafile_count": 2,
                 "dataset_experiment_count": 1,
                 "dataset_size": 1000000,
-                "description": "A test dataset for the purposes of testing",
-                "directory": None,
-                "experiments": [
-                    "/api/v1/experiment/1",
-                ],
+                "description": dataset_name,  # TODO should this be name or description, no dataset name???
+                "directory": dataset_dir.as_posix(),
+                "experiments": dataset_experiments,
                 "id": 1,
                 "immutable": False,
                 "instrument": {
@@ -66,13 +114,13 @@ def dataset_response_dict():
                         "resource_uri": "/api/v1/facility/1/",
                     },
                     "modified_time": "2000-01-01T00:00:00",
-                    "name": "Test Instrument",
+                    "name": dataset_instrument,
                     "persistent_id": "Instrument_1",
                     "resource_uri": "/api/v1/instrument/1/",
                 },
                 "modified_time": "2000-01-01T00:00:00",
                 "parameter_sets": [],
-                "persistent_id": "Dataset_1",
+                "persistent_id": dataset_pid,
                 "public_access": 1,
                 "resource_uri": "/api/v1/dataset/1/",
                 "tags": [],
@@ -82,7 +130,14 @@ def dataset_response_dict():
 
 
 @fixture
-def experiment_response_dict():
+def experiment_response_dict(
+    experiment_pid: str,
+    experiment_ids: list[str],
+    experiment_description: str,
+    experiment_institution: str,
+    experiment_name: str,
+    experiment_url: str,
+):
     return {
         "meta": {
             "limit": 20,
@@ -93,43 +148,48 @@ def experiment_response_dict():
         },
         "objects": [
             {
-                "alternate_ids": [
-                    "Test_Experiment",
-                    "Experiment_Test_1",
-                ],
+                "alternate_ids": experiment_ids,
                 "approved": False,
                 "authors": [],
                 "created_by": "api/v1/user/1/",
                 "created_time": "2000-01-01T00:00:00",
                 "datafile_count": 2,
                 "dataset_count": 1,
-                "description": "A test experiment for the purposes of testing",
+                "description": experiment_description,
                 "end_time": None,
                 "experiment_size": 1000000,
                 "handle": None,
                 "id": 1,
-                "institution_name": "Test Institution",
+                "institution_name": experiment_institution,
                 "locked": False,
                 "owner_ids": [
                     1,
                     2,
                 ],
                 "parameter_sets": [],
-                "persistent_id": "Experiment_1",
+                "persistent_id": experiment_pid,
                 "public_access": 1,
                 "resource_uri": "/api/v1/experiment/1/",
                 "start_time": "2000-01-01T00:00:00",
                 "tags": [],
-                "title": "Test Experiment",
+                "title": experiment_name,
                 "update_time": "2000-01-01T00:00:00",
-                "url": None,
+                "url": experiment_url,
             }
         ],
     }
 
 
 @fixture
-def project_response_dict():
+def project_response_dict(
+    project_pid: str,
+    project_ids: list[str],
+    project_description: str,
+    project_institutions: list[str],
+    project_name: str,
+    project_principal_investigator: str,
+    project_url: str,
+):
     return {
         "meta": {
             "limit": 20,
@@ -140,32 +200,27 @@ def project_response_dict():
         },
         "objects": [
             {
-                "alternate_ids": [
-                    "Test_Project",
-                    "Project_Test_1",
-                ],
+                "alternate_ids": project_ids,
                 "created_by": "api/v1/user/1/",
                 "datafile_count": 2,
                 "dataset_count": 1,
-                "description": "A test project for the purposes of testing",
+                "description": project_description,
                 "embargo_until": None,
                 "end_time": None,
                 "experiment_count": 1,
                 "id": 1,
-                "institution": [
-                    "api/v1/institution/1/",
-                ],
+                "institution": project_institutions,
                 "locked": False,
-                "name": "Test Project",
+                "name": project_name,
                 "parameter_sets": [],
-                "persistent_id": "Project_1",
-                "principal_investigator": "upi001",
+                "persistent_id": project_pid,
+                "principal_investigator": project_principal_investigator,
                 "public_access": 1,
                 "resource_uri": "/api/v1/project/1/",
                 "size": 1000000,
                 "start_time": "2000-01-01T00:00:00",
                 "tags": [],
-                "url": None,
+                "url": project_url,
             }
         ],
     }
@@ -338,3 +393,26 @@ def project_creation_response_dict():
         "tags": [],
         "url": None,
     }
+
+
+@fixture
+def response_by_substring(
+    response_dict_not_found,
+    dataset_response_dict,
+    experiment_response_dict,
+    project_response_dict,
+    datafile_response_dict,
+):
+    def _get_response_dict(substring: URLSubstring):
+        match substring:
+            case URLSubstring.PROJECT:
+                return project_response_dict
+            case URLSubstring.EXPERIMENT:
+                return experiment_response_dict
+            case URLSubstring.DATASET:
+                return dataset_response_dict
+            case URLSubstring.DATAFILE:
+                return datafile_response_dict
+        return response_dict_not_found
+
+    return _get_response_dict
