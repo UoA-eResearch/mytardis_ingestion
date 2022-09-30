@@ -3,10 +3,10 @@
 import logging
 
 
-def check_projects_enabled_and_log_if_not(self) -> bool:
+def log_if_projects_disabled(projects_enabled: bool) -> bool:
     """Test if projects are enabled and return the function if so,
     otherwise log a warning and return None"""
-    if not self.projects_enabled:
+    if not projects_enabled:
         logger = logging.getLogger(__name__)
         logger.warning(
             (
@@ -15,5 +15,5 @@ def check_projects_enabled_and_log_if_not(self) -> bool:
                 "migrations."
             )
         )
-        return False
-    return True
+
+    return projects_enabled

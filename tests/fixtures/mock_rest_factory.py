@@ -1,5 +1,4 @@
-# pylint: disable=missing-function-docstring,missing-module-docstring
-
+# pylint: disable=missing-function-docstring,missing-module-docstring,unsubscriptable-object
 import responses
 from pytest import fixture
 
@@ -8,19 +7,14 @@ from src.helpers.config import AuthConfig, ConnectionConfig
 
 
 @fixture
-def mocked_responses():
-    with responses.RequestsMock() as rsps:
-        rsps.get("https://example.com", status=200)
-        yield rsps
-
-
-@fixture
 def mock_mt_rest(
     auth: AuthConfig,
     connection: ConnectionConfig,
-    mocked_responses: responses.RequestsMock,
 ):
-    return MockMtRest(auth=auth, connection=connection).setup(mocked_responses)
+    def _get_mock_mt_rest(custom_mocks: responses.RequestsMock):
+        return MockMtRest(auth=auth, connection=connection).setup(custom_mocks)
+
+    return _get_mock_mt_rest
 
 
 class MockMtRest(MyTardisRESTFactory):

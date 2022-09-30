@@ -27,7 +27,7 @@ from src.blueprints.storage_boxes import StorageBox
 from src.helpers import (
     GeneralConfig,
     SchemaConfig,
-    check_projects_enabled_and_log_if_not,
+    log_if_projects_disabled,
 )
 
 logger = logging.getLogger(__name__)
@@ -95,7 +95,7 @@ class Smelter:
         """Inject the schema into the project dictionary if it's not
         already present. Do the same for an institution and convert to
         a RawProject dataclass for validation."""
-        if not check_projects_enabled_and_log_if_not(self):
+        if not log_if_projects_disabled(self.projects_enabled):
             return None
         schema = raw_project.object_schema or self.default_schema.project
         if not schema:

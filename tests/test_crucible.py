@@ -5,15 +5,6 @@ from copy import deepcopy
 import responses
 from responses import matchers
 
-from .conftest import (
-    config_dict,
-    crucible,
-    institution_response_dict,
-    project_response_dict,
-    tidied_experiment_dictionary,
-    tidied_project_dictionary,
-)
-
 
 @responses.activate
 def test_prepare_project(

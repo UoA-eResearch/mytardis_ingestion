@@ -2,7 +2,7 @@
 
 import logging
 
-from src.helpers.project_aware import check_projects_enabled_and_log_if_not
+from src.helpers.project_aware import log_if_projects_disabled
 
 
 class ProjectAwareClass:
@@ -13,7 +13,7 @@ class ProjectAwareClass:
         self.projects_enabled = projects_enabled
 
     def test_function(self) -> bool:
-        projects_enabled = check_projects_enabled_and_log_if_not(self)
+        projects_enabled = log_if_projects_disabled(self)
         return projects_enabled
 
 

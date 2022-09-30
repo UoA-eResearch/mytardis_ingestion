@@ -107,6 +107,7 @@ class Overseer:
         response_dict = response.json()
         return response_dict
 
+    # TODO we might want to add a get_objects function that let's you search for specific query param combinations. Right now it checks if the search string is in any of the object_type["target"] and "pids" fields but often we know where those should be found, i.e. when we pass in a search_string we know it's either a pid, alternative_id or name
     def get_objects(
         self,
         object_type: ObjectSearchDict,
