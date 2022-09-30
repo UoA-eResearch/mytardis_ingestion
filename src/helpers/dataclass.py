@@ -10,14 +10,14 @@ from src.blueprints.experiment import (
     RawExperiment,
     RefinedExperiment,
 )
-from src.blueprints.project import ProjectParameterSet
+from src.blueprints.project import ProjectParameterSet, RawProject, RefinedProject
 from src.helpers import ObjectEnum
 from src.helpers.enumerators import ObjectDict, ObjectPostDict, ObjectPostEnum
 
 
 def get_object_name(
     object_class: BaseDatafile | BaseDataset | BaseExperiment | BaseProject,
-) -> str | None:
+) -> str:
     """Generic helper function to get the name from a MyTardis  dataclass object"""
     if isinstance(object_class, BaseDatafile):
         return object_class.filename
@@ -27,12 +27,11 @@ def get_object_name(
         return object_class.title
     if isinstance(object_class, BaseProject):
         return object_class.name
-    return None
 
 
 def get_object_type(
     object_class: BaseDatafile | BaseDataset | BaseExperiment | BaseProject,
-) -> ObjectDict | None:
+) -> ObjectDict:
     """Generic helper function to get the name from a MyTardis  dataclass object"""
     if isinstance(object_class, BaseDatafile):
         return ObjectEnum.DATAFILE.value
@@ -42,7 +41,6 @@ def get_object_type(
         return ObjectEnum.EXPERIMENT.value
     if isinstance(object_class, BaseProject):
         return ObjectEnum.PROJECT.value
-    return None
 
 
 def get_object_parents(
@@ -51,7 +49,9 @@ def get_object_parents(
     | RawDataset
     | RefinedDataset
     | RawExperiment
-    | RefinedExperiment,
+    | RefinedExperiment
+    | RawProject
+    | RefinedProject,
 ) -> List[str] | None:
     """Function to get the parent objects from teh RawObject classes."""
     if isinstance(object_class, BaseDatafile):
@@ -60,7 +60,8 @@ def get_object_parents(
         return object_class.experiments
     if isinstance(object_class, BaseExperiment):
         return object_class.projects
-    return None
+    if isinstance(object_class, BaseProject):
+        return None
 
 
 def get_object_post_type(  # pylint: disable=too-many-return-statements
@@ -71,7 +72,7 @@ def get_object_post_type(  # pylint: disable=too-many-return-statements
     | ProjectParameterSet
     | ExperimentParameterSet
     | DatasetParameterSet,
-) -> ObjectPostDict | None:
+) -> ObjectPostDict:
     """Generic helper function to return the parameeters needed to correctly
     POST or PUT/PATCH a MyTardis object."""
 
@@ -89,4 +90,3 @@ def get_object_post_type(  # pylint: disable=too-many-return-statements
         return ObjectPostEnum.EXPERIMENT_PARAMETERS.value
     if isinstance(object_class, DatasetParameterSet):
         return ObjectPostEnum.DATASET_PARAMETERS.value
-    return None
