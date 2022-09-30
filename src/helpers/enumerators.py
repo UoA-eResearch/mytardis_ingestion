@@ -62,6 +62,10 @@ class ObjectSearchDict(TypedDict):
     url_substring: str
 
 
+# FIXME there is quite a substantial problem with how we search for potential
+# matches; whatever we search on must be unique, e.g. 2 files have the same
+# name, but are part of different datasets with our current matching logic the 2
+# files will be partial matches and therefore the new file won't be ingested
 class ObjectSearchEnum(Enum):
     """An enumerator for objects that can be searched for in
     MyTardis via the API"""
