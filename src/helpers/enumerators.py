@@ -15,6 +15,7 @@ class MyTardisObject(str, Enum):
     PROJECT = "project"
     INSTITUTION = "institution"
     DATAFILE = "datafile"
+    STORAGEBOX = "storagebox"
 
 
 class ObjectPostDict(TypedDict):
@@ -57,7 +58,7 @@ class ObjectPostEnum(Enum):
 
 
 class ObjectSearchDict(TypedDict):
-    type: str
+    type: MyTardisObject
     target: str
     url_substring: str
 
@@ -71,42 +72,42 @@ class ObjectSearchEnum(Enum):
     MyTardis via the API"""
 
     PROJECT: ObjectSearchDict = {
-        "type": "project",
+        "type": MyTardisObject.PROJECT,
         "target": "name",
         "url_substring": "project",
     }
     EXPERIMENT: ObjectSearchDict = {
-        "type": "experiment",
+        "type": MyTardisObject.EXPERIMENT,
         "target": "title",
         "url_substring": "experiment",
     }
     DATASET: ObjectSearchDict = {
-        "type": "dataset",
+        "type": MyTardisObject.DATASET,
         "target": "description",
         "url_substring": "dataset",
     }
     DATAFILE: ObjectSearchDict = {
-        "type": "datafile",
+        "type": MyTardisObject.DATAFILE,
         "target": "filename",
         "url_substring": "dataset_file",
     }
     INSTITUTION: ObjectSearchDict = {
-        "type": "institution",
+        "type": MyTardisObject.INSTITUTION,
         "target": "name",
         "url_substring": "institution",
     }
     INSTRUMENT: ObjectSearchDict = {
-        "type": "instrument",
+        "type": MyTardisObject.INSTRUMENT,
         "target": "name",
         "url_substring": "instrument",
     }
     FACILITY: ObjectSearchDict = {
-        "type": "facility",
+        "type": MyTardisObject.FACILITY,
         "target": "name",
         "url_substring": "facility",
     }
     STORAGE_BOX: ObjectSearchDict = {
-        "type": "storagebox",
+        "type": MyTardisObject.STORAGEBOX,
         "target": "name",
         "url_substring": "storagebox",
     }
@@ -116,8 +117,8 @@ class ObjectDict(TypedDict):
     type: MyTardisObject
     name: str
     match_keys: list[str]
-    parent: str | None
-    search_type: ObjectSearchEnum
+    parent: MyTardisObject | None
+    search_type: ObjectSearchDict
 
 
 # TODO do we need more match_keys like pid?
@@ -133,7 +134,7 @@ class ObjectEnum(Enum):
             "principal_investigator",
         ],
         "parent": None,
-        "search_type": ObjectSearchEnum.PROJECT,
+        "search_type": ObjectSearchEnum.PROJECT.value,
     }
     EXPERIMENT: ObjectDict = {
         "type": MyTardisObject.EXPERIMENT,
@@ -142,8 +143,8 @@ class ObjectEnum(Enum):
             "title",
             "description",
         ],
-        "parent": "project",
-        "search_type": ObjectSearchEnum.EXPERIMENT,
+        "parent": MyTardisObject.PROJECT,
+        "search_type": ObjectSearchEnum.EXPERIMENT.value,
     }
     DATASET: ObjectDict = {
         "type": MyTardisObject.DATASET,
@@ -151,8 +152,8 @@ class ObjectEnum(Enum):
         "match_keys": [
             "description",
         ],
-        "parent": "experiment",
-        "search_type": ObjectSearchEnum.DATASET,
+        "parent": MyTardisObject.EXPERIMENT,
+        "search_type": ObjectSearchEnum.DATASET.value,
     }
     DATAFILE: ObjectDict = {
         "type": MyTardisObject.DATAFILE,
@@ -162,6 +163,6 @@ class ObjectEnum(Enum):
             "size",
             "md5sum",
         ],
-        "parent": "dataset",
-        "search_type": ObjectSearchEnum.DATAFILE,
+        "parent": MyTardisObject.DATASET,
+        "search_type": ObjectSearchEnum.DATAFILE.value,
     }
