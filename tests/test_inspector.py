@@ -17,6 +17,7 @@ from src.helpers.enumerators import (
 )
 from src.overseers.inspector import Inspector
 from src.helpers.config import ConnectionConfig
+from src.helpers.dataclass import get_object_name, get_object_type, get_object_parents
 
 # TODO add other id fixtures here
 @pytest.fixture
