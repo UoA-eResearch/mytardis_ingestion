@@ -14,7 +14,7 @@ from src.blueprints.project import RawProject
 from src.crucible.crucible import Crucible
 from src.forges import Forge
 from src.helpers.dataclass import get_object_name
-from src.overseers import Inspector, Overseer
+from src.overseers import Overseer
 from src.smelters import Smelter
 
 logger = logging.getLogger(__name__)
@@ -45,7 +45,6 @@ class IngestionFactory:
         self,
         # mytardis_setup: IntrospectionConfig,
         smelter: Smelter,
-        inspector: Inspector,
         forge: Forge,
         overseer: Overseer,
         crucible: Crucible,
@@ -72,7 +71,6 @@ class IngestionFactory:
         # self.mytardis_setup = mytardis_setup
         self.forge = forge
         self.smelter = smelter
-        self.inspector = inspector
         self.crucible = crucible
 
     def process_projects(

@@ -557,6 +557,4 @@ mock_overseer = ingestion_classes.mock_overseer
 smelter = ingestion_classes.smelter
 forge = ingestion_classes.forge
 crucible = ingestion_classes.crucible
-inspector = ingestion_classes.inspector
-mock_inspector = ingestion_classes.mock_inspector
 factory = ingestion_classes.factory

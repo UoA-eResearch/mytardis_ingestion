@@ -3,7 +3,6 @@ import responses
 
 from src.blueprints.storage_boxes import StorageBox
 from src.overseers.overseer import Overseer
-from src.overseers.inspector import Inspector
 from src.smelters.smelter import Smelter
 from src.forges.forge import Forge
 from src.crucible.crucible import Crucible
@@ -58,24 +57,10 @@ def crucible(overseer: Overseer, mytardis_setup: IntrospectionConfig):
 
 
 @fixture
-def inspector(overseer: Overseer):
-    return Inspector(overseer)
-
-
-@fixture
-def mock_inspector(mock_overseer: Overseer):
-    def _get_mock_inspector(mock_requests: responses.RequestsMock):
-        return Inspector(mock_overseer(mock_requests))
-
-    return _get_mock_inspector
-
-
-@fixture
 def factory(
     smelter: Smelter,
-    inspector: Inspector,
     forge: Forge,
     overseer: Overseer,
     crucible: Crucible,
 ):
-    return IngestionFactory(smelter, inspector, forge, overseer, crucible)
+    return IngestionFactory(smelter, forge, overseer, crucible)
