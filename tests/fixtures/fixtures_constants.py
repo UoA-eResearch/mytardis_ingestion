@@ -6,6 +6,7 @@ import pytz
 from pytest import fixture
 
 from src.blueprints import GroupACL, Parameter, UserACL, Username
+from src.blueprints.custom_data_types import URI
 
 
 @fixture
@@ -532,3 +533,18 @@ def directory_relative_to_storage_box(
     filename: str,
 ) -> Path:
     return Path(target_dir / dataset_dir / filename)
+
+
+@fixture
+def project_uri():
+    return URI("/api/v1/project/1/")
+
+
+@fixture
+def institution_uri():
+    return URI("/api/v1/institution/1/")
+
+
+@fixture
+def user_uri():
+    return URI("/api/v1/user/1/")

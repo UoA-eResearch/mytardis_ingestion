@@ -1,7 +1,6 @@
 # pylint: disable=too-few-public-methods,no-name-in-module,duplicate-code
 """Pydantic model defining an Experiment for ingestion into MyTardis"""
 
-from abc import ABC
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -11,7 +10,7 @@ from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime
 
 
-class BaseExperiment(BaseModel, ABC):
+class BaseExperiment(BaseModel):
     """Abstract base class for an experiment. The two concrete child classes
     validate against different standards, with the Experiment having a more strict
     validation than the RawExperiment class."""

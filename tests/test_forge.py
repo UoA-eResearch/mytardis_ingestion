@@ -1,130 +1,119 @@
 # Old style - at some point in the future could be refactored to use the fixtures
 
+import json
 import logging
-
+from urllib.parse import urljoin
 import pytest
 import responses
+from src.blueprints.custom_data_types import URI
+from src.blueprints.project import Project
 
 from src.forges import Forge
-from src.helpers.config import AuthConfig, ConnectionConfig
+from src.helpers.config import ConnectionConfig
+from src.helpers.enumerators import ObjectPostEnum
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
 test_object_name = "Test Project"
 
-test_object_type = "project"
+test_object_type = "project/"
 
 test_object_id = 1
 
 
 @responses.activate
-def test_post_returns_expected_tuple(
+def test_post_returns_URI_on_success(
     caplog,
-    auth: AuthConfig,
+    project_uri: URI,
     connection: ConnectionConfig,
-    project_object_dictionary,
+    forge: Forge,
+    project: Project,
     project_creation_response_dict,
 ):
     caplog.set_level(logging.INFO)
     responses.add(
         responses.POST,
-        f"https://test.mytardis.nectar.auckland.ac.nz/api/v1/{test_object_type}/",
+        urljoin(connection.api_template, test_object_type),
         status=200,
         json=(project_creation_response_dict),
     )
-    forge = Forge(auth, connection)
-    test_value = forge.forge_object(
-        test_object_name,
-        test_object_type,
-        project_object_dictionary,
-    )
+    test_value = forge.forge_object(project, test_object_id)
+
     info_str = (
-        f"Object: {test_object_name} successfully created in MyTardis\n"
-        f"Object Type: {test_object_type}"
+        f"Object: {project.name} successfully "
+        "created in MyTardis\n"
+        f"Url substring: {ObjectPostEnum.PROJECT.value['url_substring']}"
     )
-    assert test_value == (test_object_name, True, "/api/v1/project/1/")
+    assert test_value == project_uri
     assert info_str in caplog.text
 
 
 @responses.activate
-def test_post_returns_expected_tuple_when_no_json_return(
+def test_post_returns_none_on_missing_body(
     caplog,
-    auth: AuthConfig,
     connection: ConnectionConfig,
-    project_object_dictionary,
+    forge: Forge,
+    project: Project,
 ):
     caplog.set_level(logging.INFO)
     responses.add(
         responses.POST,
-        f"https://test.mytardis.nectar.auckland.ac.nz/api/v1/{test_object_type}/",
+        urljoin(connection.api_template, test_object_type),
         status=201,
     )
-    forge = Forge(auth, connection)
-    test_value = forge.forge_object(
-        test_object_name, test_object_type, project_object_dictionary
-    )
+    test_value = forge.forge_object(project, test_object_id)
+
     info_str = (
-        f"Object: {test_object_name} successfully created in MyTardis\n"
-        f"Object Type: {test_object_type}"
+        f"Expected a JSON return from the POST request "
+        "but no return was found. The object may not have "
+        "been properly created and needs investigating.\n"
+        f"Object in question is: {project}"
     )
-    assert test_value == (test_object_name, True, None)
+    assert test_value is None
     assert info_str in caplog.text
 
 
+# TODO I don't understand what this test is doing
 @responses.activate
+@pytest.mark.skip(reason="What does this test do?")
 def test_overwrite_updates_action(
     caplog,
-    auth: AuthConfig,
+    project_uri: URI,
     connection: ConnectionConfig,
-    project_object_dictionary,
+    forge: Forge,
+    project: Project,
     project_creation_response_dict,
 ):
     caplog.set_level(logging.INFO)
+    url = urljoin(connection.api_template, test_object_type)
     # Catch any accidental POSTs - will cause test to fail if POST not PUT
-    responses.add(
-        responses.POST,
-        f"https://test.mytardis.nectar.auckland.ac.nz/api/v1/{test_object_type}/",
-        status=404,
-    )
+    responses.add(responses.POST, url, status=404)
     responses.add(
         responses.PUT,
-        f"https://test.mytardis.nectar.auckland.ac.nz/api/v1/{test_object_type}/1/",
+        urljoin(url, "1/"),
         status=200,
         json=(project_creation_response_dict),
     )
-    forge = Forge(auth, connection)
-    test_value = forge.forge_object(
-        test_object_name,
-        test_object_type,
-        project_object_dictionary,
-        object_id=1,
-        overwrite_objects=True,
-    )
+    test_value = forge.forge_object(project, test_object_id, True)
     info_str = (
         f"Object: {test_object_name} successfully created in MyTardis\n"
         f"Object Type: {test_object_type}"
     )
-    assert test_value == (test_object_name, True, "/api/v1/project/1/")
+    assert test_value == project_uri
     assert info_str in caplog.text
 
 
 def test_overwrite_without_object_id_logs_warning(
     caplog,
-    auth: AuthConfig,
-    connection: ConnectionConfig,
-    project_object_dictionary,
+    forge: Forge,
+    project: Project,
 ):
     caplog.set_level(logging.WARNING)
-    forge = Forge(auth, connection)
-    forge.forge_object(
-        test_object_name,
-        test_object_type,
-        project_object_dictionary,
-        overwrite_objects=True,
-    )
+    forge.forge_object(project, overwrite_objects=True)
+
     warning_str = (
-        f"Overwrite was requested for an object of type {test_object_type} "
+        f"Overwrite was requested for an object of type {ObjectPostEnum.PROJECT.value} "
         "called from Forge class. There was no object_id passed with this request"
     )
     assert warning_str in caplog.text
@@ -134,53 +123,44 @@ def test_overwrite_without_object_id_logs_warning(
 @responses.activate
 def test_HTTPError_logs_warning(
     caplog,
-    auth: AuthConfig,
     connection: ConnectionConfig,
-    project_object_dictionary,
+    forge: Forge,
+    project: Project,
 ):
+    url = urljoin(connection.api_template, test_object_type)
     responses.add(
         responses.POST,
-        f"https://test.mytardis.nectar.auckland.ac.nz/api/v1/{test_object_type}/",
+        url,
         status=504,
     )
-    test_object_json = dict_to_json(project_object_dictionary)
     caplog.set_level(logging.WARNING)
-    forge = Forge(auth, connection)
-    test_value = forge.forge_object(
-        test_object_name, test_object_type, project_object_dictionary
-    )
+    test_value = forge.forge_object(project, test_object_type)
+
     warning_str = (
         "Failed HTTP request from forge_object call\n"
-        f"object_type: {test_object_type}\n"
-        f"object_dict: {project_object_dictionary}\n"
-        f"object_json: {test_object_json}"
+        f"Url: {url}\nAction: {responses.POST}\nData: {project.json(exclude_none=True)}"
     )
     assert warning_str in caplog.text
-    assert test_value == (test_object_name, False)
+    assert test_value is False
 
 
 @pytest.mark.dependency(depends=["test_HTTPError_logs_warning"])
 @responses.activate
 def test_HTTPError_fully_logs_error_at_error(
     caplog,
-    auth: AuthConfig,
     connection: ConnectionConfig,
-    project_object_dictionary,
+    forge: Forge,
+    project: Project,
 ):
+    url = urljoin(connection.api_template, test_object_type)
     responses.add(
         responses.POST,
-        f"https://test.mytardis.nectar.auckland.ac.nz/api/v1/{test_object_type}/",
+        url,
         status=504,
     )
     caplog.set_level(logging.ERROR)
-    forge = Forge(auth, connection)
-    _ = forge.forge_object(
-        test_object_name, test_object_type, project_object_dictionary
-    )
-    info_str = (
-        "504 Server Error: Gateway Timeout for url: "
-        "https://test.mytardis.nectar.auckland.ac.nz/api/v1/project/"
-    )
+    _ = forge.forge_object(project, test_object_type)
+    info_str = "504 Server Error: Gateway Timeout for url: " f"{url}"
     assert info_str in caplog.text
 
 
@@ -190,85 +170,75 @@ def side_effect_raise_value_error(action, url, **kwargs):
 
 def test_non_HTTPError_logs_error(
     caplog,
-    auth: AuthConfig,
     connection: ConnectionConfig,
-    project_object_dictionary,
+    forge: Forge,
+    project: Project,
 ):
+    url = urljoin(connection.api_template, test_object_type)
     caplog.set_level(logging.WARNING)
-    forge = Forge(auth, connection)
-    test_object_json = dict_to_json(project_object_dictionary)
     forge.rest_factory.mytardis_api_request = side_effect_raise_value_error
     warning_str = (
         "Non-HTTP request from forge_object call\n"
-        f"object_type: {test_object_type}\n"
-        f"object_dict: {project_object_dictionary}\n"
-        f"object_json: {test_object_json}"
+        f"Url: {url}\nAction: POST"
+        f"\nData: {project.json(exclude_none=True)}"
     )
     with pytest.raises(ValueError):
-        _ = forge.forge_object(
-            test_object_name, test_object_type, project_object_dictionary
-        )
-        assert warning_str in caplog.text
-        assert "ValueError" in caplog.text
+        _ = forge.forge_object(project, test_object_type)
+
+    assert warning_str in caplog.text
+    assert "ValueError" in caplog.text
 
 
 @pytest.mark.parametrize("status_code", [300, 301, 302])
 @responses.activate
 def test_response_status_larger_than_300_logs_error(
     caplog,
-    status_code,
-    auth: AuthConfig,
     connection: ConnectionConfig,
-    project_object_dictionary,
+    status_code: int,
+    forge: Forge,
+    project: Project,
 ):
+    url = urljoin(connection.api_template, test_object_type)
     responses.add(
         responses.POST,
-        f"https://test.mytardis.nectar.auckland.ac.nz/api/v1/{test_object_type}/",
+        url,
         status=status_code,
     )
     caplog.set_level(logging.WARNING)
-    forge = Forge(auth, connection)
-    test_value = forge.forge_object(
-        test_object_name, test_object_type, project_object_dictionary
-    )
+    test_value = forge.forge_object(project, test_object_type)
     warning_str = (
         "Object not successfully created in forge_object call\n"
-        f"object_type: {test_object_type}\n"
-        f"object_dict: {project_object_dictionary}\n"
+        f"Url: {url}\nAction: {responses.POST}\nData: {project.json(exclude_none=True)}"
         f"response status code: {status_code}"
     )
     assert warning_str in caplog.text
-    assert test_value == (test_object_name, False)
+    assert test_value is False
 
 
 @responses.activate
 def test_no_uri_returns_warning(
     caplog,
-    auth: AuthConfig,
     connection: ConnectionConfig,
-    project_object_dictionary,
+    forge: Forge,
+    project: Project,
     project_creation_response_dict,
 ):
-
     test_response_dict_without_uri = project_creation_response_dict
     test_response_dict_without_uri.pop("resource_uri")
     responses.add(
         responses.POST,
-        f"https://test.mytardis.nectar.auckland.ac.nz/api/v1/{test_object_type}/",
+        urljoin(connection.api_template, test_object_type),
         status=200,
         json=test_response_dict_without_uri,
     )
     caplog.set_level(logging.WARNING)
-    forge = Forge(auth, connection)
-    test_value = forge.forge_object(
-        test_object_name, test_object_type, project_object_dictionary
-    )
+    test_value = forge.forge_object(project, test_object_type)
     warning_str = (
-        "No URI found for newly created object in forge_object call\n"
-        f"object_type: {test_object_type}\n"
-        f"object_dict: {project_object_dictionary}\n"
-        f"response status code: 200\n"
-        f"response text: {test_response_dict_without_uri}"
+        "No URI was able to be discerned when creating object: "
+        f"{project.name}. Object may have "
+        "been successfully created in MyTardis, but needs further "
+        "investigation."
     )
-    assert test_value == (test_object_name, False)
+
+    assert test_value is None
     assert warning_str in caplog.text

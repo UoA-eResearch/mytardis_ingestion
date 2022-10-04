@@ -13,7 +13,7 @@ class ProjectAwareClass:
         self.projects_enabled = projects_enabled
 
     def test_function(self) -> bool:
-        projects_enabled = log_if_projects_disabled(self)
+        projects_enabled = log_if_projects_disabled(self.projects_enabled)
         return projects_enabled
 
 

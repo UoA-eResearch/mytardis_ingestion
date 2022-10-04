@@ -1,5 +1,7 @@
 from pathlib import Path
 from pytest import fixture
+from src.blueprints.custom_data_types import URI
+from src.blueprints.project import Project
 
 from src.helpers.enumerators import URLSubstring
 
@@ -328,7 +330,7 @@ def institution_response_dict():
 def storage_box_response_dict(
     storage_box_description,
     storage_box_name,
-    storage_box_dir,
+    storage_box_dir: Path,
     storage_box_uri,
 ):
     return {
@@ -352,7 +354,7 @@ def storage_box_response_dict(
                         "id": 1,
                         "key": "location",
                         "resource_uri": "/api/v1/storageboxoption/1/",
-                        "value": storage_box_dir,
+                        "value": storage_box_dir.as_posix(),
                         "value_type": "string",
                     },
                 ],
@@ -364,34 +366,33 @@ def storage_box_response_dict(
 
 
 @fixture
-def project_creation_response_dict():
+def project_creation_response_dict(
+    project: Project, project_uri: URI, institution_uri: URI, user_uri: URI
+):
     return {
-        "alternate_ids": [
-            "Test_Project",
-            "Project_Test_1",
-        ],
-        "created_by": "api/v1/user/1/",
+        "alternate_ids": project.alternate_ids,
+        "created_by": user_uri,
         "datafile_count": 2,
         "dataset_count": 1,
-        "description": "A test project for the purposes of testing",
-        "embargo_until": None,
-        "end_time": None,
+        "description": project.description,
+        "embargo_until": project.embargo_until,
+        "end_time": project.end_time,
         "experiment_count": 1,
         "id": 1,
         "institution": [
-            "api/v1/institution/1/",
+            institution_uri,
         ],
         "locked": False,
-        "name": "Test Project",
+        "name": project.name,
         "parameter_sets": [],
-        "persistent_id": "Project_1",
-        "principal_investigator": "upi001",
+        "persistent_id": project.persistent_id,
+        "principal_investigator": project.persistent_id,
         "public_access": 1,
-        "resource_uri": "/api/v1/project/1/",
+        "resource_uri": project_uri,
         "size": 1000000,
-        "start_time": "2000-01-01T00:00:00",
+        "start_time": project.start_time,
         "tags": [],
-        "url": None,
+        "url": project.url,
     }
 
 
