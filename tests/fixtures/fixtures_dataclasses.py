@@ -6,7 +6,7 @@ from pytest import fixture
 from src.blueprints.dataset import RefinedDataset
 from src.blueprints.experiment import RefinedExperiment
 from src.blueprints.datafile import RefinedDatafile
-from src.blueprints.project import RefinedProject
+from src.blueprints.project import Project, RefinedProject
 from src.blueprints import (
     URI,
     DatafileReplica,
@@ -316,4 +316,23 @@ def refined_datafile(
         dataset=datafile_dataset,
         replicas=[datafile_replica],
         parameter_sets=raw_datafile_parameterset,
+    )
+
+
+@fixture
+def project(refined_project: RefinedProject, institution_uri: URI):
+    return Project(
+        name=refined_project.name,
+        description=refined_project.description,
+        principal_investigator=refined_project.principal_investigator,
+        url=refined_project.url,
+        users=refined_project.users,
+        groups=refined_project.groups,
+        institution=[institution_uri],
+        created_by=refined_project.created_by,
+        start_time=refined_project.start_time,
+        end_time=refined_project.end_time,
+        embargo_until=refined_project.embargo_until,
+        persistent_id=refined_project.persistent_id,
+        alternate_ids=refined_project.alternate_ids,
     )

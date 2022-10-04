@@ -2,7 +2,7 @@
 """Defines Forge class which is a class that creates MyTardis objects."""
 
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Literal, Optional, Tuple
 from urllib.parse import urljoin
 
 import requests
@@ -46,7 +46,7 @@ class Forge:
         """
         self.rest_factory = rest_factory
 
-    def __make_api_call(
+    def _make_api_call(
         self,
         url: str,
         action: str,
@@ -84,7 +84,7 @@ class Forge:
             return None
         return response
 
-    def __get_uri_from_response(self, response_dict: Dict[str, Any]) -> URI | None:
+    def _get_uri_from_response(self, response_dict: Dict[str, Any]) -> URI | None:
         """Take a response dictionary parsed from the JSON return
         of a response and extract the URI from it"""
         try:
@@ -118,7 +118,7 @@ class Forge:
         | DatasetParameterSet,
         object_id: int | None = None,
         overwrite_objects: bool = False,
-    ) -> URI | bool | None:
+    ) -> URI | Literal[False] | None:
         """POSTs a request to create an object in MyTardis
 
         This function prepares a POST request to MyTardis and catches any exceptions.
@@ -161,7 +161,7 @@ class Forge:
         # Consider refactoring this as a function to generate the URL?
         action = "POST"
         url = urljoin(self.rest_factory.api_template, object_type["url_substring"])
-        url = url + "/"
+        url = url + "/"  # TODO do we really need trailing slashes?
         if overwrite_objects:
             if object_id:
                 action = "PUT"
@@ -179,7 +179,7 @@ class Forge:
                     )
                 )
                 return None
-        response = self.__make_api_call(url, action, object_json)
+        response = self._make_api_call(url, action, object_json)
         if response and object_type["expect_json"]:
             try:
                 response_dict = response.json()
@@ -196,14 +196,14 @@ class Forge:
                     )
                 )
                 return None
-            uri = self.__get_uri_from_response(response_dict)
+            uri = self._get_uri_from_response(response_dict)
             if not isinstance(refined_object, ParameterSet):
                 if uri:
                     logger.info(
                         (
                             f"Object: {get_object_name(refined_object)} successfully "
                             "created in MyTardis\n"
-                            f"Object Type: {object_type}"
+                            f"Url substring: {object_type['url_substring']}"
                         )
                     )
                     return uri
@@ -216,7 +216,7 @@ class Forge:
                     )
                 )
                 return None
-        return True
+        return False
 
     def forge_project(
         self,

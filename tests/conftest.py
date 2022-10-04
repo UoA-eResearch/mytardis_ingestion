@@ -2,8 +2,6 @@
 
 import shutil
 from pathlib import Path
-from typing import List
-
 from pytest import fixture
 
 import tests.fixtures.fixtures_constants as const
@@ -96,6 +94,9 @@ created_by_upi = const.created_by_upi
 created_time_datetime = const.created_time_datetime
 created_time_str = const.created_time_str
 directory_relative_to_storage_box = const.directory_relative_to_storage_box
+project_uri = const.project_uri
+institution_uri = const.institution_uri
+user_uri = const.user_uri
 
 # =============================
 #
@@ -142,6 +143,7 @@ refined_project = dcls.refined_project
 refined_experiment = dcls.refined_experiment
 refined_datafile = dcls.refined_datafile
 refined_dataset = dcls.refined_dataset
+project = dcls.project
 
 
 # =========================================
@@ -216,6 +218,7 @@ def tidied_project_dictionary(
         "users": split_and_parse_users,
         "groups": split_and_parse_groups,
         "schema": project_schema,
+        "institution": project_institutions,
     }
     for key in project_metadata.keys():
         return_dict[key] = project_metadata[key]
@@ -550,7 +553,7 @@ mytardis_settings = cfg.mytardis_settings
 #
 # Ingestion classes
 #
-# =========================================f
+# =========================================
 
 
 rest_factory = ingestion_classes.rest_factory

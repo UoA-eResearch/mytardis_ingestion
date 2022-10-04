@@ -1,6 +1,7 @@
 # pylint: disable=missing-function-docstring
 
 """Tests of the Overseer class and its functions"""
+import json
 import logging
 from copy import deepcopy
 from pathlib import Path
@@ -374,28 +375,11 @@ def test_get_storagebox(
 ):
     responses.add(
         responses.GET,
-        urljoin(
-            connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]
-        ),
+        urljoin(connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]),
         match=[
             matchers.query_param_matcher(
                 {
                     "name": storage_box_name,
-                },
-            ),
-        ],
-        json=(storage_box_response_dict),
-        status=200,
-    )
-    responses.add(
-        responses.GET,
-        urljoin(
-            connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]
-        ),
-        match=[
-            matchers.query_param_matcher(
-                {
-                    "pids": storage_box_name,
                 },
             ),
         ],
@@ -417,9 +401,7 @@ def test_get_storagebox_no_storage_box_found(
     warning_str = f"Unable to locate storage box called {storage_box_name}"
     responses.add(
         responses.GET,
-        urljoin(
-            connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]
-        ),
+        urljoin(connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]),
         match=[
             matchers.query_param_matcher(
                 {
@@ -432,9 +414,7 @@ def test_get_storagebox_no_storage_box_found(
     )
     responses.add(
         responses.GET,
-        urljoin(
-            connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]
-        ),
+        urljoin(connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]),
         match=[
             matchers.query_param_matcher(
                 {
@@ -465,9 +445,7 @@ def test_get_storagebox_too_many_returns(
     storage_box_response_dict["objects"].append({"name": "Test_box_2"})
     responses.add(
         responses.GET,
-        urljoin(
-            connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]
-        ),
+        urljoin(connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]),
         match=[
             matchers.query_param_matcher(
                 {
@@ -480,9 +458,7 @@ def test_get_storagebox_too_many_returns(
     )
     responses.add(
         responses.GET,
-        urljoin(
-            connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]
-        ),
+        urljoin(connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]),
         match=[
             matchers.query_param_matcher(
                 {
@@ -514,9 +490,7 @@ def test_get_storagebox_no_name(
     )
     responses.add(
         responses.GET,
-        urljoin(
-            connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]
-        ),
+        urljoin(connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]),
         match=[
             matchers.query_param_matcher(
                 {
@@ -529,9 +503,7 @@ def test_get_storagebox_no_name(
     )
     responses.add(
         responses.GET,
-        urljoin(
-            connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]
-        ),
+        urljoin(connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]),
         match=[
             matchers.query_param_matcher(
                 {
@@ -558,14 +530,10 @@ def test_get_storagebox_no_location(
     storage_box_response_dict["objects"][0]["options"] = [
         {"key": "not_location", "value": "Nothing"},
     ]
-    warning_str = (
-        f"Storage box, {storage_box_name} is misconfigured. Missing location"
-    )
+    warning_str = f"Storage box, {storage_box_name} is misconfigured. Missing location"
     responses.add(
         responses.GET,
-        urljoin(
-            connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]
-        ),
+        urljoin(connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]),
         match=[
             matchers.query_param_matcher(
                 {
@@ -578,9 +546,7 @@ def test_get_storagebox_no_location(
     )
     responses.add(
         responses.GET,
-        urljoin(
-            connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]
-        ),
+        urljoin(connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]),
         match=[
             matchers.query_param_matcher(
                 {
@@ -609,9 +575,7 @@ def test_get_storagebox_no_description(
     warning_str = f"No description given for Storage Box, {storage_box_name}"
     responses.add(
         responses.GET,
-        urljoin(
-            connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]
-        ),
+        urljoin(connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]),
         match=[
             matchers.query_param_matcher(
                 {
@@ -624,9 +588,7 @@ def test_get_storagebox_no_description(
     )
     responses.add(
         responses.GET,
-        urljoin(
-            connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]
-        ),
+        urljoin(connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]),
         match=[
             matchers.query_param_matcher(
                 {

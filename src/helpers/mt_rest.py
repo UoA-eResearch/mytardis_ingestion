@@ -110,32 +110,31 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
         }
         if extra_headers:
             headers = {**headers, **extra_headers}
-        try:
-            if self.proxies:
-                response = requests.request(
-                    method,
-                    url,
-                    data=data,
-                    params=params,
-                    headers=headers,
-                    auth=self.auth,
-                    verify=self.verify_certificate,
-                    proxies=self.proxies,
-                )
-            else:
-                response = requests.request(
-                    method,
-                    url,
-                    data=data,
-                    params=params,
-                    headers=headers,
-                    auth=self.auth,
-                    verify=self.verify_certificate,
-                )
-            if response.status_code == 502:
-                error = BadGateWayException(response)
-                raise error
-            response.raise_for_status()
-        except Exception as error:
-            raise error
+        if self.proxies:
+            response = requests.request(
+                method,
+                url,
+                data=data,
+                params=params,
+                headers=headers,
+                auth=self.auth,
+                verify=self.verify_certificate,
+                proxies=self.proxies,
+                timeout=5,
+            )
+        else:
+            response = requests.request(
+                method,
+                url,
+                data=data,
+                params=params,
+                headers=headers,
+                auth=self.auth,
+                verify=self.verify_certificate,
+                timeout=5,
+            )
+        if response.status_code == 502:
+            raise BadGateWayException(response)
+        response.raise_for_status()
+
         return response
