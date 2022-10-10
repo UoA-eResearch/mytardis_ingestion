@@ -56,6 +56,7 @@ def test_backoff_on_mytardis_rest_factory_doesnt_trigger_on_httperror(
 
 
 @mock.patch("requests.request")
+@pytest.mark.long
 def test_backoff_on_mytardis_rest_factory(
     mock_requests_request, auth: AuthConfig, connection: ConnectionConfig
 ):
