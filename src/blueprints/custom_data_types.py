@@ -122,16 +122,7 @@ class ISODateTime(str):
         input. Each validator will receive as an input the value returned from the previous
         validator. (As per the Pydantic help manual).
         """
-        yield cls.convert_datetime
         yield cls.validate
-
-    @classmethod
-    def convert_datetime(cls, value):
-        """Custom data sanitizer to convert a datetime object into a ISO formatted string.
-        This string is then passed onto the ISO string validator."""
-        if isinstance(value, datetime):
-            value = datetime.isoformat(value)
-        return cls(f"{value}")
 
     @classmethod
     def validate(cls, value):

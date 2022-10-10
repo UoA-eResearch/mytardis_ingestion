@@ -112,7 +112,7 @@ class IngestionFactory:
             refined_parameters = None
             if len(raw_project) == 2:
                 refined_parameters = raw_project[1]
-            refined_project = self.crucible.refine_project(raw_project[0])
+            refined_project = self.crucible.prepare_project(raw_project[0])
             if not refined_project:
                 processed_list.append((name, None))
                 self.inspector.block_object(project)
@@ -175,7 +175,7 @@ class IngestionFactory:
             refined_parameters = None
             if len(raw_experiment) == 2:
                 refined_parameters = raw_experiment[1]
-            refined_experiment = self.crucible.refine_experiment(raw_experiment[0])
+            refined_experiment = self.crucible.prepare_experiment(raw_experiment[0])
             if not refined_experiment:
                 processed_list.append((name, None))
                 self.inspector.block_object(experiment)
@@ -236,7 +236,7 @@ class IngestionFactory:
             refined_parameters = None
             if len(raw_dataset) == 2:
                 refined_parameters = raw_dataset[1]
-            refined_dataset = self.crucible.refine_dataset(raw_dataset[0])
+            refined_dataset = self.crucible.prepare_dataset(raw_dataset[0])
             if not refined_dataset:
                 processed_list.append((name, None))
                 self.inspector.block_object(dataset)
@@ -294,7 +294,7 @@ class IngestionFactory:
                 self.inspector.block_object(datafile)
                 processed_list.append((name, None))
                 continue
-            refined_datafile = self.crucible.refine_datafile(raw_datafile)
+            refined_datafile = self.crucible.prepare_datafile(raw_datafile)
             if not refined_datafile:
                 processed_list.append((name, None))
                 self.inspector.block_object(datafile)

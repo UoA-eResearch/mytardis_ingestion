@@ -1,11 +1,13 @@
 # pylint:
 
+from datetime import datetime
 from pathlib import Path
 from pytest import fixture
+from src.blueprints.custom_data_types import ISODateTime
 
-from src.blueprints.dataset import RefinedDataset
-from src.blueprints.experiment import RefinedExperiment
-from src.blueprints.datafile import RefinedDatafile
+from src.blueprints.dataset import Dataset, RefinedDataset
+from src.blueprints.experiment import Experiment, RefinedExperiment
+from src.blueprints.datafile import Datafile, RefinedDatafile
 from src.blueprints.project import Project, RefinedProject
 from src.blueprints import (
     URI,
@@ -58,7 +60,7 @@ def raw_project(
     split_and_parse_groups,
     created_by_upi,
     start_time_datetime,
-    end_time_str,
+    end_time_datetime,
     embargo_time_datetime,
     project_metadata,
     project_url,
@@ -73,7 +75,7 @@ def raw_project(
         institution=project_institutions,
         created_by=created_by_upi,
         start_time=start_time_datetime,
-        end_time=end_time_str,
+        end_time=end_time_datetime,
         embargo_until=embargo_time_datetime,
         persistent_id=project_pid,
         alternate_ids=project_ids,
@@ -100,10 +102,10 @@ def raw_experiment(
     experiment_url,
     split_and_parse_users,
     split_and_parse_groups,
-    start_time_str,
+    start_time_datetime,
     end_time_datetime,
     created_time_datetime,
-    modified_time_str,
+    modified_time_datetime,
     embargo_time_datetime,
     experiment_metadata,
 ):
@@ -117,10 +119,10 @@ def raw_experiment(
         groups=split_and_parse_groups,
         locked=False,
         projects=experiment_projects,
-        start_time=start_time_str,
+        start_time=start_time_datetime,
         end_time=end_time_datetime,
         created_time=created_time_datetime,
-        update_time=modified_time_str,
+        update_time=modified_time_datetime,
         embargo_until=embargo_time_datetime,
         persistent_id=experiment_pid,
         alternate_ids=experiment_ids,
@@ -143,7 +145,7 @@ def raw_dataset(
     dataset_dir,
     split_and_parse_users,
     split_and_parse_groups,
-    created_time_str,
+    created_time_datetime,
     modified_time_datetime,
     dataset_metadata,
 ):
@@ -155,7 +157,7 @@ def raw_dataset(
         immutable=False,
         experiments=dataset_experiments,
         instrument=dataset_instrument,
-        created_time=created_time_str,
+        created_time=created_time_datetime,
         modified_time=modified_time_datetime,
         persistent_id=dataset_pid,
         alternate_ids=dataset_ids,
@@ -204,7 +206,7 @@ def refined_project(
     project_institutions,
     created_by_upi,
     start_time_datetime,
-    end_time_str,
+    end_time_datetime,
     embargo_time_datetime,
     project_pid,
     project_ids,
@@ -219,7 +221,7 @@ def refined_project(
         institution=project_institutions,
         created_by=created_by_upi,
         start_time=start_time_datetime,
-        end_time=end_time_str,
+        end_time=end_time_datetime,
         embargo_until=embargo_time_datetime,
         persistent_id=project_pid,
         alternate_ids=project_ids,
@@ -238,10 +240,10 @@ def refined_experiment(
     experiment_url,
     split_and_parse_users,
     split_and_parse_groups,
-    start_time_str,
+    start_time_datetime,
     end_time_datetime,
     created_time_datetime,
-    modified_time_str,
+    modified_time_datetime,
     embargo_time_datetime,
 ) -> RefinedExperiment:
     return RefinedExperiment(
@@ -254,10 +256,10 @@ def refined_experiment(
         groups=split_and_parse_groups,
         locked=False,
         projects=experiment_projects,
-        start_time=start_time_str,
+        start_time=start_time_datetime,
         end_time=end_time_datetime,
         created_time=created_time_datetime,
-        update_time=modified_time_str,
+        update_time=modified_time_datetime,
         embargo_until=embargo_time_datetime,
         persistent_id=experiment_pid,
         alternate_ids=experiment_ids,
@@ -274,7 +276,7 @@ def refined_dataset(
     dataset_dir,
     split_and_parse_users,
     split_and_parse_groups,
-    created_time_str,
+    created_time_datetime,
     modified_time_datetime,
 ) -> RefinedDataset:
     return RefinedDataset(
@@ -285,7 +287,7 @@ def refined_dataset(
         immutable=False,
         experiments=dataset_experiments,
         instrument=dataset_instrument,
-        created_time=created_time_str,
+        created_time=created_time_datetime,
         modified_time=modified_time_datetime,
         persistent_id=dataset_pid,
         alternate_ids=dataset_ids,
@@ -330,9 +332,104 @@ def project(refined_project: RefinedProject, institution_uri: URI):
         groups=refined_project.groups,
         institution=[institution_uri],
         created_by=refined_project.created_by,
-        start_time=refined_project.start_time,
-        end_time=refined_project.end_time,
-        embargo_until=refined_project.embargo_until,
+        start_time=(
+            ISODateTime(refined_project.start_time.isoformat())
+            if isinstance(refined_project.start_time, datetime)
+            else None
+        ),
+        end_time=(
+            ISODateTime(refined_project.end_time.isoformat())
+            if isinstance(refined_project.end_time, datetime)
+            else None
+        ),
+        embargo_until=(
+            ISODateTime(refined_project.embargo_until.isoformat())
+            if isinstance(refined_project.embargo_until, datetime)
+            else None
+        ),
         persistent_id=refined_project.persistent_id,
         alternate_ids=refined_project.alternate_ids,
+    )
+
+
+@fixture
+def experiment(refined_experiment: RefinedExperiment, project_uri: URI):
+    return Experiment(
+        title=refined_experiment.title,
+        description=refined_experiment.description,
+        institution_name=refined_experiment.institution_name,
+        created_by=refined_experiment.created_by,
+        url=refined_experiment.url,
+        users=refined_experiment.users,
+        groups=refined_experiment.groups,
+        locked=refined_experiment.locked,
+        projects=[project_uri],
+        start_time=(
+            refined_experiment.start_time.isoformat()
+            if isinstance(refined_experiment.start_time, datetime)
+            else refined_experiment.start_time
+        ),
+        end_time=(
+            refined_experiment.end_time.isoformat()
+            if isinstance(refined_experiment.end_time, datetime)
+            else refined_experiment.end_time
+        ),
+        created_time=(
+            refined_experiment.created_time.isoformat()
+            if isinstance(refined_experiment.created_time, datetime)
+            else refined_experiment.created_time
+        ),
+        update_time=(
+            refined_experiment.update_time.isoformat()
+            if isinstance(refined_experiment.update_time, datetime)
+            else refined_experiment.update_time
+        ),
+        embargo_until=(
+            refined_experiment.embargo_until.isoformat()
+            if isinstance(refined_experiment.embargo_until, datetime)
+            else refined_experiment.embargo_until
+        ),
+        persistent_id=refined_experiment.persistent_id,
+        alternate_ids=refined_experiment.alternate_ids,
+    )
+
+
+@fixture
+def dataset(refined_dataset: RefinedDataset, experiment_uri: URI, instrument_uri: URI):
+    return Dataset(
+        description=refined_dataset.description,
+        directory=refined_dataset.directory,
+        users=refined_dataset.users,
+        groups=refined_dataset.groups,
+        immutable=refined_dataset.immutable,
+        experiments=[experiment_uri],
+        instrument=instrument_uri,
+        created_time=(
+            refined_dataset.created_time.isoformat()
+            if isinstance(refined_dataset.created_time, datetime)
+            else refined_dataset.created_time
+        ),
+        modified_time=(
+            refined_dataset.modified_time.isoformat()
+            if isinstance(refined_dataset.modified_time, datetime)
+            else refined_dataset.modified_time
+        ),
+        persistent_id=refined_dataset.persistent_id,
+        alternate_ids=refined_dataset.alternate_ids,
+    )
+
+
+@fixture
+def datafile(refined_datafile: RefinedDatafile, dataset_uri: URI):
+    return Datafile(
+        filename=refined_datafile.filename,
+        md5sum=refined_datafile.md5sum,
+        mimetype=refined_datafile.mimetype,
+        size=refined_datafile.size,
+        directory=refined_datafile.directory,
+        users=refined_datafile.users,
+        groups=refined_datafile.groups,
+        dataset=dataset_uri,
+        replicas=refined_datafile.replicas,
+        parameter_sets=refined_datafile.parameter_sets,
     )

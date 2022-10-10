@@ -76,6 +76,9 @@ datafile_dataset = const.datafile_dataset
 datafile_metadata = const.datafile_metadata
 datafile_schema = const.datafile_schema
 datafile_metadata_processed = const.datafile_metadata_processed
+instrument_alternate_ids = const.instrument_alternate_ids
+instrument_pid = const.instrument_pid
+instrument_name = const.instrument_name
 split_and_parse_groups = const.split_and_parse_groups
 split_and_parse_users = const.split_and_parse_users
 storage_box_name = const.storage_box_name
@@ -95,8 +98,17 @@ created_time_datetime = const.created_time_datetime
 created_time_str = const.created_time_str
 directory_relative_to_storage_box = const.directory_relative_to_storage_box
 project_uri = const.project_uri
+experiment_uri = const.experiment_uri
+dataset_uri = const.dataset_uri
 institution_uri = const.institution_uri
+instrument_uri = const.instrument_uri
 user_uri = const.user_uri
+institution_address = const.institution_address
+institution_alternate_ids = const.institution_alternate_ids
+institution_country = const.institution_country
+institution_name = const.institution_name
+institution_pid = const.institution_pid
+
 
 # =============================
 #
@@ -144,6 +156,9 @@ refined_experiment = dcls.refined_experiment
 refined_datafile = dcls.refined_datafile
 refined_dataset = dcls.refined_dataset
 project = dcls.project
+experiment = dcls.experiment
+dataset = dcls.dataset
+datafile = dcls.datafile
 
 
 # =========================================

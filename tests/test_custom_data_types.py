@@ -122,12 +122,12 @@ def test_malformed_URIs(uris, expected_error):
             "2022-01-01T12:00:00.000000+12:00",
         ),
         (
-            datetime(2022, 1, 1, 12, 00, 00, 000000),
+            datetime(2022, 1, 1, 12, 00, 00, 000000).isoformat(),
             "2022-01-01T12:00:00",
         ),
-        (datetime(2022, 1, 1, tzinfo=NZT), "2022-01-01T00:00:00+13:00"),
+        (datetime(2022, 1, 1, tzinfo=NZT).isoformat(), "2022-01-01T00:00:00+13:00"),
         (
-            datetime(2022, 1, 1, 12, 00, 00, tzinfo=NZT),
+            datetime(2022, 1, 1, 12, 00, 00, tzinfo=NZT).isoformat(),
             "2022-01-01T12:00:00+13:00",
         ),
     ],

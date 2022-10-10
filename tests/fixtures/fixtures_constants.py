@@ -98,7 +98,7 @@ def start_time_datetime(timezone):
 
 @fixture
 def start_time_str(start_time_datetime: datetime) -> str:
-    return start_time_datetime.strftime("%Y-%m-%d %H:%M:%S%z")
+    return start_time_datetime.isoformat()
 
 
 @fixture
@@ -108,7 +108,7 @@ def created_time_datetime(timezone):
 
 @fixture
 def created_time_str(start_time_datetime: datetime) -> str:
-    return start_time_datetime.strftime("%Y-%m-%d %H:%M:%S%z")
+    return start_time_datetime.isoformat()
 
 
 @fixture
@@ -118,7 +118,7 @@ def end_time_datetime(timezone):
 
 @fixture
 def end_time_str(end_time_datetime: datetime) -> str:
-    return end_time_datetime.strftime("%Y-%m-%d %H:%M:%S%z")
+    return end_time_datetime.isoformat()
 
 
 @fixture
@@ -128,7 +128,7 @@ def modified_time_datetime(timezone):
 
 @fixture
 def modified_time_str(modified_time_datetime: datetime) -> str:
-    return modified_time_datetime.strftime("%Y-%m-%d %H:%M:%S%z")
+    return modified_time_datetime.isoformat()
 
 
 @fixture
@@ -138,7 +138,7 @@ def embargo_time_datetime(timezone):
 
 @fixture
 def embargo_time_str(embargo_time_datetime: datetime) -> str:
-    return embargo_time_datetime.strftime("%Y-%m-%d %H:%M:%S%z")
+    return embargo_time_datetime.isoformat()
 
 
 @fixture
@@ -439,6 +439,24 @@ def datafile_metadata_processed(datafile_metadata):
 
 
 @fixture
+def instrument_alternate_ids():
+    return [
+        "Test_Instrument",
+        "Instrument_Test_1",
+    ]
+
+
+@fixture
+def instrument_pid():
+    return "Instrument_1"
+
+
+@fixture
+def instrument_name():
+    return "Test Instrument"
+
+
+@fixture
 def split_and_parse_users(
     admin_users: List[str],
     read_users: List[str],
@@ -541,10 +559,50 @@ def project_uri():
 
 
 @fixture
+def experiment_uri():
+    return URI("/api/v1/experiment/1/")
+
+
+@fixture
+def dataset_uri():
+    return URI("/api/v1/dataset/1/")
+
+
+@fixture
 def institution_uri():
     return URI("/api/v1/institution/1/")
 
 
 @fixture
+def instrument_uri():
+    return URI("/api/v1/instrument/1/")
+
+
+@fixture
 def user_uri():
     return URI("/api/v1/user/1/")
+
+
+@fixture
+def institution_address():
+    return "23 Symonds Street"
+
+
+@fixture
+def institution_alternate_ids():
+    return ["UoA", "Uni"]
+
+
+@fixture
+def institution_country():
+    return "NZ"
+
+
+@fixture
+def institution_name():
+    return "University of Auckland"
+
+
+@fixture
+def institution_pid():
+    return "UoA123"

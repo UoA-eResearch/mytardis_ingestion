@@ -118,7 +118,7 @@ def test_get_objects_http_error(
             object_type,
             search_string,
         )
-        is None
+        == []
     )
     assert warning_str in caplog.text
 
@@ -181,7 +181,7 @@ def test_get_objects_no_objects(
             object_type,
             search_string,
         )
-        is None
+        == []
     )
 
 
@@ -256,7 +256,7 @@ def test_get_uris_no_objects(
             object_type,
             search_string,
         )
-        is None
+        == []
     )
 
 
@@ -345,7 +345,7 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
             object_type,
             search_string,
         )
-        is None
+        == []
     )
     assert warning_str in caplog.text
 
