@@ -73,7 +73,7 @@ class Overseer:
         resource_id = int(urlparse(uri).path.rstrip(os.sep).split(os.sep).pop())
         return resource_id
 
-    def __get_object_from_mytardis(
+    def _get_object_from_mytardis(
         self,
         object_type: ObjectSearchDict,
         query_params: Dict[str, str],
@@ -112,7 +112,7 @@ class Overseer:
         self,
         object_type: ObjectSearchDict,
         search_string: str,
-    ) -> List[Dict] | None:
+    ) -> List[Dict]:
         """Gets a list of objects matching the search parameters passed
 
         This function prepares a GET request via the MyTardisRESTFactory instance and returns
@@ -133,12 +133,12 @@ class Overseer:
         response_dict = None
         if self.objects_with_ids and object_type["type"] in self.objects_with_ids:
             query_params = {"pids": search_string}
-            response_dict = self.__get_object_from_mytardis(object_type, query_params)
+            response_dict = self._get_object_from_mytardis(object_type, query_params)
             if response_dict and "objects" in response_dict.keys():
                 for obj in response_dict["objects"]:
                     return_list.append(obj)
         query_params = {object_type["target"]: search_string}
-        response_dict = self.__get_object_from_mytardis(object_type, query_params)
+        response_dict = self._get_object_from_mytardis(object_type, query_params)
         if response_dict and "objects" in response_dict.keys():
             for obj in response_dict["objects"]:
                 return_list.append(obj)
@@ -146,15 +146,13 @@ class Overseer:
         for obj in return_list:
             if obj not in new_list:
                 new_list.append(obj)
-        if not new_list:
-            return None
         return new_list
 
     def get_uris(
         self,
         object_type: ObjectSearchDict,
         search_string: str,
-    ) -> List[URI] | None:
+    ) -> List[URI]:
         """Calls self.get_objects() to get a list of objects matching search then extracts URIs
 
         This function calls the get_objects function with the parameters passed. It then takes
@@ -168,38 +166,34 @@ class Overseer:
         Returns:
             A list of object URIs from the search request made.
         """
-        return_list = []
+        return_list: list[URI] = []
         objects = self.get_objects(object_type, search_string)
         if not objects:
-            return None
-        if objects:
-            for obj in objects:
-                try:
-                    uri = URI(obj["resource_uri"])
-                except KeyError as error:
-                    logger.error(
-                        (
-                            "Malformed return from MyTardis. No resource_uri found for "
-                            f"{object_type} searching with {search_string}. Object in "
-                            f"question is {obj}."
-                        ),
-                        exc_info=True,
-                    )
-                    raise error
-                except ValidationError as error:
-                    logger.error(
-                        (
-                            "Malformed return from MyTardis. Unable to conform "
-                            "resource_uri into URI format"
-                        ),
-                        exc_info=True,
-                    )
-                    raise error
-                except Exception as error:
-                    raise error
-                return_list.append(uri)
-            return return_list
-        return None
+            return []
+        for obj in objects:
+            try:
+                uri = URI(obj["resource_uri"])
+            except KeyError as error:
+                logger.error(
+                    (
+                        "Malformed return from MyTardis. No resource_uri found for "
+                        f"{object_type} searching with {search_string}. Object in "
+                        f"question is {obj}."
+                    ),
+                    exc_info=True,
+                )
+                raise error
+            except ValidationError as error:
+                logger.error(
+                    (
+                        "Malformed return from MyTardis. Unable to conform "
+                        "resource_uri into URI format"
+                    ),
+                    exc_info=True,
+                )
+                raise error
+            return_list.append(uri)
+        return return_list
 
     def get_storage_box(  # pylint: disable=too-many-return-statements
         self,

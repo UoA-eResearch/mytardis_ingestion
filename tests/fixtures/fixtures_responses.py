@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 from pytest import fixture
 from src.blueprints.custom_data_types import URI
@@ -66,11 +67,12 @@ def datafile_response_dict(
 def dataset_response_dict(
     dataset_dir: Path,
     dataset_name: str,
-    dataset_description: str,
     dataset_experiments: list[str],
     dataset_instrument: str,
     dataset_pid: str,
     dataset_ids: list[str],
+    dataset_uri: URI,
+    instrument_response_dict,
 ):
     return {
         "meta": {
@@ -92,39 +94,12 @@ def dataset_response_dict(
                 "experiments": dataset_experiments,
                 "id": 1,
                 "immutable": False,
-                "instrument": {
-                    "alternate_ids": [
-                        "Test_Instrument",
-                        "Instrument_Test_1",
-                    ],
-                    "created_time": "2000-01-01T00:00:00",
-                    "facility": {
-                        "alternate_ids": [
-                            "Test_Facility",
-                            "Facility_Test_1",
-                        ],
-                        "created_time": "2000-01-01T00:00:00",
-                        "id": 1,
-                        "manager_group": {
-                            "name": "Test_Facility_Management_Group",
-                            "id": 1,
-                            "resource_uri": "/api/v1/group/1/",
-                        },
-                        "modified_time": "2000-01-01T00:00:00",
-                        "name": "Test Facility",
-                        "persistent_id": "Facility_1",
-                        "resource_uri": "/api/v1/facility/1/",
-                    },
-                    "modified_time": "2000-01-01T00:00:00",
-                    "name": dataset_instrument,
-                    "persistent_id": "Instrument_1",
-                    "resource_uri": "/api/v1/instrument/1/",
-                },
+                "instrument": instrument_response_dict["objects"][0],
                 "modified_time": "2000-01-01T00:00:00",
                 "parameter_sets": [],
                 "persistent_id": dataset_pid,
                 "public_access": 1,
-                "resource_uri": "/api/v1/dataset/1/",
+                "resource_uri": dataset_uri,
                 "tags": [],
             }
         ],
@@ -139,6 +114,7 @@ def experiment_response_dict(
     experiment_institution: str,
     experiment_name: str,
     experiment_url: str,
+    experiment_uri: URI,
 ):
     return {
         "meta": {
@@ -171,7 +147,7 @@ def experiment_response_dict(
                 "parameter_sets": [],
                 "persistent_id": experiment_pid,
                 "public_access": 1,
-                "resource_uri": "/api/v1/experiment/1/",
+                "resource_uri": experiment_uri,
                 "start_time": "2000-01-01T00:00:00",
                 "tags": [],
                 "title": experiment_name,
@@ -229,7 +205,14 @@ def project_response_dict(
 
 
 @fixture
-def instrument_response_dict():
+def instrument_response_dict(
+    instrument_uri: URI,
+    instrument_alternate_ids: list[str],
+    created_time_datetime: datetime,
+    modified_time_datetime: datetime,
+    instrument_pid: str,
+    instrument_name: str,
+):
     return {
         "meta": {
             "limit": 20,
@@ -240,11 +223,8 @@ def instrument_response_dict():
         },
         "objects": [
             {
-                "alternate_ids": [
-                    "Test_Instrument",
-                    "Instrument_Test_1",
-                ],
-                "created_time": "2000-01-01T00:00:00",
+                "alternate_ids": instrument_alternate_ids,
+                "created_time": created_time_datetime.isoformat(),
                 "facility": {
                     "alternate_ids": [
                         "Test_Facility",
@@ -262,10 +242,10 @@ def instrument_response_dict():
                     "persistent_id": "Facility_1",
                     "resource_uri": "/api/v1/facility/1/",
                 },
-                "modified_time": "2000-01-01T00:00:00",
-                "name": "Test Instrument",
-                "persistent_id": "Instrument_1",
-                "resource_uri": "/api/v1/instrument/1/",
+                "modified_time": modified_time_datetime.isoformat(),
+                "name": instrument_name,
+                "persistent_id": instrument_pid,
+                "resource_uri": instrument_uri,
             },
         ],
     }
@@ -303,7 +283,14 @@ def introspection_response_dict():
 
 
 @fixture
-def institution_response_dict():
+def institution_response_dict(
+    institution_uri,
+    institution_address,
+    institution_alternate_ids,
+    institution_country,
+    institution_name,
+    institution_pid,
+):
     return {
         "meta": {
             "limit": 20,
@@ -314,13 +301,13 @@ def institution_response_dict():
         },
         "objects": [
             {
-                "address": "words",
+                "address": institution_address,
                 "aliases": 1,
-                "alternate_ids": ["fruit", "apples"],
-                "country": "NZ",
-                "name": "University of Auckland",
-                "persistent_id": "Uni ROR",
-                "resource_uri": "/api/v1/institution/1/",
+                "alternate_ids": institution_alternate_ids,
+                "country": institution_country,
+                "name": institution_name,
+                "persistent_id": institution_pid,
+                "resource_uri": institution_uri,
             }
         ],
     }
