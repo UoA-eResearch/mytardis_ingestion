@@ -3,8 +3,8 @@
 Ingestion scripts. The base class contains mostly concrete functions but
 needs to determine the Smelter class that is used by the Factory"""
 
+import json
 import logging
-from typing import List, Optional, Tuple
 
 from src.blueprints.custom_data_types import URI
 from src.blueprints.datafile import RawDatafile
@@ -18,6 +18,11 @@ from src.overseers import Overseer
 from src.smelters import Smelter
 
 logger = logging.getLogger(__name__)
+
+
+class IngestionResult:
+    success: list[tuple[str, URI | None]] = []
+    error: list[str] = []
 
 
 class IngestionFactory:
@@ -43,7 +48,6 @@ class IngestionFactory:
 
     def __init__(
         self,
-        # mytardis_setup: IntrospectionConfig,
         smelter: Smelter,
         forge: Forge,
         overseer: Overseer,
@@ -68,17 +72,20 @@ class IngestionFactory:
                 class instance of Smelter
         """
         self.overseer = overseer
-        # self.mytardis_setup = mytardis_setup
         self.forge = forge
         self.smelter = smelter
         self.crucible = crucible
 
-    def process_projects(
+    def ingest_projects(
         self,
-        projects: List[RawProject],
-    ) -> List[Tuple[str, Optional[URI]]]:
+        projects: list[RawProject] | None,
+    ) -> IngestionResult | None:
         """Wrapper function to create the projects from input files"""
-        processed_list: list[tuple[str, URI | None]] = []
+        if not projects:
+            return None
+
+        result = IngestionResult()
+
         for project in projects:
             name = get_object_name(project)
             if not name:
@@ -88,51 +95,52 @@ class IngestionFactory:
                         f"project defined by {project}"
                     )
                 )
+                result.error.append("unknown")
                 continue
-            is_present = self.inspector.match_or_block_object(
-                project
-            )  # better name ("is" implies a bool)
-            if is_present:
-                processed_list.append((name, is_present))
-                continue
-            if self.inspector.is_blocked(project):
-                logger.warning(
-                    (
-                        "Project is blocked for ingestion and can't be "
-                        f"processed. Object is {project}"
-                    )
-                )
-                processed_list.append((name, None))
-                continue
-            raw_project = self.smelter.smelt_project(project)
-            if not raw_project:
-                processed_list.append((name, None))
-                self.inspector.block_object(project)
-                continue
-            refined_parameters = None
-            if len(raw_project) == 2:
-                refined_parameters = raw_project[1]
-            refined_project = self.crucible.prepare_project(raw_project[0])
-            if not refined_project:
-                processed_list.append((name, None))
-                self.inspector.block_object(project)
-                continue
-            wrought_project = self.forge.forge_project(
-                refined_project, refined_parameters
-            )
-            if isinstance(wrought_project[0], URI):
-                processed_list.append((name, wrought_project[0]))
-                continue
-            processed_list.append((name, None))
-            self.inspector.block_object(project)
-        return processed_list
 
-    def process_experiments(  # pylint: disable=too-many-locals
+            smelted_project = self.smelter.smelt_project(project)
+            if not smelted_project:
+                result.error.append(name)
+                continue
+
+            refined_project, refined_parameters = smelted_project
+
+            prepared_project = self.crucible.prepare_project(refined_project)
+            if not prepared_project:
+                result.error.append(name)
+                continue
+
+            forged_project = self.forge.forge_project(
+                prepared_project, refined_parameters
+            )
+
+            if isinstance(forged_project[0], URI):
+                result.success.append((name, forged_project[0]))
+            else:
+                result.success.append((name, None))
+
+        logger.info(
+            "Successfully ingested %d projects: %s", len(result.success), result.success
+        )
+        if result.error:
+            logger.warning(
+                "There were errors ingesting %d projects: %s",
+                len(result.error),
+                result.error,
+            )
+
+        return result
+
+    def ingest_experiments(  # pylint: disable=too-many-locals
         self,
-        experiments: List[RawExperiment],
-    ) -> List[Tuple[str, Optional[URI]]]:
+        experiments: list[RawExperiment] | None,
+    ) -> IngestionResult | None:
         """Wrapper function to create the experiments from input files"""
-        processed_list: list[tuple[str, URI | None]] = []
+        if not experiments:
+            return None
+
+        result = IngestionResult()
+
         for experiment in experiments:
             name = get_object_name(experiment)
             if not name:
@@ -142,60 +150,54 @@ class IngestionFactory:
                         f"experiment defined by {experiment}"
                     )
                 )
+                result.error.append("unknown")
                 continue
-            if self.inspector.is_blocked_by_parents(experiment):
-                logger.warning(
-                    (
-                        "Experiment is blocked by it's parent for ingestion and "
-                        f"can't be processed. Object is {experiment}"
-                    )
-                )
-                processed_list.append((name, None))
-                continue
-            is_present = self.inspector.match_or_block_object(
-                experiment
-            )  # better name (see above)
-            if is_present:
-                processed_list.append((name, is_present))
-                continue
-            if self.inspector.is_blocked(experiment):
-                logger.warning(
-                    (
-                        "Experiment is blocked for ingestion and can't be "
-                        f"processed. Object is {experiment}"
-                    )
-                )
-                processed_list.append((name, None))
-                continue
-            raw_experiment = self.smelter.smelt_experiment(experiment)
-            if not raw_experiment:
-                self.inspector.block_object(experiment)
-                processed_list.append((name, None))
-                continue
-            refined_parameters = None
-            if len(raw_experiment) == 2:
-                refined_parameters = raw_experiment[1]
-            refined_experiment = self.crucible.prepare_experiment(raw_experiment[0])
-            if not refined_experiment:
-                processed_list.append((name, None))
-                self.inspector.block_object(experiment)
-                continue
-            wrought_experiment = self.forge.forge_experiment(
-                refined_experiment, refined_parameters
-            )
-            if isinstance(wrought_experiment[0], URI):
-                processed_list.append((name, wrought_experiment[0]))
-                continue
-            processed_list.append((name, None))
-            self.inspector.block_object(experiment)
-        return processed_list
 
-    def process_datasets(  # pylint: disable=too-many-locals
+            smelted_experiment = self.smelter.smelt_experiment(experiment)
+            if not smelted_experiment:
+                result.error.append(name)
+                continue
+
+            refined_experiment, refined_parameters = smelted_experiment
+
+            prepared_experiment = self.crucible.prepare_experiment(refined_experiment)
+            if not prepared_experiment:
+                result.error.append(name)
+                continue
+
+            forged_experiment = self.forge.forge_experiment(
+                prepared_experiment, refined_parameters
+            )
+
+            if isinstance(forged_experiment[0], URI):
+                result.success.append((name, forged_experiment[0]))
+            else:
+                result.success.append((name, None))
+
+        logger.info(
+            "Successfully ingested %d experiments: %s",
+            len(result.success),
+            result.success,
+        )
+        if result.error:
+            logger.warning(
+                "There were errors ingesting %d experiments: %s",
+                len(result.error),
+                result.error,
+            )
+
+        return result
+
+    def ingest_datasets(  # pylint: disable=too-many-locals
         self,
-        datasets: List[RawDataset],
-    ) -> List[Tuple[str, Optional[URI]]]:
+        datasets: list[RawDataset] | None,
+    ) -> IngestionResult | None:
         """Wrapper function to create the experiments from input files"""
-        processed_list: list[tuple[str, URI | None]] = []
+        if not datasets:
+            return None
+
+        result = IngestionResult()
+
         for dataset in datasets:
             name = get_object_name(dataset)
             if not name:
@@ -205,58 +207,50 @@ class IngestionFactory:
                         f"dataset defined by {dataset}"
                     )
                 )
+                result.error.append("unknown")
                 continue
-            if self.inspector.is_blocked_by_parents(dataset):
-                logger.warning(
-                    (
-                        "Dataset is blocked by it's parent for ingestion and "
-                        f"can't be processed. Object is {dataset}"
-                    )
-                )
-                processed_list.append((name, None))
-                continue
-            is_present = self.inspector.match_or_block_object(dataset)
-            if is_present:
-                processed_list.append((name, is_present))
-                continue
-            if self.inspector.is_blocked(dataset):
-                logger.warning(
-                    (
-                        "Experiment is blocked for ingestion and can't be "
-                        f"processed. Object is {dataset}"
-                    )
-                )
-                processed_list.append((name, None))
-                continue
-            raw_dataset = self.smelter.smelt_dataset(dataset)
-            if not raw_dataset:
-                self.inspector.block_object(dataset)
-                processed_list.append((name, None))
-                continue
-            refined_parameters = None
-            if len(raw_dataset) == 2:
-                refined_parameters = raw_dataset[1]
-            refined_dataset = self.crucible.prepare_dataset(raw_dataset[0])
-            if not refined_dataset:
-                processed_list.append((name, None))
-                self.inspector.block_object(dataset)
-                continue
-            wrought_dataset = self.forge.forge_dataset(
-                refined_dataset, refined_parameters
-            )
-            if isinstance(wrought_dataset[0], URI):
-                processed_list.append((name, wrought_dataset[0]))
-                continue
-            processed_list.append((name, None))
-            self.inspector.block_object(dataset)
-        return processed_list
 
-    def process_datafiles(
+            smelted_dataset = self.smelter.smelt_dataset(dataset)
+            if not smelted_dataset:
+                result.error.append(name)
+                continue
+
+            refined_dataset, refined_parameters = smelted_dataset
+            prepared_dataset = self.crucible.prepare_dataset(refined_dataset)
+            if not prepared_dataset:
+                result.error.append(name)
+                continue
+
+            forged_dataset = self.forge.forge_dataset(
+                prepared_dataset, refined_parameters
+            )
+            if isinstance(forged_dataset[0], URI):
+                result.success.append((name, forged_dataset[0]))
+            else:
+                result.success.append((name, None))
+
+        logger.info(
+            "Successfully ingested %d datasets: %s", len(result.success), result.success
+        )
+        if result.error:
+            logger.warning(
+                "There were errors ingesting %d datasets: %s",
+                len(result.error),
+                result.error,
+            )
+
+        return result
+
+    def ingest_datafiles(
         self,
-        datafiles: List[RawDatafile],
-    ) -> List[Tuple[str, Optional[URI]]]:
+        datafiles: list[RawDatafile] | None,
+    ) -> IngestionResult | None:
         """Wrapper function to create the experiments from input files"""
-        processed_list: list[tuple[str, URI | None]] = []
+        if not datafiles:
+            return None
+
+        result = IngestionResult()
+
         for datafile in datafiles:
             name = get_object_name(datafile)
             if not name:
@@ -266,43 +260,84 @@ class IngestionFactory:
                         f"datafile defined by {datafile}"
                     )
                 )
+                result.error.append("unknown")
                 continue
-            if self.inspector.is_blocked_by_parents(datafile):
-                logger.warning(
-                    (
-                        "Datafile is blocked by it's parent for ingestion and "
-                        f"can't be processed. Object is {datafile}"
-                    )
-                )
-                processed_list.append((name, None))
-                continue
-            is_present = self.inspector.match_or_block_object(datafile)
-            if is_present:
-                processed_list.append((name, is_present))
-                continue
-            if self.inspector.is_blocked(datafile):
-                logger.warning(
-                    (
-                        "Experiment is blocked for ingestion and can't be "
-                        f"processed. Object is {datafile}"
-                    )
-                )
-                processed_list.append((name, None))
-                continue
-            raw_datafile = self.smelter.smelt_datafile(datafile)
-            if not raw_datafile:
-                self.inspector.block_object(datafile)
-                processed_list.append((name, None))
-                continue
-            refined_datafile = self.crucible.prepare_datafile(raw_datafile)
+
+            refined_datafile = self.smelter.smelt_datafile(datafile)
             if not refined_datafile:
-                processed_list.append((name, None))
-                self.inspector.block_object(datafile)
+                result.error.append(name)
                 continue
-            wrought_datafile = self.forge.forge_datafile(refined_datafile)
-            if isinstance(wrought_datafile, URI):
-                processed_list.append((name, wrought_datafile))
+
+            prepared_datafile = self.crucible.prepare_datafile(refined_datafile)
+            if not prepared_datafile:
+                result.error.append(name)
                 continue
-            processed_list.append((name, None))
-            self.inspector.block_object(datafile)
-        return processed_list
+
+            forged_datafile = self.forge.forge_datafile(prepared_datafile)
+            if isinstance(forged_datafile, URI):
+                result.success.append((name, forged_datafile))
+            else:
+                result.success.append((name, None))
+
+        logger.info(
+            "Successfully ingested %d datafiles: %s",
+            len(result.success),
+            result.success,
+        )
+        if result.error:
+            logger.warning(
+                "There were errors ingesting %d datafiles: %s",
+                len(result.error),
+                result.error,
+            )
+        return result
+
+    def dump_ingestion_result_json(
+        self,
+        projects_result: IngestionResult | None,
+        experiments_result: IngestionResult | None,
+        datasets_result: IngestionResult | None,
+        datafiles_result: IngestionResult | None,
+    ):
+        with open("ingestion_result.json", "w", encoding="utf-8") as file:
+            json.dump(
+                {
+                    "projects": projects_result,
+                    "experiments": experiments_result,
+                    "datasets": datasets_result,
+                    "datafiles": datafiles_result,
+                },
+                file,
+                ensure_ascii=False,
+                indent=4,
+            )
+
+    def ingest(
+        self,
+        projects: list[RawProject] | None = None,
+        experiments: list[RawExperiment] | None = None,
+        datasets: list[RawDataset] | None = None,
+        datafiles: list[RawDatafile] | None = None,
+    ):
+        ingested_projects = self.ingest_projects(projects)
+        if not ingested_projects:
+            logger.error("Fatal error while ingesting projects. Check logs.")
+
+        ingested_experiments = self.ingest_experiments(experiments)
+        if not ingested_experiments:
+            logger.error("Fatal error ingesting experiments. Check logs.")
+
+        ingested_datasets = self.ingest_datasets(datasets)
+        if not ingested_datasets:
+            logger.error("Fatal error ingesting datasets. Check logs.")
+
+        ingested_datafiles = self.ingest_datafiles(datafiles)
+        if not ingested_datafiles:
+            logger.error("Fatal error ingesting datafiles. Check logs.")
+
+        self.dump_ingestion_result_json(
+            projects_result=ingested_projects,
+            experiments_result=ingested_experiments,
+            datasets_result=ingested_datasets,
+            datafiles_result=ingested_datafiles,
+        )
