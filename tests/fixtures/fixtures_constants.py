@@ -569,6 +569,11 @@ def dataset_uri():
 
 
 @fixture
+def datafile_uri():
+    return URI("/api/v1/dataset_file/1002735/")
+
+
+@fixture
 def institution_uri():
     return URI("/api/v1/institution/1/")
 

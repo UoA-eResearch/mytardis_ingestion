@@ -100,6 +100,7 @@ directory_relative_to_storage_box = const.directory_relative_to_storage_box
 project_uri = const.project_uri
 experiment_uri = const.experiment_uri
 dataset_uri = const.dataset_uri
+datafile_uri = const.datafile_uri
 institution_uri = const.institution_uri
 instrument_uri = const.instrument_uri
 user_uri = const.user_uri
