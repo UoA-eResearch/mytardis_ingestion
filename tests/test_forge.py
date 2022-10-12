@@ -141,7 +141,7 @@ def test_HTTPError_logs_warning(
         f"Url: {url}\nAction: {responses.POST}\nData: {project.json(exclude_none=True)}"
     )
     assert warning_str in caplog.text
-    assert test_value is False
+    assert test_value is None
 
 
 @pytest.mark.dependency(depends=["test_HTTPError_logs_warning"])
@@ -212,7 +212,7 @@ def test_response_status_larger_than_300_logs_error(
         f"response status code: {status_code}"
     )
     assert warning_str in caplog.text
-    assert test_value is False
+    assert test_value is None
 
 
 @responses.activate
