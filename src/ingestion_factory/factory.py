@@ -3,6 +3,7 @@
 Ingestion scripts. The base class contains mostly concrete functions but
 needs to determine the Smelter class that is used by the Factory"""
 
+from dataclasses import dataclass
 import json
 import logging
 
@@ -14,15 +15,20 @@ from src.blueprints.project import RawProject
 from src.crucible.crucible import Crucible
 from src.forges import Forge
 from src.helpers.dataclass import get_object_name
-from src.overseers import Overseer
 from src.smelters import Smelter
 
 logger = logging.getLogger(__name__)
 
 
 class IngestionResult:
-    success: list[tuple[str, URI | None]] = []
-    error: list[str] = []
+    def __init__(
+        self, success: list[tuple[str, URI | None]] = None, error: list[str] = None
+    ) -> None:
+        self.success = success if success else []
+        self.error = error if error else []
+
+    def __eq__(self, other) -> bool:
+        return self.success == other.success and self.error == other.error
 
 
 class IngestionFactory:
@@ -50,7 +56,6 @@ class IngestionFactory:
         self,
         smelter: Smelter,
         forge: Forge,
-        overseer: Overseer,
         crucible: Crucible,
     ) -> None:
         """Initialises the Factory with the configuration found in the config_dict.
@@ -71,7 +76,6 @@ class IngestionFactory:
             smelter : Smelter
                 class instance of Smelter
         """
-        self.overseer = overseer
         self.forge = forge
         self.smelter = smelter
         self.crucible = crucible
