@@ -237,9 +237,10 @@ def test_prepare_dataset_too_many_instruments(
     uri_list: list[URI] = list(
         map(
             lambda instrument: URI(instrument["resource_uri"]),
-            duplicate_instrument_response_dict["objects"],
+            copy.deepcopy(duplicate_instrument_response_dict["objects"]),
         )
     )
+    uri_list.reverse()
     warning = f"Unable to uniquely identify the instrument associated with the name or identifier provided. Possible candidates are: {uri_list}"
 
     assert crucible.prepare_dataset(refined_dataset) is None
@@ -323,9 +324,10 @@ def test_prepare_datafile_too_many_datasets(
     uri_list: list[URI] = list(
         map(
             lambda dataset: URI(dataset["resource_uri"]),
-            duplicate_dataset_response_dict["objects"],
+            copy.deepcopy(duplicate_dataset_response_dict["objects"]),
         )
     )
+    uri_list.reverse()
     warning = f"Unable to uniquely identify the dataset associated with this datafile in MyTardis. Possible candidates are: {uri_list}"
 
     assert crucible.prepare_datafile(refined_datafile) is None
