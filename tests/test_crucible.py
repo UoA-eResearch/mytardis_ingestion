@@ -243,7 +243,7 @@ def test_prepare_dataset_too_many_instruments(
     warning = f"Unable to uniquely identify the instrument associated with the name or identifier provided. Possible candidates are: {uri_list}"
 
     assert crucible.prepare_dataset(refined_dataset) is None
-    assert warning in caplog.text
+    assert warning in caplog.messages
 
 
 @responses.activate
@@ -329,4 +329,4 @@ def test_prepare_datafile_too_many_datasets(
     warning = f"Unable to uniquely identify the dataset associated with this datafile in MyTardis. Possible candidates are: {uri_list}"
 
     assert crucible.prepare_datafile(refined_datafile) is None
-    assert warning in caplog.text
+    assert warning in caplog.messages
