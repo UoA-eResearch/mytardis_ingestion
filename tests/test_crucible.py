@@ -196,9 +196,10 @@ def test_prepare_dataset_no_matching_instrument(
 def duplicate_instrument_response_dict(instrument_response_dict):
     instrument = copy.deepcopy(instrument_response_dict["objects"][0])
     instrument["resource_uri"] = "/api/v1/instrument/2/"
-    instrument_response_dict["objects"].append(instrument)
+    response_dict = copy.deepcopy(instrument_response_dict)
+    response_dict["objects"].append(instrument)
 
-    return instrument_response_dict
+    return response_dict
 
 
 @responses.activate
@@ -240,7 +241,7 @@ def test_prepare_dataset_too_many_instruments(
             copy.deepcopy(duplicate_instrument_response_dict["objects"]),
         )
     )
-    uri_list.reverse()
+    # uri_list.reverse()
     warning = f"Unable to uniquely identify the instrument associated with the name or identifier provided. Possible candidates are: {uri_list}"
 
     assert crucible.prepare_dataset(refined_dataset) is None
@@ -295,9 +296,10 @@ def test_prepare_datafile_no_matching_dataset(
 def duplicate_dataset_response_dict(dataset_response_dict):
     dataset = copy.deepcopy(dataset_response_dict["objects"][0])
     dataset["resource_uri"] = "/api/v1/dataset/2/"
-    dataset_response_dict["objects"].append(dataset)
+    response_dict = copy.deepcopy(dataset_response_dict)
+    response_dict["objects"].append(dataset)
 
-    return dataset_response_dict
+    return response_dict
 
 
 @responses.activate
