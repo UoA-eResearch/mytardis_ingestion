@@ -2,9 +2,8 @@
 """Defines Forge class which is a class that creates MyTardis objects."""
 
 import logging
-from typing import Any, Dict, Literal, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 from urllib.parse import urljoin
-
 import requests
 from pydantic import ValidationError
 from requests.exceptions import HTTPError, JSONDecodeError

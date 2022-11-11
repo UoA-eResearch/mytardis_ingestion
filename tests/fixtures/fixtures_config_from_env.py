@@ -78,7 +78,7 @@ def mytardis_setup(processed_introspection_response) -> IntrospectionConfig:
 
 
 @fixture
-def mytardis_settings_no_introspection(
+def mytardis_settings(
     general: GeneralConfig,
     auth: AuthConfig,
     connection: ConnectionConfig,
@@ -92,12 +92,3 @@ def mytardis_settings_no_introspection(
         storage=storage,
         default_schema=default_schema,
     )
-
-
-@fixture
-def mytardis_settings(
-    mytardis_settings_no_introspection: ConfigFromEnv,
-    mytardis_setup: IntrospectionConfig,
-) -> ConfigFromEnv:
-    mytardis_settings_no_introspection._mytardis_setup = mytardis_setup
-    return mytardis_settings_no_introspection

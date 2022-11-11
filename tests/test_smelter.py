@@ -3,15 +3,17 @@
 """Tests of the Smelter base class functions"""
 
 import logging
-from pydantic import AnyUrl
-
+from urllib.parse import urljoin
 import pytest
+import responses
+from responses import matchers
+
 from src.blueprints.common_models import ParameterSet
 from src.blueprints.datafile import RawDatafile, RefinedDatafile
 from src.blueprints.dataset import RawDataset, RefinedDataset
 from src.blueprints.experiment import RawExperiment, RefinedExperiment
 from src.blueprints.project import RawProject, RefinedProject
-
+from src.helpers.config import ConnectionConfig, StorageConfig
 from src.smelters import Smelter
 
 logger = logging.getLogger(__name__)
@@ -72,7 +74,7 @@ def test_smelt_project_projects_disabled(
     error_str = (
         "MyTardis is not currently set up to use projects. Please check settings.py "
     )
-    smelter.projects_enabled = False
+    smelter.overseer.mytardis_setup.projects_enabled = False
 
     assert smelter.smelt_project(raw_project) is None
     assert error_str in caplog.text
@@ -261,18 +263,42 @@ def test_smelt_dataset_no_schema(caplog, smelter: Smelter, raw_dataset: RawDatas
 
 
 @pytest.mark.dependency(depends=["test_extract_parameters"])
+@responses.activate
 def test_smelt_datafile(
     smelter: Smelter,
     raw_datafile: RawDatafile,
     refined_datafile: RefinedDatafile,
+    connection: ConnectionConfig,
+    storage: StorageConfig,
+    storage_box_response_dict,
 ):
+    url = urljoin(connection.api_template, "storagebox")
+    responses.get(
+        url,
+        match=[matchers.query_param_matcher({"name": storage.box})],
+        status=200,
+        json=(storage_box_response_dict),
+    )
     assert smelter.smelt_datafile(raw_datafile) == refined_datafile
 
 
 @pytest.mark.dependency(depends=["test_extract_parameters"])
+@responses.activate
 def test_smelt_datafile_use_default_schema(
-    smelter: Smelter, raw_datafile: RawDatafile, refined_datafile: RefinedDatafile
+    smelter: Smelter,
+    raw_datafile: RawDatafile,
+    refined_datafile: RefinedDatafile,
+    connection: ConnectionConfig,
+    storage: StorageConfig,
+    storage_box_response_dict,
 ):
+    url = urljoin(connection.api_template, "storagebox")
+    responses.get(
+        url,
+        match=[matchers.query_param_matcher({"name": storage.box})],
+        status=200,
+        json=(storage_box_response_dict),
+    )
     raw_datafile.object_schema = None
 
     result = smelter.smelt_datafile(raw_datafile)

@@ -23,12 +23,13 @@ from src.blueprints import (
     RefinedProject,
 )
 from src.blueprints.common_models import Parameter
-from src.blueprints.storage_boxes import StorageBox
 from src.helpers import (
     GeneralConfig,
     SchemaConfig,
     log_if_projects_disabled,
 )
+from src.helpers.config import StorageConfig
+from src.overseers.overseer import Overseer
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +44,10 @@ class Smelter:
 
     def __init__(
         self,
+        overseer: Overseer,
         general: GeneralConfig,
         default_schema: SchemaConfig,
-        storage_box: StorageBox,
-        projects_enabled=True,
+        storage: StorageConfig,
     ) -> None:
         """Class initialisation to set options for dictionary processing
         Stores MyTardis set up information from the introspection API to allow the parser
@@ -60,11 +61,11 @@ class Smelter:
                 experiments, datasets and datafiles
         """
 
-        self.projects_enabled = projects_enabled
+        self.overseer = overseer
 
         self.default_schema = default_schema
         self.default_institution = general.default_institution
-        self.storage_box = storage_box
+        self.storage = storage
 
     def extract_parameters(
         self,
@@ -95,7 +96,7 @@ class Smelter:
         """Inject the schema into the project dictionary if it's not
         already present. Do the same for an institution and convert to
         a RawProject dataclass for validation."""
-        if not log_if_projects_disabled(self.projects_enabled):
+        if not log_if_projects_disabled(self.overseer.mytardis_setup.projects_enabled):
             return None
         schema = raw_project.object_schema or self.default_schema.project
         if not schema:
@@ -153,7 +154,10 @@ class Smelter:
                 "Unable to find default experiment schema and no schema provided"
             )
             return None
-        if self.projects_enabled and not raw_experiment.projects:  # test this
+        if (
+            self.overseer.mytardis_setup.projects_enabled
+            and not raw_experiment.projects
+        ):  # test this
             logger.warning(
                 "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided %s",
                 raw_experiment,
@@ -234,18 +238,17 @@ class Smelter:
         parameters = self.extract_parameters(schema, raw_dataset)
         return (refined_dataset, parameters)
 
-    def _create_replica(
-        self,
-        relative_file_path: Path,
-    ) -> DatafileReplica | None:
+    def _create_replica(self, relative_file_path: Path) -> DatafileReplica | None:
         """Create a datafile replica using the filepath and the storage
         box"""
-        if not self.storage_box:
+        storage_box = self.overseer.get_storage_box(self.storage.box)
+        if not storage_box:
+            logger.warning("Could not find storage box name %s", self.storage.box)
             return None
         try:
             return DatafileReplica(
                 uri=relative_file_path.as_posix(),
-                location=self.storage_box.name,
+                location=storage_box.name,
                 protocol="file",
             )
         except ValidationError:

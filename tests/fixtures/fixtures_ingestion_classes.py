@@ -1,7 +1,6 @@
 from pytest import fixture
 import responses
 
-from src.blueprints.storage_boxes import StorageBox
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 from src.forges.forge import Forge
@@ -13,6 +12,8 @@ from src.helpers.config import (
     GeneralConfig,
     IntrospectionConfig,
     SchemaConfig,
+    StorageConfig,
+    ConfigFromEnv,
 )
 from src.helpers.mt_rest import MyTardisRESTFactory
 from tests.fixtures.mock_rest_factory import MockMtRest
@@ -25,25 +26,27 @@ def rest_factory(auth: AuthConfig, connection: ConnectionConfig):
 
 @fixture
 def overseer(rest_factory: MyTardisRESTFactory, mytardis_setup: IntrospectionConfig):
-    return Overseer(rest_factory, mytardis_setup)
+    overseer = Overseer(rest_factory)
+    overseer._mytardis_setup = mytardis_setup
+    return overseer
 
 
 @fixture
-def mock_overseer(mock_mt_rest: MockMtRest, mytardis_setup: IntrospectionConfig):
+def mock_overseer(mock_mt_rest: MockMtRest):
     def _get_mock_overseer(mock_responses: responses.RequestsMock):
-        return Overseer(mock_mt_rest(mock_responses), mytardis_setup)
+        return Overseer(mock_mt_rest(mock_responses))
 
     return _get_mock_overseer
 
 
 @fixture
 def smelter(
+    overseer: Overseer,
     general: GeneralConfig,
     default_schema: SchemaConfig,
-    storage_box: StorageBox,
-    mytardis_setup: IntrospectionConfig,
+    storage: StorageConfig,
 ):
-    return Smelter(general, default_schema, storage_box, mytardis_setup)
+    return Smelter(overseer, general, default_schema, storage)
 
 
 @fixture
@@ -52,15 +55,24 @@ def forge(rest_factory: MyTardisRESTFactory):
 
 
 @fixture
-def crucible(overseer: Overseer, mytardis_setup: IntrospectionConfig):
-    return Crucible(overseer, mytardis_setup)
+def crucible(overseer: Overseer):
+    return Crucible(overseer)
 
 
 @fixture
 def factory(
+    mytardis_settings: ConfigFromEnv,
+    rest_factory: MyTardisRESTFactory,
+    overseer: Overseer,
     smelter: Smelter,
     forge: Forge,
-    overseer: Overseer,
     crucible: Crucible,
 ):
-    return IngestionFactory(smelter, forge, overseer, crucible)
+    return IngestionFactory(
+        config=mytardis_settings,
+        mt_rest=rest_factory,
+        overseer=overseer,
+        smelter=smelter,
+        forge=forge,
+        crucible=crucible,
+    )

@@ -26,9 +26,12 @@ from src.blueprints.project import (
 )
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
+from src.helpers.config import ConfigFromEnv
 from src.helpers.enumerators import MyTardisObject
+from src.helpers.mt_rest import MyTardisRESTFactory
 from src.ingestion_factory import IngestionFactory
 from src.ingestion_factory.factory import IngestionResult
+from src.overseers.overseer import Overseer
 from src.smelters import Smelter
 
 logger = logging.getLogger(__name__)
@@ -38,7 +41,14 @@ logger.propagate = True
 
 
 @fixture
-def mock_ingestion_factory(smelter: Smelter, crucible: Crucible, forge: Forge):
+def mock_ingestion_factory(
+    mytardis_settings: ConfigFromEnv,
+    rest_factory: MyTardisRESTFactory,
+    overseer: Overseer,
+    smelter: Smelter,
+    crucible: Crucible,
+    forge: Forge,
+):
     def _get_mock_ingestion_factory(
         object_type: Literal[
             MyTardisObject.PROJECT,
@@ -68,7 +78,14 @@ def mock_ingestion_factory(smelter: Smelter, crucible: Crucible, forge: Forge):
                 crucible.prepare_datafile = crucible_method_mock
                 forge.forge_datafile = forge_method_mock
 
-        return IngestionFactory(smelter=smelter, forge=forge, crucible=crucible)
+        return IngestionFactory(
+            config=mytardis_settings,
+            mt_rest=rest_factory,
+            overseer=overseer,
+            smelter=smelter,
+            forge=forge,
+            crucible=crucible,
+        )
 
     return _get_mock_ingestion_factory
 

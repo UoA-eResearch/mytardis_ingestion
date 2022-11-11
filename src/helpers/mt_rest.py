@@ -46,7 +46,11 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
     user_agent_name = __name__
     user_agent_url = "https://github.com/UoA-eResearch/mytardis_ingestion.git"
 
-    def __init__(self, auth: AuthConfig, connection: ConnectionConfig) -> None:
+    def __init__(
+        self,
+        auth: AuthConfig,
+        connection: ConnectionConfig,
+    ) -> None:
         """MyTardisRESTFactory initialisation using a configuration dictionary.
 
         Defines a set of class attributes that set up access to the MyTardis RESTful API. Includes
@@ -61,7 +65,6 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
         """
 
         self.auth = auth
-
         self.proxies = connection.proxy.dict() if connection.proxy else None
 
         self.verify_certificate = connection.verify_certificate
