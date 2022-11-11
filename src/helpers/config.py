@@ -12,11 +12,18 @@ the environment automatically and verifies their types and values.
 
 import logging
 from pathlib import Path
-from typing import Optional
+import sys
+from typing import Literal, Optional
 from urllib.parse import urljoin
 
-from pydantic import AnyUrl, BaseModel, BaseSettings, HttpUrl, PrivateAttr
-from requests import HTTPError, request
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    BaseSettings,
+    HttpUrl,
+    PrivateAttr,
+    ValidationError,
+)
 from requests.auth import AuthBase
 
 from src.helpers.enumerators import MyTardisObject
@@ -228,12 +235,6 @@ class ConfigFromEnv(BaseSettings):
     connection: ConnectionConfig
     storage: StorageConfig
     default_schema: SchemaConfig
-    _mytardis_setup: Optional[IntrospectionConfig] = PrivateAttr(None)
-
-    @property
-    def mytardis_setup(self) -> IntrospectionConfig:
-        """Getter for mytardis_setup. Sends API request if self._mytardis_setup is None"""
-        return self._mytardis_setup or self.get_mytardis_setup()
 
     class Config:
         """Pydantic config to enable .env file support"""
@@ -241,85 +242,3 @@ class ConfigFromEnv(BaseSettings):
         env_file = ".env"  # this path must be relative to the current working directory, i.e. if this class needs to be instantiated in a script running in the root directory
         env_file_encoding = "utf-8"
         env_nested_delimiter = "__"
-
-    def get_mytardis_setup(self) -> IntrospectionConfig:
-        """Query introspection API
-
-        Requests introspection info from MyTardis instance configured in connection
-        """
-        user_agent = (
-            f"{__name__}/2.0 (https://github.com/UoA-eResearch/mytardis_ingestion.git)"
-        )
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "User-Agent": user_agent,
-        }
-        url = urljoin(self.connection.api_template, "introspection")
-        try:
-            if self.connection.proxy:
-                response = request(
-                    "GET",
-                    url,
-                    headers=headers,
-                    verify=self.connection.verify_certificate,
-                    proxies=self.connection.proxy.dict(),
-                )
-            else:
-                response = request(
-                    "GET",
-                    url,
-                    headers=headers,
-                    verify=self.connection.verify_certificate,
-                )
-            response.raise_for_status()
-        except HTTPError as error:
-            logger.error(
-                "Introspection returned error: %s",
-                error.response,
-                exc_info=True,
-            )
-            raise error
-        except Exception as error:
-            logger.error(
-                "Non-HTTP exception in ConfigFromEnv.get_mytardis_setup",
-                exc_info=True,
-            )
-            raise error
-        response_dict = response.json()
-        if response_dict == {} or response_dict["objects"] == []:
-            logger.error(
-                "MyTardis introspection did not return any data when called from ConfigFromEnv.get_mytardis_setup"
-            )
-            raise ValueError(
-                (
-                    "MyTardis introspection did not return any data when called from ConfigFromEnv.get_mytardis_setup"
-                )
-            )
-        if len(response_dict["objects"]) > 1:
-            logger.error(
-                (
-                    """MyTardis introspection returned more than one object when called from
-                    ConfigFromEnv.get_mytardis_setup\n
-                    Returned response was: %s""",
-                    response_dict,
-                )
-            )
-            raise ValueError(
-                (
-                    "MyTardis introspection returned more than one object when called from ConfigFromEnv.get_mytardis_setup"
-                )
-            )
-        response_dict = response_dict["objects"][0]
-        mytardis_setup = IntrospectionConfig(
-            old_acls=response_dict["experiment_only_acls"],
-            projects_enabled=response_dict["projects_enabled"],
-            objects_with_ids=response_dict["identified_objects"]
-            if response_dict["identified_objects"]
-            else None,
-            objects_with_profiles=response_dict["profiled_objects"]
-            if response_dict["profiled_objects"]
-            else None,
-        )
-        self._mytardis_setup = mytardis_setup
-        return mytardis_setup

@@ -561,7 +561,6 @@ connection = cfg.connection
 storage = cfg.storage
 default_schema = cfg.default_schema
 mytardis_setup = cfg.mytardis_setup
-mytardis_settings_no_introspection = cfg.mytardis_settings_no_introspection
 mytardis_settings = cfg.mytardis_settings
 
 

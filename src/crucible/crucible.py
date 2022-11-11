@@ -1,4 +1,3 @@
-# pylint: disable=duplicate-code,logging-fstring-interpolation
 """The Crucible class takes a refined object and replaces the str values for
 fields that exist within the MyTardis Database with their equivalent URIs.
 """
@@ -10,9 +9,9 @@ from src.blueprints.datafile import Datafile, RefinedDatafile
 from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
-from src.helpers.config import IntrospectionConfig
 from src.helpers.enumerators import ObjectSearchEnum
 from src.overseers import Overseer
+
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +20,11 @@ class Crucible:
     """The Crucible class reads in a RefinedObject and replaces the identified
     fields with URIs."""
 
-    def __init__(self, overseer: Overseer, mytardis_setup: IntrospectionConfig) -> None:
+    def __init__(
+        self,
+        overseer: Overseer,
+    ) -> None:
         self.overseer = overseer
-        if mytardis_setup:
-            self.projects_enabled = mytardis_setup.projects_enabled
-            self.objects_with_ids = mytardis_setup.objects_with_ids
-            self.objects_with_profiles = mytardis_setup.objects_with_profiles
 
     def prepare_project(self, refined_project: RefinedProject) -> Project | None:
         """Refine a project by getting the objects that need to exist in
@@ -79,7 +77,10 @@ class Crucible:
         """Refine an experiment by getting the objects that need to exist
         in MyTardis and finding their URIs"""
         projects: list[URI] = []
-        if refined_experiment.projects and self.projects_enabled:
+        if (
+            refined_experiment.projects
+            and self.overseer.mytardis_setup.projects_enabled
+        ):
             for project in refined_experiment.projects:
                 project_uri = self.overseer.get_uris(
                     ObjectSearchEnum.PROJECT.value, project
@@ -88,7 +89,7 @@ class Crucible:
                     projects.append(*project_uri)
             projects = list(set(projects))
         if not projects:
-            if self.projects_enabled:
+            if self.overseer.mytardis_setup.projects_enabled:
                 logger.warning(
                     "No projects identified for this experiment and projects enabled in MyTardis."
                 )
@@ -160,7 +161,8 @@ class Crucible:
             return None
         if len(instruments) > 1:
             logger.warning(
-                f"Unable to uniquely identify the instrument associated with the name or identifier provided. Possible candidates are: {instruments}"
+                "Unable to uniquely identify the instrument associated with the name or identifier provided. Possible candidates are: %s",
+                instruments,
             )
             return None
         instrument = instruments[0]  # TODO why only first instrument???
@@ -201,7 +203,8 @@ class Crucible:
         datasets = list(set(datasets))
         if len(datasets) > 1:
             logger.warning(
-                f"Unable to uniquely identify the dataset associated with this datafile in MyTardis. Possible candidates are: {datasets}"
+                "Unable to uniquely identify the dataset associated with this datafile in MyTardis. Possible candidates are: %s",
+                datasets,
             )
             return None
         dataset = datasets[0]  # TODO why only the first element?

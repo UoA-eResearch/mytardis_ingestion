@@ -1,11 +1,12 @@
-# pylint: disable=duplicate-code,logging-fstring-interpolation
 """IngestionFactory is a base class for specific instances of MyTardis
 Ingestion scripts. The base class contains mostly concrete functions but
 needs to determine the Smelter class that is used by the Factory"""
 
-from dataclasses import dataclass
 import json
 import logging
+import sys
+
+from pydantic import ValidationError
 
 from src.blueprints.custom_data_types import URI
 from src.blueprints.datafile import RawDatafile
@@ -14,7 +15,10 @@ from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
 from src.crucible.crucible import Crucible
 from src.forges import Forge
+from src.helpers.config import ConfigFromEnv
 from src.helpers.dataclass import get_object_name
+from src.helpers.mt_rest import MyTardisRESTFactory
+from src.overseers.overseer import Overseer
 from src.smelters import Smelter
 
 logger = logging.getLogger(__name__)
@@ -28,7 +32,9 @@ class IngestionResult:
         self.error = error if error else []
 
     def __eq__(self, other) -> bool:
-        return self.success == other.success and self.error == other.error
+        if isinstance(other, IngestionResult):
+            return self.success == other.success and self.error == other.error
+        return NotImplemented
 
 
 class IngestionFactory:
@@ -54,9 +60,12 @@ class IngestionFactory:
 
     def __init__(
         self,
-        smelter: Smelter,
-        forge: Forge,
-        crucible: Crucible,
+        config: ConfigFromEnv = None,
+        mt_rest: MyTardisRESTFactory = None,
+        overseer: Overseer = None,
+        smelter: Smelter = None,
+        forge: Forge = None,
+        crucible: Crucible = None,
     ) -> None:
         """Initialises the Factory with the configuration found in the config_dict.
 
@@ -76,9 +85,37 @@ class IngestionFactory:
             smelter : Smelter
                 class instance of Smelter
         """
-        self.forge = forge
-        self.smelter = smelter
-        self.crucible = crucible
+        if not config:
+            try:
+                config = ConfigFromEnv()
+            except ValidationError as error:
+                logger.error(
+                    (
+                        "An error occurred while validating the environment "
+                        "configuration. Make sure all required variables are set "
+                        "or pass your own configuration instance. Error: %s"
+                    ),
+                    error,
+                )
+                sys.exit()
+
+        mt_rest = (
+            mt_rest if mt_rest else MyTardisRESTFactory(config.auth, config.connection)
+        )
+        overseer = overseer if overseer else Overseer(mt_rest)
+
+        self.forge = forge if forge else Forge(mt_rest)
+        self.smelter = (
+            smelter
+            if smelter
+            else Smelter(
+                overseer=overseer,
+                general=config.general,
+                default_schema=config.default_schema,
+                storage=config.storage,
+            )
+        )
+        self.crucible = crucible if crucible else Crucible(overseer)
 
     def ingest_projects(
         self,
@@ -95,8 +132,8 @@ class IngestionFactory:
             if not name:
                 logger.warning(
                     (
-                        "Unable to find the name of the project, skipping "
-                        f"project defined by {project}"
+                        "Unable to find the name of the project, skipping project defined by %s",
+                        project,
                     )
                 )
                 result.error.append("unknown")
@@ -150,8 +187,8 @@ class IngestionFactory:
             if not name:
                 logger.warning(
                     (
-                        "Unable to find the name of the experiment, skipping "
-                        f"experiment defined by {experiment}"
+                        "Unable to find the name of the experiment, skipping experiment defined by %s",
+                        experiment,
                     )
                 )
                 result.error.append("unknown")
@@ -207,8 +244,8 @@ class IngestionFactory:
             if not name:
                 logger.warning(
                     (
-                        "Unable to find the name of the dataset, skipping "
-                        f"dataset defined by {dataset}"
+                        "Unable to find the name of the dataset, skipping dataset defined by %s",
+                        dataset,
                     )
                 )
                 result.error.append("unknown")
@@ -260,8 +297,8 @@ class IngestionFactory:
             if not name:
                 logger.warning(
                     (
-                        "Unable to find the name of the datafile, skipping "
-                        f"datafile defined by {datafile}"
+                        "Unable to find the name of the datafile, skipping datafile defined by %s",
+                        datafile,
                     )
                 )
                 result.error.append("unknown")

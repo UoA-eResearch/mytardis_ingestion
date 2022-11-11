@@ -34,10 +34,11 @@ class Overseer:
         rest_factory: An instance of MyTardisRESTFactory providing access to the API
     """
 
+    _mytardis_setup: IntrospectionConfig | None = None
+
     def __init__(
         self,
         rest_factory: MyTardisRESTFactory,
-        mytardis_setup: IntrospectionConfig,
     ) -> None:
         """Class initialisation using a configuration dictionary.
 
@@ -53,9 +54,11 @@ class Overseer:
             mytardis_setup : IntrospectionConfig
         """
         self.rest_factory = rest_factory
-        if mytardis_setup:
-            self.projects_enabled = mytardis_setup.projects_enabled
-            self.objects_with_ids = mytardis_setup.objects_with_ids
+
+    @property
+    def mytardis_setup(self) -> IntrospectionConfig:
+        """Getter for mytardis_setup. Sends API request if self._mytardis_setup is None"""
+        return self._mytardis_setup or self.get_mytardis_setup()
 
     @staticmethod
     def resource_uri_to_id(uri: URI) -> int:
@@ -107,7 +110,11 @@ class Overseer:
         response_dict = response.json()
         return response_dict
 
-    # TODO we might want to add a get_objects function that let's you search for specific query param combinations. Right now it checks if the search string is in any of the object_type["target"] and "pids" fields but often we know where those should be found, i.e. when we pass in a search_string we know it's either a pid, alternative_id or name
+    # TODO we might want to add a get_objects function that let's you search for
+    # specific query param combinations. Right now it checks if the search
+    # string is in any of the object_type["target"] and "pids" fields but often
+    # we know where those should be found, i.e. when we pass in a search_string
+    # we know it's either a pid, alternative_id or name
     def get_objects(
         self,
         object_type: ObjectSearchDict,
@@ -131,7 +138,10 @@ class Overseer:
         """
         return_list: list = []
         response_dict = None
-        if self.objects_with_ids and object_type["type"] in self.objects_with_ids:
+        if (
+            self.mytardis_setup.objects_with_ids
+            and object_type["type"] in self.mytardis_setup.objects_with_ids
+        ):
             query_params = {"pids": search_string}
             response_dict = self._get_object_from_mytardis(object_type, query_params)
             if response_dict and "objects" in response_dict.keys():
@@ -276,6 +286,52 @@ class Overseer:
             f"Storage box, {storage_box_name} is misconfigured. Missing location"
         )
         return None
+
+    def get_mytardis_setup(self) -> IntrospectionConfig:
+        """Query introspection API
+
+        Requests introspection info from MyTardis instance configured in connection
+        """
+        url = urljoin(self.rest_factory.api_template, "introspection")
+        response = self.rest_factory.mytardis_api_request("GET", url)
+
+        response_dict = response.json()
+        if response_dict == {} or response_dict["objects"] == []:
+            logger.error(
+                "MyTardis introspection did not return any data when called from ConfigFromEnv.get_mytardis_setup"
+            )
+            raise ValueError(
+                (
+                    "MyTardis introspection did not return any data when called from ConfigFromEnv.get_mytardis_setup"
+                )
+            )
+        if len(response_dict["objects"]) > 1:
+            logger.error(
+                (
+                    """MyTardis introspection returned more than one object when called from
+                    ConfigFromEnv.get_mytardis_setup\n
+                    Returned response was: %s""",
+                    response_dict,
+                )
+            )
+            raise ValueError(
+                (
+                    "MyTardis introspection returned more than one object when called from ConfigFromEnv.get_mytardis_setup"
+                )
+            )
+        response_dict = response_dict["objects"][0]
+        mytardis_setup = IntrospectionConfig(
+            old_acls=response_dict["experiment_only_acls"],
+            projects_enabled=response_dict["projects_enabled"],
+            objects_with_ids=response_dict["identified_objects"]
+            if response_dict["identified_objects"]
+            else None,
+            objects_with_profiles=response_dict["profiled_objects"]
+            if response_dict["profiled_objects"]
+            else None,
+        )
+        self._mytardis_setup = mytardis_setup
+        return mytardis_setup
 
 
 # Future functionality

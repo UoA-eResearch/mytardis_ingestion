@@ -1,40 +1,36 @@
 # pylint: disable=missing-function-docstring
 
 """Tests of the Overseer class and its functions"""
-import json
 import logging
-from copy import deepcopy
-from pathlib import Path
 from urllib.parse import urljoin
 
 import mock
 import pytest
+from requests import HTTPError
 import responses
-from pytest import fixture
 from responses import matchers
 
 from src.blueprints import StorageBox
 from src.blueprints.custom_data_types import URI
 from src.helpers.config import (
-    AuthConfig,
+    ConfigFromEnv,
     ConnectionConfig,
     IntrospectionConfig,
-    StorageConfig,
 )
-from src.helpers.enumerators import ObjectEnum, ObjectSearchEnum
+from src.helpers.enumerators import ObjectSearchEnum
+from src.helpers.mt_rest import MyTardisRESTFactory
 from src.overseers import Overseer
 
-from .conftest import (
-    connection,
-    overseer,
-    project_response_dict,
-    storage,
-    storage_box,
-    storage_box_response_dict,
-)
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
+
+
+@pytest.fixture
+def overseer_plain(
+    rest_factory: MyTardisRESTFactory, mytardis_setup: IntrospectionConfig
+):
+    return Overseer(rest_factory)
 
 
 def test_staticmethod_resource_uri_to_id():
@@ -602,3 +598,108 @@ def test_get_storagebox_no_description(
     storage_box.description = "No description"
     assert overseer.get_storage_box(storage_box_name) == storage_box
     assert warning_str in caplog.text
+
+
+@responses.activate
+def test_get_mytardis_setup(
+    overseer_plain: Overseer,
+    connection: ConnectionConfig,
+    introspection_response_dict,
+    mytardis_setup,
+):
+    assert overseer_plain._mytardis_setup is None
+
+    responses.add(
+        responses.GET,
+        urljoin(
+            connection.api_template,
+            "introspection",
+        ),
+        json=(introspection_response_dict),
+        status=200,
+    )
+
+    assert overseer_plain.mytardis_setup == mytardis_setup
+
+
+@responses.activate
+def test_get_mytardis_setup_http_error(
+    caplog, overseer: Overseer, connection: ConnectionConfig
+):
+    responses.add(
+        responses.GET,
+        urljoin(connection.api_template, "introspection"),
+        status=504,
+    )
+
+    caplog.set_level(logging.ERROR)
+    error_str = "Introspection returned error:"
+    with pytest.raises(HTTPError):
+        _ = overseer.get_mytardis_setup()
+        assert error_str in caplog.text
+
+
+@mock.patch("src.overseers.overseer.Overseer.get_mytardis_setup")
+def test_get_mytardis_setup_general_error(
+    mock_get_mytardis_setup,
+    caplog,
+    overseer: Overseer,
+):
+    mock_get_mytardis_setup.side_effect = IOError()
+    error_str = "Non-HTTP exception in ConfigFromEnv.get_mytardis_setup"
+    with pytest.raises(IOError):
+        _ = overseer.get_mytardis_setup()
+        assert error_str in caplog.text
+
+
+@responses.activate
+def test_get_mytardis_setup_no_objects(
+    caplog,
+    overseer: Overseer,
+    connection: ConnectionConfig,
+    response_dict_not_found,
+):
+
+    responses.add(
+        responses.GET,
+        urljoin(
+            connection.api_template,
+            "introspection",
+        ),
+        json=(response_dict_not_found),
+        status=200,
+    )
+    caplog.set_level(logging.ERROR)
+    error_str = "MyTardis introspection did not return any data when called from ConfigFromEnv.get_mytardis_setup"
+    with pytest.raises(ValueError, match=error_str):
+        _ = overseer.get_mytardis_setup()
+        assert error_str in caplog.text
+
+
+@responses.activate
+def test_get_mytardis_setup_too_many_objects(
+    caplog,
+    overseer: Overseer,
+    connection: ConnectionConfig,
+    introspection_response_dict,
+):
+    test_dict = introspection_response_dict
+    test_dict["objects"].append("Some Fake Data")
+    responses.add(
+        responses.GET,
+        urljoin(
+            connection.api_template,
+            "introspection",
+        ),
+        json=(test_dict),
+        status=200,
+    )
+    caplog.set_level(logging.ERROR)
+    log_error_str = f"""MyTardis introspection returned more than one object when called from
+        ConfigFromEnv.get_mytardis_setup\n
+        Returned response was: {test_dict}"""
+    error_str = "MyTardis introspection returned more than one object when called from ConfigFromEnv.get_mytardis_setup"
+
+    with pytest.raises(ValueError, match=error_str):
+        _ = overseer.get_mytardis_setup()
+        assert log_error_str in caplog.text
