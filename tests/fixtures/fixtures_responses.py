@@ -89,7 +89,7 @@ def dataset_response_dict(
                 "dataset_datafile_count": 2,
                 "dataset_experiment_count": 1,
                 "dataset_size": 1000000,
-                "description": dataset_name,  # TODO should this be name or description, no dataset name???
+                "description": dataset_name,
                 "directory": dataset_dir.as_posix(),
                 "experiments": dataset_experiments,
                 "id": 1,

@@ -141,9 +141,7 @@ class Crucible:
             uris = self.overseer.get_uris(ObjectSearchEnum.EXPERIMENT.value, experiment)
             if uris:
                 experiment_uris.extend(uris)
-        experiment_uris = list(
-            set(experiment_uris)
-        )  # FIXME this probably doesn't actually work for lists of more than 1 experiment
+        experiment_uris = list(set(experiment_uris))
         if not experiment_uris:
             logger.warning("Unable to find experiments associated with this dataset.")
             return None
@@ -151,9 +149,7 @@ class Crucible:
             ObjectSearchEnum.INSTRUMENT.value, refined_dataset.instrument
         )
         if instruments:
-            instruments = list(
-                set(instruments)
-            )  # FIXME this probably doesn't actually work for lists of more than 1 instrument
+            instruments = list(set(instruments))
         else:
             logger.warning(
                 "Unable to find the instrument associated with this dataset in MyTardis."
@@ -165,7 +161,7 @@ class Crucible:
                 instruments,
             )
             return None
-        instrument = instruments[0]  # TODO why only first instrument???
+        instrument = instruments[0]
 
         return Dataset(
             description=refined_dataset.description,
@@ -207,7 +203,7 @@ class Crucible:
                 datasets,
             )
             return None
-        dataset = datasets[0]  # TODO why only the first element?
+        dataset = datasets[0]
 
         return Datafile(
             filename=refined_datafile.filename,

@@ -16,7 +16,7 @@ logger.propagate = True
 
 test_object_name = "Test Project"
 
-test_object_type = "project/"
+test_object_type = "project"
 
 test_object_id = 1
 

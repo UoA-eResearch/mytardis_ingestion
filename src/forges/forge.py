@@ -160,16 +160,13 @@ class Forge:
         # Consider refactoring this as a function to generate the URL?
         action = "POST"
         url = urljoin(self.rest_factory.api_template, object_type["url_substring"])
-        url = url + "/"  # TODO do we really need trailing slashes?
         if overwrite_objects:
             if object_id:
                 action = "PUT"
                 url = urljoin(
                     self.rest_factory.api_template, object_type["url_substring"]
                 )
-                url = url + "/"
                 url = urljoin(url, str(object_id))
-                url = url + "/"
             else:
                 logger.warning(
                     (
