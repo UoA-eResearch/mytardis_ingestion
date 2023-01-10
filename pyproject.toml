@@ -9,7 +9,7 @@ python = "^3.10"
 requests = "^2.27.1"
 backoff = "^2.2.1"
 PyYAML = "^6.0"
-python-decouple = "^3.6"
+python-decouple = "^3.7"
 types-PyYAML = "^6.0.12"
 pydantic = "^1.10.4"
 
