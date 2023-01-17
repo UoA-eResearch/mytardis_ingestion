@@ -14,7 +14,7 @@ types-PyYAML = "^6.0.12"
 pydantic = "^1.10.4"
 
 [tool.poetry.dev-dependencies]
-pytest = "^7.2.0"
+pytest = "^7.2.1"
 mock = "^5.0.1"
 pytest-dependency = "^0.5.1"
 pylint = "^2.15.10"
