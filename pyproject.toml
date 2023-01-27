@@ -24,7 +24,7 @@ types-requests = "^2.28.11"
 types-mock = "^5.0.0"
 PySnooper = "^1.1.0"
 responses = "^0.22.0"
-pre-commit = "^2.21.0"
+pre-commit = "^3.0.1"
 bandit = "^1.7.4"
 pytest-cov = "^4.0.0"
 genbadge = {extras = ["tests", "coverage"], version = "^1.0.6"}
