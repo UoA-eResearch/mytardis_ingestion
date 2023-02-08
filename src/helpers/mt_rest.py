@@ -5,11 +5,13 @@ is heavily based on the NGS ingestor for MyTardis found at
     https://github.com/mytardis/mytardis_ngs_ingestor
 """
 
+from typing import Dict, Optional
 from urllib.parse import urljoin
 
 import backoff
 import requests
 from requests.exceptions import RequestException
+
 from src.helpers.config import AuthConfig, ConnectionConfig
 
 
@@ -44,7 +46,11 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
     user_agent_name = __name__
     user_agent_url = "https://github.com/UoA-eResearch/mytardis_ingestion.git"
 
-    def __init__(self, auth: AuthConfig, connection: ConnectionConfig) -> None:
+    def __init__(
+        self,
+        auth: AuthConfig,
+        connection: ConnectionConfig,
+    ) -> None:
         """MyTardisRESTFactory initialisation using a configuration dictionary.
 
         Defines a set of class attributes that set up access to the MyTardis RESTful API. Includes
@@ -52,13 +58,13 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
 
         Args:
             auth : AuthConfig
-            Pydantic config class containing information about authenticating with a MyTardis instance
+            Pydantic config class containing information about authenticating with a MyTardis
+                 instance
             connection : ConnectionConfig
             Pydantic config class containing information about connecting to a MyTardis instance
         """
 
         self.auth = auth
-
         self.proxies = connection.proxy.dict() if connection.proxy else None
 
         self.verify_certificate = connection.verify_certificate
@@ -70,9 +76,9 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
         self,
         method: str,  # REST api method
         url: str,
-        data: str = None,
-        params: str = None,
-        extra_headers: dict = None,
+        data: Optional[str] = None,
+        params: Optional[Dict[str, str]] = None,
+        extra_headers: Optional[Dict[str, str]] = None,
     ) -> requests.Response:
         """Function to handle the REST API calls
 
@@ -107,32 +113,31 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
         }
         if extra_headers:
             headers = {**headers, **extra_headers}
-        try:
-            if self.proxies:
-                response = requests.request(
-                    method,
-                    url,
-                    data=data,
-                    params=params,
-                    headers=headers,
-                    auth=self.auth,
-                    verify=self.verify_certificate,
-                    proxies=self.proxies,
-                )
-            else:
-                response = requests.request(
-                    method,
-                    url,
-                    data=data,
-                    params=params,
-                    headers=headers,
-                    auth=self.auth,
-                    verify=self.verify_certificate,
-                )
-            if response.status_code == 502:
-                error = BadGateWayException(response)
-                raise error
-            response.raise_for_status()
-        except Exception as error:
-            raise error
+        if self.proxies:
+            response = requests.request(
+                method,
+                url,
+                data=data,
+                params=params,
+                headers=headers,
+                auth=self.auth,
+                verify=self.verify_certificate,
+                proxies=self.proxies,
+                timeout=5,
+            )
+        else:
+            response = requests.request(
+                method,
+                url,
+                data=data,
+                params=params,
+                headers=headers,
+                auth=self.auth,
+                verify=self.verify_certificate,
+                timeout=5,
+            )
+        if response.status_code == 502:
+            raise BadGateWayException(response)
+        response.raise_for_status()
+
         return response

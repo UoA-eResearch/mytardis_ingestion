@@ -1,3 +1,3 @@
 # pylint: disable=missing-module-docstring
 
-from src.overseers.overseer import Overseer
+from src.overseers.overseer import *

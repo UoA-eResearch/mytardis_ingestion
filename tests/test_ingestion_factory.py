@@ -1,581 +1,274 @@
-# NB: For the purposes of testing the IngestionFactory codebase a YAML specific
-# implementation of the IngestionFactory is used. This concrete class defines
-# the YAMLSmelter class to be the smelter implementation. As this class is fully
-# tested, there is little risk in using this as a test case.
-
 import logging
-from pathlib import Path
-from urllib.parse import urljoin
-
-import mock
-import responses
+from typing import Literal
+from unittest.mock import MagicMock, Mock
+import pytest
 from pytest import fixture
-from responses import matchers
-from src.helpers.config import ConnectionConfig, ConfigFromEnv
 
+from src.blueprints.custom_data_types import URI
+from src.blueprints.datafile import Datafile, RawDatafile, RefinedDatafile
+from src.blueprints.dataset import (
+    Dataset,
+    DatasetParameterSet,
+    RawDataset,
+    RefinedDataset,
+)
+from src.blueprints.experiment import (
+    Experiment,
+    ExperimentParameterSet,
+    RawExperiment,
+    RefinedExperiment,
+)
+from src.blueprints.project import (
+    Project,
+    ProjectParameterSet,
+    RawProject,
+    RefinedProject,
+)
+from src.crucible.crucible import Crucible
+from src.forges.forge import Forge
+from src.helpers.config import ConfigFromEnv
+from src.helpers.enumerators import MyTardisObject
+from src.helpers.mt_rest import MyTardisRESTFactory
 from src.ingestion_factory import IngestionFactory
+from src.ingestion_factory.factory import IngestionResult
+from src.overseers.overseer import Overseer
 from src.smelters import Smelter
-
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
-
-GLOB_STRING = "*.test"
 
 # pylint: disable=missing-function-docstring
 
 
 @fixture
-def factory(
-    smelter: Smelter,
+def mock_ingestion_factory(
     mytardis_settings: ConfigFromEnv,
-) -> IngestionFactory:
-    IngestionFactory.__abstractmethods__ = set()
-    return IngestionFactory(
-        general=mytardis_settings.general,
-        auth=mytardis_settings.auth,
-        connection=mytardis_settings.connection,
-        mytardis_setup=mytardis_settings.mytardis_setup,
-        smelter=smelter,
-    )
+    rest_factory: MyTardisRESTFactory,
+    overseer: Overseer,
+    smelter: Smelter,
+    crucible: Crucible,
+    forge: Forge,
+):
+    def _get_mock_ingestion_factory(
+        object_type: Literal[
+            MyTardisObject.PROJECT,
+            MyTardisObject.EXPERIMENT,
+            MyTardisObject.DATASET,
+            MyTardisObject.DATAFILE,
+        ],
+        smelter_method_mock: Mock = MagicMock(return_value=None),
+        crucible_method_mock: Mock = MagicMock(return_value=None),
+        forge_method_mock: Mock = MagicMock(return_value=(None, None)),
+    ):
+        match object_type:
+            case MyTardisObject.PROJECT:
+                smelter.smelt_project = smelter_method_mock
+                crucible.prepare_project = crucible_method_mock
+                forge.forge_project = forge_method_mock
+            case MyTardisObject.EXPERIMENT:
+                smelter.smelt_experiment = smelter_method_mock
+                crucible.prepare_experiment = crucible_method_mock
+                forge.forge_experiment = forge_method_mock
+            case MyTardisObject.DATASET:
+                smelter.smelt_dataset = smelter_method_mock
+                crucible.prepare_dataset = crucible_method_mock
+                forge.forge_dataset = forge_method_mock
+            case MyTardisObject.DATAFILE:
+                smelter.smelt_datafile = smelter_method_mock
+                crucible.prepare_datafile = crucible_method_mock
+                forge.forge_datafile = forge_method_mock
 
-
-@fixture
-def search_with_no_uri_dict():
-    return {
-        "institution": "Uni RoR",
-        "project": "Test_Project",
-        "experiment": "Test_Experiment",
-        "dataset": "Test_Dataset",
-        "instrument": "Instrument_1",
-    }
-
-
-def mock_smelter_get_objects_in_input_file(file_path):
-    file_path = Path(file_path)
-    with open(file_path) as test_file:
-        for line in test_file.readlines():
-            if line.startswith("project"):
-                return ["project"]
-            if line.startswith("experiment"):
-                return ["experiment"]
-            if line.startswith("dataset"):
-                return ["dataset"]
-            if line.startswith("datafile"):
-                return ["datafile"]
-    return [None]
-
-
-def test_build_object_lists(datadir, factory: IngestionFactory):
-    with mock.patch.object(
-        factory.smelter, "get_objects_in_input_file"
-    ) as mock_get_inputs_in_input_file:
-        mock_get_inputs_in_input_file.side_effect = (
-            mock_smelter_get_objects_in_input_file
+        return IngestionFactory(
+            config=mytardis_settings,
+            mt_rest=rest_factory,
+            overseer=overseer,
+            smelter=smelter,
+            forge=forge,
+            crucible=crucible,
         )
-        assert factory.build_object_lists(
-            Path(datadir / "projects.test"), "project"
-        ) == [Path(datadir / "projects.test")]
-        assert (
-            factory.build_object_lists(Path(datadir / "projects.test"), "experiment")
-            == []
-        )
-        # FIXME fix the datadir problems
-        # assert set(factory.build_object_lists(datadir, "project")) == set(
-        #     [
-        #         Path(datadir / "projects.test"),
-        #         Path(datadir / "projects_2.test"),
-        #         Path(datadir / "projects_3.test"),
-        #     ]
-        # )
-        # assert factory.build_object_lists(datadir, "experiment") == [
-        #     Path(datadir / "experiment.test")
-        # ]
-        # assert factory.build_object_lists(datadir, "dataset") == [
-        #     Path(datadir / "dataset.test")
-        # ]
-        # assert factory.build_object_lists(datadir, "datafile") == [
-        #     Path(datadir / "datafile.test")
-        # ]
+
+    return _get_mock_ingestion_factory
 
 
-@responses.activate
-def test_replace_search_term_with_uri(
-    factory: IngestionFactory,
-    institution_response_dict,
-    connection: ConnectionConfig,
-    search_with_no_uri_dict,
+def test_ingest_project(
+    caplog: pytest.LogCaptureFixture,
+    mock_ingestion_factory: IngestionFactory,
+    raw_project: RawProject,
+    refined_project: RefinedProject,
+    project: Project,
+    raw_project_parameterset: ProjectParameterSet,
+    project_uri: URI,
 ):
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "institution"),
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=200,
-        json=(institution_response_dict),
+    ingestion_factory: IngestionFactory = mock_ingestion_factory(
+        MyTardisObject.PROJECT,
+        smelter_method_mock=MagicMock(
+            return_value=(refined_project, raw_project_parameterset)
+        ),
+        crucible_method_mock=MagicMock(return_value=project),
+        forge_method_mock=MagicMock(return_value=(project_uri, None)),
     )
-    object_type = "institution"
-    test_dict = {object_type: search_with_no_uri_dict[object_type]}
-    assert factory.replace_search_term_with_uri(object_type, test_dict, "name") == {
-        "institution": ["/api/v1/institution/1/"]
-    }
+    caplog.set_level(logging.INFO)
+    info = f"Successfully ingested 1 projects: {[(raw_project.name, URI(project_uri))]}"
+    expected_result = IngestionResult(
+        success=[(raw_project.name, URI(project_uri))], error=[]
+    )
+
+    assert ingestion_factory.ingest_projects([raw_project]) == expected_result
+    assert info in caplog.text
+
+    caplog.clear()
+    caplog.set_level(logging.WARNING)
+
+    ingestion_factory.crucible.prepare_project = MagicMock(return_value=None)
+    warning = f"There were errors ingesting 1 projects: {[raw_project.name]}"
+    expected_result = IngestionResult(success=[], error=[raw_project.name])
+
+    assert ingestion_factory.ingest_projects([raw_project]) == expected_result
+    assert warning in caplog.text
+
+    caplog.clear()
+
+    ingestion_factory.smelter.smelt_project = MagicMock(return_value=None)
+    warning = f"There were errors ingesting 1 projects: {[raw_project.name]}"
+    expected_result = IngestionResult(success=[], error=[raw_project.name])
+
+    assert ingestion_factory.ingest_projects([raw_project]) == expected_result
+    assert warning in caplog.text
 
 
-@responses.activate
-def test_replace_search_term_with_uri_fallback_search(
-    factory: IngestionFactory,
-    response_dict_not_found,
-    institution_response_dict,
-    connection: ConnectionConfig,
-    search_with_no_uri_dict,
+def test_ingest_experiment(
+    caplog: pytest.LogCaptureFixture,
+    mock_ingestion_factory: IngestionFactory,
+    raw_experiment: RawExperiment,
+    refined_experiment: RefinedExperiment,
+    experiment: Experiment,
+    raw_experiment_parameterset: ExperimentParameterSet,
+    experiment_uri: URI,
 ):
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "institution"),
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
+    ingestion_factory: IngestionFactory = mock_ingestion_factory(
+        MyTardisObject.EXPERIMENT,
+        smelter_method_mock=MagicMock(
+            return_value=(refined_experiment, raw_experiment_parameterset)
+        ),
+        crucible_method_mock=MagicMock(return_value=experiment),
+        forge_method_mock=MagicMock(return_value=(experiment_uri, None)),
     )
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "institution"),
-        match=[
-            matchers.query_param_matcher(
-                {"name": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=200,
-        json=(institution_response_dict),
+    caplog.set_level(logging.INFO)
+    info = f"Successfully ingested 1 experiments: {[(raw_experiment.title, URI(experiment_uri))]}"
+    expected_result = IngestionResult(
+        success=[(raw_experiment.title, URI(experiment_uri))], error=[]
     )
-    object_type = "institution"
-    test_dict = {object_type: search_with_no_uri_dict[object_type]}
-    assert factory.replace_search_term_with_uri(object_type, test_dict, "name") == {
-        "institution": ["/api/v1/institution/1/"]
-    }
+
+    assert ingestion_factory.ingest_experiments([raw_experiment]) == expected_result
+    assert info in caplog.text
+
+    caplog.clear()
+    caplog.set_level(logging.WARNING)
+
+    ingestion_factory.crucible.prepare_experiment = MagicMock(return_value=None)
+    warning = f"There were errors ingesting 1 experiments: {[raw_experiment.title]}"
+    expected_result = IngestionResult(success=[], error=[raw_experiment.title])
+
+    assert ingestion_factory.ingest_experiments([raw_experiment]) == expected_result
+    assert warning in caplog.text
+
+    caplog.clear()
+
+    ingestion_factory.smelter.smelt_experiment = MagicMock(return_value=None)
+    warning = f"There were errors ingesting 1 experiments: {[raw_experiment.title]}"
+    expected_result = IngestionResult(success=[], error=[raw_experiment.title])
+
+    assert ingestion_factory.ingest_experiments([raw_experiment]) == expected_result
+    assert warning in caplog.text
 
 
-@responses.activate
-def test_replace_search_term_with_uri_not_found(
-    factory: IngestionFactory,
-    response_dict_not_found,
-    connection: ConnectionConfig,
-    search_with_no_uri_dict,
+def test_ingest_dataset(
+    caplog: pytest.LogCaptureFixture,
+    mock_ingestion_factory: IngestionFactory,
+    raw_dataset: RawDataset,
+    refined_dataset: RefinedDataset,
+    dataset: Dataset,
+    raw_dataset_parameterset: DatasetParameterSet,
+    dataset_uri: URI,
 ):
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "institution"),
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
+    ingestion_factory: IngestionFactory = mock_ingestion_factory(
+        MyTardisObject.DATASET,
+        smelter_method_mock=MagicMock(
+            return_value=(refined_dataset, raw_dataset_parameterset)
+        ),
+        crucible_method_mock=MagicMock(return_value=dataset),
+        forge_method_mock=MagicMock(return_value=(dataset_uri, None)),
     )
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "institution"),
-        match=[
-            matchers.query_param_matcher(
-                {"name": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    object_type = "institution"
-    assert (
-        factory.replace_search_term_with_uri(
-            object_type, search_with_no_uri_dict, "name"
-        )
-        == search_with_no_uri_dict
+    caplog.set_level(logging.INFO)
+    info = f"Successfully ingested 1 datasets: {[(raw_dataset.description, URI(dataset_uri))]}"
+    expected_result = IngestionResult(
+        success=[(raw_dataset.description, URI(dataset_uri))], error=[]
     )
 
+    assert ingestion_factory.ingest_datasets([raw_dataset]) == expected_result
+    assert info in caplog.text
 
-@responses.activate
-def test_replace_search_term_with_uri_http_error(
-    factory: IngestionFactory,
-    institution_response_dict,
-    connection: ConnectionConfig,
-    search_with_no_uri_dict,
+    caplog.clear()
+    caplog.set_level(logging.WARNING)
+
+    ingestion_factory.crucible.prepare_dataset = MagicMock(return_value=None)
+    warning = f"There were errors ingesting 1 datasets: {[raw_dataset.description]}"
+    expected_result = IngestionResult(success=[], error=[raw_dataset.description])
+
+    assert ingestion_factory.ingest_datasets([raw_dataset]) == expected_result
+    assert warning in caplog.text
+
+    caplog.clear()
+
+    ingestion_factory.smelter.smelt_dataset = MagicMock(return_value=None)
+    warning = f"There were errors ingesting 1 datasets: {[raw_dataset.description]}"
+    expected_result = IngestionResult(success=[], error=[raw_dataset.description])
+
+    assert ingestion_factory.ingest_datasets([raw_dataset]) == expected_result
+    assert warning in caplog.text
+
+
+def test_ingest_datafile(
+    caplog: pytest.LogCaptureFixture,
+    mock_ingestion_factory: IngestionFactory,
+    raw_datafile: RawDatafile,
+    refined_datafile: RefinedDatafile,
+    datafile: Datafile,
+    datafile_uri: URI,
 ):
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "institution"),
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=404,
-        json=(institution_response_dict),
+    ingestion_factory: IngestionFactory = mock_ingestion_factory(
+        MyTardisObject.DATAFILE,
+        smelter_method_mock=MagicMock(return_value=refined_datafile),
+        crucible_method_mock=MagicMock(return_value=datafile),
+        forge_method_mock=MagicMock(return_value=datafile_uri),
     )
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "institution"),
-        match=[
-            matchers.query_param_matcher(
-                {"name": search_with_no_uri_dict["institution"]}
-            )
-        ],
-        status=404,
-        json=(institution_response_dict),
-    )
-    object_type = "institution"
-    assert (
-        factory.replace_search_term_with_uri(
-            object_type, search_with_no_uri_dict, "name"
-        )
-        == search_with_no_uri_dict
+    caplog.set_level(logging.INFO)
+    info = f"Successfully ingested 1 datafiles: {[(raw_datafile.filename, URI(datafile_uri))]}"
+    expected_result = IngestionResult(
+        success=[(raw_datafile.filename, URI(datafile_uri))], error=[]
     )
 
+    result = ingestion_factory.ingest_datafiles([raw_datafile])
+    assert result.success == expected_result.success
+    assert result.error == expected_result.error
+    assert result == expected_result
+    assert info in caplog.text
 
-@responses.activate
-def test_get_project_uri(
-    factory: IngestionFactory,
-    connection: ConnectionConfig,
-    project_response_dict,
-    search_with_no_uri_dict,
-):
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "project"),
-        match=[
-            matchers.query_param_matcher({"pids": search_with_no_uri_dict["project"]})
-        ],
-        status=200,
-        json=(project_response_dict),
-    )
-    assert factory.get_project_uri(search_with_no_uri_dict["project"]) == [
-        "/api/v1/project/1/"
-    ]
+    caplog.clear()
+    caplog.set_level(logging.WARNING)
 
+    ingestion_factory.crucible.prepare_datafile = MagicMock(return_value=None)
+    warning = f"There were errors ingesting 1 datafiles: {[raw_datafile.filename]}"
+    expected_result = IngestionResult(success=[], error=[raw_datafile.filename])
 
-@responses.activate
-def test_get_project_uri_fall_back_search(
-    factory: IngestionFactory,
-    connection: ConnectionConfig,
-    project_response_dict,
-    search_with_no_uri_dict,
-    response_dict_not_found,
-):
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "project"),
-        match=[
-            matchers.query_param_matcher({"pids": search_with_no_uri_dict["project"]})
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "project"),
-        match=[
-            matchers.query_param_matcher({"name": search_with_no_uri_dict["project"]})
-        ],
-        status=200,
-        json=(project_response_dict),
-    )
-    assert factory.get_project_uri(search_with_no_uri_dict["project"]) == [
-        "/api/v1/project/1/"
-    ]
+    assert ingestion_factory.ingest_datafiles([raw_datafile]) == expected_result
+    assert warning in caplog.text
 
+    caplog.clear()
 
-@responses.activate
-def test_get_project_uri_not_found(
-    factory: IngestionFactory,
-    connection: ConnectionConfig,
-    search_with_no_uri_dict,
-    response_dict_not_found,
-):
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "project"),
-        match=[
-            matchers.query_param_matcher({"pids": search_with_no_uri_dict["project"]})
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "project"),
-        match=[
-            matchers.query_param_matcher({"name": search_with_no_uri_dict["project"]})
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    assert factory.get_project_uri(search_with_no_uri_dict["project"]) == None
+    ingestion_factory.smelter.smelt_datafile = MagicMock(return_value=None)
+    warning = f"There were errors ingesting 1 datafiles: {[raw_datafile.filename]}"
+    expected_result = IngestionResult(success=[], error=[raw_datafile.filename])
 
-
-@responses.activate
-def test_get_experiment_uri(
-    factory: IngestionFactory,
-    connection: ConnectionConfig,
-    experiment_response_dict,
-    search_with_no_uri_dict,
-):
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "experiment"),
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["experiment"]}
-            )
-        ],
-        status=200,
-        json=(experiment_response_dict),
-    )
-    assert factory.get_experiment_uri(search_with_no_uri_dict["experiment"]) == [
-        "/api/v1/experiment/1/"
-    ]
-
-
-@responses.activate
-def test_get_experiment_uri_fall_back_search(
-    factory: IngestionFactory,
-    connection: ConnectionConfig,
-    experiment_response_dict,
-    search_with_no_uri_dict,
-    response_dict_not_found,
-):
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "experiment"),
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["experiment"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "experiment"),
-        match=[
-            matchers.query_param_matcher(
-                {"title": search_with_no_uri_dict["experiment"]}
-            )
-        ],
-        status=200,
-        json=(experiment_response_dict),
-    )
-    assert factory.get_experiment_uri(search_with_no_uri_dict["experiment"]) == [
-        "/api/v1/experiment/1/"
-    ]
-
-
-@responses.activate
-def test_get_experiment_uri_not_found(
-    factory: IngestionFactory,
-    connection: ConnectionConfig,
-    search_with_no_uri_dict,
-    response_dict_not_found,
-):
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "experiment"),
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["experiment"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "experiment"),
-        match=[
-            matchers.query_param_matcher(
-                {"title": search_with_no_uri_dict["experiment"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    assert factory.get_experiment_uri(search_with_no_uri_dict["experiment"]) == None
-
-
-@responses.activate
-def test_get_dataset_uri(
-    factory: IngestionFactory,
-    connection: ConnectionConfig,
-    dataset_response_dict,
-    search_with_no_uri_dict,
-):
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "dataset"),
-        match=[
-            matchers.query_param_matcher({"pids": search_with_no_uri_dict["dataset"]})
-        ],
-        status=200,
-        json=(dataset_response_dict),
-    )
-    assert factory.get_dataset_uri(search_with_no_uri_dict["dataset"]) == [
-        "/api/v1/dataset/1/"
-    ]
-
-
-@responses.activate
-def test_get_dataset_uri_fall_back_search(
-    factory: IngestionFactory,
-    connection: ConnectionConfig,
-    dataset_response_dict,
-    search_with_no_uri_dict,
-    response_dict_not_found,
-):
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "dataset"),
-        match=[
-            matchers.query_param_matcher({"pids": search_with_no_uri_dict["dataset"]})
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "dataset"),
-        match=[
-            matchers.query_param_matcher(
-                {"description": search_with_no_uri_dict["dataset"]}
-            )
-        ],
-        status=200,
-        json=(dataset_response_dict),
-    )
-    assert factory.get_dataset_uri(search_with_no_uri_dict["dataset"]) == [
-        "/api/v1/dataset/1/"
-    ]
-
-
-@responses.activate
-def test_get_dataset_uri_not_found(
-    factory: IngestionFactory,
-    connection: ConnectionConfig,
-    search_with_no_uri_dict,
-    response_dict_not_found,
-):
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "dataset"),
-        match=[
-            matchers.query_param_matcher({"pids": search_with_no_uri_dict["dataset"]})
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "dataset"),
-        match=[
-            matchers.query_param_matcher(
-                {"description": search_with_no_uri_dict["dataset"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    assert factory.get_dataset_uri(search_with_no_uri_dict["dataset"]) == None
-
-
-@responses.activate
-def test_get_instrument_uri(
-    factory: IngestionFactory,
-    connection: ConnectionConfig,
-    instrument_response_dict,
-    search_with_no_uri_dict,
-):
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "instrument"),
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["instrument"]}
-            )
-        ],
-        status=200,
-        json=(instrument_response_dict),
-    )
-    assert factory.get_instrument_uri(search_with_no_uri_dict["instrument"]) == [
-        "/api/v1/instrument/1/"
-    ]
-
-
-@responses.activate
-def test_get_instrument_uri_fall_back_search(
-    factory: IngestionFactory,
-    connection: ConnectionConfig,
-    instrument_response_dict,
-    search_with_no_uri_dict,
-    response_dict_not_found,
-):
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "instrument"),
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["instrument"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "instrument"),
-        match=[
-            matchers.query_param_matcher(
-                {"name": search_with_no_uri_dict["instrument"]}
-            )
-        ],
-        status=200,
-        json=(instrument_response_dict),
-    )
-    assert factory.get_instrument_uri(search_with_no_uri_dict["instrument"]) == [
-        "/api/v1/instrument/1/"
-    ]
-
-
-@responses.activate
-def test_get_instrument_uri_not_found(
-    factory: IngestionFactory,
-    connection: ConnectionConfig,
-    search_with_no_uri_dict,
-    response_dict_not_found,
-):
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "instrument"),
-        match=[
-            matchers.query_param_matcher(
-                {"pids": search_with_no_uri_dict["instrument"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, "instrument"),
-        match=[
-            matchers.query_param_matcher(
-                {"name": search_with_no_uri_dict["instrument"]}
-            )
-        ],
-        status=200,
-        json=(response_dict_not_found),
-    )
-    assert factory.get_instrument_uri(search_with_no_uri_dict["instrument"]) is None
+    assert ingestion_factory.ingest_datafiles([raw_datafile]) == expected_result
+    assert warning in caplog.text

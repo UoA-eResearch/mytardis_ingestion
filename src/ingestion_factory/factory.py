@@ -1,20 +1,40 @@
-# pylint: disable=consider-using-set-comprehension
 """IngestionFactory is a base class for specific instances of MyTardis
 Ingestion scripts. The base class contains mostly concrete functions but
 needs to determine the Smelter class that is used by the Factory"""
 
-from pathlib import Path
-from typing import Union
+import json
+import logging
+import sys
 
+from pydantic import ValidationError
+
+from src.blueprints.custom_data_types import URI
+from src.blueprints.datafile import RawDatafile
+from src.blueprints.dataset import RawDataset
+from src.blueprints.experiment import RawExperiment
+from src.blueprints.project import RawProject
+from src.crucible.crucible import Crucible
 from src.forges import Forge
-from src.helpers.config import (
-    AuthConfig,
-    ConnectionConfig,
-    GeneralConfig,
-    IntrospectionConfig,
-)
-from src.overseers import Overseer
+from src.helpers.config import ConfigFromEnv
+from src.helpers.dataclass import get_object_name
+from src.helpers.mt_rest import MyTardisRESTFactory
+from src.overseers.overseer import Overseer
 from src.smelters import Smelter
+
+logger = logging.getLogger(__name__)
+
+
+class IngestionResult:
+    def __init__(
+        self, success: list[tuple[str, URI | None]] = None, error: list[str] = None
+    ) -> None:
+        self.success = success if success else []
+        self.error = error if error else []
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, IngestionResult):
+            return self.success == other.success and self.error == other.error
+        return NotImplemented
 
 
 class IngestionFactory:
@@ -40,11 +60,12 @@ class IngestionFactory:
 
     def __init__(
         self,
-        general: GeneralConfig,
-        auth: AuthConfig,
-        connection: ConnectionConfig,
-        mytardis_setup: IntrospectionConfig,
-        smelter: Smelter,
+        config: ConfigFromEnv = None,
+        mt_rest: MyTardisRESTFactory = None,
+        overseer: Overseer = None,
+        smelter: Smelter = None,
+        forge: Forge = None,
+        crucible: Crucible = None,
     ) -> None:
         """Initialises the Factory with the configuration found in the config_dict.
 
@@ -53,316 +74,311 @@ class IngestionFactory:
 
         Args:
             general : GeneralConfig
-            Pydantic config class containing general information
+                Pydantic config class containing general information
             auth : AuthConfig
-            Pydantic config class containing information about authenticating with a MyTardis instance
+                Pydantic config class containing information about authenticating with a MyTardis
+                instance
             connection : ConnectionConfig
-            Pydantic config class containing information about connecting to a MyTardis instance
+                Pydantic config class containing information about connecting to a MyTardis instance
             mytardis_setup : IntrospectionConfig
-            Pydantic config class containing information from the introspection API
+                Pydantic config class containing information from the introspection API
             smelter : Smelter
-            class instance of Smelter
+                class instance of Smelter
         """
-        self.overseer = Overseer(auth, connection, mytardis_setup)
-        self.mytardis_setup = mytardis_setup
-        self.forge = Forge(auth, connection)
-        self.smelter = smelter
-        self.glob_string = self.smelter.get_file_type_for_input_files()
-        self.default_institution = general.default_institution
+        if not config:
+            try:
+                config = ConfigFromEnv()
+            except ValidationError as error:
+                logger.error(
+                    (
+                        "An error occurred while validating the environment "
+                        "configuration. Make sure all required variables are set "
+                        "or pass your own configuration instance. Error: %s"
+                    ),
+                    error,
+                )
+                sys.exit()
 
-    def build_object_lists(self, file_path: Path, object_type: str) -> list:
-        """General function to glob for files and return a list with the files that
-        have objects of object_type defined within them
+        mt_rest = (
+            mt_rest if mt_rest else MyTardisRESTFactory(config.auth, config.connection)
+        )
+        overseer = overseer if overseer else Overseer(mt_rest)
 
-        Args:
-            file_path: A Path object, ideally to the directory containing the input files
-               but which can also be a parent directory or a single file.
-            object_type: The object that is being sought.
+        self.forge = forge if forge else Forge(mt_rest)
+        self.smelter = (
+            smelter
+            if smelter
+            else Smelter(
+                overseer=overseer,
+                general=config.general,
+                default_schema=config.default_schema,
+                storage=config.storage,
+            )
+        )
+        self.crucible = crucible if crucible else Crucible(overseer)
 
-        Returns:
-            A list of files that have inputs of type object_type
-        """
-        return_list = []
-        if file_path.is_file():
-            if object_type in self.smelter.get_objects_in_input_file(file_path):
-                return [file_path]
-            return []
-        for input_file in file_path.rglob(self.glob_string):
-            if object_type in self.smelter.get_objects_in_input_file(input_file):
-                return_list.append(input_file)
-        return return_list
-
-    def replace_search_term_with_uri(
+    def ingest_projects(
         self,
-        object_type: str,
-        cleaned_dict: dict,
-        fallback_search: str,
-        key_name: str = None,
-    ) -> dict:
-        """Helper function to carry out a search using an identifier or name
-        and replace it's value with a URI from MyTardis
-
-        Args:
-            object_type: A string representation of the object type in MyTardis to search for
-            cleaned_dict: A dictionary containing the key to be replaced
-            fallback_search: The name of the search key should searching by identifier fail
-            key_name: The name of the key to replace, if it is not the object_type.
-
-        Returns:
-            The cleaned_dict dictionary with the search term replaced by a URI from MyTardis
-        """
-        if not key_name:
-            key_name = object_type
-        objects: Union[list, None] = []
-        if key_name in cleaned_dict.keys():
-            if not Overseer.is_uri(cleaned_dict[key_name], object_type):
-                if (
-                    self.mytardis_setup.objects_with_ids
-                    and object_type in self.mytardis_setup.objects_with_ids
-                ):
-                    objects = self.overseer.get_uris_by_identifier(
-                        object_type, cleaned_dict[key_name]
-                    )
-                    if (
-                        object_type not in self.mytardis_setup.objects_with_ids
-                        or not objects
-                    ):
-                        objects = self.overseer.get_uris(
-                            object_type, fallback_search, cleaned_dict[key_name]
-                        )
-                    cleaned_dict[key_name] = objects
-        return cleaned_dict
-
-    def get_project_uri(self, project_id):
-        """Helper function to get a Project URI from MyTardis
-
-        Args:
-            project_id: An identifier or project name to search for
-
-        Returns:
-            The URI from MyTardis for the project searched for.
-        """
-        uri = None
-        if (
-            self.mytardis_setup.objects_with_ids
-            and "project" in self.mytardis_setup.objects_with_ids
-        ):
-            uri = self.overseer.get_uris_by_identifier("project", project_id)
-        if not uri:
-            uri = self.overseer.get_uris("project", "name", project_id)
-        return uri
-
-    def get_experiment_uri(self, experiment_id):
-        """Helper function to get an Experiment URI from MyTardis
-
-        Args:
-            experiment_id: An identifier or experiment name to search for
-
-        Returns:
-            The URI from MyTardis for the experiment searched for.
-        """
-        uri = None
-        if (
-            self.mytardis_setup.objects_with_ids
-            and "experiment" in self.mytardis_setup.objects_with_ids
-        ):
-            uri = self.overseer.get_uris_by_identifier("experiment", experiment_id)
-        if not uri:
-            uri = self.overseer.get_uris("experiment", "title", experiment_id)
-        return uri
-
-    def get_dataset_uri(self, dataset_id):
-        """Helper function to get a Dataset URI from MyTardis
-
-        Args:
-            dataset_id: An identifier or dataset name to search for
-
-        Returns:
-            The URI from MyTardis for the dataset searched for.
-        """
-        uri = None
-        if (
-            self.mytardis_setup.objects_with_ids
-            and "dataset" in self.mytardis_setup.objects_with_ids
-        ):
-            uri = self.overseer.get_uris_by_identifier("dataset", dataset_id)
-        if not uri:
-            uri = self.overseer.get_uris("dataset", "description", dataset_id)
-        return uri
-
-    def get_instrument_uri(self, instrument):
-        """Helper function to get a Instrumentt URI from MyTardis
-
-        Args:
-            instrument_id: An identifier or instrument name to search for
-
-        Returns:
-            The URI from MyTardis for the instrument searched for.
-        """
-        uri = None
-        if (
-            self.mytardis_setup.objects_with_ids
-            and "instrument" in self.mytardis_setup.objects_with_ids
-        ):
-            uri = self.overseer.get_uris_by_identifier("instrument", instrument)
-        if not uri:
-            uri = self.overseer.get_uris("instrument", "name", instrument)
-        return uri
-
-    def process_projects(self, file_path: Path) -> list:
+        projects: list[RawProject] | None,
+    ) -> IngestionResult | None:
         """Wrapper function to create the projects from input files"""
-        project_files = self.build_object_lists(file_path, "project")
-        return_list = []
-        for project_file in project_files:
-            parsed_dictionaries = self.smelter.read_file(project_file)
-            for parsed_dict in parsed_dictionaries:
-                object_type = self.smelter.get_object_from_dictionary(parsed_dict)
-                if object_type == "project":
-                    object_dict, parameter_dict = self.smelter.smelt_project(
-                        parsed_dict
-                    )
-                    name = object_dict["name"]
-                    object_dict = self.replace_search_term_with_uri(
-                        "institution", object_dict, "name"
-                    )
-                    forged_object = self.forge.forge_object(
-                        name, "project", object_dict
-                    )
-                    return_list.append(forged_object)
-                    uri = None
-                    if forged_object[1]:
-                        uri = forged_object[2]
-                    if parameter_dict["parameters"] != [] and uri:
-                        parameter_dict["project"] = uri
-                        return_list.append(
-                            self.forge.forge_object(
-                                f"{name} - Parameters",
-                                "projectparameterset",
-                                parameter_dict,
-                            )
-                        )
-        return return_list
+        if not projects:
+            return None
 
-    def process_experiments(  # pylint: disable=too-many-locals
-        self, file_path: Path
-    ) -> list:
-        """Wrapper function to create the experiments from input files"""
-        experiment_files = self.build_object_lists(file_path, "experiment")
-        return_list = []
-        for experiment_file in experiment_files:
-            parsed_dictionaries = self.smelter.read_file(experiment_file)
-            for parsed_dict in parsed_dictionaries:
-                object_type = self.smelter.get_object_from_dictionary(parsed_dict)
-                if object_type == "experiment":
-                    object_dict, parameter_dict = self.smelter.smelt_experiment(
-                        parsed_dict
-                    )
-                    name = object_dict["title"]
-                    project_id = object_dict["projects"]
-                    if isinstance(project_id, str):
-                        project_id = [project_id]
-                    project_uris = []
-                    for project in project_id:
-                        project_uris.append(self.get_project_uri(project))
-                    project_uris = list(
-                        set([item for sublist in project_uris for item in sublist])
-                    )
-                    object_dict["projects"] = project_uris
-                    forged_object = self.forge.forge_object(
-                        name, "experiment", object_dict
-                    )
-                    return_list.append(forged_object)
-                    uri = None
-                    if forged_object[1]:
-                        uri = forged_object[2]
-                    if parameter_dict["parameters"] != [] and uri:
-                        parameter_dict["experiment"] = uri
-                        return_list.append(
-                            self.forge.forge_object(
-                                f"{name} - Parameters",
-                                "experimentparameterset",
-                                parameter_dict,
-                            )
-                        )
-        return return_list
+        result = IngestionResult()
 
-    def process_datasets(  # pylint: disable=too-many-locals
-        self, file_path: Path
-    ) -> list:
-        """Wrapper function to create the experiments from input files"""
-        dataset_files = self.build_object_lists(file_path, "dataset")
-        return_list = []
-        for dataset_file in dataset_files:
-            parsed_dictionaries = self.smelter.read_file(dataset_file)
-            for parsed_dict in parsed_dictionaries:
-                object_type = self.smelter.get_object_from_dictionary(parsed_dict)
-                if object_type == "dataset":
-                    object_dict, parameter_dict = self.smelter.smelt_dataset(
-                        parsed_dict
+        for project in projects:
+            name = get_object_name(project)
+            if not name:
+                logger.warning(
+                    (
+                        "Unable to find the name of the project, skipping project defined by %s",
+                        project,
                     )
-                    name = object_dict["description"]
-                    experiments = object_dict["experiments"]
-                    if isinstance(experiments, str):
-                        experiments = [experiments]
-                    experiment_uris = []
-                    for experiment in experiments:
-                        experiment_uris.append(self.get_experiment_uri(experiment))
-                    experiment_uris = list(
-                        set([item for sublist in experiment_uris for item in sublist])
-                    )
-                    object_dict["experiments"] = experiment_uris
-                    instrument = object_dict["instrument"]
-                    object_dict["instrument"] = self.get_instrument_uri(instrument)[0]
-                    forged_object = self.forge.forge_object(
-                        name, "dataset", object_dict
-                    )
-                    return_list.append(forged_object)
-                    uri = None
-                    if forged_object[1]:
-                        uri = forged_object[2]
-                    if parameter_dict["parameters"] != [] and uri:
-                        parameter_dict["dataset"] = uri
-                        return_list.append(
-                            self.forge.forge_object(
-                                f"{name} - Parameters",
-                                "datasetparameterset",
-                                parameter_dict,
-                            )
-                        )
-        return return_list
+                )
+                result.error.append("unknown")
+                continue
 
-    def process_datafiles(self, file_path: Path) -> list:
+            smelted_project = self.smelter.smelt_project(project)
+            if not smelted_project:
+                result.error.append(name)
+                continue
+
+            refined_project, refined_parameters = smelted_project
+
+            prepared_project = self.crucible.prepare_project(refined_project)
+            if not prepared_project:
+                result.error.append(name)
+                continue
+
+            forged_project = self.forge.forge_project(
+                prepared_project, refined_parameters
+            )
+
+            if isinstance(forged_project[0], URI):
+                result.success.append((name, forged_project[0]))
+            else:
+                result.success.append((name, None))
+
+        logger.info(
+            "Successfully ingested %d projects: %s", len(result.success), result.success
+        )
+        if result.error:
+            logger.warning(
+                "There were errors ingesting %d projects: %s",
+                len(result.error),
+                result.error,
+            )
+
+        return result
+
+    def ingest_experiments(  # pylint: disable=too-many-locals
+        self,
+        experiments: list[RawExperiment] | None,
+    ) -> IngestionResult | None:
         """Wrapper function to create the experiments from input files"""
-        datafile_files = self.build_object_lists(file_path, "datafile")
-        return_list = []
-        for datafile_file in datafile_files:
-            parsed_dictionaries = self.smelter.read_file(datafile_file)
-            for parsed_dict in parsed_dictionaries:
-                object_type = self.smelter.get_object_from_dictionary(parsed_dict)
-                if object_type == "datafile":
-                    parsed_dict["datafiles"]["dataset_id"] = self.get_dataset_uri(
-                        parsed_dict["datafiles"]["dataset_id"]
+        if not experiments:
+            return None
+
+        result = IngestionResult()
+
+        for experiment in experiments:
+            name = get_object_name(experiment)
+            if not name:
+                logger.warning(
+                    (
+                        "Unable to find the name of the experiment, skipping experiment defined by %s",
+                        experiment,
                     )
-                    cleaned_list = self.smelter.expand_datafile_entry(parsed_dict)
-                    for cleaned_dict in cleaned_list:
-                        name = cleaned_dict["filename"]
-                        object_dict, parameter_dict = self.smelter.smelt_datafile(
-                            cleaned_dict
-                        )
-                        forged_object = self.forge.forge_object(
-                            name, "dataset_file", object_dict
-                        )
-                        return_list.append(forged_object)
-                        uri = None
-                        if forged_object[1]:
-                            uri = forged_object[2]
-                        if parameter_dict["parameters"] != [] and uri:
-                            parameter_dict["dataset"] = uri
-                            return_list.append(
-                                self.forge.forge_object(
-                                    f"{name} - Parameters",
-                                    "datafileparameterset",
-                                    parameter_dict,
-                                )
-                            )
-        return return_list
+                )
+                result.error.append("unknown")
+                continue
+
+            smelted_experiment = self.smelter.smelt_experiment(experiment)
+            if not smelted_experiment:
+                result.error.append(name)
+                continue
+
+            refined_experiment, refined_parameters = smelted_experiment
+
+            prepared_experiment = self.crucible.prepare_experiment(refined_experiment)
+            if not prepared_experiment:
+                result.error.append(name)
+                continue
+
+            forged_experiment = self.forge.forge_experiment(
+                prepared_experiment, refined_parameters
+            )
+
+            if isinstance(forged_experiment[0], URI):
+                result.success.append((name, forged_experiment[0]))
+            else:
+                result.success.append((name, None))
+
+        logger.info(
+            "Successfully ingested %d experiments: %s",
+            len(result.success),
+            result.success,
+        )
+        if result.error:
+            logger.warning(
+                "There were errors ingesting %d experiments: %s",
+                len(result.error),
+                result.error,
+            )
+
+        return result
+
+    def ingest_datasets(  # pylint: disable=too-many-locals
+        self,
+        datasets: list[RawDataset] | None,
+    ) -> IngestionResult | None:
+        """Wrapper function to create the experiments from input files"""
+        if not datasets:
+            return None
+
+        result = IngestionResult()
+
+        for dataset in datasets:
+            name = get_object_name(dataset)
+            if not name:
+                logger.warning(
+                    (
+                        "Unable to find the name of the dataset, skipping dataset defined by %s",
+                        dataset,
+                    )
+                )
+                result.error.append("unknown")
+                continue
+
+            smelted_dataset = self.smelter.smelt_dataset(dataset)
+            if not smelted_dataset:
+                result.error.append(name)
+                continue
+
+            refined_dataset, refined_parameters = smelted_dataset
+            prepared_dataset = self.crucible.prepare_dataset(refined_dataset)
+            if not prepared_dataset:
+                result.error.append(name)
+                continue
+
+            forged_dataset = self.forge.forge_dataset(
+                prepared_dataset, refined_parameters
+            )
+            if isinstance(forged_dataset[0], URI):
+                result.success.append((name, forged_dataset[0]))
+            else:
+                result.success.append((name, None))
+
+        logger.info(
+            "Successfully ingested %d datasets: %s", len(result.success), result.success
+        )
+        if result.error:
+            logger.warning(
+                "There were errors ingesting %d datasets: %s",
+                len(result.error),
+                result.error,
+            )
+
+        return result
+
+    def ingest_datafiles(
+        self,
+        datafiles: list[RawDatafile] | None,
+    ) -> IngestionResult | None:
+        """Wrapper function to create the experiments from input files"""
+        if not datafiles:
+            return None
+
+        result = IngestionResult()
+
+        for datafile in datafiles:
+            name = get_object_name(datafile)
+            if not name:
+                logger.warning(
+                    (
+                        "Unable to find the name of the datafile, skipping datafile defined by %s",
+                        datafile,
+                    )
+                )
+                result.error.append("unknown")
+                continue
+
+            refined_datafile = self.smelter.smelt_datafile(datafile)
+            if not refined_datafile:
+                result.error.append(name)
+                continue
+
+            prepared_datafile = self.crucible.prepare_datafile(refined_datafile)
+            if not prepared_datafile:
+                result.error.append(name)
+                continue
+
+            forged_datafile = self.forge.forge_datafile(prepared_datafile)
+            if isinstance(forged_datafile, URI):
+                result.success.append((name, forged_datafile))
+            else:
+                result.success.append((name, None))
+
+        logger.info(
+            "Successfully ingested %d datafiles: %s",
+            len(result.success),
+            result.success,
+        )
+        if result.error:
+            logger.warning(
+                "There were errors ingesting %d datafiles: %s",
+                len(result.error),
+                result.error,
+            )
+        return result
+
+    def dump_ingestion_result_json(
+        self,
+        projects_result: IngestionResult | None,
+        experiments_result: IngestionResult | None,
+        datasets_result: IngestionResult | None,
+        datafiles_result: IngestionResult | None,
+    ):
+        with open("ingestion_result.json", "w", encoding="utf-8") as file:
+            json.dump(
+                {
+                    "projects": projects_result,
+                    "experiments": experiments_result,
+                    "datasets": datasets_result,
+                    "datafiles": datafiles_result,
+                },
+                file,
+                ensure_ascii=False,
+                indent=4,
+            )
+
+    def ingest(
+        self,
+        projects: list[RawProject] | None = None,
+        experiments: list[RawExperiment] | None = None,
+        datasets: list[RawDataset] | None = None,
+        datafiles: list[RawDatafile] | None = None,
+    ):
+        ingested_projects = self.ingest_projects(projects)
+        if not ingested_projects:
+            logger.error("Fatal error while ingesting projects. Check logs.")
+
+        ingested_experiments = self.ingest_experiments(experiments)
+        if not ingested_experiments:
+            logger.error("Fatal error ingesting experiments. Check logs.")
+
+        ingested_datasets = self.ingest_datasets(datasets)
+        if not ingested_datasets:
+            logger.error("Fatal error ingesting datasets. Check logs.")
+
+        ingested_datafiles = self.ingest_datafiles(datafiles)
+        if not ingested_datafiles:
+            logger.error("Fatal error ingesting datafiles. Check logs.")
+
+        self.dump_ingestion_result_json(
+            projects_result=ingested_projects,
+            experiments_result=ingested_experiments,
+            datasets_result=ingested_datasets,
+            datafiles_result=ingested_datafiles,
+        )

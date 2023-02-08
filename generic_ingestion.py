@@ -20,6 +20,7 @@ The workflow for these scripts are as follows:
 import logging
 import subprocess
 from pathlib import Path
+
 from src.helpers.config import ConfigFromEnv
 from src.ingestion_factory.factory import IngestionFactory
 from src.smelters.yaml_smelter import YAMLSmelter
@@ -47,15 +48,15 @@ factory = IngestionFactory(
 
 project_files = factory.build_object_lists(yaml_path, "project")
 for project_file in project_files:
-    factory.process_projects(project_file)
+    factory.ingest_projects(project_file)
 
 experiment_files = factory.build_object_lists(yaml_path, "experiment")
 for experiment_file in experiment_files:
-    factory.process_experiments(experiment_file)
+    factory.ingest_experiments(experiment_file)
 
 dataset_files = factory.build_object_lists(yaml_path, "dataset")
 for dataset_file in dataset_files:
-    factory.process_datasets(dataset_file)
+    factory.ingest_datasets(dataset_file)
 
 datafile_files = factory.build_object_lists(yaml_path, "datafile")
 for datafile_file in datafile_files:
@@ -75,4 +76,4 @@ for datafile_file in datafile_files:
             # Note the subprocess call is excluded from the bandit check via nosec as this is
             # intended to demonstrate how the file movement needs to occur. In practice this
             # should probably be handled by a shell script that also calls the ingestion process
-    factory.process_datafiles(datafile_file)
+    factory.ingest_datafiles(datafile_file)
