@@ -321,22 +321,22 @@ files = [
 
 [[package]]
 name = "devtools"
-version = "0.8.0"
-description = "Python's missing debug print command and other development tools."
+version = "0.10.0"
+description = "Python's missing debug print command, and more."
 category = "dev"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 files = [
-    {file = "devtools-0.8.0-py3-none-any.whl", hash = "sha256:00717ef184223cf36c65bbd17c6eb412f8a7564f47957f9e8b2b7610661b17fb"},
-    {file = "devtools-0.8.0.tar.gz", hash = "sha256:6162a2f61c70242479dff3163e7837e6a9bf32451661af1347bfa3115602af16"},
+    {file = "devtools-0.10.0-py3-none-any.whl", hash = "sha256:b0bc02043bb032cdfb93e227226e2fea1aaea8f5a31fca25fabc4eadca22f228"},
+    {file = "devtools-0.10.0.tar.gz", hash = "sha256:6eb7c4fa7c4b90e5cfe623537a9961d1dc3199d8be0981802c6931cd8f02418f"},
 ]
 
 [package.dependencies]
 asttokens = ">=2.0.0,<3.0.0"
-executing = ">=0.8.0,<1.0.0"
+executing = ">=1.1.1"
 
 [package.extras]
-pygments = ["Pygments (>=2.2.0)"]
+pygments = ["pygments (>=2.2.0)"]
 
 [[package]]
 name = "dill"
@@ -382,15 +382,18 @@ test = ["pytest (>=6)"]
 
 [[package]]
 name = "executing"
-version = "0.10.0"
+version = "1.2.0"
 description = "Get the currently executing AST node of a frame, and other information"
 category = "dev"
 optional = false
 python-versions = "*"
 files = [
-    {file = "executing-0.10.0-py2.py3-none-any.whl", hash = "sha256:9c745f80cda11eb22b62cbecf21156491a794eb56ab06f9d286a44e62822b24e"},
-    {file = "executing-0.10.0.tar.gz", hash = "sha256:d1cd87c2e371e9966261410c5b3769d6df2f9e4a79a83eebd2662dd3388f9833"},
+    {file = "executing-1.2.0-py2.py3-none-any.whl", hash = "sha256:0314a69e37426e3608aada02473b4161d4caf5a4b244d1d0c48072b8fee7bacc"},
+    {file = "executing-1.2.0.tar.gz", hash = "sha256:19da64c18d2d851112f09c287f8d3dbbdf725ab0e569077efb6cdcbd3497c107"},
 ]
+
+[package.extras]
+tests = ["asttokens", "littleutils", "pytest", "rich"]
 
 [[package]]
 name = "filelock"
@@ -1490,4 +1493,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "43aa95db95d978f5794dd0237faa9f4ae80d77cfa2ed6c5763ecfa6dfb03459a"
+content-hash = "3a6faa93a3e9d7af4a237603ddefaa7a74b94d85c2dc12b44de8cfe102cd83aa"
