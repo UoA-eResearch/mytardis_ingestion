@@ -23,6 +23,7 @@
   * [Built With](#built-with)
 * [Usage](#usage)
 * [Roadmap](#roadmap)
+* [Setup](#setup)
 * [Contact](#contact)
   [Change Log](#change-log)
 
@@ -125,6 +126,19 @@ Recommended metadata fields include:
  - Migrate the API keys out of an **env** file and into a more secure information repository
  - Maintain parity with UoA MyTardis development to ensure that the ingestion scripts continue to function as expected
   - As part of ongoing MyTardis development an assessment of the cost/benefit of using GraphQL as an API in place of Tastypie will be made. Based on the outcome of that decision modifications to the ingestion scripts may be necessary.
+
+### Setup
+The setup is designed for an Ubuntu/Linux setup with VS Code installed. For a full-detailed step-by-step setup, please refer to the Documentation channel on Teams, otherwise continue to see the following summarised steps:
+ - Repo
+  1.	Generate and add an SSH key for the device this repo is to be downloaded in on GitHub. 
+  2.	Clone this repository via SSH.
+  3. On a terminal, cd into this repo's directory, and run the following command “sudo source ./setup/venv_setup.sh”. A prompt will be displayed to enter the sudo password, as well as a name for the virtual environment. Please enter these to run the rest of the script. This will create and setup a virtual environment for the repo via the poetry method.
+  4.	On the terminal run “pre-commit install”. This will now activate the pre-commit hooks when performing the “git commit” command.
+  5.	Now the terminal is ready to run project scripts.
+ - VS Code (only if this is a fresh install of Ubuntu/Linux)
+  1.  Open the “vscode_extensions.txt” file (found in the ./setup folder) and copy the commands for installing the extensions.
+  2.	Using the terminal (or VS Code's terminal), paste the commands here and press the Enter key to install the relevant extensions required for VS Code.
+
 
 ## Contact
 
