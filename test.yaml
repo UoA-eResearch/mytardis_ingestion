@@ -1,0 +1,169 @@
+!Project
+admin_groups: []
+admin_users: []
+alternate_ids: []
+description: ''
+download_groups: []
+download_users: []
+lead_researcher: ''
+metadata: {}
+project_id: p11
+project_name: p1
+read_groups: []
+read_users: []
+sensitive_groups: []
+sensitive_users: []
+principal_investigator: abcd123
+--- !Project
+admin_groups: []
+admin_users: []
+alternate_ids: []
+description: ''
+download_groups: []
+download_users: []
+lead_researcher: ''
+metadata: {}
+project_id: P22
+project_name: P2
+read_groups: []
+read_users: []
+sensitive_groups: []
+sensitive_users: []
+--- !Experiment
+admin_groups: []
+admin_users: []
+alternate_ids: []
+description: ''
+download_groups: []
+download_users: []
+experiment_id: e11
+experiment_name: e1
+metadata: {}
+project_id: p11
+read_groups: []
+read_users: []
+sensitive_groups: []
+sensitive_users: []
+--- !Experiment
+admin_groups: []
+admin_users: []
+alternate_ids: []
+description: ''
+download_groups: []
+download_users: []
+experiment_id: E22
+experiment_name: E2
+metadata: {}
+project_id: P22
+read_groups: []
+read_users: []
+sensitive_groups: []
+sensitive_users: []
+--- !Dataset
+admin_groups: []
+admin_users: []
+dataset_id: ds11
+dataset_name: ds1
+download_groups: []
+download_users: []
+experiment_id:
+- e11
+instrument_id: ''
+metadata: {}
+read_groups: []
+read_users: []
+sensitive_groups: []
+sensitive_users: []
+--- !Dataset
+admin_groups: []
+admin_users: []
+dataset_id: ds22
+dataset_name: ds2
+download_groups: []
+download_users: []
+experiment_id:
+- E22
+instrument_id: ''
+metadata: {}
+read_groups: []
+read_users: []
+sensitive_groups: []
+sensitive_users: []
+--- !Datafile
+dataset_id: ds11
+files:
+- !FileInfo
+  admin_groups: []
+  admin_users: []
+  download_groups: []
+  download_users: []
+  metadata: {}
+  name: app.py
+  read_groups: []
+  read_users: []
+  sensitive_groups: []
+  sensitive_users: []
+  size: 250
+- !FileInfo
+  admin_groups: []
+  admin_users: []
+  download_groups: []
+  download_users: []
+  metadata: {}
+  name: default_rc.py
+  read_groups: []
+  read_users: []
+  sensitive_groups: []
+  sensitive_users: []
+  size: 169959
+- !FileInfo
+  admin_groups: []
+  admin_users: []
+  download_groups: []
+  download_users: []
+  metadata: {}
+  name: default.qrc
+  read_groups: []
+  read_users: []
+  sensitive_groups: []
+  sensitive_users: []
+  size: 303
+--- !Datafile
+dataset_id: ds22
+files:
+- !FileInfo
+  admin_groups: []
+  admin_users: []
+  download_groups: []
+  download_users: []
+  metadata: {}
+  name: poetry.lock
+  read_groups: []
+  read_users: []
+  sensitive_groups: []
+  sensitive_users: []
+  size: 45942
+- !FileInfo
+  admin_groups: []
+  admin_users: []
+  download_groups: []
+  download_users: []
+  metadata: {}
+  name: pyproject.toml
+  read_groups: []
+  read_users: []
+  sensitive_groups: []
+  sensitive_users: []
+  size: 615
+- !FileInfo
+  admin_groups: []
+  admin_users: []
+  download_groups: []
+  download_users: []
+  metadata: {}
+  name: README.md
+  read_groups: []
+  read_users: []
+  sensitive_groups: []
+  sensitive_users: []
+  size: 1198
