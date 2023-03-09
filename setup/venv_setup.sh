@@ -4,7 +4,8 @@
 #chmod u+x install.sh
 
 #This bash script sets up a virtual environment for the repo
-#Please make sure this script is located in the top level directory
+#Please make sure that this script is called from the top level directory using the source command
+#e.g. source ./setup/venv_setup.sh
 echo "---Starting install..."
 
 echo "---Please enter a name for the virtual environment"
