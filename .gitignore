@@ -42,4 +42,4 @@ pytest.xml
 
 .env
 
-docs/build
+docs/build/
