@@ -41,3 +41,5 @@ pytest.xml
 .coverage
 
 .env
+
+docs/build
