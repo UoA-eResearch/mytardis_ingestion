@@ -127,7 +127,7 @@ Recommended metadata fields include:
  - Maintain parity with UoA MyTardis development to ensure that the ingestion scripts continue to function as expected
   - As part of ongoing MyTardis development an assessment of the cost/benefit of using GraphQL as an API in place of Tastypie will be made. Based on the outcome of that decision modifications to the ingestion scripts may be necessary.
 
-### Setup
+## Setup
 The setup is designed for an Ubuntu/Linux setup with VS Code installed. For a full-detailed step-by-step setup, please refer to the Documentation channel on Teams, otherwise continue to see the following summarised steps:
  - Repo
   1.	Generate and add an SSH key for the device this repo is to be downloaded in on GitHub. 
@@ -138,6 +138,13 @@ The setup is designed for an Ubuntu/Linux setup with VS Code installed. For a fu
  - VS Code (only if this is a fresh install of Ubuntu/Linux)
   1.  Open the “vscode_extensions.txt” file (found in the ./setup folder) and copy the commands for installing the extensions.
   2.	Using the terminal (or VS Code's terminal), paste the commands here and press the Enter key to install the relevant extensions required for VS Code.
+
+
+## Documentation
+For API documentation, Sphinx is used to autogenerate documents for this project. In order to generate the necessary documents for Sphinx, please follow the following steps:
+ 1. Using terminal, change directory into the repo.
+ 2. On the terminal, run the command "cd docs".
+ 3. Now run the command "source automake.sh", and this should automatically generate all the relevant docs.
 
 
 ## Contact
