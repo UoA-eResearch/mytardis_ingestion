@@ -1,32 +1,12 @@
-Core/Legacy stuff to keep/
-
-Core/helpers/.#raid.py
-
-Core/helpers/#raid.py#
-
 *.pyc
 .#*
 
-mech_test.py
-
-test_ingest.py
-
-make_plots.py
 *~
 *.py#
 
 raid_test.py
 
-Core/__pycache__/
-
-Core/helpers/__pycache__/
-
-Core/overseer/__pycache__/
-
 __pycache__/
-
-*.OLD
-*.OLD#
 
 Print_group_ingestion.py
 
