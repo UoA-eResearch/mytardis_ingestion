@@ -14,7 +14,6 @@ make html
 
 echo "---Generating PDF files"
 make epub
-sudo mkdir build/pdf
 ebook-convert build/epub/MyTardisIngestion.epub build/MyTardisIngestion.pdf
 echo "If build succeeded, generated PDF can be found in docs/build/MyTardisIngestion.pdf"
 
