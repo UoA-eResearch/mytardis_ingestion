@@ -41,8 +41,4 @@ echo "---Setting up precommit hooks"
 pre-commit install
 pre-commit autoupdate
 
-#Install Calibre - used in Sphinx to convert files
-echo "---Installing Calibre"
-sudo apt-get install -y calibre
-
 echo "---Installation complete"

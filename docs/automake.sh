@@ -12,9 +12,4 @@ sphinx-apidoc -o ./source ../src
 echo "---Generating HTML files"
 make html
 
-echo "---Generating PDF files"
-make epub
-ebook-convert build/epub/MyTardisIngestion.epub build/MyTardisIngestion.pdf
-echo "If build succeeded, generated PDF can be found in docs/build/MyTardisIngestion.pdf"
-
 echo "---Auto doc generation finished"
