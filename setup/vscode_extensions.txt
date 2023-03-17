@@ -1,4 +1,4 @@
-#Installs the necessary extensions required for VS Code. To use
+#Installs the extensions recommended for VS Code.
 
 #Run the following command if you wish to get list of extensions installed for Unix
 #code --list-extensions | xargs -L 1 echo code --install-extension
