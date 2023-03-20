@@ -143,11 +143,11 @@ The setup is designed for an Ubuntu/Linux (recommended) or Manjaro/Linux setup w
   4.	On the terminal, run the following command “curl -sSL https://install.python-poetry.org | python3 –“. This will install Poetry in the OS.
   5.	Add the Poetry to the PATH environment variable.
   6.	Run the following commands in this order (the explanation for each command is defined in the parentheses that follow the command):
-    a.	poetry config virtualenvs.in-project true (create a local virtual environment in the project directory)
-    b.	poetry lock (in this case this command sets up the poetry file for installation)
-    c.	poetry install (installs all the relevant libraries for Python)
-    d.	poetry run pre-commit install (installs git pre-commit)
-    e.	poetry run pre-commit autoupdate (updates any relevant dependencies, used to avoid dependency issues)
+    1.	poetry config virtualenvs.in-project true (create a local virtual environment in the project directory)
+    2.	poetry lock (in this case this command sets up the poetry file for installation)
+    3.	poetry install (installs all the relevant libraries for Python)
+    4.	poetry run pre-commit install (installs git pre-commit)
+    5.	poetry run pre-commit autoupdate (updates any relevant dependencies, used to avoid dependency issues)
   7.	Run the command “poetry shell” to activate the virtual environment and the repo is now setup and ready to run the project.
 
  - VS Code (OPTIONAL, and only recommended if this is a fresh install of the repo) 
