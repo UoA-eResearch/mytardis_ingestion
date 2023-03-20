@@ -135,7 +135,7 @@ The setup is designed for an Ubuntu/Linux (recommended) or Manjaro/Linux setup w
 
 1.	Generate and add an SSH key for the device this repo is to be downloaded in on GitHub. 
 2.	Clone this repository via SSH.
-3. On a terminal, cd into this repo's directory, and run the following command “sudo source ./setup/<yourOS>_venv-setup.sh”, where <yourOS> is the operating system being used by the dev. A prompt will be displayed to enter the sudo password (if applicable). Please enter this to run the rest of the script. This will create and setup a virtual environment for the repo via the poetry method, and will also install pre-commit.
+3. On a terminal, cd into this repo's directory, and run the following command “source ./setup/<yourOS>_venv-setup.sh”, where <yourOS> is the operating system being used by the dev. A prompt will be displayed to enter the sudo password (if applicable). Please enter this to run the rest of the script. This will create and setup a virtual environment for the repo via the poetry method, and will also install pre-commit.
 4.	Now the terminal is ready to run project scripts.
 
  ### Repo - Generalised Instructions
