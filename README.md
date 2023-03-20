@@ -142,12 +142,19 @@ These instructions are written for non Ubuntu OS environments
 3.	Clone the mytardis_ingestion repo in the desired directory. This can be achieved on the terminal by first changing into the desired directory, then running the command “git clone git@github.com:UoA-eResearch/mytardis_ingestion.git”
 4.	On the terminal, run the following command “curl -sSL https://install.python-poetry.org | python3 –“. This will install Poetry in the OS.
 5.	Add the Poetry to the PATH environment variable.
-6.	Run the following commands in this order (the explanation for each command is defined in the parentheses that follow the command):
-  1.	poetry config virtualenvs.in-project true (create a local virtual environment in the project directory)
-  2.	poetry lock (in this case this command sets up the poetry file for installation)
-  3.	poetry install (installs all the relevant libraries for Python)
-  4.	poetry run pre-commit install (installs git pre-commit)
-  5.	poetry run pre-commit autoupdate (updates any relevant dependencies, used to avoid dependency issues)
+6.	Run the following commands in this order (the explanation for each command is defined in the line above that command that start with #, and has been written to be friendly with terminal/bash):
+  ```
+  #create a local virtual environment in the project directory
+  poetry config virtualenvs.in-project true 
+  #in this case this command sets up the poetry file for installation
+  poetry lock 
+  #installs all the relevant libraries for Python
+  poetry install 
+  #installs git pre-commit
+  poetry run pre-commit install 
+  #updates any relevant dependencies, used to avoid dependency issues
+  poetry run pre-commit autoupdate 
+  ```
 7.	Run the command “poetry shell” to activate the virtual environment and the repo is now setup and ready to run the project.
 
  ### VS Code (OPTIONAL, and only recommended if this is a fresh install of the repo) 
