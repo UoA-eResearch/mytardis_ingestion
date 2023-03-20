@@ -10,7 +10,7 @@
 
 
 echo "---Starting install..."
-sudo echo
+
 
 echo "---Installing poetry"
 curl -sSL https://install.python-poetry.org | python3 -

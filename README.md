@@ -164,9 +164,10 @@ These instructions are written for non Ubuntu OS environments
 
 ## Documentation
 For API documentation, Sphinx is used to autogenerate documents for this project. In order to generate the necessary documents for Sphinx, please follow the following steps:
- 1. Using terminal, change directory into the repo.
- 2. On the terminal, run the command "cd docs".
- 3. Now run the command "source automake.sh", and this should automatically generate all the relevant docs.
+1. Activate the virtual environment by running the command "poetry shell" on the terminal
+2. Using terminal, change directory into the repo.
+3. On the terminal, run the command "cd docs".
+4. Now run the command "source automake.sh", and this should automatically generate all the relevant docs.
 
 
 ## Contact
