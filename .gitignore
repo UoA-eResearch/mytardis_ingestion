@@ -23,3 +23,5 @@ pytest.xml
 .env
 
 docs/build/
+
+.venv/
