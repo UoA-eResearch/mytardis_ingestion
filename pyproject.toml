@@ -11,7 +11,7 @@ backoff = "^2.2.1"
 PyYAML = "^6.0"
 python-decouple = "^3.6"
 types-PyYAML = "^6.0.11"
-pydantic = {extras = ["dotenv"], version = "^1.10.2"}
+pydantic = {extras = ["dotenv"], version = "^1.10.7"}
 pytz = "^2022.2.1"
 python-dateutil = "^2.8.2"
 
