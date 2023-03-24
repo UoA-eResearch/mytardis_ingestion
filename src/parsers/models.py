@@ -1,3 +1,6 @@
+""" This is the data model from Ingestion Data Wizard which is used to define the YAML structure, and data types.
+And how to parse the YAML file into Python objects.
+"""
 from typing import List, Dict, Any, Literal, Optional, Type, TypeAlias, TypeVar, Union
 from dataclasses import dataclass, field
 import yaml

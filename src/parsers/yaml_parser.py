@@ -15,10 +15,12 @@ from dataclasses import dataclass, field
 import yaml
 
 # User-defined imports
+'''
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
+'''
 from src.helpers.config import (
     ConfigFromEnv,
     GeneralConfig,
@@ -30,7 +32,7 @@ from src.smelters.smelter import Smelter
 from src.parsers.models import (  ### create new data model to match YAML file
     IngestionMetadata,
     RawProject,
-    RawExperiment,
+   RawExperiment,
     RawDataset,
     RawDatafile,
 )
@@ -71,9 +73,6 @@ class YamlParser:
         )
 
     def _constructor_setup(self, loader, node) -> dict:
-        return dict(**loader.construct_mapping(node))
-
-    def _fileinfo_constructor(self, loader, node) -> dict:
         return dict(**loader.construct_mapping(node))
 
     def _rawdatafile_constructor(self, loader, node) -> RawDatafile:
