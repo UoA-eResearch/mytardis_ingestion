@@ -94,22 +94,4 @@ class YamlParser:
             
             data = yaml.safe_load_all(f)
             loaded_data = list(data)
-            print(loaded_data)
             return loaded_data
-            #return loaded_data.RawProject, loaded_data.RawExperiment, loaded_data.RawDataset, loaded_data.RawDatafile
-            #for stuff in loaded_data:
-            #    print(stuff)
-                #if type(stuff) == RawProject:
-                 #   print(stuff)
-                #if type(stuff) == RawExperiment:
-                #    #print(stuff.name)
-            '''
-            data_load = f.read()
-            #print(data_load)
-            try:
-                data_yaml = IngestionMetadata.from_yaml(data_load)
-                return data_yaml
-            except Exception as e:
-                print("Error parsing YAML file: {0}".format(e))
-            '''
-        
