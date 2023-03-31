@@ -122,7 +122,7 @@ def raw_experiment(
         created_time=created_time_datetime,
         update_time=modified_time_datetime,
         embargo_until=embargo_time_datetime,
-        aidentifiers=experiment_ids,
+        identifiers=experiment_ids,
         metadata=experiment_metadata,
     )
 
