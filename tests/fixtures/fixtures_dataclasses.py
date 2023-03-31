@@ -2,13 +2,9 @@
 
 from datetime import datetime
 from pathlib import Path
-from pytest import fixture
-from src.blueprints.custom_data_types import ISODateTime
 
-from src.blueprints.dataset import Dataset, RefinedDataset
-from src.blueprints.experiment import Experiment, RefinedExperiment
-from src.blueprints.datafile import Datafile, RefinedDatafile
-from src.blueprints.project import Project, RefinedProject
+from pytest import fixture
+
 from src.blueprints import (
     URI,
     DatafileReplica,
@@ -20,6 +16,11 @@ from src.blueprints import (
     StorageBox,
     Username,
 )
+from src.blueprints.custom_data_types import ISODateTime
+from src.blueprints.datafile import Datafile, RefinedDatafile
+from src.blueprints.dataset import Dataset, RefinedDataset
+from src.blueprints.experiment import Experiment, RefinedExperiment
+from src.blueprints.project import Project, RefinedProject
 
 
 @fixture
@@ -53,7 +54,6 @@ def raw_project(
     project_name,
     project_description,
     project_ids,
-    project_pid,
     project_principal_investigator,
     project_institutions,
     split_and_parse_users,
@@ -77,8 +77,7 @@ def raw_project(
         start_time=start_time_datetime,
         end_time=end_time_datetime,
         embargo_until=embargo_time_datetime,
-        persistent_id=project_pid,
-        alternate_ids=project_ids,
+        identifiers=project_ids,
         metadata=project_metadata,
     )
 
@@ -95,7 +94,6 @@ def raw_experiment(
     experiment_name,
     experiment_description,
     experiment_ids,
-    experiment_pid,
     experiment_institution,
     experiment_projects,
     created_by_upi,
@@ -124,8 +122,7 @@ def raw_experiment(
         created_time=created_time_datetime,
         update_time=modified_time_datetime,
         embargo_until=embargo_time_datetime,
-        persistent_id=experiment_pid,
-        alternate_ids=experiment_ids,
+        aidentifiers=experiment_ids,
         metadata=experiment_metadata,
     )
 
@@ -140,7 +137,6 @@ def raw_dataset(
     dataset_name,
     dataset_experiments,
     dataset_instrument,
-    dataset_pid,
     dataset_ids,
     dataset_dir,
     split_and_parse_users,
@@ -159,8 +155,7 @@ def raw_dataset(
         instrument=dataset_instrument,
         created_time=created_time_datetime,
         modified_time=modified_time_datetime,
-        persistent_id=dataset_pid,
-        alternate_ids=dataset_ids,
+        identifiers=dataset_ids,
         metadata=dataset_metadata,
     )
 
@@ -208,7 +203,6 @@ def refined_project(
     start_time_datetime,
     end_time_datetime,
     embargo_time_datetime,
-    project_pid,
     project_ids,
 ) -> RefinedProject:
     return RefinedProject(
@@ -223,8 +217,7 @@ def refined_project(
         start_time=start_time_datetime,
         end_time=end_time_datetime,
         embargo_until=embargo_time_datetime,
-        persistent_id=project_pid,
-        alternate_ids=project_ids,
+        identifiers=project_ids,
     )
 
 
@@ -233,7 +226,6 @@ def refined_experiment(
     experiment_name,
     experiment_description,
     experiment_ids,
-    experiment_pid,
     experiment_institution,
     experiment_projects,
     created_by_upi,
@@ -261,8 +253,7 @@ def refined_experiment(
         created_time=created_time_datetime,
         update_time=modified_time_datetime,
         embargo_until=embargo_time_datetime,
-        persistent_id=experiment_pid,
-        alternate_ids=experiment_ids,
+        identifiers=experiment_ids,
     )
 
 
@@ -271,7 +262,6 @@ def refined_dataset(
     dataset_name,
     dataset_experiments,
     dataset_instrument,
-    dataset_pid,
     dataset_ids,
     dataset_dir,
     split_and_parse_users,
@@ -289,8 +279,7 @@ def refined_dataset(
         instrument=dataset_instrument,
         created_time=created_time_datetime,
         modified_time=modified_time_datetime,
-        persistent_id=dataset_pid,
-        alternate_ids=dataset_ids,
+        identifiers=dataset_ids,
     )
 
 
@@ -347,8 +336,7 @@ def project(refined_project: RefinedProject, institution_uri: URI):
             if isinstance(refined_project.embargo_until, datetime)
             else None
         ),
-        persistent_id=refined_project.persistent_id,
-        alternate_ids=refined_project.alternate_ids,
+        identifiers=refined_project.identifiers,
     )
 
 
@@ -389,8 +377,7 @@ def experiment(refined_experiment: RefinedExperiment, project_uri: URI):
             if isinstance(refined_experiment.embargo_until, datetime)
             else refined_experiment.embargo_until
         ),
-        persistent_id=refined_experiment.persistent_id,
-        alternate_ids=refined_experiment.alternate_ids,
+        identifiers=refined_experiment.identifiers,
     )
 
 
@@ -414,8 +401,7 @@ def dataset(refined_dataset: RefinedDataset, experiment_uri: URI, instrument_uri
             if isinstance(refined_dataset.modified_time, datetime)
             else refined_dataset.modified_time
         ),
-        persistent_id=refined_dataset.persistent_id,
-        alternate_ids=refined_dataset.alternate_ids,
+        identifiers=refined_dataset.identifiers,
     )
 
 

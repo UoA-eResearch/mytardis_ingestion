@@ -23,11 +23,7 @@ from src.blueprints import (
     RefinedProject,
 )
 from src.blueprints.common_models import Parameter
-from src.helpers import (
-    GeneralConfig,
-    SchemaConfig,
-    log_if_projects_disabled,
-)
+from src.helpers import GeneralConfig, SchemaConfig, log_if_projects_disabled
 from src.helpers.config import StorageConfig
 from src.overseers.overseer import Overseer
 
@@ -123,8 +119,7 @@ class Smelter:
                 url=raw_project.url,
                 users=raw_project.users,
                 groups=raw_project.groups,
-                persistent_id=raw_project.persistent_id,
-                alternate_ids=raw_project.alternate_ids,
+                identifiers=raw_project.identifiers,
                 institution=institution,
                 start_time=raw_project.start_time,
                 end_time=raw_project.end_time,
@@ -178,8 +173,7 @@ class Smelter:
                 locked=raw_experiment.locked,
                 users=raw_experiment.users,
                 groups=raw_experiment.groups,
-                persistent_id=raw_experiment.persistent_id,
-                alternate_ids=raw_experiment.alternate_ids,
+                identifiers=raw_experiment.identifiers,
                 projects=raw_experiment.projects,
                 institution_name=institution_name,
                 start_time=raw_experiment.start_time,
@@ -219,8 +213,7 @@ class Smelter:
                 users=raw_dataset.users,
                 groups=raw_dataset.groups,
                 immutable=raw_dataset.immutable,
-                persistent_id=raw_dataset.persistent_id,
-                alternate_ids=raw_dataset.alternate_ids,
+                identifiers=raw_dataset.identifiers,
                 experiments=raw_dataset.experiments,
                 instrument=raw_dataset.instrument,
                 created_time=raw_dataset.created_time,

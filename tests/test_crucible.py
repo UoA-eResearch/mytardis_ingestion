@@ -1,18 +1,20 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
-from urllib.parse import urljoin
 import copy
 import logging
+from urllib.parse import urljoin
+
 import pytest
 import responses
 from responses import matchers
-from src.blueprints.custom_data_types import URI
 
+from src.blueprints.custom_data_types import URI
 from src.blueprints.datafile import Datafile, RefinedDatafile
 from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
 from src.crucible.crucible import Crucible
 from src.helpers.config import ConnectionConfig
+from tests.fixtures.fixtures_dataclasses import refined_project
 
 
 @responses.activate
@@ -28,7 +30,9 @@ def test_prepare_project(
     responses.get(
         url,
         match=[
-            matchers.query_param_matcher({"pids": refined_project.institution[0]}),
+            matchers.query_param_matcher(
+                {"identifiers": refined_project.institution[0]}
+            ),
         ],
         status=200,
         json=(institution_response_dict),
@@ -66,19 +70,24 @@ def test_prepare_experiment(
     experiment: Experiment,
     project_response_dict,
     response_dict_not_found,
+    experiment_ids,
 ):
-    responses.get(
-        urljoin(connection.api_template, "project"),
-        match=[matchers.query_param_matcher({"pids": refined_experiment.projects[0]})],
-        status=200,
-        json=(project_response_dict),
-    )
+    if refined_experiment.projects:
+        responses.get(
+            urljoin(connection.api_template, "project"),
+            match=[
+                matchers.query_param_matcher(
+                    {"identifiers": refined_experiment.projects[0]}
+                )
+            ],
+            status=200,
+            json=(project_response_dict),
+        )
     responses.get(
         urljoin(connection.api_template, "project"),
         status=200,
         json=(response_dict_not_found),
     )
-
     assert crucible.prepare_experiment(refined_experiment) == experiment
 
 
@@ -116,7 +125,11 @@ def test_prepare_dataset(
 ):
     responses.get(
         urljoin(connection.api_template, "experiment"),
-        match=[matchers.query_param_matcher({"pids": refined_dataset.experiments[0]})],
+        match=[
+            matchers.query_param_matcher(
+                {"identifiers": refined_dataset.experiments[0]}
+            )
+        ],
         status=200,
         json=experiment_response_dict,
     )
@@ -127,7 +140,9 @@ def test_prepare_dataset(
     )
     responses.get(
         urljoin(connection.api_template, "instrument"),
-        match=[matchers.query_param_matcher({"pids": refined_dataset.instrument})],
+        match=[
+            matchers.query_param_matcher({"identifiers": refined_dataset.instrument})
+        ],
         status=200,
         json=(instrument_response_dict),
     )
@@ -172,7 +187,11 @@ def test_prepare_dataset_no_matching_instrument(
     caplog.set_level(logging.WARNING)
     responses.get(
         urljoin(connection.api_template, "experiment"),
-        match=[matchers.query_param_matcher({"pids": refined_dataset.experiments[0]})],
+        match=[
+            matchers.query_param_matcher(
+                {"identifiers": refined_dataset.experiments[0]}
+            )
+        ],
         status=200,
         json=experiment_response_dict,
     )
@@ -215,7 +234,11 @@ def test_prepare_dataset_too_many_instruments(
     caplog.set_level(logging.WARNING)
     responses.get(
         urljoin(connection.api_template, "experiment"),
-        match=[matchers.query_param_matcher({"pids": refined_dataset.experiments[0]})],
+        match=[
+            matchers.query_param_matcher(
+                {"identifiers": refined_dataset.experiments[0]}
+            )
+        ],
         status=200,
         json=experiment_response_dict,
     )
@@ -226,7 +249,9 @@ def test_prepare_dataset_too_many_instruments(
     )
     responses.get(
         urljoin(connection.api_template, "instrument"),
-        match=[matchers.query_param_matcher({"pids": refined_dataset.instrument})],
+        match=[
+            matchers.query_param_matcher({"identifiers": refined_dataset.instrument})
+        ],
         status=200,
         json=(duplicate_instrument_response_dict),
     )
@@ -253,7 +278,7 @@ def test_prepare_datafile(
 ):
     responses.get(
         urljoin(connection.api_template, "dataset"),
-        match=[matchers.query_param_matcher({"pids": refined_datafile.dataset})],
+        match=[matchers.query_param_matcher({"identifiers": refined_datafile.dataset})],
         status=200,
         json=(dataset_response_dict),
     )
@@ -308,7 +333,7 @@ def test_prepare_datafile_too_many_datasets(
     caplog.set_level(logging.WARNING)
     responses.get(
         urljoin(connection.api_template, "dataset"),
-        match=[matchers.query_param_matcher({"pids": refined_datafile.dataset})],
+        match=[matchers.query_param_matcher({"identifiers": refined_datafile.dataset})],
         status=200,
         json=(duplicate_dataset_response_dict),
     )

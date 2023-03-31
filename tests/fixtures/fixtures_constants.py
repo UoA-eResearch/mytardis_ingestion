@@ -228,13 +228,9 @@ def project_description():
 
 
 @fixture
-def project_pid():
-    return "Project_1"
-
-
-@fixture
 def project_ids():
     return [
+        "Project_1",
         "Test_Project",
         "Project_Test_1",
     ]
@@ -300,13 +296,9 @@ def experiment_projects():
 
 
 @fixture
-def experiment_pid():
-    return "Experiment_1"
-
-
-@fixture
 def experiment_ids():
     return [
+        "Experiment_1",
         "Test_Experiment",
         "Experiment_Test_1",
     ]
@@ -367,13 +359,12 @@ def dataset_instrument():
 
 
 @fixture
-def dataset_pid():
-    return "Dataset_1"
-
-
-@fixture
 def dataset_ids():
-    return ["Test_Dataset", "Dataset_Test_1"]
+    return [
+        "Dataset_1",
+        "Test_Dataset",
+        "Dataset_Test_1",
+    ]
 
 
 @fixture
@@ -439,16 +430,12 @@ def datafile_metadata_processed(datafile_metadata):
 
 
 @fixture
-def instrument_alternate_ids():
+def instrument_ids():
     return [
+        "Instrument_1",
         "Test_Instrument",
         "Instrument_Test_1",
     ]
-
-
-@fixture
-def instrument_pid():
-    return "Instrument_1"
 
 
 @fixture
@@ -594,8 +581,8 @@ def institution_address():
 
 
 @fixture
-def institution_alternate_ids():
-    return ["UoA", "Uni"]
+def institution_ids():
+    return ["UoA123", "UoA", "Uni"]
 
 
 @fixture
@@ -606,8 +593,3 @@ def institution_country():
 @fixture
 def institution_name():
     return "University of Auckland"
-
-
-@fixture
-def institution_pid():
-    return "UoA123"
