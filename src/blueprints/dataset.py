@@ -21,8 +21,7 @@ class BaseDataset(BaseModel):
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None
     immutable: bool = False
-    persistent_id: Optional[str] = None
-    alternate_ids: Optional[List[str]] = None
+    identifiers: Optional[List[str]] = None
 
 
 class RawDataset(BaseDataset):

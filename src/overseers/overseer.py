@@ -142,7 +142,7 @@ class Overseer:
             self.mytardis_setup.objects_with_ids
             and object_type["type"] in self.mytardis_setup.objects_with_ids
         ):
-            query_params = {"pids": search_string}
+            query_params = {"identifiers": search_string}
             response_dict = self._get_object_from_mytardis(object_type, query_params)
             if response_dict and "objects" in response_dict.keys():
                 for obj in response_dict["objects"]:

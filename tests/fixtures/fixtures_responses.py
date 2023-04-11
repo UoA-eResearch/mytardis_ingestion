@@ -1,9 +1,10 @@
 from datetime import datetime
 from pathlib import Path
+
 from pytest import fixture
+
 from src.blueprints.custom_data_types import URI
 from src.blueprints.project import Project
-
 from src.helpers.enumerators import URLSubstring
 
 
@@ -68,8 +69,6 @@ def dataset_response_dict(
     dataset_dir: Path,
     dataset_name: str,
     dataset_experiments: list[str],
-    dataset_instrument: str,
-    dataset_pid: str,
     dataset_ids: list[str],
     dataset_uri: URI,
     instrument_response_dict,
@@ -84,7 +83,6 @@ def dataset_response_dict(
         },
         "objects": [
             {
-                "alternate_ids": dataset_ids,
                 "created_time": "2000-01-01T00:00:00",
                 "dataset_datafile_count": 2,
                 "dataset_experiment_count": 1,
@@ -93,11 +91,11 @@ def dataset_response_dict(
                 "directory": dataset_dir.as_posix(),
                 "experiments": dataset_experiments,
                 "id": 1,
+                "identifiers": dataset_ids,
                 "immutable": False,
                 "instrument": instrument_response_dict["objects"][0],
                 "modified_time": "2000-01-01T00:00:00",
                 "parameter_sets": [],
-                "persistent_id": dataset_pid,
                 "public_access": 1,
                 "resource_uri": dataset_uri,
                 "tags": [],
@@ -108,7 +106,6 @@ def dataset_response_dict(
 
 @fixture
 def experiment_response_dict(
-    experiment_pid: str,
     experiment_ids: list[str],
     experiment_description: str,
     experiment_institution: str,
@@ -126,7 +123,6 @@ def experiment_response_dict(
         },
         "objects": [
             {
-                "alternate_ids": experiment_ids,
                 "approved": False,
                 "authors": [],
                 "created_by": "api/v1/user/1/",
@@ -138,6 +134,7 @@ def experiment_response_dict(
                 "experiment_size": 1000000,
                 "handle": None,
                 "id": 1,
+                "identifiers": experiment_ids,
                 "institution_name": experiment_institution,
                 "locked": False,
                 "owner_ids": [
@@ -145,7 +142,6 @@ def experiment_response_dict(
                     2,
                 ],
                 "parameter_sets": [],
-                "persistent_id": experiment_pid,
                 "public_access": 1,
                 "resource_uri": experiment_uri,
                 "start_time": "2000-01-01T00:00:00",
@@ -160,7 +156,6 @@ def experiment_response_dict(
 
 @fixture
 def project_response_dict(
-    project_pid: str,
     project_ids: list[str],
     project_description: str,
     project_institutions: list[str],
@@ -178,7 +173,6 @@ def project_response_dict(
         },
         "objects": [
             {
-                "alternate_ids": project_ids,
                 "created_by": "api/v1/user/1/",
                 "datafile_count": 2,
                 "dataset_count": 1,
@@ -187,11 +181,11 @@ def project_response_dict(
                 "end_time": None,
                 "experiment_count": 1,
                 "id": 1,
+                "identifiers": project_ids,
                 "institution": project_institutions,
                 "locked": False,
                 "name": project_name,
                 "parameter_sets": [],
-                "persistent_id": project_pid,
                 "principal_investigator": project_principal_investigator,
                 "public_access": 1,
                 "resource_uri": "/api/v1/project/1/",
@@ -207,10 +201,9 @@ def project_response_dict(
 @fixture
 def instrument_response_dict(
     instrument_uri: URI,
-    instrument_alternate_ids: list[str],
+    instrument_ids: list[str],
     created_time_datetime: datetime,
     modified_time_datetime: datetime,
-    instrument_pid: str,
     instrument_name: str,
 ):
     return {
@@ -223,13 +216,8 @@ def instrument_response_dict(
         },
         "objects": [
             {
-                "alternate_ids": instrument_alternate_ids,
                 "created_time": created_time_datetime.isoformat(),
                 "facility": {
-                    "alternate_ids": [
-                        "Test_Facility",
-                        "Facility_Test_1",
-                    ],
                     "created_time": "2000-01-01T00:00:00",
                     "id": 1,
                     "manager_group": {
@@ -239,12 +227,16 @@ def instrument_response_dict(
                     },
                     "modified_time": "2000-01-01T00:00:00",
                     "name": "Test Facility",
-                    "persistent_id": "Facility_1",
+                    "identifiers": [
+                        "Facility_1",
+                        "Test_Facility",
+                        "Facility_Test_1",
+                    ],
                     "resource_uri": "/api/v1/facility/1/",
                 },
+                "identifiers": instrument_ids,
                 "modified_time": modified_time_datetime.isoformat(),
                 "name": instrument_name,
-                "persistent_id": instrument_pid,
                 "resource_uri": instrument_uri,
             },
         ],
@@ -286,10 +278,9 @@ def introspection_response_dict():
 def institution_response_dict(
     institution_uri,
     institution_address,
-    institution_alternate_ids,
+    institution_ids,
     institution_country,
     institution_name,
-    institution_pid,
 ):
     return {
         "meta": {
@@ -303,10 +294,9 @@ def institution_response_dict(
             {
                 "address": institution_address,
                 "aliases": 1,
-                "alternate_ids": institution_alternate_ids,
                 "country": institution_country,
+                "identifiers": institution_ids,
                 "name": institution_name,
-                "persistent_id": institution_pid,
                 "resource_uri": institution_uri,
             }
         ],
@@ -357,7 +347,6 @@ def project_creation_response_dict(
     project: Project, project_uri: URI, institution_uri: URI, user_uri: URI
 ):
     return {
-        "alternate_ids": project.alternate_ids,
         "created_by": user_uri,
         "datafile_count": 2,
         "dataset_count": 1,
@@ -366,14 +355,14 @@ def project_creation_response_dict(
         "end_time": project.end_time,
         "experiment_count": 1,
         "id": 1,
+        "identifers": project.identifiers,
         "institution": [
             institution_uri,
         ],
         "locked": False,
         "name": project.name,
         "parameter_sets": [],
-        "persistent_id": project.persistent_id,
-        "principal_investigator": project.persistent_id,
+        "principal_investigator": project.principal_investigator,
         "public_access": 1,
         "resource_uri": project_uri,
         "size": 1000000,

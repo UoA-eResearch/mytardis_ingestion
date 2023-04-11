@@ -5,6 +5,7 @@ needs to determine the Smelter class that is used by the Factory"""
 import json
 import logging
 import sys
+from typing import Optional
 
 from pydantic import ValidationError
 
@@ -26,7 +27,9 @@ logger = logging.getLogger(__name__)
 
 class IngestionResult:
     def __init__(
-        self, success: list[tuple[str, URI | None]] = None, error: list[str] = None
+        self,
+        success: Optional[list[tuple[str, Optional[URI]]]] = None,
+        error: Optional[list[str]] = None,
     ) -> None:
         self.success = success if success else []
         self.error = error if error else []
@@ -60,12 +63,12 @@ class IngestionFactory:
 
     def __init__(
         self,
-        config: ConfigFromEnv = None,
-        mt_rest: MyTardisRESTFactory = None,
-        overseer: Overseer = None,
-        smelter: Smelter = None,
-        forge: Forge = None,
-        crucible: Crucible = None,
+        config: Optional[ConfigFromEnv] = None,
+        mt_rest: Optional[MyTardisRESTFactory] = None,
+        overseer: Optional[Overseer] = None,
+        smelter: Optional[Smelter] = None,
+        forge: Optional[Forge] = None,
+        crucible: Optional[Crucible] = None,
     ) -> None:
         """Initialises the Factory with the configuration found in the config_dict.
 
