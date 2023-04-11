@@ -409,7 +409,7 @@ def test_get_storagebox_no_storage_box_found(
         match=[
             matchers.query_param_matcher(
                 {
-                    "pids": storage_box_name,
+                    "identifiers": storage_box_name,
                 },
             ),
         ],
@@ -453,7 +453,7 @@ def test_get_storagebox_too_many_returns(
         match=[
             matchers.query_param_matcher(
                 {
-                    "pids": storage_box_name,
+                    "identifers": storage_box_name,
                 },
             ),
         ],
@@ -498,7 +498,7 @@ def test_get_storagebox_no_name(
         match=[
             matchers.query_param_matcher(
                 {
-                    "pids": storage_box_name,
+                    "identifiers": storage_box_name,
                 },
             ),
         ],
@@ -541,7 +541,7 @@ def test_get_storagebox_no_location(
         match=[
             matchers.query_param_matcher(
                 {
-                    "pids": storage_box_name,
+                    "identifiers": storage_box_name,
                 },
             ),
         ],
@@ -583,7 +583,7 @@ def test_get_storagebox_no_description(
         match=[
             matchers.query_param_matcher(
                 {
-                    "pids": storage_box_name,
+                    "identifiers": storage_box_name,
                 },
             ),
         ],
@@ -654,7 +654,6 @@ def test_get_mytardis_setup_no_objects(
     connection: ConnectionConfig,
     response_dict_not_found,
 ):
-
     responses.add(
         responses.GET,
         urljoin(
