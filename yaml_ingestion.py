@@ -30,5 +30,5 @@ logger = logging.getLogger(__name__)
 yp = YamlParser()
 
 data_load = yp.parse_yaml_file("test_renaming_exported_update.yaml")
-print(data_load[0].name)
+#print(data_load[0].name)
 
