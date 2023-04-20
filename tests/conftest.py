@@ -2,15 +2,15 @@
 
 import shutil
 from pathlib import Path
+
 from pytest import fixture
 
+import tests.fixtures.fixtures_config_from_env as cfg
 import tests.fixtures.fixtures_constants as const
 import tests.fixtures.fixtures_dataclasses as dcls
-import tests.fixtures.mock_rest_factory as mock_rest
 import tests.fixtures.fixtures_ingestion_classes as ingestion_classes
 import tests.fixtures.fixtures_responses as rsps
-import tests.fixtures.fixtures_config_from_env as cfg
-
+import tests.fixtures.mock_rest_factory as mock_rest
 
 # =============================
 #
@@ -41,7 +41,6 @@ download_users = const.download_users
 sensitive_users = const.sensitive_users
 project_name = const.project_name
 project_description = const.project_description
-project_pid = const.project_pid
 project_ids = const.project_ids
 project_principal_investigator = const.project_principal_investigator
 project_institutions = const.project_institutions
@@ -53,7 +52,6 @@ experiment_name = const.experiment_name
 experiment_description = const.experiment_description
 experiment_institution = const.experiment_institution
 experiment_projects = const.experiment_projects
-experiment_pid = const.experiment_pid
 experiment_ids = const.experiment_ids
 experiment_metadata = const.experiment_metadata
 experiment_schema = const.experiment_schema
@@ -64,7 +62,6 @@ dataset_name = const.dataset_name
 dataset_description = const.dataset_description
 dataset_experiments = const.dataset_experiments
 dataset_instrument = const.dataset_instrument
-dataset_pid = const.dataset_pid
 dataset_ids = const.dataset_ids
 dataset_metadata = const.dataset_metadata
 dataset_schema = const.dataset_schema
@@ -76,8 +73,7 @@ datafile_dataset = const.datafile_dataset
 datafile_metadata = const.datafile_metadata
 datafile_schema = const.datafile_schema
 datafile_metadata_processed = const.datafile_metadata_processed
-instrument_alternate_ids = const.instrument_alternate_ids
-instrument_pid = const.instrument_pid
+instrument_ids = const.instrument_ids
 instrument_name = const.instrument_name
 split_and_parse_groups = const.split_and_parse_groups
 split_and_parse_users = const.split_and_parse_users
@@ -105,10 +101,9 @@ institution_uri = const.institution_uri
 instrument_uri = const.instrument_uri
 user_uri = const.user_uri
 institution_address = const.institution_address
-institution_alternate_ids = const.institution_alternate_ids
+institution_ids = const.institution_ids
 institution_country = const.institution_country
 institution_name = const.institution_name
-institution_pid = const.institution_pid
 
 
 # =============================
@@ -179,7 +174,6 @@ def raw_project_dictionary(
     project_ids,
     project_metadata,
     project_name,
-    project_pid,
     project_principal_investigator,
     read_groups,
     read_users,
@@ -188,8 +182,7 @@ def raw_project_dictionary(
 ):
     return {
         "name": project_name,
-        "persistent_id": project_pid,
-        "alternate_ids": project_ids,
+        "identifers": project_ids,
         "description": project_description,
         "principal_investigator": project_principal_investigator,
         "admin_groups": admin_groups,
@@ -214,7 +207,6 @@ def tidied_project_dictionary(
     project_ids,
     project_metadata,
     project_name,
-    project_pid,
     project_principal_investigator,
     read_groups,
     read_users,
@@ -227,8 +219,7 @@ def tidied_project_dictionary(
 ):
     return_dict = {
         "name": project_name,
-        "persistent_id": project_pid,
-        "alternate_ids": project_ids,
+        "identifers": project_ids,
         "description": project_description,
         "principal_investigator": project_principal_investigator,
         "users": split_and_parse_users,
@@ -246,7 +237,6 @@ def raw_project_as_dict(
     project_name,
     project_description,
     project_ids,
-    project_pid,
     project_principal_investigator,
     split_and_parse_users,
     split_and_parse_groups,
@@ -257,8 +247,7 @@ def raw_project_as_dict(
         "principal_investigator": project_principal_investigator,
         "users": split_and_parse_users,
         "groups": split_and_parse_groups,
-        "persistent_id": project_pid,
-        "alternate_ids": project_ids,
+        "identifers": project_ids,
     }
 
 
@@ -278,7 +267,6 @@ def project_parameters_as_dict(
 def raw_experiment_dictionary(
     experiment_name,
     experiment_projects,
-    experiment_pid,
     experiment_ids,
     experiment_description,
     experiment_metadata,
@@ -286,8 +274,7 @@ def raw_experiment_dictionary(
     return {
         "title": experiment_name,
         "projects": experiment_projects,
-        "persistent_id": experiment_pid,
-        "alternate_ids": experiment_ids,
+        "identifiers": experiment_ids,
         "description": experiment_description,
         "metadata": experiment_metadata,
     }
@@ -297,7 +284,6 @@ def raw_experiment_dictionary(
 def tidied_experiment_dictionary(
     experiment_name,
     experiment_projects,
-    experiment_pid,
     experiment_ids,
     experiment_description,
     experiment_metadata,
@@ -306,8 +292,7 @@ def tidied_experiment_dictionary(
     return_dict = {
         "title": experiment_name,
         "projects": experiment_projects,
-        "persistent_id": experiment_pid,
-        "alternate_ids": experiment_ids,
+        "identifiers": experiment_ids,
         "description": experiment_description,
         "schema": experiment_schema,
     }
@@ -321,15 +306,13 @@ def raw_experiment_as_dict(
     experiment_name,
     experiment_projects,
     experiment_description,
-    experiment_pid,
     experiment_ids,
 ):
     return {
         "title": experiment_name,
         "projects": experiment_projects,
         "description": experiment_description,
-        "persistent_id": experiment_pid,
-        "alternate_ids": experiment_ids,
+        "identifiers": experiment_ids,
     }
 
 
@@ -349,7 +332,6 @@ def experiment_parameters_as_dict(
 def raw_dataset_dictionary(
     dataset_name,
     dataset_experiments,
-    dataset_pid,
     dataset_ids,
     dataset_instrument,
     dataset_metadata,
@@ -357,8 +339,7 @@ def raw_dataset_dictionary(
     return {
         "description": dataset_name,
         "experiments": dataset_experiments,
-        "persistent_id": dataset_pid,
-        "alternate_ids": dataset_ids,
+        "identifiers": dataset_ids,
         "instrument": dataset_instrument,
         "metadata": dataset_metadata,
     }
@@ -368,7 +349,6 @@ def raw_dataset_dictionary(
 def tidied_dataset_dictionary(
     dataset_name,
     dataset_experiments,
-    dataset_pid,
     dataset_ids,
     dataset_instrument,
     dataset_schema,
@@ -377,8 +357,7 @@ def tidied_dataset_dictionary(
     return_dict = {
         "description": dataset_name,
         "experiments": dataset_experiments,
-        "persistent_id": dataset_pid,
-        "alternate_ids": dataset_ids,
+        "identifiers": dataset_ids,
         "instrument": dataset_instrument,
         "schema": dataset_schema,
     }
@@ -391,15 +370,13 @@ def tidied_dataset_dictionary(
 def raw_dataset_as_dict(
     dataset_name,
     dataset_experiments,
-    dataset_pid,
     dataset_ids,
     dataset_instrument,
 ):
     return {
         "description": dataset_name,
         "experiments": dataset_experiments,
-        "persistent_id": dataset_pid,
-        "alternate_ids": dataset_ids,
+        "identifiers": dataset_ids,
         "instrument": dataset_instrument,
     }
     for key in dataset_metadata.keys():

@@ -44,8 +44,6 @@ class BaseDatafile(BaseModel):
     size: int
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None
-    # persistent_id: Optional[str] = None
-    # alternate_ids: Optional[List[str]] = None
 
 
 class RawDatafile(BaseDatafile):

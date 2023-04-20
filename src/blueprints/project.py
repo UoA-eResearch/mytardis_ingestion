@@ -22,8 +22,7 @@ class BaseProject(BaseModel):
     url: Optional[HttpUrl] = None
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None
-    persistent_id: Optional[str] = None
-    alternate_ids: Optional[List[str]] = None
+    identifiers: Optional[List[str]] = None
 
 
 class RawProject(BaseProject):

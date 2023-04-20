@@ -22,8 +22,7 @@ class BaseExperiment(BaseModel):
     locked: bool = False
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None
-    persistent_id: Optional[str] = None
-    alternate_ids: Optional[List[str]] = None
+    identifiers: Optional[List[str]] = None
 
 
 class RawExperiment(BaseExperiment):

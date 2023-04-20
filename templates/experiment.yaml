@@ -7,9 +7,9 @@ project_id: # Multiple projects can be associated with a sample. If this is the 
   - # If a rigorous directory structure is used then this can be inferred from the directory and only needs explicit definition if multiple projects are used for the sample
   - <one of the identifiers associated with the project that this experiment/sample is part of>
   - <one of the identifiers associated with the project that this experiment/sample is part of>
-experiment_id: <an identifier, unique within the project, that is associated with the sample>
-alternate_ids:
-  - <a list of alternative identifiers that are used for this object>
+experiment_ids: 
+  - <a list of identifiers that are used for this object>
+  - <a list of identifiers that are used for this object>
 description: <value>
 # schema: <value> - un-comment if multiple schema have been defined and set the appropriate type of schema
 #

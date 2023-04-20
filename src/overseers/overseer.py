@@ -81,7 +81,6 @@ class Overseer:
         object_type: ObjectSearchDict,
         query_params: Dict[str, str],
     ) -> Dict[str, List[Any]] | None:
-
         url = urljoin(self.rest_factory.api_template, object_type["url_substring"])
         try:
             response = self.rest_factory.mytardis_api_request(
@@ -112,7 +111,7 @@ class Overseer:
 
     # TODO we might want to add a get_objects function that let's you search for
     # specific query param combinations. Right now it checks if the search
-    # string is in any of the object_type["target"] and "pids" fields but often
+    # string is in any of the object_type["target"] and "identifers" fields but often
     # we know where those should be found, i.e. when we pass in a search_string
     # we know it's either a pid, alternative_id or name
     def get_objects(
@@ -142,7 +141,7 @@ class Overseer:
             self.mytardis_setup.objects_with_ids
             and object_type["type"] in self.mytardis_setup.objects_with_ids
         ):
-            query_params = {"pids": search_string}
+            query_params = {"identifiers": search_string}
             response_dict = self._get_object_from_mytardis(object_type, query_params)
             if response_dict and "objects" in response_dict.keys():
                 for obj in response_dict["objects"]:

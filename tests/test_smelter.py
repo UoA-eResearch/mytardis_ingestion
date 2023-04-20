@@ -4,6 +4,7 @@
 
 import logging
 from urllib.parse import urljoin
+
 import pytest
 import responses
 from responses import matchers
