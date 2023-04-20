@@ -16,10 +16,11 @@ logger = logging.getLogger(__name__)
 
 def test_yaml_parse():
     yp = YamlParser()
-    data_load = yp.parse_yaml_file("../test_renaming_exported_update.yaml")
+    data_load = yp.parse_yaml_file("fixtures/fixtures_renaming_exported_update.yaml")
     assert data_load[0].name == "p1"
     assert data_load[2].title == "e1"
 
+### Could create these tests after the ingestion path is created - especially the .env file
 def test_smelter():
     # check if smelter could do what he should do
     pass
