@@ -1,3 +1,5 @@
+# pylint: disable=missing-module-docstring,missing-function-docstring
+
 from datetime import datetime
 from pathlib import Path
 from typing import List
@@ -7,6 +9,7 @@ from pytest import fixture
 
 from src.blueprints import GroupACL, Parameter, UserACL, Username
 from src.blueprints.custom_data_types import URI
+from src.helpers.enumerators import DataClassification
 
 
 @fixture
@@ -593,3 +596,18 @@ def institution_country():
 @fixture
 def institution_name():
     return "University of Auckland"
+
+
+@fixture
+def project_data_classification():
+    return DataClassification.SENSITIVE
+
+
+@fixture
+def experiment_data_classification():
+    return DataClassification.SENSITIVE
+
+
+@fixture
+def dataset_data_classification():
+    return DataClassification.SENSITIVE

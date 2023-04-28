@@ -19,6 +19,8 @@ class MyTardisObject(str, Enum):
 
 
 class URLSubstring(str, Enum):
+    """Enum to convert between human readable and URL substrings"""
+
     PROJECT = "project"
     EXPERIMENT = "experiment"
     DATASET = "dataset"
@@ -33,12 +35,14 @@ class URLSubstring(str, Enum):
 
 
 class ObjectPostDict(TypedDict):
+    """An object to account for whether or not a return is expected from the API call."""
+
     url_substring: URLSubstring
     expect_json: bool
 
 
 class ObjectPostEnum(Enum):
-    """An enumverator for the POST/PUT/PATCH specific
+    """An enumerator for the POST/PUT/PATCH specific
     information used by MyTardis."""
 
     PROJECT: ObjectPostDict = {
@@ -182,3 +186,17 @@ class ObjectEnum(Enum):
         "parent": MyTardisObject.DATASET,
         "search_type": ObjectSearchEnum.DATAFILE.value,
     }
+
+
+class DataClassification(Enum):
+    """An enumerator for data classification.
+
+    Gaps have been left deliberately in the enumeration to allow for intermediate
+    classifications of data that may arise. The larger the integer that the classification
+    resolves to, the less sensitive the data is.
+    """
+
+    RESTRICTED = 1
+    SENSITIVE = 25
+    INTERNAL = 100
+    PUBLIC = 100

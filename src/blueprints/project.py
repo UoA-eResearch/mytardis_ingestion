@@ -8,6 +8,7 @@ from pydantic import AnyUrl, BaseModel, Field, HttpUrl
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime, Username
+from src.helpers.enumerators import DataClassification
 
 
 class BaseProject(BaseModel):
@@ -18,6 +19,7 @@ class BaseProject(BaseModel):
     name: str
     description: str
     principal_investigator: Username
+    data_classification: DataClassification = DataClassification.SENSITIVE
     created_by: Optional[str] = None
     url: Optional[HttpUrl] = None
     users: Optional[List[UserACL]] = None
