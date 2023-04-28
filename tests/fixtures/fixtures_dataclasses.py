@@ -1,4 +1,4 @@
-# pylint:
+# pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
 
 from datetime import datetime
 from pathlib import Path

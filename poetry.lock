@@ -1600,6 +1600,18 @@ files = [
 ]
 
 [[package]]
+name = "types-python-dateutil"
+version = "2.8.19.12"
+description = "Typing stubs for python-dateutil"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-python-dateutil-2.8.19.12.tar.gz", hash = "sha256:355b2cb82b31e556fd18e7b074de7c350c680ab80608f0cc55ba6770d986d67d"},
+    {file = "types_python_dateutil-2.8.19.12-py3-none-any.whl", hash = "sha256:fe5b545e678ec13e3ddc83a0eee1545c1b5e2fba4cfc39b276ab6f4e7604a923"},
+]
+
+[[package]]
 name = "types-pytz"
 version = "2023.3.0.0"
 description = "Typing stubs for pytz"
@@ -1789,4 +1801,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "af82372d3d1b4ba020b9b67e4bed2df0e3dce56ad3e0622e7058abaeec3e5758"
+content-hash = "e380006ce4b9007f948d635b6ba1d42947c7c41ef4b24619e692d93d681cff2a"

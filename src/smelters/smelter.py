@@ -155,7 +155,7 @@ class Smelter:
             and not raw_experiment.projects
         ):  # test this
             logger.warning(
-                "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided %s",
+                "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided %s", # pylint: disable=line-too-long
                 raw_experiment,
             )
             return None

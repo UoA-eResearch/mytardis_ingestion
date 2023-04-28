@@ -1,21 +1,22 @@
-from pytest import fixture
+# pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
 import responses
+from pytest import fixture
 
-from src.overseers.overseer import Overseer
-from src.smelters.smelter import Smelter
-from src.forges.forge import Forge
 from src.crucible.crucible import Crucible
-from src.ingestion_factory import IngestionFactory
+from src.forges.forge import Forge
 from src.helpers.config import (
     AuthConfig,
+    ConfigFromEnv,
     ConnectionConfig,
     GeneralConfig,
     IntrospectionConfig,
     SchemaConfig,
     StorageConfig,
-    ConfigFromEnv,
 )
 from src.helpers.mt_rest import MyTardisRESTFactory
+from src.ingestion_factory import IngestionFactory
+from src.overseers.overseer import Overseer
+from src.smelters.smelter import Smelter
 from tests.fixtures.mock_rest_factory import MockMtRest
 
 
@@ -27,14 +28,14 @@ def rest_factory(auth: AuthConfig, connection: ConnectionConfig):
 @fixture
 def overseer(rest_factory: MyTardisRESTFactory, mytardis_setup: IntrospectionConfig):
     overseer = Overseer(rest_factory)
-    overseer._mytardis_setup = mytardis_setup
+    overseer._mytardis_setup = mytardis_setup #pylint: disable=W0212
     return overseer
 
 
 @fixture
 def mock_overseer(mock_mt_rest: MockMtRest):
     def _get_mock_overseer(mock_responses: responses.RequestsMock):
-        return Overseer(mock_mt_rest(mock_responses))
+        return Overseer(mock_mt_rest(mock_responses)) #type: ignore[operator]
 
     return _get_mock_overseer
 

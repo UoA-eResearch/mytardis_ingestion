@@ -1,4 +1,4 @@
-# pylint: disable=missing-module-docstring,missing-function-docstring
+# pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
 
 from datetime import datetime
 from pathlib import Path
@@ -488,7 +488,7 @@ def split_and_parse_users(
 def split_and_parse_groups(
     admin_groups, read_groups, download_groups, sensitive_groups
 ):
-    return_list: List[GroupACL] = []
+    return_list: List[GroupACL] = [] # type: ignore[annotation-unchecked]
     for admin_group in admin_groups:
         return_list.append(
             GroupACL(

@@ -1,4 +1,4 @@
-# pylint: disable=missing-function-docstring
+# pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
 
 import shutil
 from pathlib import Path
@@ -202,19 +202,11 @@ def raw_project_dictionary(
 
 @fixture
 def tidied_project_dictionary(
-    admin_groups,
-    admin_users,
-    download_groups,
-    download_users,
     project_description,
     project_ids,
     project_metadata,
     project_name,
     project_principal_investigator,
-    read_groups,
-    read_users,
-    sensitive_groups,
-    sensitive_users,
     project_institutions,
     project_schema,
     split_and_parse_users,
