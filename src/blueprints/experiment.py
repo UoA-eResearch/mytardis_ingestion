@@ -18,7 +18,7 @@ class BaseExperiment(BaseModel):
 
     title: str
     description: str
-    data_classification = Optional[DataClassification] = None
+    data_classification: Optional[DataClassification] = None
     created_by: Optional[str] = None
     url: Optional[HttpUrl] = None
     locked: bool = False
