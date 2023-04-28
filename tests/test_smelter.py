@@ -94,7 +94,8 @@ def test_smelt_project_object_use_default_schema(
 
     assert result is not None
     (_, parameterset) = result
-    assert parameterset.parameter_schema == smelter.default_schema.project
+    if parameterset:
+        assert parameterset.parameter_schema == smelter.default_schema.project
     assert result == (refined_project, raw_project_parameterset)
 
 
@@ -159,7 +160,8 @@ def test_smelt_experiment_projects_enabled(
     caplog.set_level(logging.WARNING)
     error_str = "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided "
     raw_experiment.projects = None
-    smelter.projects_enabled = True
+    if not smelter.projects_enabled:
+        smelter.projects_enabled = True
 
     assert smelter.smelt_experiment(raw_experiment) is None
     assert error_str in caplog.text

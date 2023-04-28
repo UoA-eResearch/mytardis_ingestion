@@ -104,6 +104,9 @@ institution_address = const.institution_address
 institution_ids = const.institution_ids
 institution_country = const.institution_country
 institution_name = const.institution_name
+project_data_classification = const.project_data_classification
+experiment_data_classification = const.experiment_data_classification
+dataset_data_classification = const.dataset_data_classification
 
 
 # =============================
@@ -379,9 +382,11 @@ def raw_dataset_as_dict(
         "identifiers": dataset_ids,
         "instrument": dataset_instrument,
     }
-    for key in dataset_metadata.keys():
-        return_dict[key] = dataset_metadata[key]
-    return return_dict
+
+
+#    for key in dataset_metadata.keys():
+#        return_dict[key] = dataset_metadata[key]
+#    return return_dict
 
 
 @fixture

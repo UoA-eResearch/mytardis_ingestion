@@ -250,7 +250,7 @@ def refined_experiment(
     return RefinedExperiment(
         title=experiment_name,
         description=experiment_description,
-        data_classificati=experiment_data_classification,
+        data_classification=experiment_data_classification,
         institution_name=experiment_institution,
         created_by=created_by_upi,
         url=experiment_url,
