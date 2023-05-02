@@ -376,11 +376,6 @@ def raw_dataset_as_dict(
     }
 
 
-#    for key in dataset_metadata.keys():
-#        return_dict[key] = dataset_metadata[key]
-#    return return_dict
-
-
 @fixture
 def dataset_parameters_as_dict(
     dataset_schema,

@@ -198,5 +198,5 @@ class DataClassification(Enum):
 
     RESTRICTED = 1
     SENSITIVE = 25
-    INTERNAL = 100
+    INTERNAL = 50
     PUBLIC = 100
