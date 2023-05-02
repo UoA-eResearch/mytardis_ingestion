@@ -265,20 +265,13 @@ class RawDatafile(YAMLSerializable, IDerivedAccessControl, IMetadata):
 @dataclass
 class IngestionMetadata:
     """
-    A class representing a collection of metadata, with
-    objects of different MyTardis types. It can be serialised
-    to become a YAML file for ingestion into MyTardis.
+    A class to represent the metadata associated with ingesting data.
 
-    Attributes
-    ----------
-    projects : List[RawProject]
-        A list of RawProject objects.
-    experiments : List[RawExperiment]
-        A list of RawExperiment objects.
-    datasets : List[RawDataset]
-        A list of RawDataset objects.
-    datafiles : List[RawDatafile]
-        A list of RawDatafile objects.
+    Attributes:
+        projects (List[RawProject]): A list of RawProject objects.
+        experiments (List[RawExperiment]): A list of RawExperiment objects.
+        datasets (List[RawDataset]): A list of RawDataset objects.
+        datafiles (List[RawDatafile]): A list of RawDatafile objects.
     """
     projects: List[RawProject] = field(default_factory=list)
     experiments: List[RawExperiment] = field(default_factory=list)
@@ -287,12 +280,10 @@ class IngestionMetadata:
 
     def is_empty(self) -> bool:
         """
-        Returns whether the IngestionMetadata object is empty.
+        Check if the metadata is empty.
 
-        Returns
-        -------
-        bool
-            True if the object is empty, False otherwise.
+        Returns:
+            bool: True if there are no projects, experiments, datasets or datafiles, False otherwise.
         """
         return (
             len(self.projects) == 0
@@ -303,12 +294,10 @@ class IngestionMetadata:
 
     def to_yaml(self):
         """
-        Returns a string of the YAML representation of the metadata.
+        Convert the metadata to a YAML string.
 
-        Returns
-        -------
-        str
-            A string of the YAML representation of the metadata.
+        Returns:
+            str: A YAML representation of the metadata.
         """
         concatenated: List[Any] = self.projects
         concatenated.extend(self.experiments)
@@ -319,17 +308,13 @@ class IngestionMetadata:
 
     def get_files_by_dataset(self, dataset: RawDataset) -> List[RawDatafile]:
         """
-        Returns datafiles that belong to a dataset.
+        Get the datafiles associated with a given dataset.
 
-        Parameters
-        ----------
-        dataset : RawDataset
-            The dataset to which the datafiles should belong.
+        Args:
+            dataset (RawDataset): The dataset to look for.
 
-        Returns
-        -------
-        List[RawDatafile]
-            A list of RawDatafile objects that belong to the given dataset.
+        Returns:
+            List[RawDatafile]: A list of RawDatafile objects associated with the dataset.
         """
         id = dataset.dataset_id
         # update with Datafile
@@ -344,17 +329,13 @@ class IngestionMetadata:
 
     def get_datasets_by_experiment(self, exp: RawExperiment) -> List[RawDataset]:
         """
-        Returns datasets that belong to an experiment.
+        Get the datasets associated with a given experiment.
 
-        Parameters
-        ----------
-        exp : RawExperiment
-            An instance of RawExperiment to get the datasets for.
+        Args:
+            exp (RawExperiment): The experiment to look for.
 
-        Returns
-        -------
-        List[RawDataset]
-            A list of RawDataset instances that belong to the experiment.
+        Returns:
+            List[RawDataset]: A list of RawDataset objects associated with the experiment.
         """
         id = exp.experiment_id
         all_datasets: List[RawDataset] = []
@@ -366,17 +347,13 @@ class IngestionMetadata:
 
     def get_experiments_by_project(self, proj: RawProject) -> List[RawExperiment]:
         """
-        Returns experiments that belong to a project.
+        Get the experiments associated with a given project.
 
-        Parameters
-        ----------
-        proj : RawProject
-            An instance of RawProject to get the experiments for.
+        Args:
+            proj (RawProject): The project to look for.
 
-        Returns
-        -------
-        List[RawExperiment]
-            A list of RawExperiment instances that belong to the project.
+        Returns:
+            List[RawExperiment]: A list of RawExperiment objects associated with the project.
         """
         id = proj.project_id
         all_exps: List[RawExperiment] = []
@@ -388,24 +365,17 @@ class IngestionMetadata:
 
     @staticmethod
     def from_yaml(yaml_rep: str):
-        """Returns a IngestionMetadata object by loading metadata from content of a YAML file.
-
-        Parameters
-        ----------
-        yaml_rep : str
-            The content of a YAML file. Note that this is the content, not the path of the file.
-            The function does not read from a file for you, you have to pass in the file's content.
-
-        Returns
-        -------
-        IngestionMetadata
-            An instance of IngestionMetadata populated with objects from the YAML representation.
         """
+        This static method converts a YAML string to an IngestionMetadata object.
+
+        Args:
+            yaml_rep (str): A string in YAML format representing the metadata to be converted.
+
+        Returns:
+            IngestionMetadata: An IngestionMetadata object containing the metadata from the input YAML string.
+        """ 
         metadata = IngestionMetadata()
         objects = yaml.safe_load_all(yaml_rep)
-        # Iterate through all the objects,
-        # sorting them into the right list
-        # based on type.
         for obj in objects:
             if isinstance(obj, RawProject):
                 metadata.projects.append(obj)
@@ -421,7 +391,6 @@ class IngestionMetadata:
                     + ", ignored. Object was %s",
                     obj,
                 )
-        # print(metadata.datafiles)
         return metadata
 
 
