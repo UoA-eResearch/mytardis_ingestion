@@ -18,66 +18,23 @@ class YAMLSerializable(yaml.YAMLObject):
     to a Python object.
 
     Attributes:
-    ----------
-    None
+        None
 
     Methods:
-    -------
-    from_yaml(cls: Type, loader: Loader, node: MappingNode) -> Any:
-        Convert a representation node to a Python object,
-        calling __init__ to create a new object.
-
-        We're using dataclasses to create an __init__ method
-        which sets default values for fields not present in YAML document.
-        By default, YAMLObject does not call __init__, so yaml.safe_load throws an exception
-        on documents that don't have all required fields. (see https://github.com/yaml/pyyaml/issues/510,
-        https://stackoverflow.com/questions/13331222/yaml-does-not-call-the-constructor)
-        So we override the from_yaml method here to call __init__ (see
-        https://stackoverflow.com/questions/7224033/default-constructor-parameters-in-pyyaml)
-
-        Parameters:
-        ----------
-        cls : Type
-            The class that this method belongs to.
-        loader : Loader
-            A PyYAML loader object that loads the YAML representation of the object.
-        node : MappingNode
-            A PyYAML node object that represents the YAML mapping that contains the object's data.
-
-        Returns:
-        -------
-        Any
-            A new object created by calling the __init__ method with the values extracted from the YAML node.
-
+        from_yaml(cls: Type, loader: Loader, node: MappingNode) -> Any: A class method that loads and constructs an object from a YAML node.
     """
     @classmethod
     def from_yaml(cls: Type, loader: Loader, node: MappingNode) -> Any:
         """
-        Convert a representation node to a Python object,
-        calling __init__ to create a new object.
+        Loads and constructs an object from a YAML node.
 
-        We're using dataclasses to create an __init__ method
-        which sets default values for fields not present in YAML document.
-        By default, YAMLObject does not call __init__, so yaml.safe_load throws an exception
-        on documents that don't have all required fields. (see https://github.com/yaml/pyyaml/issues/510,
-        https://stackoverflow.com/questions/13331222/yaml-does-not-call-the-constructor)
-        So we override the from_yaml method here to call __init__ (see
-        https://stackoverflow.com/questions/7224033/default-constructor-parameters-in-pyyaml)
-
-        Parameters:
-        ----------
-        cls : Type
-            The class that this method belongs to.
-        loader : Loader
-            A PyYAML loader object that loads the YAML representation of the object.
-        node : MappingNode
-            A PyYAML node object that represents the YAML mapping that contains the object's data.
+        Args:
+            cls (Type): The class that needs to be constructed.
+            loader (Loader): The YAML loader instance.
+            node (MappingNode): The YAML mapping node containing the data.
 
         Returns:
-        -------
-        Any
-            A new object created by calling the __init__ method with the values extracted from the YAML node.
-
+            Any: An instance of the class.
         """
         fields = loader.construct_mapping(node)
         return cls(**fields)
