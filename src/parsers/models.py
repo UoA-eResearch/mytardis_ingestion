@@ -114,7 +114,7 @@ class RawProject(YAMLSerializable, IProjectAccessControl, IMetadata):
     yaml_loader = yaml.SafeLoader
     description: str = ""
     project_id: str = ""
-    alternate_ids: List[str] = field(default_factory=list)
+    identifiers: List[str] = field(default_factory=list)
     name: str = ""
     principal_investigator: str = "abcd123"
 
@@ -135,7 +135,7 @@ class RawExperiment(YAMLSerializable, IDerivedAccessControl, IMetadata):
     yaml_loader = yaml.SafeLoader
     project_id: str = ""
     experiment_id: str = ""
-    alternate_ids: List[str] = field(default_factory=list)
+    identifiers: List[str] = field(default_factory=list)
     description: str = ""
     title: str = ""
 
@@ -159,7 +159,7 @@ class RawDataset(YAMLSerializable, IDerivedAccessControl, IMetadata):
     experiment_id: List[str] = field(default_factory=list)
     dataset_id: str = ""
     description: str = ""  
-    instrument: str = ""  
+    instrument: str = "" 
     experiments: List[str] = field(default_factory=list) 
 
 
