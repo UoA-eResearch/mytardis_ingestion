@@ -114,6 +114,7 @@ class Smelter:
             refined_project = RefinedProject(
                 name=raw_project.name,
                 description=raw_project.description,
+                data_classification=raw_project.data_classification,
                 principal_investigator=raw_project.principal_investigator,
                 created_by=raw_project.created_by,
                 url=raw_project.url,
@@ -154,7 +155,7 @@ class Smelter:
             and not raw_experiment.projects
         ):  # test this
             logger.warning(
-                "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided %s",
+                "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided %s", # pylint: disable=line-too-long
                 raw_experiment,
             )
             return None
@@ -168,6 +169,7 @@ class Smelter:
             refined_experiment = RefinedExperiment(
                 title=raw_experiment.title,
                 description=raw_experiment.description,
+                data_classification=raw_experiment.data_classification,
                 created_by=raw_experiment.created_by,
                 url=raw_experiment.url,
                 locked=raw_experiment.locked,
@@ -210,6 +212,7 @@ class Smelter:
             refined_dataset = RefinedDataset(
                 description=raw_dataset.description,
                 directory=raw_dataset.directory,
+                data_classification=raw_dataset.data_classification,
                 users=raw_dataset.users,
                 groups=raw_dataset.groups,
                 immutable=raw_dataset.immutable,

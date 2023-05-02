@@ -47,4 +47,4 @@ instrument_id: <one of the identifiers associated with the instrument (or commer
 #
 metadata:
   <key>: <value>
-  <key>: <value>
+  #
