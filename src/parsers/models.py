@@ -107,7 +107,6 @@ class RawProject(YAMLSerializable, IProjectAccessControl, IMetadata):
         description (str): A brief description of the project.
         project_id (str): The unique identifier of the project.
         alternate_ids (List[str]): A list of alternate identifiers for the project.
-        lead_researcher (str): The name of the lead researcher for the project.
         name (str): The name of the project.
         principal_investigator (str): The name of the principal investigator for the project.
     """
@@ -116,7 +115,6 @@ class RawProject(YAMLSerializable, IProjectAccessControl, IMetadata):
     description: str = ""
     project_id: str = ""
     alternate_ids: List[str] = field(default_factory=list)
-    lead_researcher: str = ""
     name: str = ""
     principal_investigator: str = "abcd123"
 
@@ -151,7 +149,6 @@ class RawDataset(YAMLSerializable, IDerivedAccessControl, IMetadata):
         dataset_name (str): The name of the dataset.
         experiment_id (List[str]): A list of unique identifiers of the experiments this dataset belongs to.
         dataset_id (str): The unique identifier of the dataset.
-        instrument_id (str): The unique identifier of the instrument used to generate the data.
         description (str): A brief description of the dataset.
         instrument (str): The name of the instrument used to generate the data.
         experiments (List[str]): A list of experiment names associated with this dataset.
@@ -161,7 +158,6 @@ class RawDataset(YAMLSerializable, IDerivedAccessControl, IMetadata):
     dataset_name: str = ""
     experiment_id: List[str] = field(default_factory=list)
     dataset_id: str = ""
-    instrument_id: str = ""
     description: str = ""  
     instrument: str = ""  
     experiments: List[str] = field(default_factory=list) 
@@ -172,7 +168,6 @@ class FileInfo(YAMLSerializable, IDerivedAccessControl, IMetadata):
     """A class representing MyTardis Datafile objects.
 
     Attributes:
-        name (str): The name of the datafile.
         size (int): The size of the datafile.
         filename (str): The filename of the datafile.
         directory (str): The directory path of the datafile.
@@ -184,7 +179,6 @@ class FileInfo(YAMLSerializable, IDerivedAccessControl, IMetadata):
     """
     yaml_tag = "!FileInfo"
     yaml_loader = yaml.SafeLoader
-    name: str = ""
     size: int = field(repr=False, default=0)
     filename: str = ""
     directory: str = ""
