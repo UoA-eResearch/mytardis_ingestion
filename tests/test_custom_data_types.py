@@ -109,7 +109,7 @@ def test_malformed_URIs(uris, expected_error):
 
 @pytest.mark.parametrize(
     "iso_strings, expected",
-    [
+    (
         ("2022-01-01T12:00:00", "2022-01-01T12:00:00"),
         ("2022-01-01T12:00:00+12:00", "2022-01-01T12:00:00+12:00"),
         ("2022-01-01T12:00:00.0+12:00", "2022-01-01T12:00:00.0+12:00"),
@@ -130,8 +130,8 @@ def test_malformed_URIs(uris, expected_error):
             datetime(2022, 1, 1, 12, 00, 00, tzinfo=NZT).isoformat(),
             "2022-01-01T12:00:00+13:00",
         ),
-    ],
+    ),
 )
-def test_good_ISO_string(iso_strings, expected):
+def test_good_ISO_DateTime_string(iso_strings, expected):
     test_class = DummyISODateTime(iso_time=iso_strings)
     assert test_class.iso_time == expected

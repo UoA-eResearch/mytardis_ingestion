@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 from pydantic import AnyUrl, BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
-from src.blueprints.custom_data_types import URI
+from src.blueprints.custom_data_types import URI, ISODateTime
 
 
 class DatafileReplica(BaseModel):
@@ -35,7 +35,11 @@ class BaseDatafile(BaseModel):
         mimetype: str
             the MIME type of the file to be ingested
         size: int
-            the size in bytes of the file to be ingested"""
+            the size in bytes of the file to be ingested
+        archive_date: ISODateTime
+            the date that the datafile will be automatically archived
+        delete_date: ISODateTime
+            the date that the datafile is able to be deleted"""
 
     filename: str
     directory: Path
@@ -44,6 +48,8 @@ class BaseDatafile(BaseModel):
     size: int
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None
+    archive_date: ISODateTime
+    delete_date: Optional[ISODateTime] = None
 
 
 class RawDatafile(BaseDatafile):

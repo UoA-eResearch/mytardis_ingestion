@@ -8,7 +8,7 @@ import pytz
 from pytest import fixture
 
 from src.blueprints import GroupACL, Parameter, UserACL, Username
-from src.blueprints.custom_data_types import URI
+from src.blueprints.custom_data_types import URI, ISODateTime
 from src.helpers.enumerators import DataClassification
 
 
@@ -488,7 +488,7 @@ def split_and_parse_users(
 def split_and_parse_groups(
     admin_groups, read_groups, download_groups, sensitive_groups
 ):
-    return_list: List[GroupACL] = [] # type: ignore[annotation-unchecked]
+    return_list: List[GroupACL] = []  # type: ignore[annotation-unchecked]
     for admin_group in admin_groups:
         return_list.append(
             GroupACL(
@@ -611,3 +611,13 @@ def experiment_data_classification():
 @fixture
 def dataset_data_classification():
     return DataClassification.SENSITIVE
+
+
+@fixture
+def datafile_archive_date():
+    return ISODateTime("2023-12-31T12:00:00+13:00")
+
+
+@fixture
+def datafile_delete_date():
+    return ISODateTime("2025-12-31T12:00:00+13:00")

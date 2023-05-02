@@ -107,6 +107,8 @@ institution_name = const.institution_name
 project_data_classification = const.project_data_classification
 experiment_data_classification = const.experiment_data_classification
 dataset_data_classification = const.dataset_data_classification
+datafile_archive_date = const.datafile_archive_date
+datafile_delete_date = const.datafile_delete_date
 
 
 # =============================
