@@ -1,14 +1,16 @@
+# pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
+
 from pytest import fixture
 
 from src.helpers.config import (
-    GeneralConfig,
     AuthConfig,
-    ConnectionConfig,
-    StorageConfig,
-    SchemaConfig,
-    ProxyConfig,
-    IntrospectionConfig,
     ConfigFromEnv,
+    ConnectionConfig,
+    GeneralConfig,
+    IntrospectionConfig,
+    ProxyConfig,
+    SchemaConfig,
+    StorageConfig,
 )
 
 

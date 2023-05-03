@@ -45,6 +45,7 @@ class Crucible:
         return Project(
             name=refined_project.name,
             description=refined_project.description,
+            data_classification=refined_project.data_classification,
             principal_investigator=refined_project.principal_investigator,
             created_by=refined_project.created_by,
             url=refined_project.url,
@@ -95,6 +96,7 @@ class Crucible:
         return Experiment(
             title=refined_experiment.title,
             description=refined_experiment.description,
+            data_classification=refined_experiment.data_classification,
             created_by=refined_experiment.created_by,
             url=refined_experiment.url,
             locked=refined_experiment.locked,
@@ -163,6 +165,7 @@ class Crucible:
         return Dataset(
             description=refined_dataset.description,
             directory=refined_dataset.directory,
+            data_classification=refined_dataset.data_classification,
             users=refined_dataset.users,
             groups=refined_dataset.groups,
             immutable=refined_dataset.immutable,

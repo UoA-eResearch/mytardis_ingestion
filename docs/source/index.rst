@@ -3,6 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+NB: THIS IS OUT OF DATE
+
 The University of Auckland's process for ingesting data into MyTardis
 =====================================================================
 

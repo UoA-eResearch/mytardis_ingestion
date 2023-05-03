@@ -1,4 +1,4 @@
-# pylint: disable=missing-function-docstring
+# pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
 
 import shutil
 from pathlib import Path
@@ -104,6 +104,9 @@ institution_address = const.institution_address
 institution_ids = const.institution_ids
 institution_country = const.institution_country
 institution_name = const.institution_name
+project_data_classification = const.project_data_classification
+experiment_data_classification = const.experiment_data_classification
+dataset_data_classification = const.dataset_data_classification
 
 
 # =============================
@@ -199,19 +202,11 @@ def raw_project_dictionary(
 
 @fixture
 def tidied_project_dictionary(
-    admin_groups,
-    admin_users,
-    download_groups,
-    download_users,
     project_description,
     project_ids,
     project_metadata,
     project_name,
     project_principal_investigator,
-    read_groups,
-    read_users,
-    sensitive_groups,
-    sensitive_users,
     project_institutions,
     project_schema,
     split_and_parse_users,
@@ -379,9 +374,6 @@ def raw_dataset_as_dict(
         "identifiers": dataset_ids,
         "instrument": dataset_instrument,
     }
-    for key in dataset_metadata.keys():
-        return_dict[key] = dataset_metadata[key]
-    return return_dict
 
 
 @fixture

@@ -114,7 +114,8 @@ class URI(str):
 class ISODateTime(str):
     """Class type that handles datetime objects and returns a validated ISO date time
     formatted string. Validation is done against a regex taken from Stack Overflow.
-    https://stackoverflow.com/questions/41129921/validate-an-iso-8601-datetime-string-in-python"""
+    https://stackoverflow.com/questions/41129921/validate-an-iso-8601-datetime-string-in-python
+    """
 
     @classmethod
     def __get_validators__(cls):
@@ -183,5 +184,5 @@ class BaseObjectType(str):
         return cls(f"{value}")
 
     def __repr__(self):
-        """Indicate that it is a formatted ISODateTime string via __repr__"""
+        """Indicate that it is a formatted BaseObjectType string via __repr__"""
         return f"BaseObjectType({super().__repr__()})"
