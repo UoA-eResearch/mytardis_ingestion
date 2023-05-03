@@ -3,12 +3,14 @@ And how to parse the YAML file into Python objects.
 """
 import logging
 from dataclasses import dataclass, field
-from pathlib import Path  # ## added
+from pathlib import Path 
 from typing import Any, Dict, List, Literal, Optional, Type, TypeAlias, TypeVar, Union
 
 import yaml
 from yaml.loader import Loader
 from yaml.nodes import MappingNode, Node
+from src.blueprints.custom_data_types import URI, Username, ISODateTime
+from src.helpers.enumerators import DataClassification
 
 
 class YAMLSerializable(yaml.YAMLObject):
@@ -104,20 +106,19 @@ class RawProject(YAMLSerializable, IProjectAccessControl, IMetadata):
     A class representing MyTardis Project objects.
 
     Attributes:
-        description (str): A brief description of the project.
-        project_id (str): The unique identifier of the project.
-        alternate_ids (List[str]): A list of alternate identifiers for the project.
         name (str): The name of the project.
+        description (str): A brief description of the project.
+        identifiers (List[str]): A list of identifiers for the project.
+        data_classification (DataClassification): The data classification of the project.
         principal_investigator (str): The name of the principal investigator for the project.
     """
     yaml_tag = "!Project"
     yaml_loader = yaml.SafeLoader
-    description: str = ""
-    project_id: str = ""
-    identifiers: List[str] = field(default_factory=list)
     name: str = ""
+    description: str = ""
     principal_investigator: str = "abcd123"
-
+    data_classification: DataClassification = DataClassification.SENSITIVE
+    identifiers: List[str] = field(default_factory=list)
 
 @dataclass
 class RawExperiment(YAMLSerializable, IDerivedAccessControl, IMetadata):
@@ -125,19 +126,21 @@ class RawExperiment(YAMLSerializable, IDerivedAccessControl, IMetadata):
     A class representing MyTardis Experiment objects.
 
     Attributes:
-        project_id (str): The unique identifier of the project this experiment belongs to.
-        experiment_id (str): The unique identifier of the experiment.
-        alternate_ids (List[str]): A list of alternate identifiers for the experiment.
-        description (str): A brief description of the experiment.
         title (str): The title of the experiment.
+        description (str): A brief description of the experiment.
+        data_classification (DataClassification): The data classification of the experiment.
+        identifiers (List[str]): A list of identifiers for the experiment.
+        projects (List[str]): A list of project names associated with this experiment.
+
+
     """
     yaml_tag = "!Experiment"
     yaml_loader = yaml.SafeLoader
-    project_id: str = ""
-    experiment_id: str = ""
-    identifiers: List[str] = field(default_factory=list)
-    description: str = ""
     title: str = ""
+    description: str = ""
+    data_classification: Optional[DataClassification] = None
+    identifiers: List[str] = field(default_factory=list)
+    projects: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -146,45 +149,20 @@ class RawDataset(YAMLSerializable, IDerivedAccessControl, IMetadata):
     A class representing MyTardis Dataset objects.
 
     Attributes:
-        dataset_name (str): The name of the dataset.
-        experiment_id (List[str]): A list of unique identifiers of the experiments this dataset belongs to.
-        dataset_id (str): The unique identifier of the dataset.
-        description (str): A brief description of the dataset.
-        instrument (str): The name of the instrument used to generate the data.
+        description (str): The name of the dataset.
+        data_classification (DataClassification): The data classification of the dataset.
+        identifiers (List[str]): A list of identifiers for the dataset.
         experiments (List[str]): A list of experiment names associated with this dataset.
+        instrument (str): The name of the instrument used to generate the data.
+
     """
     yaml_tag = "!Dataset"
     yaml_loader = yaml.SafeLoader
-    dataset_name: str = ""
-    experiment_id: List[str] = field(default_factory=list)
-    dataset_id: str = ""
-    description: str = ""  
+    description: str = ""
+    data_classification: Optional[DataClassification] = None
+    identifiers: List[str] = field(default_factory=list)
+    experiments: List[str] = field(default_factory=list)
     instrument: str = "" 
-    experiments: List[str] = field(default_factory=list) 
-
-
-@dataclass
-class FileInfo(YAMLSerializable, IDerivedAccessControl, IMetadata):
-    """A class representing MyTardis Datafile objects.
-
-    Attributes:
-        size (int): The size of the datafile.
-        filename (str): The filename of the datafile.
-        directory (str): The directory path of the datafile.
-        md5sum (str): The md5sum hash of the datafile.
-        mimetype (str): The mimetype of the datafile.
-        dataset (str): The name of the dataset that the datafile belongs to.
-        yaml_tag (str): The YAML tag for serialization of this class.
-        yaml_loader (yaml.Loader): The YAML loader class for deserialization of this class.
-    """
-    yaml_tag = "!FileInfo"
-    yaml_loader = yaml.SafeLoader
-    size: int = field(repr=False, default=0)
-    filename: str = ""
-    directory: str = ""
-    md5sum: str = ""
-    mimetype: str = ""
-    dataset: str = ""
 
 
 ### create new Datafile class to match fields in ingestion script
@@ -194,23 +172,21 @@ class RawDatafile(YAMLSerializable, IDerivedAccessControl, IMetadata):
     A class representing MyTardis Datafile objects.
 
     Attributes:
-        size (str): The size of the datafile.
         filename (str): The name of the file.
         directory (str): The directory where the file is located.
         md5sum (str): The MD5 checksum of the file.
         mimetype (str): The MIME type of the file.
+        size (str): The size of the datafile.
         dataset (str): The dataset to which the datafile belongs.
-        dataset_id (str): The ID of the dataset to which the datafile belongs.
     """
     yaml_tag = "!Datafile"
     yaml_loader = yaml.SafeLoader
-    size: str = ""  
     filename: str = ""
-    directory: str = ""
+    directory: Path = ""
     md5sum: str = ""
     mimetype: str = ""
+    size: int = field(repr=False, default=0)
     dataset: str = ""
-    dataset_id: str = ""
 
 
 @dataclass
@@ -267,11 +243,11 @@ class IngestionMetadata:
         Returns:
             List[RawDatafile]: A list of RawDatafile objects associated with the dataset.
         """
-        id = dataset.dataset_id
+        id = dataset.identifiers[0]
         # update with Datafile
         all_files: List[RawDatafile] = []
         for file in self.datafiles:
-            if not file.dataset_id == id:
+            if not file.dataset == id:
                 continue
             # Concatenate list of fileinfo matching dataset
             # with current list
@@ -288,10 +264,10 @@ class IngestionMetadata:
         Returns:
             List[RawDataset]: A list of RawDataset objects associated with the experiment.
         """
-        id = exp.experiment_id
+        id = exp.identifiers[0]
         all_datasets: List[RawDataset] = []
         for dataset in self.datasets:
-            if id not in dataset.experiment_id:
+            if id not in dataset.experiments:
                 continue
             all_datasets.append(dataset)
         return all_datasets
@@ -306,10 +282,10 @@ class IngestionMetadata:
         Returns:
             List[RawExperiment]: A list of RawExperiment objects associated with the project.
         """
-        id = proj.project_id
+        id = proj.identifiers[0]
         all_exps: List[RawExperiment] = []
         for exp in self.experiments:
-            if not exp.project_id == id:
+            if not exp.projects == id:
                 continue
             all_exps.append(exp)
         return all_exps

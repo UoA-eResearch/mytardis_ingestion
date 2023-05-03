@@ -2,13 +2,6 @@ import logging
 
 import pytest
 
-from src.parsers.models import (  # ## create new data model to match YAML file
-    IngestionMetadata,
-    RawDatafile,
-    RawDataset,
-    RawExperiment,
-    RawProject,
-)
 from src.parsers.yaml_parser import YamlParser
 from src.smelters.smelter import Smelter
 
@@ -18,10 +11,10 @@ logger = logging.getLogger(__name__)
 def test_yaml_parse():
     yp = YamlParser()
     data_load = yp.parse_yaml_file(
-        "tests/fixtures/fixtures_renaming_exported_update.yaml"
+        "tests/fixtures/fixtures_example.yaml"
     )
-    assert data_load[0].name == "p1"
-    assert data_load[2].title == "e1"
+    assert data_load[0].name == "BIRU_MultipleLungCancer"
+    assert data_load[2].title == "BIRU lungcancer1_NoTreatment"
 
 
 ### Could create these tests after the ingestion path is created - especially the .env file
