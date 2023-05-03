@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from src.parsers.yaml_parser import YamlParser
+from src.beneficiation.yaml_parser import YamlParser
 from src.smelters.smelter import Smelter
 
 logger = logging.getLogger(__name__)

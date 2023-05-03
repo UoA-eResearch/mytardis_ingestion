@@ -50,7 +50,6 @@ class IProjectAccessControl:
     while the IDerviedAccessControl class represents fields
     for experiments, datasets and datafiles.
     """
-
     admin_groups: List[str] = field(default_factory=list)
     admin_users: List[str] = field(default_factory=list)
     read_groups: List[str] = field(default_factory=list)
@@ -71,7 +70,6 @@ class IDerivedAccessControl:
     When set to None, the fields represent that they are inheriting
     access control fields from the containing object.
     """
-
     admin_groups: Optional[List[str]] = field(default=None)
     admin_users: Optional[List[str]] = field(default=None)
     read_groups: Optional[List[str]] = field(default=None)
@@ -98,7 +96,6 @@ class IMetadata:
     """
     # change to Optional[]
     metadata: Dict[str, Any] = field(default_factory=dict)
-
 
 @dataclass
 class RawProject(YAMLSerializable, IProjectAccessControl, IMetadata):
@@ -131,8 +128,6 @@ class RawExperiment(YAMLSerializable, IDerivedAccessControl, IMetadata):
         data_classification (DataClassification): The data classification of the experiment.
         identifiers (List[str]): A list of identifiers for the experiment.
         projects (List[str]): A list of project names associated with this experiment.
-
-
     """
     yaml_tag = "!Experiment"
     yaml_loader = yaml.SafeLoader
@@ -154,7 +149,6 @@ class RawDataset(YAMLSerializable, IDerivedAccessControl, IMetadata):
         identifiers (List[str]): A list of identifiers for the dataset.
         experiments (List[str]): A list of experiment names associated with this dataset.
         instrument (str): The name of the instrument used to generate the data.
-
     """
     yaml_tag = "!Dataset"
     yaml_loader = yaml.SafeLoader
@@ -244,13 +238,10 @@ class IngestionMetadata:
             List[RawDatafile]: A list of RawDatafile objects associated with the dataset.
         """
         id = dataset.identifiers[0]
-        # update with Datafile
         all_files: List[RawDatafile] = []
         for file in self.datafiles:
             if not file.dataset == id:
                 continue
-            # Concatenate list of fileinfo matching dataset
-            # with current list
             all_files.append(file)
         return all_files
 
@@ -320,36 +311,39 @@ class IngestionMetadata:
                 )
         return metadata
 
+"""
+Usage:
+dataset = Dataset()
+dataset.dataset_name = "Calibration 10 X"
+dataset.dataset_id = "2022-06-calibration-10-x"
 
-# # To use:
-# dataset = Dataset()
-# dataset.dataset_name = "Calibration 10 X"
-# dataset.dataset_id = "2022-06-calibration-10-x"
+python
+Copy code
+# To dump into YAML
+yaml.dump(dataset)
 
-# # To dump into YAML
-# yaml.dump(dataset)
+# To dump multiple objects
+datafile = Datafile()
+datafile.dataset_id = "2022-06-calibration-10-x"
+output = [dataset, datafile]
+yaml.dump_all(output)
 
-# # To dump multiple objects
-# datafile = Datafile()
-# datafile.dataset_id = "2022-06-calibration-10-x"
-# output = [dataset, datafile]
-# yaml.dump_all(output)
+# If not working with tags, strip them out and process as normal.
+import yaml
+from yaml.nodes import MappingNode, ScalarNode, SequenceNode
 
-# # If not working with tags, strip them out and process as normal.
-# import yaml
-# from yaml.nodes import MappingNode, ScalarNode, SequenceNode
-# def strip_unknown_tag_and_construct(loader, node):
-#     node.tag = ""
-#     # print(node)
-#     if isinstance(node, ScalarNode):
-#         return loader.construct_scalar(node)
-#     if isinstance(node, SequenceNode):
-#         return loader.construct_sequence(node)
-#     if isinstance(node, MappingNode):
-#         return loader.construct_mapping(node)
-#     else:
-#         return None
+def strip_unknown_tag_and_construct(loader, node):
+    node.tag = ""
+    if isinstance(node, ScalarNode):
+        return loader.construct_scalar(node)
+    if isinstance(node, SequenceNode):
+        return loader.construct_sequence(node)
+    if isinstance(node, MappingNode):
+        return loader.construct_mapping(node)
+    else:
+        return None
 
-# yaml.SafeLoader.add_constructor(None, strip_unknown_tag_and_construct)
-# with open('test/test.yaml') as f:
-#     a = list(yaml.safe_load_all(f))
+yaml.SafeLoader.add_constructor(None, strip_unknown_tag_and_construct)
+with open('test/test.yaml') as f:
+    a = list(yaml.safe_load_all(f))
+"""

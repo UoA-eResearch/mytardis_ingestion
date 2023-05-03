@@ -12,7 +12,7 @@ import os
 import yaml
 
 # User-defined imports
-from src.parsers.models import ( 
+from src.beneficiation.models import ( 
     RawProject,
    RawExperiment,
     RawDataset,
