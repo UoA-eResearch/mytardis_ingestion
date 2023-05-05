@@ -4,6 +4,7 @@
 
 import logging
 from urllib.parse import urljoin
+
 import pytest
 import responses
 from responses import matchers
@@ -93,7 +94,8 @@ def test_smelt_project_object_use_default_schema(
 
     assert result is not None
     (_, parameterset) = result
-    assert parameterset.parameter_schema == smelter.default_schema.project
+    if parameterset:
+        assert parameterset.parameter_schema == smelter.default_schema.project
     assert result == (refined_project, raw_project_parameterset)
 
 
@@ -156,9 +158,10 @@ def test_smelt_experiment_projects_enabled(
     caplog, smelter: Smelter, raw_experiment: RawExperiment
 ):
     caplog.set_level(logging.WARNING)
-    error_str = "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided "
+    error_str = "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided " #pylint: disable=line-too-long
     raw_experiment.projects = None
-    smelter.projects_enabled = True
+    if not smelter.overseer.mytardis_setup.projects_enabled:
+        smelter.overseer.mytardis_setup.projects_enabled = True
 
     assert smelter.smelt_experiment(raw_experiment) is None
     assert error_str in caplog.text
@@ -177,7 +180,8 @@ def test_smelt_experiment_object_use_default_schema(
 
     assert result is not None
     (_, parameterset) = result
-    assert parameterset.parameter_schema == smelter.default_schema.experiment
+    if parameterset:
+        assert parameterset.parameter_schema == smelter.default_schema.experiment
     assert result == (refined_experiment, raw_experiment_parameterset)
 
 
@@ -248,7 +252,8 @@ def test_smelt_dataset_use_default_schema(
 
     assert result is not None
     (_, parameterset) = result
-    assert parameterset.parameter_schema == smelter.default_schema.dataset
+    if parameterset:
+        assert parameterset.parameter_schema == smelter.default_schema.dataset
     assert result == (refined_dataset, raw_dataset_parameterset)
 
 
@@ -304,7 +309,8 @@ def test_smelt_datafile_use_default_schema(
     result = smelter.smelt_datafile(raw_datafile)
 
     assert result is not None
-    assert result.parameter_sets.parameter_schema == smelter.default_schema.datafile
+    if result.parameter_sets:
+        assert result.parameter_sets.parameter_schema == smelter.default_schema.datafile
     assert result == refined_datafile
 
 

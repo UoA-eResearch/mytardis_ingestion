@@ -8,6 +8,7 @@ from pydantic import AnyUrl, BaseModel, Field, HttpUrl
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime
+from src.helpers.enumerators import DataClassification
 
 
 class BaseExperiment(BaseModel):
@@ -17,13 +18,13 @@ class BaseExperiment(BaseModel):
 
     title: str
     description: str
+    data_classification: Optional[DataClassification] = None
     created_by: Optional[str] = None
     url: Optional[HttpUrl] = None
     locked: bool = False
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None
-    persistent_id: Optional[str] = None
-    alternate_ids: Optional[List[str]] = None
+    identifiers: Optional[List[str]] = None
 
 
 class RawExperiment(BaseExperiment):

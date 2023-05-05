@@ -9,6 +9,7 @@ from pydantic import AnyUrl, BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime
+from src.helpers.enumerators import DataClassification
 
 
 class BaseDataset(BaseModel):
@@ -17,12 +18,12 @@ class BaseDataset(BaseModel):
     validation than the RawDataset class."""
 
     description: str
+    data_classification: Optional[DataClassification] = None
     directory: Optional[Path] = None
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None
     immutable: bool = False
-    persistent_id: Optional[str] = None
-    alternate_ids: Optional[List[str]] = None
+    identifiers: Optional[List[str]] = None
 
 
 class RawDataset(BaseDataset):

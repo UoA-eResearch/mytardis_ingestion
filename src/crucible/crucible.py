@@ -1,8 +1,8 @@
 """The Crucible class takes a refined object and replaces the str values for
 fields that exist within the MyTardis Database with their equivalent URIs.
 """
-from datetime import datetime
 import logging
+from datetime import datetime
 
 from src.blueprints.custom_data_types import URI
 from src.blueprints.datafile import Datafile, RefinedDatafile
@@ -11,7 +11,6 @@ from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
 from src.helpers.enumerators import ObjectSearchEnum
 from src.overseers import Overseer
-
 
 logger = logging.getLogger(__name__)
 
@@ -46,13 +45,13 @@ class Crucible:
         return Project(
             name=refined_project.name,
             description=refined_project.description,
+            data_classification=refined_project.data_classification,
             principal_investigator=refined_project.principal_investigator,
             created_by=refined_project.created_by,
             url=refined_project.url,
             users=refined_project.users,
             groups=refined_project.groups,
-            persistent_id=refined_project.persistent_id,
-            alternate_ids=refined_project.alternate_ids,
+            identifiers=refined_project.identifiers,
             institution=institutions,
             start_time=(
                 refined_project.start_time.isoformat()
@@ -97,13 +96,13 @@ class Crucible:
         return Experiment(
             title=refined_experiment.title,
             description=refined_experiment.description,
+            data_classification=refined_experiment.data_classification,
             created_by=refined_experiment.created_by,
             url=refined_experiment.url,
             locked=refined_experiment.locked,
             users=refined_experiment.users,
             groups=refined_experiment.groups,
-            persistent_id=refined_experiment.persistent_id,
-            alternate_ids=refined_experiment.alternate_ids,
+            identifiers=refined_experiment.identifiers,
             projects=projects,
             institution_name=refined_experiment.institution_name,
             start_time=(
@@ -166,11 +165,11 @@ class Crucible:
         return Dataset(
             description=refined_dataset.description,
             directory=refined_dataset.directory,
+            data_classification=refined_dataset.data_classification,
             users=refined_dataset.users,
             groups=refined_dataset.groups,
             immutable=refined_dataset.immutable,
-            persistent_id=refined_dataset.persistent_id,
-            alternate_ids=refined_dataset.alternate_ids,
+            identifiers=refined_dataset.identifiers,
             experiments=experiment_uris,
             instrument=instrument,
             created_time=(

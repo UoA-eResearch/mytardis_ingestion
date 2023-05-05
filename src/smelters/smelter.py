@@ -23,11 +23,7 @@ from src.blueprints import (
     RefinedProject,
 )
 from src.blueprints.common_models import Parameter
-from src.helpers import (
-    GeneralConfig,
-    SchemaConfig,
-    log_if_projects_disabled,
-)
+from src.helpers import GeneralConfig, SchemaConfig, log_if_projects_disabled
 from src.helpers.config import StorageConfig
 from src.overseers.overseer import Overseer
 
@@ -118,13 +114,13 @@ class Smelter:
             refined_project = RefinedProject(
                 name=raw_project.name,
                 description=raw_project.description,
+                data_classification=raw_project.data_classification,
                 principal_investigator=raw_project.principal_investigator,
                 created_by=raw_project.created_by,
                 url=raw_project.url,
                 users=raw_project.users,
                 groups=raw_project.groups,
-                persistent_id=raw_project.persistent_id,
-                alternate_ids=raw_project.alternate_ids,
+                identifiers=raw_project.identifiers,
                 institution=institution,
                 start_time=raw_project.start_time,
                 end_time=raw_project.end_time,
@@ -159,7 +155,7 @@ class Smelter:
             and not raw_experiment.projects
         ):  # test this
             logger.warning(
-                "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided %s",
+                "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided %s", # pylint: disable=line-too-long
                 raw_experiment,
             )
             return None
@@ -173,13 +169,13 @@ class Smelter:
             refined_experiment = RefinedExperiment(
                 title=raw_experiment.title,
                 description=raw_experiment.description,
+                data_classification=raw_experiment.data_classification,
                 created_by=raw_experiment.created_by,
                 url=raw_experiment.url,
                 locked=raw_experiment.locked,
                 users=raw_experiment.users,
                 groups=raw_experiment.groups,
-                persistent_id=raw_experiment.persistent_id,
-                alternate_ids=raw_experiment.alternate_ids,
+                identifiers=raw_experiment.identifiers,
                 projects=raw_experiment.projects,
                 institution_name=institution_name,
                 start_time=raw_experiment.start_time,
@@ -216,11 +212,11 @@ class Smelter:
             refined_dataset = RefinedDataset(
                 description=raw_dataset.description,
                 directory=raw_dataset.directory,
+                data_classification=raw_dataset.data_classification,
                 users=raw_dataset.users,
                 groups=raw_dataset.groups,
                 immutable=raw_dataset.immutable,
-                persistent_id=raw_dataset.persistent_id,
-                alternate_ids=raw_dataset.alternate_ids,
+                identifiers=raw_dataset.identifiers,
                 experiments=raw_dataset.experiments,
                 instrument=raw_dataset.instrument,
                 created_time=raw_dataset.created_time,

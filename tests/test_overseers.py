@@ -6,21 +6,16 @@ from urllib.parse import urljoin
 
 import mock
 import pytest
-from requests import HTTPError
 import responses
+from requests import HTTPError
 from responses import matchers
 
 from src.blueprints import StorageBox
 from src.blueprints.custom_data_types import URI
-from src.helpers.config import (
-    ConfigFromEnv,
-    ConnectionConfig,
-    IntrospectionConfig,
-)
+from src.helpers.config import ConfigFromEnv, ConnectionConfig, IntrospectionConfig
 from src.helpers.enumerators import ObjectSearchEnum
 from src.helpers.mt_rest import MyTardisRESTFactory
 from src.overseers import Overseer
-
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -61,7 +56,7 @@ def test_get_objects(
         json=(project_response_dict),
         match=[
             matchers.query_param_matcher(
-                {"pids": search_string},
+                {"identifiers": search_string},
             ),
         ],
         status=200,
@@ -98,7 +93,7 @@ def test_get_objects_http_error(
         urljoin(connection.api_template, object_type["type"]),
         match=[
             matchers.query_param_matcher(
-                {"pids": search_string},
+                {"identifiers": search_string},
             ),
         ],
         status=504,
@@ -166,7 +161,7 @@ def test_get_objects_no_objects(
         json=(response_dict_not_found),
         match=[
             matchers.query_param_matcher(
-                {"pids": search_string},
+                {"identifiers": search_string},
             ),
         ],
         status=200,
@@ -206,7 +201,7 @@ def test_get_uris(
         json=(project_response_dict),
         match=[
             matchers.query_param_matcher(
-                {"pids": search_string},
+                {"identifiers": search_string},
             ),
         ],
         status=200,
@@ -242,7 +237,7 @@ def test_get_uris_no_objects(
         json=(response_dict_not_found),
         match=[
             matchers.query_param_matcher(
-                {"pids": search_string},
+                {"identifiers": search_string},
             ),
         ],
         status=200,
@@ -285,7 +280,7 @@ def test_get_uris_malformed_return_dict(
         json=(test_dict),
         match=[
             matchers.query_param_matcher(
-                {"pids": search_string},
+                {"identifiers": search_string},
             ),
         ],
         status=200,
@@ -326,7 +321,7 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
         urljoin(connection.api_template, object_type["type"]),
         match=[
             matchers.query_param_matcher(
-                {"pids": search_string},
+                {"identifiers": search_string},
             ),
         ],
         status=504,
@@ -414,7 +409,7 @@ def test_get_storagebox_no_storage_box_found(
         match=[
             matchers.query_param_matcher(
                 {
-                    "pids": storage_box_name,
+                    "identifiers": storage_box_name,
                 },
             ),
         ],
@@ -458,7 +453,7 @@ def test_get_storagebox_too_many_returns(
         match=[
             matchers.query_param_matcher(
                 {
-                    "pids": storage_box_name,
+                    "identifers": storage_box_name,
                 },
             ),
         ],
@@ -503,7 +498,7 @@ def test_get_storagebox_no_name(
         match=[
             matchers.query_param_matcher(
                 {
-                    "pids": storage_box_name,
+                    "identifiers": storage_box_name,
                 },
             ),
         ],
@@ -546,7 +541,7 @@ def test_get_storagebox_no_location(
         match=[
             matchers.query_param_matcher(
                 {
-                    "pids": storage_box_name,
+                    "identifiers": storage_box_name,
                 },
             ),
         ],
@@ -588,7 +583,7 @@ def test_get_storagebox_no_description(
         match=[
             matchers.query_param_matcher(
                 {
-                    "pids": storage_box_name,
+                    "identifiers": storage_box_name,
                 },
             ),
         ],
@@ -659,7 +654,6 @@ def test_get_mytardis_setup_no_objects(
     connection: ConnectionConfig,
     response_dict_not_found,
 ):
-
     responses.add(
         responses.GET,
         urljoin(

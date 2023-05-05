@@ -1,3 +1,5 @@
+# pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
+
 from datetime import datetime
 from pathlib import Path
 from typing import List
@@ -7,6 +9,7 @@ from pytest import fixture
 
 from src.blueprints import GroupACL, Parameter, UserACL, Username
 from src.blueprints.custom_data_types import URI
+from src.helpers.enumerators import DataClassification
 
 
 @fixture
@@ -228,13 +231,9 @@ def project_description():
 
 
 @fixture
-def project_pid():
-    return "Project_1"
-
-
-@fixture
 def project_ids():
     return [
+        "Project_1",
         "Test_Project",
         "Project_Test_1",
     ]
@@ -300,13 +299,9 @@ def experiment_projects():
 
 
 @fixture
-def experiment_pid():
-    return "Experiment_1"
-
-
-@fixture
 def experiment_ids():
     return [
+        "Experiment_1",
         "Test_Experiment",
         "Experiment_Test_1",
     ]
@@ -367,13 +362,12 @@ def dataset_instrument():
 
 
 @fixture
-def dataset_pid():
-    return "Dataset_1"
-
-
-@fixture
 def dataset_ids():
-    return ["Test_Dataset", "Dataset_Test_1"]
+    return [
+        "Dataset_1",
+        "Test_Dataset",
+        "Dataset_Test_1",
+    ]
 
 
 @fixture
@@ -439,16 +433,12 @@ def datafile_metadata_processed(datafile_metadata):
 
 
 @fixture
-def instrument_alternate_ids():
+def instrument_ids():
     return [
+        "Instrument_1",
         "Test_Instrument",
         "Instrument_Test_1",
     ]
-
-
-@fixture
-def instrument_pid():
-    return "Instrument_1"
 
 
 @fixture
@@ -498,7 +488,7 @@ def split_and_parse_users(
 def split_and_parse_groups(
     admin_groups, read_groups, download_groups, sensitive_groups
 ):
-    return_list: List[GroupACL] = []
+    return_list: List[GroupACL] = [] # type: ignore[annotation-unchecked]
     for admin_group in admin_groups:
         return_list.append(
             GroupACL(
@@ -594,8 +584,8 @@ def institution_address():
 
 
 @fixture
-def institution_alternate_ids():
-    return ["UoA", "Uni"]
+def institution_ids():
+    return ["UoA123", "UoA", "Uni"]
 
 
 @fixture
@@ -609,5 +599,15 @@ def institution_name():
 
 
 @fixture
-def institution_pid():
-    return "UoA123"
+def project_data_classification():
+    return DataClassification.SENSITIVE
+
+
+@fixture
+def experiment_data_classification():
+    return DataClassification.SENSITIVE
+
+
+@fixture
+def dataset_data_classification():
+    return DataClassification.SENSITIVE
