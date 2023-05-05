@@ -118,6 +118,7 @@ class TimeOffsetConfig(BaseModel):
         days = 365 * self.years + 31 * self.months + 7 * self.weeks + self.days
         return timedelta(days=days)
 
+
 class ProxyConfig(BaseModel):
     """MyTardis proxy configuration.
 
@@ -190,20 +191,40 @@ class StorageBoxConfig(BaseModel):
     Pydantic model for Mytardis storage configuration.
 
     Attributes:
-        source_directory : Path
-            file location on the ingestion source
-        target_directory : Path
-            file location on remote storage
-        box : str
-            name of the storage box
+        target_directory (Path): file location on remote storage
+        name (str): name of the storage box
+    """
+
+    target_directory: Path
+    name: str
+
+
+class StorageConfig(BaseModel):
+    """MyTardis storage configuration.
+
+    Pydantic model for Mytardis storage configuration.
+
+    Attributes:
+        source_directory (Path): file location on the ingestion source
+        box (StorageBoxConfig): Pydantic model of a storage box
     """
 
     source_directory: Path
-    target_directory: Path
-    box: str
+    box: StorageBoxConfig
 
-class StorageConfig(BaseModel):
 
+class ArchiveConfig(BaseModel):
+    """MyTardis autoarchive configuration
+
+    Pydantic model for MyTardis autoarchive config.
+
+    Args:
+        time_offset (TimeOffsetConfig): Pydantic model holding the date offset for archive
+        storage_box (StorageBoxConfig): Pydantic model holding the archive storage box
+    """
+
+    time_offset: TimeOffsetConfig
+    storage_box: StorageBoxConfig
 
 
 class IntrospectionConfig(BaseModel):
@@ -270,18 +291,20 @@ class ConfigFromEnv(BaseSettings):
     #CONNECTION__PROXY__HTTPS=
     # Storage, prefix with STORAGE__
     STORAGE__SOURCE_DIRECTORY=~/api_data
-    STORAGE__TARGET_DIRECTORY=/srv/mytardis
-    STORAGE__BOX=new box at /srv/mytardis
+    STORAGE__BOX__TARGET_DIRECTORY=/srv/mytardis
+    STORAGE__BOX__NAME=new box at /srv/mytardis
     # Schema, prefix with MYTARDIS_SCHEMA__
     # DEFAULT_SCHEMA__PROJECT=https://test.test.com
     # DEFAULT_SCHEMA__EXPERIMENT=
     # DEFAULT_SCHEMA__DATASET=
     # DEFAULT_SCHEMA__DATAFILE=
     # Archive, prefix with ARCHIVE__
-    ARCHIVE__YEARS=1
-    ARCHIVE__MONTHS=18
-    ARCHIVE__WEEKS=7
-    ARCHIVE__DAYS=12
+    ARCHIVE__TIME_OFFSET__YEARS=1
+    ARCHIVE__TIME_OFFSET__MONTHS=18
+    ARCHIVE__TIME_OFFSET__WEEKS=7
+    ARCHIVE__TIME_OFFSET__DAYS=12
+    ARCHIVE__STORAGE_BOX__TARGET_DIRECTORY=/srv/mytardis
+    ARCHIVE__STORAGE_BOX__NAME=archive box at /srv/mytardis
     ```
     ## Example
     ```python

@@ -24,7 +24,7 @@ from src.blueprints import (
 )
 from src.blueprints.common_models import Parameter
 from src.helpers import GeneralConfig, SchemaConfig, log_if_projects_disabled
-from src.helpers.config import StorageConfig
+from src.helpers.config import ArchiveConfig, StorageConfig
 from src.overseers.overseer import Overseer
 
 logger = logging.getLogger(__name__)
@@ -44,6 +44,7 @@ class Smelter:
         general: GeneralConfig,
         default_schema: SchemaConfig,
         storage: StorageConfig,
+        archive: ArchiveConfig,
     ) -> None:
         """Class initialisation to set options for dictionary processing
         Stores MyTardis set up information from the introspection API to allow the parser
@@ -58,10 +59,10 @@ class Smelter:
         """
 
         self.overseer = overseer
-
         self.default_schema = default_schema
         self.default_institution = general.default_institution
         self.storage = storage
+        self.archive = archive
 
     def extract_parameters(
         self,
@@ -155,7 +156,7 @@ class Smelter:
             and not raw_experiment.projects
         ):  # test this
             logger.warning(
-                "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided %s", # pylint: disable=line-too-long
+                "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided %s",  # pylint: disable=line-too-long
                 raw_experiment,
             )
             return None
@@ -234,12 +235,14 @@ class Smelter:
         parameters = self.extract_parameters(schema, raw_dataset)
         return (refined_dataset, parameters)
 
-    def _create_replica(self, relative_file_path: Path) -> DatafileReplica | None:
+    def _create_replica(
+        self, relative_file_path: Path, storage_box_name: str
+    ) -> DatafileReplica | None:
         """Create a datafile replica using the filepath and the storage
         box"""
-        storage_box = self.overseer.get_storage_box(self.storage.box)
+        storage_box = self.overseer.get_storage_box(storage_box_name)
         if not storage_box:
-            logger.warning("Could not find storage box name %s", self.storage.box)
+            logger.warning("Could not find storage box name %s", storage_box_name)
             return None
         try:
             return DatafileReplica(
@@ -268,7 +271,10 @@ class Smelter:
                 "Unable to find default datafile schema and no schema provided"
             )
             return None
-        replicas = self._create_replica(raw_datafile.directory)
+        replicas = [
+            self._create_replica(raw_datafile.directory, self.storage.box.name),
+            self._create_replica(raw_datafile.directory, self.archive.storage_box.name),
+        ]
         if not replicas:
             return None
         parameters = self.extract_parameters(schema, raw_datafile)
@@ -282,7 +288,7 @@ class Smelter:
                 users=raw_datafile.users,
                 groups=raw_datafile.groups,
                 dataset=raw_datafile.dataset,
-                replicas=[replicas],
+                replicas=replicas,
                 parameter_sets=parameters,
             )
         except ValidationError:

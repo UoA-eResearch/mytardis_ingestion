@@ -1,6 +1,7 @@
 # pylint: disable=too-few-public-methods,no-name-in-module
 """Pydantic model defining a Dataset for ingestion into MyTardis"""
 
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -48,8 +49,6 @@ class BaseDatafile(BaseModel):
     size: int
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None
-    archive_date: ISODateTime
-    delete_date: Optional[ISODateTime] = None
 
 
 class RawDatafile(BaseDatafile):
@@ -59,6 +58,8 @@ class RawDatafile(BaseDatafile):
     dataset: str
     metadata: Optional[Dict[str, str | int | float | bool]] = None
     object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
+    archive_date: Optional[datetime | str] = None
+    delete_date: Optional[datetime | str] = None
 
 
 class RefinedDatafile(BaseDatafile):
@@ -67,6 +68,8 @@ class RefinedDatafile(BaseDatafile):
     dataset: str
     replicas: List[DatafileReplica]
     parameter_sets: Optional[ParameterSet] = None
+    archive_date: Optional[datetime | str] = None
+    delete_date: Optional[datetime | str] = None
 
 
 class Datafile(BaseDatafile):
@@ -75,3 +78,5 @@ class Datafile(BaseDatafile):
     replicas: List[DatafileReplica]
     parameter_sets: Optional[ParameterSet] = None
     dataset: URI
+    archive_date: ISODateTime
+    delete_date: Optional[ISODateTime] = None
