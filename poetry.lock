@@ -1356,24 +1356,24 @@ use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
 name = "responses"
-version = "0.22.0"
+version = "0.23.1"
 description = "A utility library for mocking out the `requests` Python library."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "responses-0.22.0-py3-none-any.whl", hash = "sha256:dcf294d204d14c436fddcc74caefdbc5764795a40ff4e6a7740ed8ddbf3294be"},
-    {file = "responses-0.22.0.tar.gz", hash = "sha256:396acb2a13d25297789a5866b4881cf4e46ffd49cc26c43ab1117f40b973102e"},
+    {file = "responses-0.23.1-py3-none-any.whl", hash = "sha256:8a3a5915713483bf353b6f4079ba8b2a29029d1d1090a503c70b0dc5d9d0c7bd"},
+    {file = "responses-0.23.1.tar.gz", hash = "sha256:c4d9aa9fc888188f0c673eff79a8dadbe2e75b7fe879dc80a221a06e0a68138f"},
 ]
 
 [package.dependencies]
+pyyaml = "*"
 requests = ">=2.22.0,<3.0"
-toml = "*"
-types-toml = "*"
+types-PyYAML = "*"
 urllib3 = ">=1.25.10"
 
 [package.extras]
-tests = ["coverage (>=6.0.0)", "flake8", "mypy", "pytest (>=7.0.0)", "pytest-asyncio", "pytest-cov", "pytest-httpserver", "types-requests"]
+tests = ["coverage (>=6.0.0)", "flake8", "mypy", "pytest (>=7.0.0)", "pytest-asyncio", "pytest-cov", "pytest-httpserver", "tomli", "tomli-w", "types-requests"]
 
 [[package]]
 name = "rich"
@@ -1707,18 +1707,6 @@ files = [
 types-urllib3 = "*"
 
 [[package]]
-name = "types-toml"
-version = "0.10.8.3"
-description = "Typing stubs for toml"
-category = "dev"
-optional = false
-python-versions = "*"
-files = [
-    {file = "types-toml-0.10.8.3.tar.gz", hash = "sha256:f37244eff4cd7eace9cb70d0bac54d3eba77973aa4ef26c271ac3d1c6503a48e"},
-    {file = "types_toml-0.10.8.3-py3-none-any.whl", hash = "sha256:a2286a053aea6ab6ff814659272b1d4a05d86a1dd52b807a87b23511993b46c5"},
-]
-
-[[package]]
 name = "types-urllib3"
 version = "1.26.25.5"
 description = "Typing stubs for urllib3"
@@ -1857,4 +1845,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "3ab6f78c71b30b7f452fc058025d87ff4649ae42c708977701493cd7b4992e27"
+content-hash = "6a88c2874e37d8fe036b345f5bcf6d3fd64d4dc3b65de26489ceb6ef3d0d7324"
