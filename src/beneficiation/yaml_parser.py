@@ -131,7 +131,7 @@ class YamlParser:
 
     def _rawexperiment_constructor(self, loader, node) -> RawExperiment:
         """
-        A method that constructs a RawDataset object using the constructor_setup helper method.
+        A method that constructs a RawExperiment object using the constructor_setup helper method.
 
         Args:
             loader (Loader): A PyYAML loader object.
@@ -144,7 +144,7 @@ class YamlParser:
 
     def _rawproject_constructor(self, loader, node) -> RawProject:
         """
-        A method that constructs a RawDataset object using the constructor_setup helper method.
+        A method that constructs a RawProject object using the constructor_setup helper method.
 
         Args:
             loader (Loader): A PyYAML loader object.
@@ -155,7 +155,7 @@ class YamlParser:
         """
         return RawProject(**loader.construct_mapping(node))
 
-    def parse_yaml_file(self, fpath: str):
+    def parse_yaml_file(self, fpath: str) -> list:
         """
         Parse a YAML file at the specified path and return a list of loaded objects.
 

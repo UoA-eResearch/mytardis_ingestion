@@ -213,7 +213,7 @@ class IngestionMetadata:
             and len(self.datafiles) == 0
         )
 
-    def to_yaml(self):
+    def to_yaml(self) -> None:
         """
         Convert the metadata to a YAML string.
 
@@ -282,7 +282,7 @@ class IngestionMetadata:
         return all_exps
 
     @staticmethod
-    def from_yaml(yaml_rep: str):
+    def from_yaml(yaml_rep: str) -> None:
         """
         This static method converts a YAML string to an IngestionMetadata object.
 
