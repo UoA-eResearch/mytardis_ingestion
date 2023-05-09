@@ -156,7 +156,10 @@ class Crucible:
             return None
         if len(instruments) > 1:
             logger.warning(
-                "Unable to uniquely identify the instrument associated with the name or identifier provided. Possible candidates are: %s",
+                (
+                    "Unable to uniquely identify the instrument associated with the name or "
+                    "identifier provided. Possible candidates are: %s"
+                ),
                 instruments,
             )
             return None

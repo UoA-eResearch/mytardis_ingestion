@@ -38,6 +38,9 @@ pyright = "^1.1.254"
 devtools = "^0.10.0"
 sphinx = "^7.0.0"
 
+[tool.poetry.group.dev.dependencies]
+wily = "^1.24.0"
+
 [tool.isort]
 profile = "black"
 

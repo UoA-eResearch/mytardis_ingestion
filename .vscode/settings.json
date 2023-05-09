@@ -3,5 +3,6 @@
         "tests"
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "python.radon.executable": "/Users/csea004/.virtualenvs/mytardis-ingestion-SuS0QS-b-py3.11/bin/radon"
 }
