@@ -62,3 +62,11 @@ repos:
     rev: v1.3.1
     hooks:
     -   id: python-safety-dependencies-check
+-   repo: local
+    hooks:
+     -   id: wily
+         name: wily
+         entry: wily diff
+         verbose: true
+         language: python
+         additional_dependencies: [wily]
