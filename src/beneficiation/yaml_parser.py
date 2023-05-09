@@ -10,6 +10,8 @@ import os
 
 # Third-party imports
 import yaml
+from yaml.loader import Loader
+from yaml.nodes import MappingNode, Node
 
 # User-defined imports
 from src.beneficiation.models import ( 
@@ -89,7 +91,7 @@ class YamlParser:
             dfile_tag, self._rawdatafile_constructor
         )
 
-    def _constructor_setup(self, loader, node) -> dict:
+    def _constructor_setup(self, loader:Loader, node:MappingNode) -> dict:
         """
         A helper method that returns a dictionary containing the arguments of the constructor.
 
@@ -103,7 +105,7 @@ class YamlParser:
         
         return dict(**loader.construct_mapping(node))
 
-    def _rawdatafile_constructor(self, loader, node) -> RawDatafile:
+    def _rawdatafile_constructor(self, loader: Loader, node: MappingNode) -> RawDatafile:
         """
         A method that constructs a RawDatafile object using the constructor_setup helper method.
 
@@ -116,7 +118,7 @@ class YamlParser:
         """
         return RawDatafile(**loader.construct_mapping(node))
 
-    def _rawdataset_constructor(self, loader, node) -> RawDataset:
+    def _rawdataset_constructor(self, loader: Loader, node: MappingNode) -> RawDataset:
         """
         A method that constructs a RawDataset object using the constructor_setup helper method.
 
@@ -142,7 +144,7 @@ class YamlParser:
         """
         return RawExperiment(**loader.construct_mapping(node))
 
-    def _rawproject_constructor(self, loader, node) -> RawProject:
+    def _rawproject_constructor(self, loader: Loader, node: MappingNode) -> RawProject:
         """
         A method that constructs a RawProject object using the constructor_setup helper method.
 
@@ -167,7 +169,6 @@ class YamlParser:
         """
         logger.info("parsing {0}".format(fpath))
         with open(fpath) as f:
-            
             data = yaml.safe_load_all(f)
             loaded_data = list(data)
             return loaded_data
