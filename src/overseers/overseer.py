@@ -10,8 +10,8 @@ from urllib.parse import urljoin, urlparse
 from pydantic import ValidationError
 from requests.exceptions import HTTPError
 
-from src.blueprints import StorageBox
 from src.blueprints.custom_data_types import URI
+from src.blueprints.storage_boxes import StorageBox
 from src.helpers import MyTardisRESTFactory
 from src.helpers.config import IntrospectionConfig
 from src.helpers.enumerators import ObjectSearchDict, ObjectSearchEnum
@@ -73,14 +73,13 @@ class Overseer:
         Returns:
             The integer id that maps to the URI
         """
-        resource_id = int(urlparse(uri).path.rstrip(os.sep).split(os.sep).pop())
-        return resource_id
+        return int(urlparse(uri).path.rstrip(os.sep).split(os.sep).pop())
 
     def _get_object_from_mytardis(
         self,
         object_type: ObjectSearchDict,
         query_params: Dict[str, str],
-    ) -> Dict[str, List[Any]] | None:
+    ) -> Any | None:
         url = urljoin(self.rest_factory.api_template, object_type["url_substring"])
         try:
             response = self.rest_factory.mytardis_api_request(
@@ -106,10 +105,10 @@ class Overseer:
                 exc_info=True,
             )
             raise error
-        response_dict = response.json()
-        return response_dict
+        return response.json()
 
-    # TODO we might want to add a get_objects function that let's you search for
+    # TODO pylint:disable=fixme
+    # we might want to add a get_objects function that let's you search for
     # specific query param combinations. Right now it checks if the search
     # string is in any of the object_type["target"] and "identifers" fields but often
     # we know where those should be found, i.e. when we pass in a search_string
@@ -118,7 +117,7 @@ class Overseer:
         self,
         object_type: ObjectSearchDict,
         search_string: str,
-    ) -> List[Dict]:
+    ) -> List[Dict[str, Any]]:
         """Gets a list of objects matching the search parameters passed
 
         This function prepares a GET request via the MyTardisRESTFactory instance and returns
@@ -135,7 +134,7 @@ class Overseer:
         Raises:
             HTTPError: The GET request failed for some reason
         """
-        return_list: list = []
+        return_list = []
         response_dict = None
         if (
             self.mytardis_setup.objects_with_ids
@@ -144,13 +143,11 @@ class Overseer:
             query_params = {"identifiers": search_string}
             response_dict = self._get_object_from_mytardis(object_type, query_params)
             if response_dict and "objects" in response_dict.keys():
-                for obj in response_dict["objects"]:
-                    return_list.append(obj)
+                return_list.extend(iter(response_dict["objects"]))
         query_params = {object_type["target"]: search_string}
         response_dict = self._get_object_from_mytardis(object_type, query_params)
         if response_dict and "objects" in response_dict.keys():
-            for obj in response_dict["objects"]:
-                return_list.append(obj)
+            return_list.extend(iter(response_dict["objects"]))
         new_list = []
         for obj in return_list:
             if obj not in new_list:
@@ -219,20 +216,20 @@ class Overseer:
                 box is completely defined, or None if this is not the case.
         """
 
-        raw_storage_box = self.get_objects(
+        storage_box_list = self.get_objects(
             ObjectSearchEnum.STORAGE_BOX.value, storage_box_name
         )
-        if raw_storage_box and len(raw_storage_box) > 1:
+        if storage_box_list and len(storage_box_list) > 1:
             logger.warning(
                 "Unable to uniquely identify the storage box based on the "
                 f"name provided ({storage_box_name}). Please check with your "
                 "system administrator to identify the source of the issue."
             )
             return None
-        if not raw_storage_box:
+        if not storage_box_list:
             logger.warning(f"Unable to locate storage box called {storage_box_name}")
             return None
-        storage_box = raw_storage_box[0]  # Unpack from the list
+        storage_box = storage_box_list[0]  # Unpack from the list
         location = None
         for option in storage_box["options"]:
             try:
@@ -254,7 +251,7 @@ class Overseer:
             except KeyError:
                 logger.warning(
                     f"Storage box, {storage_box_name} is misconfigured. Storage box "
-                    f"gathered from MyTardis: {raw_storage_box}"
+                    f"gathered from MyTardis: {storage_box}"
                 )
                 return None
             try:
@@ -297,11 +294,15 @@ class Overseer:
         response_dict = response.json()
         if response_dict == {} or response_dict["objects"] == []:
             logger.error(
-                "MyTardis introspection did not return any data when called from ConfigFromEnv.get_mytardis_setup"
+                (
+                    "MyTardis introspection did not return any data when called from "
+                    "ConfigFromEnv.get_mytardis_setup"
+                )
             )
             raise ValueError(
                 (
-                    "MyTardis introspection did not return any data when called from ConfigFromEnv.get_mytardis_setup"
+                    "MyTardis introspection did not return any data when called from "
+                    "ConfigFromEnv.get_mytardis_setup"
                 )
             )
         if len(response_dict["objects"]) > 1:
@@ -315,19 +316,16 @@ class Overseer:
             )
             raise ValueError(
                 (
-                    "MyTardis introspection returned more than one object when called from ConfigFromEnv.get_mytardis_setup"
+                    "MyTardis introspection returned more than one object when called from "
+                    "ConfigFromEnv.get_mytardis_setup"
                 )
             )
         response_dict = response_dict["objects"][0]
         mytardis_setup = IntrospectionConfig(
             old_acls=response_dict["experiment_only_acls"],
             projects_enabled=response_dict["projects_enabled"],
-            objects_with_ids=response_dict["identified_objects"]
-            if response_dict["identified_objects"]
-            else None,
-            objects_with_profiles=response_dict["profiled_objects"]
-            if response_dict["profiled_objects"]
-            else None,
+            objects_with_ids=response_dict["identified_objects"] or None,
+            objects_with_profiles=response_dict["profiled_objects"] or None,
         )
         self._mytardis_setup = mytardis_setup
         return mytardis_setup

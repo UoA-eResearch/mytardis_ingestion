@@ -1,6 +1,7 @@
 # pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Callable, Dict, List
 
 from pytest import fixture
 
@@ -10,7 +11,7 @@ from src.helpers.enumerators import URLSubstring
 
 
 @fixture
-def response_dict_not_found():
+def response_dict_not_found() -> Dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -30,7 +31,7 @@ def datafile_response_dict(
     datafile_mimetype: str,
     datafile_size: int,
     datafile_dataset: str,
-):
+) -> Dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -72,8 +73,8 @@ def dataset_response_dict(
     dataset_experiments: list[str],
     dataset_ids: list[str],
     dataset_uri: URI,
-    instrument_response_dict,
-):
+    instrument_response_dict: Dict[str, Any],
+) -> Dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -113,7 +114,7 @@ def experiment_response_dict(
     experiment_name: str,
     experiment_url: str,
     experiment_uri: URI,
-):
+) -> Dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -163,7 +164,7 @@ def project_response_dict(
     project_name: str,
     project_principal_investigator: str,
     project_url: str,
-):
+) -> Dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -206,7 +207,7 @@ def instrument_response_dict(
     created_time_datetime: datetime,
     modified_time_datetime: datetime,
     instrument_name: str,
-):
+) -> Dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -245,7 +246,7 @@ def instrument_response_dict(
 
 
 @fixture
-def introspection_response_dict():
+def introspection_response_dict() -> Dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -277,12 +278,12 @@ def introspection_response_dict():
 
 @fixture
 def institution_response_dict(
-    institution_uri,
-    institution_address,
-    institution_ids,
-    institution_country,
-    institution_name,
-):
+    institution_uri: URI,
+    institution_address: str,
+    institution_ids: List[str],
+    institution_country: str,
+    institution_name: str,
+) -> Dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -306,11 +307,11 @@ def institution_response_dict(
 
 @fixture
 def storage_box_response_dict(
-    storage_box_description,
-    storage_box_name,
+    storage_box_description: str,
+    storage_box_name: str,
     storage_box_dir: Path,
-    storage_box_uri,
-):
+    storage_box_uri: URI,
+) -> Dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -346,7 +347,7 @@ def storage_box_response_dict(
 @fixture
 def project_creation_response_dict(
     project: Project, project_uri: URI, institution_uri: URI, user_uri: URI
-):
+) -> Dict[str, Any]:
     return {
         "created_by": user_uri,
         "datafile_count": 2,
@@ -375,13 +376,13 @@ def project_creation_response_dict(
 
 @fixture
 def response_by_substring(
-    response_dict_not_found,
-    dataset_response_dict,
-    experiment_response_dict,
-    project_response_dict,
-    datafile_response_dict,
-):
-    def _get_response_dict(substring: URLSubstring):
+    response_dict_not_found: Dict[str, Any],
+    dataset_response_dict: Dict[str, Any],
+    experiment_response_dict: Dict[str, Any],
+    project_response_dict: Dict[str, Any],
+    datafile_response_dict: Dict[str, Any],
+) -> Callable[[URLSubstring], Any]:
+    def _get_response_dict(substring: URLSubstring) -> Dict[str, Any]:
         match substring:
             case URLSubstring.PROJECT:
                 return project_response_dict

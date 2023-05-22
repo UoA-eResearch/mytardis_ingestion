@@ -11,19 +11,12 @@ the environment automatically and verifies their types and values.
 """
 
 import logging
-from datetime import timedelta
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 from urllib.parse import urljoin
 
-from pydantic import (
-    AnyUrl,
-    BaseModel,
-    BaseSettings,
-    HttpUrl,
-    PrivateAttr,
-    root_validator,
-)
+from pydantic import AnyUrl, BaseModel, BaseSettings, HttpUrl, PrivateAttr
+from requests import PreparedRequest
 from requests.auth import AuthBase
 
 from src.helpers.enumerators import MyTardisObject
@@ -35,11 +28,12 @@ class GeneralConfig(BaseModel):
     """MyTardis general config
 
     Attributes:
-        default_institution : Optional[str]
-            name of the default institution
+        default_institution (Optional[str]): name of the default institution
+        source_directory: The root directory to the data source.
     """
 
     default_institution: Optional[str]
+    source_directory: Path
 
 
 class AuthConfig(BaseModel, AuthBase):
@@ -62,61 +56,12 @@ class AuthConfig(BaseModel, AuthBase):
     username: str
     api_key: str
 
-    def __call__(self, r):  # pylint: disable=invalid-name
+    def __call__(
+        self, r: PreparedRequest
+    ) -> PreparedRequest:  # pylint: disable=invalid-name
         """Return an authorisation header for MyTardis"""
         r.headers["Authorization"] = f"ApiKey {self.username}:{self.api_key}"
         return r
-
-
-class TimeOffsetConfig(BaseModel):
-    """Configuration for the auto-archive app. This config adds a default
-    time delta to be added to the ingestion date.
-
-    Note: The default values for each of the time increments is 0. The offset
-    as a whole cannot be 0, however, so the configuration validates against the
-    total offset converted to days, and ensures that this is > 0.
-
-    For the purposes of calculating the offset, a greedy approach has been taken
-    for months. The total offset is determined from:
-        365 days * # years +
-        31 days * # months +
-        7 days * # weeks +
-        # days
-    It is therefore possible to specify time offsets in mixed terms, such as 2
-    years and 6 months.
-
-    Attributes:
-        years (int): Default = 0. The number of years in the offset
-        months (int): Default = 0. The number of months in the offset
-        weeks (int): Default = 0. The number of weeks in the offset
-        days (int): Default = 0. The number of days in the offset
-    """
-
-    years: int = 0
-    months: int = 0
-    weeks: int = 0
-    days: int = 0
-
-    @root_validator(skip_on_failure=True)
-    @classmethod
-    def check_value_is_not_zero(cls, values):
-        """Custom validator to ensure that there is at least one of:
-        years, months, weeks or days."""
-        days = (
-            365 * values["years"]
-            + 31 * values["months"]
-            + 7 * values["weeks"]
-            + values["days"]
-        )
-        if days <= 0:
-            raise ValueError(
-                "A time offset must be given in YEARS, MONTHS, WEEKS, or DAYS"
-            )
-        return values
-
-    def __call__(self):
-        days = 365 * self.years + 31 * self.months + 7 * self.weeks + self.days
-        return timedelta(days=days)
 
 
 class ProxyConfig(BaseModel):
@@ -185,46 +130,20 @@ class SchemaConfig(BaseModel):
     datafile: Optional[AnyUrl] = None
 
 
-class StorageBoxConfig(BaseModel):
+class StorageConfig(BaseModel):
     """MyTardis storage box configuration.
 
-    Pydantic model for Mytardis storage configuration.
+    Pydantic model for Mytardis storage configuration. Contains enough information
+    to allow for the creation of a storage box via the project API.
 
     Attributes:
         target_directory (Path): file location on remote storage
         name (str): name of the storage box
     """
 
-    target_directory: Path
-    name: str
-
-
-class StorageConfig(BaseModel):
-    """MyTardis storage configuration.
-
-    Pydantic model for Mytardis storage configuration.
-
-    Attributes:
-        source_directory (Path): file location on the ingestion source
-        box (StorageBoxConfig): Pydantic model of a storage box
-    """
-
-    source_directory: Path
-    box: StorageBoxConfig
-
-
-class ArchiveConfig(BaseModel):
-    """MyTardis autoarchive configuration
-
-    Pydantic model for MyTardis autoarchive config.
-
-    Args:
-        time_offset (TimeOffsetConfig): Pydantic model holding the date offset for archive
-        storage_box (StorageBoxConfig): Pydantic model holding the archive storage box
-    """
-
-    time_offset: TimeOffsetConfig
-    storage_box: StorageBoxConfig
+    storage_class: str = "django.core.files.storage.FileSystemStorage"
+    options: Optional[Dict[str, str]]
+    attributes: Optional[Dict[str, str]]
 
 
 class IntrospectionConfig(BaseModel):
@@ -282,6 +201,7 @@ class ConfigFromEnv(BaseSettings):
     ```
     # Genral
     GENERAL__DEFAULT_INSTITUTION=University of Auckland
+    GENERAL__SOURCE_DIRECTORY=~/api_data
     #Auth, prefix with AUTH__
     AUTH__USERNAME=ltro982
     AUTH__API_KEY=lukas-test-key
@@ -290,21 +210,18 @@ class ConfigFromEnv(BaseSettings):
     #CONNECTION__PROXY__HTTP=
     #CONNECTION__PROXY__HTTPS=
     # Storage, prefix with STORAGE__
-    STORAGE__SOURCE_DIRECTORY=~/api_data
-    STORAGE__BOX__TARGET_DIRECTORY=/srv/mytardis
-    STORAGE__BOX__NAME=new box at /srv/mytardis
+    STORAGE__STORAGE_BOX__STORAGE_CLASS=django..core.files.storage.FileSystemStorage
+    STORAGE__STORAGE_BOX__OPTIONS__KEY=value
+    STORAGE__STORAGE_BOX__ATTRIBUTES__KEY=value
     # Schema, prefix with MYTARDIS_SCHEMA__
     # DEFAULT_SCHEMA__PROJECT=https://test.test.com
     # DEFAULT_SCHEMA__EXPERIMENT=
     # DEFAULT_SCHEMA__DATASET=
     # DEFAULT_SCHEMA__DATAFILE=
     # Archive, prefix with ARCHIVE__
-    ARCHIVE__TIME_OFFSET__YEARS=1
-    ARCHIVE__TIME_OFFSET__MONTHS=18
-    ARCHIVE__TIME_OFFSET__WEEKS=7
-    ARCHIVE__TIME_OFFSET__DAYS=12
-    ARCHIVE__STORAGE_BOX__TARGET_DIRECTORY=/srv/mytardis
-    ARCHIVE__STORAGE_BOX__NAME=archive box at /srv/mytardis
+    ARCHIVE__STORAGE_BOX__STORAGE_CLASS=django.core.files.storage.FileSystemStorage
+    ARCHIVE__STORAGE_BOX__OPTIONS__KEY=value
+    ARCHIVE__STORAGE_BOX__ATTRIBUTES__KEY=value
     ```
     ## Example
     ```python
@@ -318,7 +235,7 @@ class ConfigFromEnv(BaseSettings):
     connection: ConnectionConfig
     storage: StorageConfig
     default_schema: SchemaConfig
-    archive: TimeOffsetConfig
+    archive: StorageConfig
 
     class Config:
         """Pydantic config to enable .env file support"""

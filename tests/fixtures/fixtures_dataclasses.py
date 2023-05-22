@@ -1,32 +1,82 @@
 # pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
 
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
+from typing import Any, Dict, List
 
 from pytest import fixture
 
-from src.blueprints import (
-    URI,
+from src.blueprints.common_models import GroupACL, Parameter, ParameterSet, UserACL
+from src.blueprints.custom_data_types import URI, ISODateTime, Username
+from src.blueprints.datafile import (
+    Datafile,
     DatafileReplica,
-    ParameterSet,
     RawDatafile,
-    RawDataset,
-    RawExperiment,
-    RawProject,
-    StorageBox,
-    Username,
+    RefinedDatafile,
 )
-from src.blueprints.custom_data_types import ISODateTime
-from src.blueprints.datafile import Datafile, RefinedDatafile
-from src.blueprints.dataset import Dataset, RefinedDataset
-from src.blueprints.experiment import Experiment, RefinedExperiment
-from src.blueprints.project import Project, RefinedProject
+from src.blueprints.dataset import Dataset, RawDataset, RefinedDataset
+from src.blueprints.experiment import Experiment, RawExperiment, RefinedExperiment
+from src.blueprints.project import Project, RawProject, RefinedProject
+from src.blueprints.storage_boxes import RawStorageBox, StorageBox
+
+
+@fixture
+def raw_archive_box(
+    archive_box_name: str,
+    archive_class: str,
+    archive_options: Dict[str, str],
+    archive_box_description: str,
+    archive_attributes: Dict[str, str],
+) -> RawStorageBox:
+    return RawStorageBox(
+        name=archive_box_name,
+        storage_class=archive_class,
+        options=archive_options,
+        desciption=archive_box_description,
+        attributes=archive_attributes,
+    )
+
+
+@fixture
+def raw_storage_box(
+    storage_box_name: str,
+    storage_class: str,
+    storage_options: Dict[str, str],
+    storage_box_description: str,
+    storage_attributes: Dict[str, str],
+) -> RawStorageBox:
+    return RawStorageBox(
+        name=storage_box_name,
+        storage_class=storage_class,
+        options=storage_options,
+        description=storage_box_description,
+        attributes=storage_attributes,
+    )
+
+
+@fixture
+def archive_box(
+    archive_box_name: str,
+    archive_box_dir: str,
+    archive_box_uri: str,
+    archive_box_description: str,
+) -> StorageBox:
+    return StorageBox(
+        name=archive_box_name,
+        location=Path(archive_box_dir),
+        uri=URI(archive_box_uri),
+        description=archive_box_description,
+    )
 
 
 @fixture
 def storage_box(
-    storage_box_name, storage_box_dir, storage_box_uri, storage_box_description
-):
+    storage_box_name: str,
+    storage_box_dir: str,
+    storage_box_uri: str,
+    storage_box_description: str,
+) -> StorageBox:
     return StorageBox(
         name=storage_box_name,
         location=Path(storage_box_dir),
@@ -36,7 +86,12 @@ def storage_box(
 
 
 @fixture
-def datafile_replica(storage_box, dataset_dir, filename, target_dir):
+def datafile_replica(
+    storage_box: StorageBox,
+    dataset_dir: Path,
+    filename: str,
+    target_dir: Path,
+) -> DatafileReplica:
     return DatafileReplica(
         uri=Path(target_dir / dataset_dir / filename).as_posix(),
         location=storage_box.name,
@@ -45,27 +100,34 @@ def datafile_replica(storage_box, dataset_dir, filename, target_dir):
 
 
 @fixture
-def raw_project_parameterset(project_schema, project_metadata_processed):
+def raw_project_parameterset(
+    project_schema: str,
+    project_metadata_processed: List[Parameter],
+) -> ParameterSet:
     return ParameterSet(schema=project_schema, parameters=project_metadata_processed)
 
 
 @fixture
-def raw_project(
-    project_name,
-    project_description,
-    project_ids,
-    project_principal_investigator,
-    project_institutions,
-    split_and_parse_users,
-    split_and_parse_groups,
-    created_by_upi,
-    start_time_datetime,
-    end_time_datetime,
-    embargo_time_datetime,
-    project_metadata,
-    project_url,
-    project_data_classification,
-):
+def raw_project(  # pylint: disable=too-many-locals,too-many-arguments
+    project_name: str,
+    project_description: str,
+    project_ids: List[str],
+    project_principal_investigator: str,
+    project_institutions: List[str],
+    split_and_parse_users: List[UserACL],
+    split_and_parse_groups: List[GroupACL],
+    created_by_upi: str,
+    start_time_datetime: datetime,
+    end_time_datetime: datetime,
+    embargo_time_datetime: datetime,
+    project_metadata: Dict[str, Any],
+    project_url: str,
+    project_data_classification: Enum,
+    autoarchive_offset: int,
+    delete_offset: int,
+    raw_active_store: List[str],
+    raw_archives: List[str],
+) -> RawProject:
     return RawProject(
         name=project_name,
         description=project_description,
@@ -81,35 +143,42 @@ def raw_project(
         identifiers=project_ids,
         metadata=project_metadata,
         data_classification=project_data_classification,
+        autoarchive_offset=autoarchive_offset,
+        delete_offset=delete_offset,
+        active_stores=raw_active_store,
+        archives=raw_archives,
     )
 
 
 @fixture
-def raw_experiment_parameterset(experiment_schema, experiment_metadata_processed):
+def raw_experiment_parameterset(
+    experiment_schema: str,
+    experiment_metadata_processed: List[Parameter],
+) -> ParameterSet:
     return ParameterSet(
         schema=experiment_schema, parameters=experiment_metadata_processed
     )
 
 
 @fixture
-def raw_experiment(
-    experiment_name,
-    experiment_description,
-    experiment_ids,
-    experiment_institution,
-    experiment_projects,
-    created_by_upi,
-    experiment_url,
-    split_and_parse_users,
-    split_and_parse_groups,
-    start_time_datetime,
-    end_time_datetime,
-    created_time_datetime,
-    modified_time_datetime,
-    embargo_time_datetime,
-    experiment_metadata,
-    experiment_data_classification,
-):
+def raw_experiment(  # pylint: disable=too-many-locals,too-many-arguments
+    experiment_name: str,
+    experiment_description: str,
+    experiment_ids: List[str],
+    experiment_institution: str,
+    experiment_projects: List[str],
+    created_by_upi: str,
+    experiment_url: str,
+    split_and_parse_users: List[UserACL],
+    split_and_parse_groups: List[GroupACL],
+    start_time_datetime: datetime,
+    end_time_datetime: datetime,
+    created_time_datetime: datetime,
+    modified_time_datetime: datetime,
+    embargo_time_datetime: datetime,
+    experiment_metadata: Dict[str, Any],
+    experiment_data_classification: Enum,
+) -> RawExperiment:
     return RawExperiment(
         title=experiment_name,
         description=experiment_description,
@@ -132,24 +201,27 @@ def raw_experiment(
 
 
 @fixture
-def raw_dataset_parameterset(dataset_schema, dataset_metadata_processed):
+def raw_dataset_parameterset(
+    dataset_schema: str,
+    dataset_metadata_processed: List[Parameter],
+) -> ParameterSet:
     return ParameterSet(schema=dataset_schema, parameters=dataset_metadata_processed)
 
 
 @fixture
-def raw_dataset(
-    dataset_name,
-    dataset_experiments,
-    dataset_instrument,
-    dataset_ids,
-    dataset_dir,
-    split_and_parse_users,
-    split_and_parse_groups,
-    created_time_datetime,
-    modified_time_datetime,
-    dataset_metadata,
-    dataset_data_classification,
-):
+def raw_dataset(  # pylint:disable=too-many-arguments
+    dataset_name: str,
+    dataset_experiments: List[str],
+    dataset_instrument: str,
+    dataset_ids: List[str],
+    dataset_dir: Path,
+    split_and_parse_users: List[UserACL],
+    split_and_parse_groups: List[GroupACL],
+    created_time_datetime: datetime,
+    modified_time_datetime: datetime,
+    dataset_metadata: Dict[str, Any],
+    dataset_data_classification: Enum,
+) -> RawDataset:
     return RawDataset(
         description=dataset_name,
         directory=dataset_dir,
@@ -167,22 +239,25 @@ def raw_dataset(
 
 
 @fixture
-def raw_datafile_parameterset(datafile_schema, datafile_metadata_processed):
+def raw_datafile_parameterset(
+    datafile_schema: str,
+    datafile_metadata_processed: List[Parameter],
+) -> ParameterSet:
     return ParameterSet(schema=datafile_schema, parameters=datafile_metadata_processed)
 
 
 @fixture
 def raw_datafile(
-    filename,
-    datafile_md5sum,
-    datafile_mimetype,
-    datafile_size,
-    datafile_dataset,
-    directory_relative_to_storage_box,
-    split_and_parse_users,
-    split_and_parse_groups,
-    datafile_metadata,
-):
+    filename: str,
+    datafile_md5sum: str,
+    datafile_mimetype: str,
+    datafile_size: int,
+    datafile_dataset: str,
+    directory_relative_to_storage_box: Path,
+    split_and_parse_users: List[UserACL],
+    split_and_parse_groups: List[GroupACL],
+    datafile_metadata: Dict[str, Any],
+) -> RawDatafile:
     return RawDatafile(
         filename=filename,
         md5sum=datafile_md5sum,
@@ -197,20 +272,22 @@ def raw_datafile(
 
 
 @fixture
-def refined_project(
-    project_name,
-    project_description,
-    project_principal_investigator,
-    project_url,
-    split_and_parse_users,
-    split_and_parse_groups,
-    project_institutions,
-    created_by_upi,
-    start_time_datetime,
-    end_time_datetime,
-    embargo_time_datetime,
-    project_ids,
-    project_data_classification,
+def refined_project(  # pylint:disable=too-many-arguments
+    project_name: str,
+    project_description: str,
+    project_ids: List[str],
+    project_principal_investigator: str,
+    project_institutions: List[str],
+    split_and_parse_users: List[UserACL],
+    split_and_parse_groups: List[GroupACL],
+    created_by_upi: str,
+    start_time_datetime: datetime,
+    end_time_datetime: datetime,
+    embargo_time_datetime: datetime,
+    project_url: str,
+    project_data_classification: Enum,
+    raw_active_store: List[str],
+    raw_archives: List[str],
 ) -> RefinedProject:
     return RefinedProject(
         name=project_name,
@@ -226,26 +303,28 @@ def refined_project(
         end_time=end_time_datetime,
         embargo_until=embargo_time_datetime,
         identifiers=project_ids,
+        active_stores=raw_active_store,
+        archives=raw_archives,
     )
 
 
 @fixture
-def refined_experiment(
-    experiment_name,
-    experiment_description,
-    experiment_ids,
-    experiment_institution,
-    experiment_projects,
-    created_by_upi,
-    experiment_url,
-    split_and_parse_users,
-    split_and_parse_groups,
-    start_time_datetime,
-    end_time_datetime,
-    created_time_datetime,
-    modified_time_datetime,
-    embargo_time_datetime,
-    experiment_data_classification,
+def refined_experiment(  # pylint: disable=too-many-arguments
+    experiment_name: str,
+    experiment_description: str,
+    experiment_ids: List[str],
+    experiment_institution: str,
+    experiment_projects: List[str],
+    created_by_upi: str,
+    experiment_url: str,
+    split_and_parse_users: List[UserACL],
+    split_and_parse_groups: List[GroupACL],
+    start_time_datetime: datetime,
+    end_time_datetime: datetime,
+    created_time_datetime: datetime,
+    modified_time_datetime: datetime,
+    embargo_time_datetime: datetime,
+    experiment_data_classification: Enum,
 ) -> RefinedExperiment:
     return RefinedExperiment(
         title=experiment_name,
@@ -269,16 +348,16 @@ def refined_experiment(
 
 @fixture
 def refined_dataset(
-    dataset_name,
-    dataset_experiments,
-    dataset_instrument,
-    dataset_ids,
-    dataset_dir,
-    split_and_parse_users,
-    split_and_parse_groups,
-    created_time_datetime,
-    modified_time_datetime,
-    dataset_data_classification,
+    dataset_name: str,
+    dataset_experiments: List[str],
+    dataset_instrument: str,
+    dataset_ids: List[str],
+    dataset_dir: Path,
+    split_and_parse_users: List[UserACL],
+    split_and_parse_groups: List[GroupACL],
+    created_time_datetime: datetime,
+    modified_time_datetime: datetime,
+    dataset_data_classification: Enum,
 ) -> RefinedDataset:
     return RefinedDataset(
         description=dataset_name,
@@ -297,16 +376,15 @@ def refined_dataset(
 
 @fixture
 def refined_datafile(
-    filename,
-    datafile_md5sum,
-    datafile_mimetype,
-    datafile_size,
-    datafile_dataset,
-    directory_relative_to_storage_box,
-    split_and_parse_users,
-    split_and_parse_groups,
-    datafile_replica,
-    raw_datafile_parameterset,
+    filename: str,
+    datafile_md5sum: str,
+    datafile_mimetype: str,
+    datafile_size: int,
+    datafile_dataset: str,
+    directory_relative_to_storage_box: Path,
+    split_and_parse_users: List[UserACL],
+    split_and_parse_groups: List[GroupACL],
+    raw_datafile_parameterset: ParameterSet,
 ) -> RefinedDatafile:
     return RefinedDatafile(
         filename=filename,
@@ -317,13 +395,17 @@ def refined_datafile(
         users=split_and_parse_users,
         groups=split_and_parse_groups,
         dataset=datafile_dataset,
-        replicas=[datafile_replica],
         parameter_sets=raw_datafile_parameterset,
     )
 
 
 @fixture
-def project(refined_project: RefinedProject, institution_uri: URI):
+def project(
+    refined_project: RefinedProject,
+    institution_uri: URI,
+    raw_storage_box: RawStorageBox,
+    raw_archive_box: RawStorageBox,
+) -> Project:
     return Project(
         name=refined_project.name,
         description=refined_project.description,
@@ -350,11 +432,16 @@ def project(refined_project: RefinedProject, institution_uri: URI):
             else None
         ),
         identifiers=refined_project.identifiers,
+        active_stores=[raw_storage_box],
+        archives=[raw_archive_box],
     )
 
 
 @fixture
-def experiment(refined_experiment: RefinedExperiment, project_uri: URI):
+def experiment(
+    refined_experiment: RefinedExperiment,
+    project_uri: URI,
+) -> Experiment:
     return Experiment(
         title=refined_experiment.title,
         description=refined_experiment.description,
@@ -396,7 +483,11 @@ def experiment(refined_experiment: RefinedExperiment, project_uri: URI):
 
 
 @fixture
-def dataset(refined_dataset: RefinedDataset, experiment_uri: URI, instrument_uri: URI):
+def dataset(
+    refined_dataset: RefinedDataset,
+    experiment_uri: URI,
+    instrument_uri: URI,
+) -> Dataset:
     return Dataset(
         description=refined_dataset.description,
         directory=refined_dataset.directory,
@@ -421,7 +512,13 @@ def dataset(refined_dataset: RefinedDataset, experiment_uri: URI, instrument_uri
 
 
 @fixture
-def datafile(refined_datafile: RefinedDatafile, dataset_uri: URI):
+def datafile(
+    refined_datafile: RefinedDatafile,
+    dataset_uri: URI,
+    datafile_replica: DatafileReplica,
+    archive_date: datetime,
+    delete_date: datetime,
+) -> Datafile:
     return Datafile(
         filename=refined_datafile.filename,
         md5sum=refined_datafile.md5sum,
@@ -431,6 +528,8 @@ def datafile(refined_datafile: RefinedDatafile, dataset_uri: URI):
         users=refined_datafile.users,
         groups=refined_datafile.groups,
         dataset=dataset_uri,
-        replicas=refined_datafile.replicas,
         parameter_sets=refined_datafile.parameter_sets,
+        archive_date=archive_date,
+        delete_date=delete_date,
+        replicas=[datafile_replica],
     )

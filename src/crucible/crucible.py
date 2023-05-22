@@ -15,6 +15,31 @@ from src.overseers import Overseer
 logger = logging.getLogger(__name__)
 
 
+### PASTED CODE
+
+'''    def __create_storage_box(self, storage_box_name: str, archive: bool = False):
+        """Create the dataclass that holds the informaiton needed to POST a storage box."""
+        storage_class = self.active_store.storage_class
+        options = self.active_store.options
+        attributes = self.active_store.attributes
+        storage_type = "disk"
+        if archive:
+            storage_class = self.archive.storage_class
+            options = self.archive.options
+            attributes = self.archive.attributes
+            storage_type = "disk"
+        if not attributes:
+            attributes = {}
+        if "type" not in attributes:
+            attributes["type"] = storage_type
+        return StorageBox(
+            name=storage_box_name,
+            storage_class=storage_class,
+            options=options,
+            attributes=attributes,
+        )'''
+
+
 class Crucible:
     """The Crucible class reads in a RefinedObject and replaces the identified
     fields with URIs."""
@@ -30,10 +55,9 @@ class Crucible:
         MyTardis and finding their URIs"""
         institutions: list[URI] = []
         for institution in refined_project.institution:
-            institution_uri = self.overseer.get_uris(
+            if institution_uri := self.overseer.get_uris(
                 ObjectSearchEnum.INSTITUTION.value, institution
-            )
-            if institution_uri:
+            ):
                 institutions.append(*institution_uri)
         institutions = list(set(institutions))
         if not institutions:
@@ -44,6 +68,8 @@ class Crucible:
 
         return Project(
             name=refined_project.name,
+            autoarchive_offset=refined_project.autoarchive_offset,
+            delete_offset=refined_project.delete_offset,
             description=refined_project.description,
             data_classification=refined_project.data_classification,
             principal_investigator=refined_project.principal_investigator,
@@ -68,6 +94,8 @@ class Crucible:
                 if isinstance(refined_project.embargo_until, datetime)
                 else refined_project.embargo_until
             ),
+            archives=refined_project.archives,
+            active_stores=refined_project.active_stores,
         )
 
     def prepare_experiment(
@@ -81,18 +109,16 @@ class Crucible:
             and self.overseer.mytardis_setup.projects_enabled
         ):
             for project in refined_experiment.projects:
-                project_uri = self.overseer.get_uris(
+                if project_uri := self.overseer.get_uris(
                     ObjectSearchEnum.PROJECT.value, project
-                )
-                if project_uri:
+                ):
                     projects.append(*project_uri)
             projects = list(set(projects))
-        if not projects:
-            if self.overseer.mytardis_setup.projects_enabled:
-                logger.warning(
-                    "No projects identified for this experiment and projects enabled in MyTardis."
-                )
-                return None
+        if not projects and self.overseer.mytardis_setup.projects_enabled:
+            logger.warning(
+                "No projects identified for this experiment and projects enabled in MyTardis."
+            )
+            return None
         return Experiment(
             title=refined_experiment.title,
             description=refined_experiment.description,
@@ -137,8 +163,9 @@ class Crucible:
         relevant fields of interest"""
         experiment_uris: list[URI] = []
         for experiment in refined_dataset.experiments:
-            uris = self.overseer.get_uris(ObjectSearchEnum.EXPERIMENT.value, experiment)
-            if uris:
+            if uris := self.overseer.get_uris(
+                ObjectSearchEnum.EXPERIMENT.value, experiment
+            ):
                 experiment_uris.extend(uris)
         experiment_uris = list(set(experiment_uris))
         if not experiment_uris:
@@ -217,5 +244,5 @@ class Crucible:
             groups=refined_datafile.groups,
             dataset=dataset,
             parameter_sets=refined_datafile.parameter_sets,
-            replicas=refined_datafile.replicas,
+            # replicas=refined_datafile.replicas,
         )

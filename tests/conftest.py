@@ -2,8 +2,9 @@
 
 import shutil
 from pathlib import Path
+from typing import Any, Dict, List
 
-from pytest import fixture
+from pytest import FixtureRequest, fixture
 
 import tests.fixtures.fixtures_config_from_env as cfg
 import tests.fixtures.fixtures_constants as const
@@ -11,6 +12,8 @@ import tests.fixtures.fixtures_dataclasses as dcls
 import tests.fixtures.fixtures_ingestion_classes as ingestion_classes
 import tests.fixtures.fixtures_responses as rsps
 import tests.fixtures.mock_rest_factory as mock_rest
+from src.blueprints.common_models import GroupACL, UserACL
+from src.blueprints.datafile import DatafileReplica
 
 # =============================
 #
@@ -109,7 +112,23 @@ experiment_data_classification = const.experiment_data_classification
 dataset_data_classification = const.dataset_data_classification
 datafile_archive_date = const.datafile_archive_date
 datafile_delete_date = const.datafile_delete_date
-
+storage_class = const.storage_class
+storage_options = const.storage_options
+storage_attributes = const.storage_attributes
+archive_class = const.archive_class
+archive_options = const.archive_options
+archive_attributes = const.archive_attributes
+archive = cfg.archive
+autoarchive_offset = const.autoarchive_offset
+delete_offset = const.delete_offset
+raw_active_store = const.raw_active_store
+raw_archives = const.raw_archives
+archive_box_name = const.archive_box_name
+archive_box_uri = const.archive_box_uri
+archive_box_description = const.archive_box_description
+archive_box_dir = const.archive_box_dir
+archive_date = const.archive_date
+delete_date = const.delete_date
 
 # =============================
 #
@@ -119,7 +138,7 @@ datafile_delete_date = const.datafile_delete_date
 
 
 @fixture
-def datadir(tmpdir, request):
+def datadir(tmpdir: str, request: FixtureRequest) -> Path:
     """
     Fixture responsible for searching a folder with the same name of test
     module and, if available, moving all contents to a temporary directory so
@@ -143,6 +162,9 @@ def datadir(tmpdir, request):
 # ==============================
 
 storage_box = dcls.storage_box
+raw_storage_box = dcls.raw_storage_box
+archive_box = dcls.archive_box
+raw_archive_box = dcls.raw_archive_box
 datafile_replica = dcls.datafile_replica
 raw_project_parameterset = dcls.raw_project_parameterset
 raw_project = dcls.raw_project
@@ -170,21 +192,21 @@ datafile = dcls.datafile
 
 
 @fixture
-def raw_project_dictionary(
-    admin_groups,
-    admin_users,
-    download_groups,
-    download_users,
-    project_description,
-    project_ids,
-    project_metadata,
-    project_name,
-    project_principal_investigator,
-    read_groups,
-    read_users,
-    sensitive_groups,
-    sensitive_users,
-):
+def raw_project_dictionary(  # pylint: disable=too-many-arguments
+    admin_groups: List[str],
+    admin_users: List[str],
+    download_groups: List[str],
+    download_users: List[str],
+    project_description: str,
+    project_ids: List[str],
+    project_metadata: Dict[str, str],
+    project_name: str,
+    project_principal_investigator: str,
+    read_groups: List[str],
+    read_users: List[str],
+    sensitive_groups: List[str],
+    sensitive_users: List[str],
+) -> Dict[str, Any]:
     return {
         "name": project_name,
         "identifers": project_ids,
@@ -204,16 +226,16 @@ def raw_project_dictionary(
 
 @fixture
 def tidied_project_dictionary(
-    project_description,
-    project_ids,
-    project_metadata,
-    project_name,
-    project_principal_investigator,
-    project_institutions,
-    project_schema,
-    split_and_parse_users,
-    split_and_parse_groups,
-):
+    project_description: str,
+    project_ids: List[str],
+    project_metadata: Dict[str, str],
+    project_name: str,
+    project_principal_investigator: str,
+    project_institutions: List[str],
+    project_schema: str,
+    split_and_parse_users: List[UserACL],
+    split_and_parse_groups: List[GroupACL],
+) -> Dict[str, Any]:
     return_dict = {
         "name": project_name,
         "identifers": project_ids,
@@ -224,20 +246,20 @@ def tidied_project_dictionary(
         "schema": project_schema,
         "institution": project_institutions,
     }
-    for key in project_metadata.keys():
+    for key in project_metadata:
         return_dict[key] = project_metadata[key]
     return return_dict
 
 
 @fixture
 def raw_project_as_dict(
-    project_name,
-    project_description,
-    project_ids,
-    project_principal_investigator,
-    split_and_parse_users,
-    split_and_parse_groups,
-):
+    project_name: str,
+    project_description: str,
+    project_ids: List[str],
+    project_principal_investigator: str,
+    split_and_parse_users: List[UserACL],
+    split_and_parse_groups: List[GroupACL],
+) -> Dict[str, Any]:
     return {
         "name": project_name,
         "description": project_description,
@@ -250,24 +272,28 @@ def raw_project_as_dict(
 
 @fixture
 def project_parameters_as_dict(
-    project_schema,
-    project_metadata,
-):
-    return_dict = {"schema": project_schema}
-    return_dict["parameters"] = []
+    project_schema: str,
+    project_metadata: Dict[str, Any],
+) -> Dict[str, Any]:
+    return_dict = {"schema": project_schema, "parameters": []}
     for key, value in project_metadata.items():
-        return_dict["parameters"].append({"name": key, "value": value})
+        return_dict["parameters"].append(  # type: ignore[attr-defined]
+            {
+                "name": key,
+                "value": value,
+            }
+        )
     return return_dict
 
 
 @fixture
 def raw_experiment_dictionary(
-    experiment_name,
-    experiment_projects,
-    experiment_ids,
-    experiment_description,
-    experiment_metadata,
-):
+    experiment_name: str,
+    experiment_projects: List[str],
+    experiment_ids: List[str],
+    experiment_description: str,
+    experiment_metadata: Dict[str, str],
+) -> Dict[str, Any]:
     return {
         "title": experiment_name,
         "projects": experiment_projects,
@@ -279,13 +305,13 @@ def raw_experiment_dictionary(
 
 @fixture
 def tidied_experiment_dictionary(
-    experiment_name,
-    experiment_projects,
-    experiment_ids,
-    experiment_description,
-    experiment_metadata,
-    experiment_schema,
-):
+    experiment_name: str,
+    experiment_projects: List[str],
+    experiment_ids: List[str],
+    experiment_description: str,
+    experiment_metadata: Dict[str, str],
+    experiment_schema: str,
+) -> Dict[str, Any]:
     return_dict = {
         "title": experiment_name,
         "projects": experiment_projects,
@@ -293,18 +319,18 @@ def tidied_experiment_dictionary(
         "description": experiment_description,
         "schema": experiment_schema,
     }
-    for key in experiment_metadata.keys():
+    for key in experiment_metadata:
         return_dict[key] = experiment_metadata[key]
     return return_dict
 
 
 @fixture
 def raw_experiment_as_dict(
-    experiment_name,
-    experiment_projects,
-    experiment_description,
-    experiment_ids,
-):
+    experiment_name: str,
+    experiment_projects: List[str],
+    experiment_ids: List[str],
+    experiment_description: str,
+) -> Dict[str, Any]:
     return {
         "title": experiment_name,
         "projects": experiment_projects,
@@ -315,24 +341,28 @@ def raw_experiment_as_dict(
 
 @fixture
 def experiment_parameters_as_dict(
-    experiment_schema,
-    experiment_metadata,
-):
-    return_dict = {"schema": experiment_schema}
-    return_dict["parameters"] = []
+    experiment_schema: str,
+    experiment_metadata: Dict[str, Any],
+) -> Dict[str, Any]:
+    return_dict = {"schema": experiment_schema, "parameters": []}
     for key, value in experiment_metadata.items():
-        return_dict["parameters"].append({"name": key, "value": value})
+        return_dict["parameters"].append(  # type: ignore[attr-defined]
+            {
+                "name": key,
+                "value": value,
+            },
+        )
     return return_dict
 
 
 @fixture
 def raw_dataset_dictionary(
-    dataset_name,
-    dataset_experiments,
-    dataset_ids,
-    dataset_instrument,
-    dataset_metadata,
-):
+    dataset_name: str,
+    dataset_experiments: List[str],
+    dataset_ids: List[str],
+    dataset_instrument: str,
+    dataset_metadata: Dict[str, str],
+) -> Dict[str, Any]:
     return {
         "description": dataset_name,
         "experiments": dataset_experiments,
@@ -344,13 +374,13 @@ def raw_dataset_dictionary(
 
 @fixture
 def tidied_dataset_dictionary(
-    dataset_name,
-    dataset_experiments,
-    dataset_ids,
-    dataset_instrument,
-    dataset_schema,
-    dataset_metadata,
-):
+    dataset_name: str,
+    dataset_experiments: List[str],
+    dataset_ids: List[str],
+    dataset_instrument: str,
+    dataset_schema: str,
+    dataset_metadata: Dict[str, str],
+) -> Dict[str, Any]:
     return_dict = {
         "description": dataset_name,
         "experiments": dataset_experiments,
@@ -358,18 +388,18 @@ def tidied_dataset_dictionary(
         "instrument": dataset_instrument,
         "schema": dataset_schema,
     }
-    for key in dataset_metadata.keys():
+    for key in dataset_metadata:
         return_dict[key] = dataset_metadata[key]
     return return_dict
 
 
 @fixture
 def raw_dataset_as_dict(
-    dataset_name,
-    dataset_experiments,
-    dataset_ids,
-    dataset_instrument,
-):
+    dataset_name: str,
+    dataset_experiments: List[str],
+    dataset_ids: List[str],
+    dataset_instrument: str,
+) -> Dict[str, Any]:
     return {
         "description": dataset_name,
         "experiments": dataset_experiments,
@@ -380,26 +410,30 @@ def raw_dataset_as_dict(
 
 @fixture
 def dataset_parameters_as_dict(
-    dataset_schema,
-    dataset_metadata,
-):
-    return_dict = {"schema": dataset_schema}
-    return_dict["parameters"] = []
+    dataset_schema: str,
+    dataset_metadata: Dict[str, Any],
+) -> Dict[str, Any]:
+    return_dict = {"schema": dataset_schema, "parameters": []}
     for key, value in dataset_metadata.items():
-        return_dict["parameters"].append({"name": key, "value": value})
+        return_dict["parameters"].append(  # type: ignore[attr-defined]
+            {
+                "name": key,
+                "value": value,
+            },
+        )
     return return_dict
 
 
 @fixture
 def raw_datafile_dictionary(
-    datafile_dataset,
-    filename,
-    target_dir,
-    source_dir,
-    datafile_md5sum,
-    datafile_metadata,
-    datafile_size,
-):
+    datafile_dataset: str,
+    filename: str,
+    target_dir: Path,
+    source_dir: Path,
+    datafile_md5sum: str,
+    datafile_metadata: Dict[str, str],
+    datafile_size: int,
+) -> Dict[str, Any]:
     return {
         "dataset": datafile_dataset,
         "filename": filename,
@@ -413,18 +447,18 @@ def raw_datafile_dictionary(
 
 @fixture
 def tidied_datafile_dictionary(
-    datafile_dataset,
-    filename,
-    target_dir,
-    source_dir,
-    datafile_md5sum,
-    datafile_metadata,
-    datafile_size,
-    directory_relative_to_storage_box,
-    datafile_replica,
-    datafile_schema,
-    datafile_mimetype,
-):
+    datafile_dataset: str,
+    filename: str,
+    target_dir: Path,
+    source_dir: Path,
+    datafile_md5sum: str,
+    datafile_metadata: Dict[str, str],
+    datafile_size: int,
+    directory_relative_to_storage_box: Path,
+    datafile_replica: DatafileReplica,
+    datafile_schema: str,
+    datafile_mimetype: str,
+) -> Dict[str, Any]:
     return_dict = {
         "dataset": datafile_dataset,
         "filename": filename,
@@ -437,23 +471,23 @@ def tidied_datafile_dictionary(
         "replicas": [datafile_replica],
         "schema": datafile_schema,
     }
-    for key in datafile_metadata.keys():
+    for key in datafile_metadata:
         return_dict[key] = datafile_metadata[key]
     return return_dict
 
 
 @fixture
 def raw_datafile_as_dict(
-    datafile_dataset,
-    filename,
-    target_dir,
-    source_dir,
-    datafile_md5sum,
-    datafile_size,
-    directory_relative_to_storage_box,
-    datafile_replica,
-    datafile_mimetype,
-):
+    datafile_dataset: str,
+    filename: str,
+    target_dir: Path,
+    source_dir: Path,
+    datafile_md5sum: str,
+    datafile_size: int,
+    directory_relative_to_storage_box: Path,
+    datafile_replica: DatafileReplica,
+    datafile_mimetype: str,
+) -> Dict[str, Any]:
     return {
         "dataset": datafile_dataset,
         "filename": filename,
@@ -469,18 +503,22 @@ def raw_datafile_as_dict(
 
 @fixture
 def datafile_parameters_as_dict(
-    datafile_schema,
-    datafile_metadata,
-):
-    return_dict = {"schema": datafile_schema}
-    return_dict["parameters"] = []
+    datafile_schema: str,
+    datafile_metadata: Dict[str, Any],
+) -> Dict[str, Any]:
+    return_dict = {"schema": datafile_schema, "parameters": []}
     for key, value in datafile_metadata.items():
-        return_dict["parameters"].append({"name": key, "value": value})
+        return_dict["parameters"].append(  # type: ignore[attr-defined]
+            {
+                "name": key,
+                "value": value,
+            },
+        )
     return return_dict
 
 
 @fixture
-def preconditioned_datafile_dictionary():
+def preconditioned_datafile_dictionary() -> Dict[str, Any]:
     return {
         "dataset": ["Dataset_1"],
         "filename": "test_data.dat",
@@ -529,7 +567,7 @@ processed_introspection_response = cfg.processed_introspection_response
 general = cfg.general
 auth = cfg.auth
 connection = cfg.connection
-storage = cfg.storage
+active_store = cfg.storage
 default_schema = cfg.default_schema
 mytardis_setup = cfg.mytardis_setup
 mytardis_settings = cfg.mytardis_settings

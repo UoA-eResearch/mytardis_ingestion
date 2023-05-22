@@ -7,14 +7,12 @@ import pytest
 import responses
 from responses import matchers
 
-from src.blueprints.custom_data_types import URI
 from src.blueprints.datafile import Datafile, RefinedDatafile
 from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
 from src.crucible.crucible import Crucible
 from src.helpers.config import ConnectionConfig
-from tests.fixtures.fixtures_dataclasses import refined_project
 
 
 @responses.activate
@@ -37,7 +35,7 @@ def test_prepare_project(
         status=200,
         json=(institution_response_dict),
     )
-    responses.get(url, status=200, json=(response_dict_not_found))
+    responses.get(url, status=200, json=response_dict_not_found)
 
     assert crucible.prepare_project(refined_project) == project
 
@@ -70,7 +68,6 @@ def test_prepare_experiment(
     experiment: Experiment,
     project_response_dict,
     response_dict_not_found,
-    experiment_ids,
 ):
     if refined_experiment.projects:
         responses.get(
@@ -261,7 +258,10 @@ def test_prepare_dataset_too_many_instruments(
         json=(response_dict_not_found),
     )
 
-    warning = "Unable to uniquely identify the instrument associated with the name or identifier provided. Possible candidates are: "
+    warning = (
+        "Unable to uniquely identify the instrument associated with the "
+        "name or identifier provided. Possible candidates are: "
+    )
 
     assert crucible.prepare_dataset(refined_dataset) is None
     assert len(list(filter(lambda m: m.startswith(warning), caplog.messages))) == 1
@@ -343,7 +343,10 @@ def test_prepare_datafile_too_many_datasets(
         json=(response_dict_not_found),
     )
 
-    warning = "Unable to uniquely identify the dataset associated with this datafile in MyTardis. Possible candidates are: "
+    warning = (
+        "Unable to uniquely identify the dataset associated with this datafile in "
+        "MyTardis. Possible candidates are: "
+    )
 
     assert crucible.prepare_datafile(refined_datafile) is None
     assert len(list(filter(lambda m: m.startswith(warning), caplog.messages))) == 1

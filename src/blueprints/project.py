@@ -8,6 +8,7 @@ from pydantic import AnyUrl, BaseModel, Field, HttpUrl
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime, Username
+from src.blueprints.storage_boxes import RawStorageBox
 from src.helpers.enumerators import DataClassification
 
 
@@ -20,6 +21,8 @@ class BaseProject(BaseModel):
     description: str
     principal_investigator: Username
     data_classification: DataClassification = DataClassification.SENSITIVE
+    autoarchive_offset: int = 365  # default 1 year
+    delete_offset: int = -1  #
     created_by: Optional[str] = None
     url: Optional[HttpUrl] = None
     users: Optional[List[UserACL]] = None
@@ -37,6 +40,8 @@ class RawProject(BaseProject):
     start_time: Optional[datetime | str] = None
     end_time: Optional[datetime | str] = None
     embargo_until: Optional[datetime | str] = None
+    archives: Optional[List[str]] = None
+    active_stores: Optional[List[str]] = None
 
 
 class RefinedProject(BaseProject):
@@ -48,6 +53,8 @@ class RefinedProject(BaseProject):
     start_time: Optional[datetime | str] = None
     end_time: Optional[datetime | str] = None
     embargo_until: Optional[datetime | str] = None
+    archives: List[str]
+    active_stores: List[str]
 
 
 class Project(BaseProject):
@@ -59,6 +66,8 @@ class Project(BaseProject):
     start_time: Optional[ISODateTime] = None
     end_time: Optional[ISODateTime] = None
     embargo_until: Optional[ISODateTime] = None
+    archives: List[RawStorageBox]
+    active_stores: List[RawStorageBox]
 
 
 class ProjectParameterSet(ParameterSet):

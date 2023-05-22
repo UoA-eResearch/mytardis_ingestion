@@ -10,6 +10,7 @@ from urllib.parse import urljoin
 
 import backoff
 import requests
+from requests import Response
 from requests.exceptions import RequestException
 
 from src.helpers.config import AuthConfig, ConnectionConfig
@@ -23,7 +24,9 @@ class BadGateWayException(RequestException):
     """
 
     # Included for clarity even though it is unnecessary
-    def __init__(self, response):  # pylint: disable=useless-super-delegation
+    def __init__(
+        self, response: Response
+    ) -> None:  # pylint: disable=useless-super-delegation
         super().__init__(response)
 
 
@@ -79,7 +82,7 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
         data: Optional[str] = None,
         params: Optional[Dict[str, str]] = None,
         extra_headers: Optional[Dict[str, str]] = None,
-    ) -> requests.Response:
+    ) -> Response:
         """Function to handle the REST API calls
 
         Takes a REST method and url and prepares a requests request. Once the request has been

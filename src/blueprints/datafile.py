@@ -58,18 +58,21 @@ class RawDatafile(BaseDatafile):
     dataset: str
     metadata: Optional[Dict[str, str | int | float | bool]] = None
     object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
-    archive_date: Optional[datetime | str] = None
-    delete_date: Optional[datetime | str] = None
+    archive_date: Optional[datetime] = None
+    delete_date: Optional[datetime] = None
+    archive_offset: Optional[int] = None
+    delete_offset: Optional[int] = None
 
 
 class RefinedDatafile(BaseDatafile):
     """Concrete class for raw data as read in from the metadata file."""
 
     dataset: str
-    replicas: List[DatafileReplica]
     parameter_sets: Optional[ParameterSet] = None
-    archive_date: Optional[datetime | str] = None
-    delete_date: Optional[datetime | str] = None
+    archive_date: Optional[datetime | int] = None
+    delete_date: Optional[datetime | int] = None
+    archive_offset: Optional[int] = None
+    delete_offset: Optional[int] = None
 
 
 class Datafile(BaseDatafile):
@@ -79,4 +82,4 @@ class Datafile(BaseDatafile):
     parameter_sets: Optional[ParameterSet] = None
     dataset: URI
     archive_date: ISODateTime
-    delete_date: Optional[ISODateTime] = None
+    delete_date: ISODateTime

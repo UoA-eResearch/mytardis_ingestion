@@ -16,6 +16,7 @@ pytz = "^2023.3"
 python-dateutil = "^2.8.2"
 types-pytz = "^2023.3.0.0"
 types-python-dateutil = "^2.8.19.12"
+python-slugify = "^8.0.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.3.1"
@@ -39,6 +40,8 @@ sphinx = "^7.0.0"
 
 [tool.poetry.group.dev.dependencies]
 wily = "^1.24.0"
+pytest-xdist = "^3.2.1"
+types-python-slugify = "^8.0.0.2"
 
 [tool.isort]
 profile = "black"
@@ -72,6 +75,7 @@ exclude = [
        "^docs/.*$",
        ]
 plugins = ["pydantic.mypy"]
+strict = true
 
 [tool.bandit]
 exclude_dirs = [
