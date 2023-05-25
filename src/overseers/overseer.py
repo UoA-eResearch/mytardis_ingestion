@@ -4,7 +4,7 @@ for the Forge class."""
 
 import logging
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin, urlparse
 
 from pydantic import ValidationError
@@ -102,6 +102,41 @@ class Overseer:
                     f"object_type = {object_type}\n"
                     f"search_target = {query_params}"
                 ),
+                exc_info=True,
+            )
+            raise error
+        return response.json()
+
+    def get_object_by_uri(
+        self,
+        uri: URI,
+    ) -> Optional[Any]:
+        """GET an object from MyTardis using the URI
+
+        Args:
+            uri (URI): The URI of the object to GET
+
+        Raises:
+            error: _description_
+            error: _description_
+            ValueError: _description_
+            ValueError: _description_
+
+        Returns:
+            Dict[str,Any]: The object retrieved and deserialised from JSON
+        """
+        url = urljoin(self.rest_factory.hostname, uri)
+        try:
+            response = self.rest_factory.mytardis_api_request("GET", url)
+        except HTTPError:
+            logger.warning(
+                ("Failed HTTP request from Overseer.get_objects call\n" f"URI = {uri}"),
+                exc_info=True,
+            )
+            return None
+        except Exception as error:
+            logger.error(
+                ("Non-HTTP exception in Overseer.get_objects call\n" f"URI = {uri}"),
                 exc_info=True,
             )
             raise error

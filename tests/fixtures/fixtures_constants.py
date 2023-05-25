@@ -1,5 +1,5 @@
 # pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List
@@ -670,6 +670,11 @@ def storage_attributes() -> Dict[str, str]:
 
 
 @fixture
+def datetime_now(timezone: BaseTzInfo) -> datetime:
+    return datetime(2001, 1, 1, 12, 0, 0, tzinfo=timezone)
+
+
+@fixture
 def autoarchive_offset() -> int:
     return 547
 
@@ -681,18 +686,12 @@ def delete_offset() -> int:
 
 @fixture
 def raw_active_store() -> List[str]:
-    return [
-        "store1",
-        "store2",
-    ]
+    return ["Test_storage_box"]
 
 
 @fixture
 def raw_archives() -> List[str]:
-    return [
-        "archive1",
-        "archive2",
-    ]
+    return ["Test archive box"]
 
 
 @fixture
@@ -706,10 +705,16 @@ def storage_box_dir() -> Path:
 
 
 @fixture
-def archive_date(timezone: BaseTzInfo) -> datetime:
-    return datetime(2001, 1, 1, 12, 0, 0, tzinfo=timezone)
+def archive_date(
+    datetime_now: datetime,
+    autoarchive_offset: int,
+) -> datetime:
+    return datetime_now + timedelta(days=autoarchive_offset)
 
 
 @fixture
-def delete_date(timezone: BaseTzInfo) -> datetime:
-    return datetime(2001, 1, 1, 12, 0, 0, tzinfo=timezone)
+def delete_date(
+    datetime_now: datetime,
+    delete_offset: int,
+) -> datetime:
+    return datetime_now + timedelta(days=delete_offset)

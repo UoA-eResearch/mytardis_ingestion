@@ -1443,6 +1443,24 @@ files = [
 pytest = ">=3.6.0"
 
 [[package]]
+name = "pytest-mock"
+version = "3.10.0"
+description = "Thin-wrapper around the mock package for easier use with pytest"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pytest-mock-3.10.0.tar.gz", hash = "sha256:fbbdb085ef7c252a326fd8cdcac0aa3b1333d8811f131bdcc701002e1be7ed4f"},
+    {file = "pytest_mock-3.10.0-py3-none-any.whl", hash = "sha256:f4c973eeae0282963eb293eb173ce91b091a79c1334455acfac9ddee8a1c784b"},
+]
+
+[package.dependencies]
+pytest = ">=5.0"
+
+[package.extras]
+dev = ["pre-commit", "pytest-asyncio", "tox"]
+
+[[package]]
 name = "pytest-xdist"
 version = "3.2.1"
 description = "pytest xdist plugin for distributed testing, most importantly across multiple CPUs"
@@ -2233,4 +2251,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "a2f6b67a5b76f891959d8f8a525b9bacf8d531e32ba45ec3547dd1575c31b199"
+content-hash = "1471db589811fb3cdd12abb72b3fa1af763813bb3f0a808c703778e99b0519f2"

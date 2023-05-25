@@ -122,13 +122,15 @@ def mytardis_settings(
     general: GeneralConfig,
     auth: AuthConfig,
     connection: ConnectionConfig,
-    storage: StorageConfig,
+    active_store: StorageConfig,
+    archive: StorageConfig,
     default_schema: SchemaConfig,
 ) -> ConfigFromEnv:
     return ConfigFromEnv(
         general=general,
         auth=auth,
         connection=connection,
-        storage=storage,
+        storage=active_store,
+        archive=archive,
         default_schema=default_schema,
     )

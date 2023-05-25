@@ -118,7 +118,6 @@ storage_attributes = const.storage_attributes
 archive_class = const.archive_class
 archive_options = const.archive_options
 archive_attributes = const.archive_attributes
-archive = cfg.archive
 autoarchive_offset = const.autoarchive_offset
 delete_offset = const.delete_offset
 raw_active_store = const.raw_active_store
@@ -129,6 +128,7 @@ archive_box_description = const.archive_box_description
 archive_box_dir = const.archive_box_dir
 archive_date = const.archive_date
 delete_date = const.delete_date
+datetime_now = const.datetime_now
 
 # =============================
 #
@@ -166,6 +166,7 @@ raw_storage_box = dcls.raw_storage_box
 archive_box = dcls.archive_box
 raw_archive_box = dcls.raw_archive_box
 datafile_replica = dcls.datafile_replica
+archive_replica = dcls.archive_replica
 raw_project_parameterset = dcls.raw_project_parameterset
 raw_project = dcls.raw_project
 raw_experiment_parameterset = dcls.raw_experiment_parameterset
@@ -182,7 +183,6 @@ project = dcls.project
 experiment = dcls.experiment
 dataset = dcls.dataset
 datafile = dcls.datafile
-
 
 # =========================================
 #
@@ -555,8 +555,9 @@ institution_response_dict = rsps.institution_response_dict
 storage_box_response_dict = rsps.storage_box_response_dict
 project_creation_response_dict = rsps.project_creation_response_dict
 response_by_substring = rsps.response_by_substring
-
-
+get_experiment_details = rsps.get_experiment_details
+get_project_details = rsps.get_project_details
+autoarchive_details = rsps.autoarchive_details
 # =========================================
 #
 # config from env classes
@@ -568,6 +569,7 @@ general = cfg.general
 auth = cfg.auth
 connection = cfg.connection
 active_store = cfg.storage
+archive = cfg.archive
 default_schema = cfg.default_schema
 mytardis_setup = cfg.mytardis_setup
 mytardis_settings = cfg.mytardis_settings

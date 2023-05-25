@@ -71,8 +71,14 @@ def forge(
 @fixture
 def crucible(
     overseer: Overseer,
+    active_store: StorageConfig,
+    archive: StorageConfig,
 ) -> Crucible:
-    return Crucible(overseer)
+    return Crucible(
+        overseer=overseer,
+        active_stores=active_store,
+        archive=archive,
+    )
 
 
 @fixture

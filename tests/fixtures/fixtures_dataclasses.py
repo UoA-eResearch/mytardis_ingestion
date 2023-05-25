@@ -26,14 +26,12 @@ def raw_archive_box(
     archive_box_name: str,
     archive_class: str,
     archive_options: Dict[str, str],
-    archive_box_description: str,
     archive_attributes: Dict[str, str],
 ) -> RawStorageBox:
     return RawStorageBox(
         name=archive_box_name,
         storage_class=archive_class,
         options=archive_options,
-        desciption=archive_box_description,
         attributes=archive_attributes,
     )
 
@@ -43,14 +41,12 @@ def raw_storage_box(
     storage_box_name: str,
     storage_class: str,
     storage_options: Dict[str, str],
-    storage_box_description: str,
     storage_attributes: Dict[str, str],
 ) -> RawStorageBox:
     return RawStorageBox(
         name=storage_box_name,
         storage_class=storage_class,
         options=storage_options,
-        description=storage_box_description,
         attributes=storage_attributes,
     )
 
@@ -95,6 +91,20 @@ def datafile_replica(
     return DatafileReplica(
         uri=Path(target_dir / dataset_dir / filename).as_posix(),
         location=storage_box.name,
+        protocol="file",
+    )
+
+
+@fixture
+def archive_replica(
+    archive_box: StorageBox,
+    dataset_dir: Path,
+    filename: str,
+    target_dir: Path,
+) -> DatafileReplica:
+    return DatafileReplica(
+        uri=Path(target_dir / dataset_dir / filename).as_posix(),
+        location=archive_box.name,
         protocol="file",
     )
 
@@ -518,6 +528,7 @@ def datafile(
     datafile_replica: DatafileReplica,
     archive_date: datetime,
     delete_date: datetime,
+    archive_replica: DatafileReplica,
 ) -> Datafile:
     return Datafile(
         filename=refined_datafile.filename,
@@ -529,7 +540,10 @@ def datafile(
         groups=refined_datafile.groups,
         dataset=dataset_uri,
         parameter_sets=refined_datafile.parameter_sets,
-        archive_date=archive_date,
-        delete_date=delete_date,
-        replicas=[datafile_replica],
+        archive_date=ISODateTime(archive_date.isoformat()),
+        delete_date=ISODateTime(delete_date.isoformat()),
+        replicas=[
+            archive_replica,
+            datafile_replica,
+        ],
     )

@@ -112,7 +112,7 @@ class URI(str):
             )
         object_type_str = object_type.group(1)
         if object_type_str.lower() not in KNOWN_MYTARDIS_OBJECTS:
-            raise ValueError(f'Unknown object type: "{object_type}"')
+            raise ValueError(f'Unknown object type: "{object_type_str}"')
         return cls(f"{value}")
 
     def __repr__(self) -> str:
