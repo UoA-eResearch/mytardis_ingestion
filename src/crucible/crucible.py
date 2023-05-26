@@ -7,15 +7,14 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Tuple
 
-from slugify import slugify
-
 from src.blueprints.custom_data_types import URI, ISODateTime
 from src.blueprints.datafile import Datafile, DatafileReplica, RefinedDatafile
 from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
 from src.blueprints.storage_boxes import RawStorageBox
-from src.helpers.config import StorageConfig
+from src.config.config import StorageConfig
+from src.config.singleton import Singleton
 from src.helpers.enumerators import ObjectSearchEnum
 from src.overseers import Overseer
 
@@ -25,7 +24,7 @@ logger = logging.getLogger(__name__)
 ### PASTED CODE
 
 
-class Crucible:
+class Crucible(metaclass=Singleton):
     """The Crucible class reads in a RefinedObject and replaces the identified
     fields with URIs."""
 

@@ -15,14 +15,15 @@ from src.blueprints.datafile import RawDatafile, RefinedDatafile
 from src.blueprints.dataset import RawDataset, RefinedDataset
 from src.blueprints.experiment import RawExperiment, RefinedExperiment
 from src.blueprints.project import RawProject, RefinedProject
-from src.helpers import GeneralConfig, SchemaConfig, log_if_projects_disabled
-from src.helpers.config import StorageConfig
+from src.config.config import GeneralConfig, SchemaConfig, StorageConfig
+from src.config.singleton import Singleton
+from src.helpers.project_aware import log_if_projects_disabled
 from src.overseers.overseer import Overseer
 
 logger = logging.getLogger(__name__)
 
 
-class Smelter:
+class Smelter(metaclass=Singleton):
     """The Smelter base class to be subclassed into individual concrete classes for different
     ingestion approaches.
     Smelter classes share a number of similar processing routines, especially around dictionary

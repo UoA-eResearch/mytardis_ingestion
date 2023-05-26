@@ -13,8 +13,8 @@ from src.blueprints.datafile import Datafile, RefinedDatafile
 from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
+from src.config.config import ConnectionConfig
 from src.crucible.crucible import Crucible
-from src.helpers.config import ConnectionConfig
 
 
 @responses.activate

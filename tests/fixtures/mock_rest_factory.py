@@ -4,8 +4,8 @@ from typing import Any, Callable
 import responses
 from pytest import fixture
 
+from src.config.config import AuthConfig, ConnectionConfig
 from src.helpers import MyTardisRESTFactory
-from src.helpers.config import AuthConfig, ConnectionConfig
 
 
 class MockMtRest(MyTardisRESTFactory):

@@ -2,13 +2,14 @@
 
 import logging
 from urllib.parse import urljoin
+
 import pytest
 import responses
+
 from src.blueprints.custom_data_types import URI
 from src.blueprints.project import Project
-
+from src.config.config import ConnectionConfig
 from src.forges import Forge
-from src.helpers.config import ConnectionConfig
 from src.helpers.enumerators import ObjectPostEnum
 
 logger = logging.getLogger(__name__)

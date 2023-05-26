@@ -14,7 +14,7 @@ from responses import matchers
 
 from src.blueprints.custom_data_types import URI
 from src.blueprints.storage_boxes import StorageBox
-from src.helpers.config import ConnectionConfig, IntrospectionConfig
+from src.config.config import ConnectionConfig, IntrospectionConfig
 from src.helpers.enumerators import ObjectSearchEnum
 from src.helpers.mt_rest import MyTardisRESTFactory
 from src.overseers import Overseer

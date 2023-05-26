@@ -4,9 +4,7 @@ from typing import Any, Callable
 import responses
 from pytest import fixture
 
-from src.crucible.crucible import Crucible
-from src.forges.forge import Forge
-from src.helpers.config import (
+from src.config.config import (
     AuthConfig,
     ConfigFromEnv,
     ConnectionConfig,
@@ -15,6 +13,8 @@ from src.helpers.config import (
     SchemaConfig,
     StorageConfig,
 )
+from src.crucible.crucible import Crucible
+from src.forges.forge import Forge
 from src.helpers.mt_rest import MyTardisRESTFactory
 from src.ingestion_factory import IngestionFactory
 from src.overseers.overseer import Overseer

@@ -13,7 +13,8 @@ import requests
 from requests import Response
 from requests.exceptions import RequestException
 
-from src.helpers.config import AuthConfig, ConnectionConfig
+from src.config.config import AuthConfig, ConnectionConfig
+from src.config.singleton import Singleton
 
 
 class BadGateWayException(RequestException):
@@ -30,7 +31,7 @@ class BadGateWayException(RequestException):
         super().__init__(response)
 
 
-class MyTardisRESTFactory:  # pylint: disable=R0903
+class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
     """Class to interact with MyTardis by calling the REST API
 
     This is the main class that sets up access to the RESTful API supported by MyTardis. It takes
