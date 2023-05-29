@@ -6,4 +6,4 @@ from src.blueprints.datafile import *
 from src.blueprints.dataset import *
 from src.blueprints.experiment import *
 from src.blueprints.project import *
-from src.blueprints.storage_boxes import StorageBox
+from src.blueprints.storage_boxes import RawStorageBox

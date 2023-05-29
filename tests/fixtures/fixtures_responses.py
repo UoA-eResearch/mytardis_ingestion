@@ -1,16 +1,18 @@
 # pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Callable, Dict, List
 
 from pytest import fixture
 
 from src.blueprints.custom_data_types import URI
 from src.blueprints.project import Project
+from src.blueprints.storage_boxes import StorageBox
 from src.helpers.enumerators import URLSubstring
 
 
 @fixture
-def response_dict_not_found():
+def response_dict_not_found() -> Dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -30,7 +32,7 @@ def datafile_response_dict(
     datafile_mimetype: str,
     datafile_size: int,
     datafile_dataset: str,
-):
+) -> Dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -66,14 +68,155 @@ def datafile_response_dict(
 
 
 @fixture
+def autoarchive_details(
+    autoarchive_offset: int,
+    delete_offset: int,
+    archive_box: StorageBox,
+    storage_box: StorageBox,
+) -> Dict[str, Any]:
+    return {
+        "offset": autoarchive_offset,
+        "delete_offset": delete_offset,
+        "archives": [
+            {
+                "name": archive_box.name,
+                "description": archive_box.description,
+                "uri": archive_box.uri,
+                "location": archive_box.location.as_posix(),
+            }
+        ],
+        "active_stores": [
+            {
+                "name": storage_box.name,
+                "description": storage_box.description,
+                "uri": storage_box.uri,
+                "location": storage_box.location.as_posix(),
+            }
+        ],
+    }
+
+
+@fixture
+def get_project_details(
+    project_ids: list[str],
+    project_description: str,
+    project_institutions: list[str],
+    project_name: str,
+    project_principal_investigator: str,
+    project_url: str,
+    autoarchive_details: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    return [
+        {
+            "autoarchive": autoarchive_details,
+            "created_by": "api/v1/user/1/",
+            "datafile_count": 2,
+            "dataset_count": 1,
+            "description": project_description,
+            "embargo_until": None,
+            "end_time": None,
+            "experiment_count": 1,
+            "id": 1,
+            "identifiers": project_ids,
+            "institution": project_institutions,
+            "locked": False,
+            "name": project_name,
+            "parameter_sets": [],
+            "principal_investigator": project_principal_investigator,
+            "public_access": 1,
+            "resource_uri": "/api/v1/project/1/",
+            "size": 1000000,
+            "start_time": "2000-01-01T00:00:00",
+            "tags": [],
+            "url": project_url,
+        }
+    ]
+
+
+@fixture
+def project_response_dict(
+    get_project_details: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    return {
+        "meta": {
+            "limit": 20,
+            "next": None,
+            "offset": 0,
+            "previous": None,
+            "total_count": 1,
+        },
+        "objects": get_project_details,
+    }
+
+
+@fixture
+def get_experiment_details(
+    experiment_ids: list[str],
+    experiment_description: str,
+    experiment_institution: str,
+    experiment_name: str,
+    experiment_url: str,
+    experiment_uri: URI,
+    get_project_details: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    return [
+        {
+            "approved": False,
+            "authors": [],
+            "created_by": "api/v1/user/1/",
+            "created_time": "2000-01-01T00:00:00",
+            "datafile_count": 2,
+            "dataset_count": 1,
+            "description": experiment_description,
+            "end_time": None,
+            "experiment_size": 1000000,
+            "handle": None,
+            "id": 1,
+            "identifiers": experiment_ids,
+            "institution_name": experiment_institution,
+            "locked": False,
+            "owner_ids": [
+                1,
+                2,
+            ],
+            "parameter_sets": [],
+            "public_access": 1,
+            "projects": get_project_details,
+            "resource_uri": experiment_uri,
+            "start_time": "2000-01-01T00:00:00",
+            "tags": [],
+            "title": experiment_name,
+            "update_time": "2000-01-01T00:00:00",
+            "url": experiment_url,
+        }
+    ]
+
+
+@fixture
+def experiment_response_dict(
+    get_experiment_details: Dict[str, Any],
+) -> Dict[str, Any]:
+    return {
+        "meta": {
+            "limit": 20,
+            "next": None,
+            "offset": 0,
+            "previous": None,
+            "total_count": 1,
+        },
+        "objects": get_experiment_details,
+    }
+
+
+@fixture
 def dataset_response_dict(
     dataset_dir: Path,
     dataset_name: str,
-    dataset_experiments: list[str],
     dataset_ids: list[str],
     dataset_uri: URI,
-    instrument_response_dict,
-):
+    instrument_response_dict: Dict[str, Any],
+    get_experiment_details: List[Dict[str, Any]],
+) -> Dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -90,7 +233,7 @@ def dataset_response_dict(
                 "dataset_size": 1000000,
                 "description": dataset_name,
                 "directory": dataset_dir.as_posix(),
-                "experiments": dataset_experiments,
+                "experiments": get_experiment_details,
                 "id": 1,
                 "identifiers": dataset_ids,
                 "immutable": False,
@@ -106,107 +249,13 @@ def dataset_response_dict(
 
 
 @fixture
-def experiment_response_dict(
-    experiment_ids: list[str],
-    experiment_description: str,
-    experiment_institution: str,
-    experiment_name: str,
-    experiment_url: str,
-    experiment_uri: URI,
-):
-    return {
-        "meta": {
-            "limit": 20,
-            "next": None,
-            "offset": 0,
-            "previous": None,
-            "total_count": 1,
-        },
-        "objects": [
-            {
-                "approved": False,
-                "authors": [],
-                "created_by": "api/v1/user/1/",
-                "created_time": "2000-01-01T00:00:00",
-                "datafile_count": 2,
-                "dataset_count": 1,
-                "description": experiment_description,
-                "end_time": None,
-                "experiment_size": 1000000,
-                "handle": None,
-                "id": 1,
-                "identifiers": experiment_ids,
-                "institution_name": experiment_institution,
-                "locked": False,
-                "owner_ids": [
-                    1,
-                    2,
-                ],
-                "parameter_sets": [],
-                "public_access": 1,
-                "resource_uri": experiment_uri,
-                "start_time": "2000-01-01T00:00:00",
-                "tags": [],
-                "title": experiment_name,
-                "update_time": "2000-01-01T00:00:00",
-                "url": experiment_url,
-            }
-        ],
-    }
-
-
-@fixture
-def project_response_dict(
-    project_ids: list[str],
-    project_description: str,
-    project_institutions: list[str],
-    project_name: str,
-    project_principal_investigator: str,
-    project_url: str,
-):
-    return {
-        "meta": {
-            "limit": 20,
-            "next": None,
-            "offset": 0,
-            "previous": None,
-            "total_count": 1,
-        },
-        "objects": [
-            {
-                "created_by": "api/v1/user/1/",
-                "datafile_count": 2,
-                "dataset_count": 1,
-                "description": project_description,
-                "embargo_until": None,
-                "end_time": None,
-                "experiment_count": 1,
-                "id": 1,
-                "identifiers": project_ids,
-                "institution": project_institutions,
-                "locked": False,
-                "name": project_name,
-                "parameter_sets": [],
-                "principal_investigator": project_principal_investigator,
-                "public_access": 1,
-                "resource_uri": "/api/v1/project/1/",
-                "size": 1000000,
-                "start_time": "2000-01-01T00:00:00",
-                "tags": [],
-                "url": project_url,
-            }
-        ],
-    }
-
-
-@fixture
 def instrument_response_dict(
     instrument_uri: URI,
     instrument_ids: list[str],
     created_time_datetime: datetime,
     modified_time_datetime: datetime,
     instrument_name: str,
-):
+) -> Dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -245,7 +294,7 @@ def instrument_response_dict(
 
 
 @fixture
-def introspection_response_dict():
+def introspection_response_dict() -> Dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -277,12 +326,12 @@ def introspection_response_dict():
 
 @fixture
 def institution_response_dict(
-    institution_uri,
-    institution_address,
-    institution_ids,
-    institution_country,
-    institution_name,
-):
+    institution_uri: URI,
+    institution_address: str,
+    institution_ids: List[str],
+    institution_country: str,
+    institution_name: str,
+) -> Dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -306,11 +355,11 @@ def institution_response_dict(
 
 @fixture
 def storage_box_response_dict(
-    storage_box_description,
-    storage_box_name,
+    storage_box_description: str,
+    storage_box_name: str,
     storage_box_dir: Path,
-    storage_box_uri,
-):
+    storage_box_uri: URI,
+) -> Dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -346,7 +395,7 @@ def storage_box_response_dict(
 @fixture
 def project_creation_response_dict(
     project: Project, project_uri: URI, institution_uri: URI, user_uri: URI
-):
+) -> Dict[str, Any]:
     return {
         "created_by": user_uri,
         "datafile_count": 2,
@@ -375,13 +424,13 @@ def project_creation_response_dict(
 
 @fixture
 def response_by_substring(
-    response_dict_not_found,
-    dataset_response_dict,
-    experiment_response_dict,
-    project_response_dict,
-    datafile_response_dict,
-):
-    def _get_response_dict(substring: URLSubstring):
+    response_dict_not_found: Dict[str, Any],
+    dataset_response_dict: Dict[str, Any],
+    experiment_response_dict: Dict[str, Any],
+    project_response_dict: Dict[str, Any],
+    datafile_response_dict: Dict[str, Any],
+) -> Callable[[URLSubstring], Any]:
+    def _get_response_dict(substring: URLSubstring) -> Dict[str, Any]:
         match substring:
             case URLSubstring.PROJECT:
                 return project_response_dict

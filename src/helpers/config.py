@@ -12,18 +12,11 @@ the environment automatically and verifies their types and values.
 
 import logging
 from pathlib import Path
-import sys
-from typing import Literal, Optional
+from typing import Dict, Optional
 from urllib.parse import urljoin
 
-from pydantic import (
-    AnyUrl,
-    BaseModel,
-    BaseSettings,
-    HttpUrl,
-    PrivateAttr,
-    ValidationError,
-)
+from pydantic import AnyUrl, BaseModel, BaseSettings, HttpUrl, PrivateAttr
+from requests import PreparedRequest
 from requests.auth import AuthBase
 
 from src.helpers.enumerators import MyTardisObject
@@ -35,11 +28,12 @@ class GeneralConfig(BaseModel):
     """MyTardis general config
 
     Attributes:
-        default_institution : Optional[str]
-            name of the default institution
+        default_institution (Optional[str]): name of the default institution
+        source_directory: The root directory to the data source.
     """
 
     default_institution: Optional[str]
+    source_directory: Path
 
 
 class AuthConfig(BaseModel, AuthBase):
@@ -62,7 +56,9 @@ class AuthConfig(BaseModel, AuthBase):
     username: str
     api_key: str
 
-    def __call__(self, r):  # pylint: disable=invalid-name
+    def __call__(
+        self, r: PreparedRequest
+    ) -> PreparedRequest:  # pylint: disable=invalid-name
         """Return an authorisation header for MyTardis"""
         r.headers["Authorization"] = f"ApiKey {self.username}:{self.api_key}"
         return r
@@ -135,22 +131,19 @@ class SchemaConfig(BaseModel):
 
 
 class StorageConfig(BaseModel):
-    """MyTardis storage configuration.
+    """MyTardis storage box configuration.
 
-    Pydantic model for Mytardis storage configuration.
+    Pydantic model for Mytardis storage configuration. Contains enough information
+    to allow for the creation of a storage box via the project API.
 
     Attributes:
-        source_directory : Path
-            file location on the ingestion source
-        target_directory : Path
-            file location on remote storage
-        box : str
-            name of the storage box
+        target_directory (Path): file location on remote storage
+        name (str): name of the storage box
     """
 
-    source_directory: Path
-    target_directory: Path
-    box: str
+    storage_class: str = "django.core.files.storage.FileSystemStorage"
+    options: Optional[Dict[str, str]]
+    attributes: Optional[Dict[str, str]]
 
 
 class IntrospectionConfig(BaseModel):
@@ -195,6 +188,8 @@ class ConfigFromEnv(BaseSettings):
             instance of Pydantic storage model
         default_schema : SchemaConfig
             instance of Pydantic schema model
+        archive: TimeOffsetConfig
+            instance of Pydantic time offset model
 
     Properties:
         mytardis_setup : Optional[IntrospectionConfig] (default: None)
@@ -206,6 +201,7 @@ class ConfigFromEnv(BaseSettings):
     ```
     # Genral
     GENERAL__DEFAULT_INSTITUTION=University of Auckland
+    GENERAL__SOURCE_DIRECTORY=~/api_data
     #Auth, prefix with AUTH__
     AUTH__USERNAME=ltro982
     AUTH__API_KEY=lukas-test-key
@@ -214,14 +210,18 @@ class ConfigFromEnv(BaseSettings):
     #CONNECTION__PROXY__HTTP=
     #CONNECTION__PROXY__HTTPS=
     # Storage, prefix with STORAGE__
-    STORAGE__SOURCE_DIRECTORY=~/api_data
-    STORAGE__TARGET_DIRECTORY=/srv/mytardis
-    STORAGE__BOX=new box at /srv/mytardis
+    STORAGE__STORAGE_BOX__STORAGE_CLASS=django..core.files.storage.FileSystemStorage
+    STORAGE__STORAGE_BOX__OPTIONS__KEY=value
+    STORAGE__STORAGE_BOX__ATTRIBUTES__KEY=value
     # Schema, prefix with MYTARDIS_SCHEMA__
     # DEFAULT_SCHEMA__PROJECT=https://test.test.com
     # DEFAULT_SCHEMA__EXPERIMENT=
     # DEFAULT_SCHEMA__DATASET=
     # DEFAULT_SCHEMA__DATAFILE=
+    # Archive, prefix with ARCHIVE__
+    ARCHIVE__STORAGE_BOX__STORAGE_CLASS=django.core.files.storage.FileSystemStorage
+    ARCHIVE__STORAGE_BOX__OPTIONS__KEY=value
+    ARCHIVE__STORAGE_BOX__ATTRIBUTES__KEY=value
     ```
     ## Example
     ```python
@@ -235,6 +235,7 @@ class ConfigFromEnv(BaseSettings):
     connection: ConnectionConfig
     storage: StorageConfig
     default_schema: SchemaConfig
+    archive: StorageConfig
 
     class Config:
         """Pydantic config to enable .env file support"""

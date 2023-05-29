@@ -115,7 +115,7 @@ class IngestionFactory:
                 overseer=overseer,
                 general=config.general,
                 default_schema=config.default_schema,
-                storage=config.storage,
+                active_store=config.storage,
             )
         )
         self.crucible = crucible if crucible else Crucible(overseer)

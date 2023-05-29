@@ -1,5 +1,8 @@
 # pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
 
+from pathlib import Path
+from typing import Any, Dict, List
+
 from pytest import fixture
 
 from src.helpers.config import (
@@ -15,7 +18,7 @@ from src.helpers.config import (
 
 
 @fixture
-def processed_introspection_response():
+def processed_introspection_response() -> Dict[str, bool | List[str]]:
     return {
         "old_acls": False,
         "projects_enabled": True,
@@ -31,17 +34,30 @@ def processed_introspection_response():
 
 
 @fixture
-def general(default_institution) -> GeneralConfig:
-    return GeneralConfig(default_institution=default_institution)
+def general(
+    default_institution: str,
+    source_dir: Path,
+) -> GeneralConfig:
+    return GeneralConfig(
+        default_institution=default_institution,
+        source_directory=source_dir,
+    )
 
 
 @fixture
-def auth(username, api_key) -> AuthConfig:
+def auth(
+    username: str,
+    api_key: str,
+) -> AuthConfig:
     return AuthConfig(username=username, api_key=api_key)
 
 
 @fixture
-def connection(hostname, proxies, verify_certificate) -> ConnectionConfig:
+def connection(
+    hostname: str,
+    proxies: Dict[str, str],
+    verify_certificate: bool,
+) -> ConnectionConfig:
     return ConnectionConfig(
         hostname=hostname,
         proxy=ProxyConfig(http=proxies["http"], https=proxies["https"]),
@@ -50,17 +66,37 @@ def connection(hostname, proxies, verify_certificate) -> ConnectionConfig:
 
 
 @fixture
-def storage(storage_box, source_dir, target_dir) -> StorageConfig:
+def storage(
+    storage_class: str,
+    storage_options: Dict[str, Any],
+    storage_attributes: Dict[str, Any],
+) -> StorageConfig:
     return StorageConfig(
-        box=storage_box.name,
-        source_directory=source_dir,
-        target_directory=target_dir,
+        storage_class=storage_class,
+        options=storage_options,
+        attributes=storage_attributes,
+    )
+
+
+@fixture
+def archive(
+    archive_class: str,
+    archive_options: Dict[str, Any],
+    archive_attributes: Dict[str, Any],
+) -> StorageConfig:
+    return StorageConfig(
+        storage_class=archive_class,
+        options=archive_options,
+        attributes=archive_attributes,
     )
 
 
 @fixture
 def default_schema(
-    project_schema, experiment_schema, dataset_schema, datafile_schema
+    project_schema: str,
+    experiment_schema: str,
+    dataset_schema: str,
+    datafile_schema: str,
 ) -> SchemaConfig:
     return SchemaConfig(
         project=project_schema,
@@ -71,7 +107,9 @@ def default_schema(
 
 
 @fixture
-def mytardis_setup(processed_introspection_response) -> IntrospectionConfig:
+def mytardis_setup(
+    processed_introspection_response: Dict[str, bool | List[str]],
+) -> IntrospectionConfig:
     return IntrospectionConfig(
         old_acls=processed_introspection_response["old_acls"],
         projects_enabled=processed_introspection_response["projects_enabled"],
@@ -84,13 +122,15 @@ def mytardis_settings(
     general: GeneralConfig,
     auth: AuthConfig,
     connection: ConnectionConfig,
-    storage: StorageConfig,
+    active_store: StorageConfig,
+    archive: StorageConfig,
     default_schema: SchemaConfig,
 ) -> ConfigFromEnv:
     return ConfigFromEnv(
         general=general,
         auth=auth,
         connection=connection,
-        storage=storage,
+        storage=active_store,
+        archive=archive,
         default_schema=default_schema,
     )

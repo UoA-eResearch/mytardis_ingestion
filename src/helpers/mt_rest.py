@@ -10,6 +10,7 @@ from urllib.parse import urljoin
 
 import backoff
 import requests
+from requests import Response
 from requests.exceptions import RequestException
 
 from src.helpers.config import AuthConfig, ConnectionConfig
@@ -23,7 +24,9 @@ class BadGateWayException(RequestException):
     """
 
     # Included for clarity even though it is unnecessary
-    def __init__(self, response):  # pylint: disable=useless-super-delegation
+    def __init__(
+        self, response: Response
+    ) -> None:  # pylint: disable=useless-super-delegation
         super().__init__(response)
 
 
@@ -66,7 +69,7 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
 
         self.auth = auth
         self.proxies = connection.proxy.dict() if connection.proxy else None
-
+        self.hostname = connection.hostname
         self.verify_certificate = connection.verify_certificate
         self.api_template = urljoin(connection.hostname, "/api/v1/")
         self.user_agent = f"{self.user_agent_name}/2.0 ({self.user_agent_url})"
@@ -79,7 +82,7 @@ class MyTardisRESTFactory:  # pylint: disable=R0903
         data: Optional[str] = None,
         params: Optional[Dict[str, str]] = None,
         extra_headers: Optional[Dict[str, str]] = None,
-    ) -> requests.Response:
+    ) -> Response:
         """Function to handle the REST API calls
 
         Takes a REST method and url and prepares a requests request. Once the request has been

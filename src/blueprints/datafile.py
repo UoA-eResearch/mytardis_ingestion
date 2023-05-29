@@ -1,13 +1,14 @@
 # pylint: disable=too-few-public-methods,no-name-in-module
 """Pydantic model defining a Dataset for ingestion into MyTardis"""
 
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
 from pydantic import AnyUrl, BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
-from src.blueprints.custom_data_types import URI
+from src.blueprints.custom_data_types import URI, ISODateTime
 
 
 class DatafileReplica(BaseModel):
@@ -35,7 +36,11 @@ class BaseDatafile(BaseModel):
         mimetype: str
             the MIME type of the file to be ingested
         size: int
-            the size in bytes of the file to be ingested"""
+            the size in bytes of the file to be ingested
+        archive_date: ISODateTime
+            the date that the datafile will be automatically archived
+        delete_date: ISODateTime
+            the date that the datafile is able to be deleted"""
 
     filename: str
     directory: Path
@@ -53,14 +58,21 @@ class RawDatafile(BaseDatafile):
     dataset: str
     metadata: Optional[Dict[str, str | int | float | bool]] = None
     object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
+    archive_date: Optional[datetime] = None
+    delete_date: Optional[datetime] = None
+    archive_offset: Optional[int] = None
+    delete_offset: Optional[int] = None
 
 
 class RefinedDatafile(BaseDatafile):
     """Concrete class for raw data as read in from the metadata file."""
 
     dataset: str
-    replicas: List[DatafileReplica]
     parameter_sets: Optional[ParameterSet] = None
+    archive_date: Optional[datetime | int] = None
+    delete_date: Optional[datetime | int] = None
+    archive_offset: Optional[int] = None
+    delete_offset: Optional[int] = None
 
 
 class Datafile(BaseDatafile):
@@ -69,3 +81,5 @@ class Datafile(BaseDatafile):
     replicas: List[DatafileReplica]
     parameter_sets: Optional[ParameterSet] = None
     dataset: URI
+    archive_date: ISODateTime
+    delete_date: ISODateTime

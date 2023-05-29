@@ -1,6 +1,9 @@
+"""Tests of the ingestion factory as a whole"""
+# pylint: disable=missing-function-docstring
 import logging
-from typing import Literal
+from typing import Any, Callable, Literal
 from unittest.mock import MagicMock, Mock
+
 import pytest
 from pytest import fixture
 
@@ -32,7 +35,7 @@ from src.helpers.mt_rest import MyTardisRESTFactory
 from src.ingestion_factory import IngestionFactory
 from src.ingestion_factory.factory import IngestionResult
 from src.overseers.overseer import Overseer
-from src.smelters import Smelter
+from src.smelters.smelter import Smelter
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -40,15 +43,28 @@ logger.propagate = True
 # pylint: disable=missing-function-docstring
 
 
-@fixture
-def mock_ingestion_factory(
+@fixture(name="mock_ingestion_factory")
+def fixture_mock_ingestion_factory(
     mytardis_settings: ConfigFromEnv,
     rest_factory: MyTardisRESTFactory,
     overseer: Overseer,
     smelter: Smelter,
     crucible: Crucible,
     forge: Forge,
-):
+) -> Callable[
+    [
+        Literal[
+            MyTardisObject.PROJECT,
+            MyTardisObject.EXPERIMENT,
+            MyTardisObject.DATASET,
+            MyTardisObject.DATAFILE,
+        ],
+        Mock,
+        Mock,
+        Mock,
+    ],
+    Any,
+]:
     def _get_mock_ingestion_factory(
         object_type: Literal[
             MyTardisObject.PROJECT,
@@ -59,24 +75,24 @@ def mock_ingestion_factory(
         smelter_method_mock: Mock = MagicMock(return_value=None),
         crucible_method_mock: Mock = MagicMock(return_value=None),
         forge_method_mock: Mock = MagicMock(return_value=(None, None)),
-    ):
+    ) -> IngestionFactory:
         match object_type:
             case MyTardisObject.PROJECT:
-                smelter.smelt_project = smelter_method_mock
-                crucible.prepare_project = crucible_method_mock
-                forge.forge_project = forge_method_mock
+                smelter.smelt_project = smelter_method_mock  # type: ignore[method-assign]
+                crucible.prepare_project = crucible_method_mock  # type: ignore[method-assign]
+                forge.forge_project = forge_method_mock  # type: ignore[method-assign]
             case MyTardisObject.EXPERIMENT:
-                smelter.smelt_experiment = smelter_method_mock
-                crucible.prepare_experiment = crucible_method_mock
-                forge.forge_experiment = forge_method_mock
+                smelter.smelt_experiment = smelter_method_mock  # type: ignore[method-assign]
+                crucible.prepare_experiment = crucible_method_mock  # type: ignore[method-assign]
+                forge.forge_experiment = forge_method_mock  # type: ignore[method-assign]
             case MyTardisObject.DATASET:
-                smelter.smelt_dataset = smelter_method_mock
-                crucible.prepare_dataset = crucible_method_mock
-                forge.forge_dataset = forge_method_mock
+                smelter.smelt_dataset = smelter_method_mock  # type: ignore[method-assign]
+                crucible.prepare_dataset = crucible_method_mock  # type: ignore[method-assign]
+                forge.forge_dataset = forge_method_mock  # type: ignore[method-assign]
             case MyTardisObject.DATAFILE:
-                smelter.smelt_datafile = smelter_method_mock
-                crucible.prepare_datafile = crucible_method_mock
-                forge.forge_datafile = forge_method_mock
+                smelter.smelt_datafile = smelter_method_mock  # type: ignore[method-assign]
+                crucible.prepare_datafile = crucible_method_mock  # type: ignore[method-assign]
+                forge.forge_datafile = forge_method_mock  # type: ignore[method-assign]
 
         return IngestionFactory(
             config=mytardis_settings,

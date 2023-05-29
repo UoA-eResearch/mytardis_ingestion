@@ -55,7 +55,6 @@ def test_extract_parameters_object_schema_none(
     )
 
 
-@pytest.mark.dependency(depends=["test_extract_parameters"])
 def test_smelt_project(
     smelter: Smelter,
     raw_project: RawProject,
@@ -81,7 +80,6 @@ def test_smelt_project_projects_disabled(
     assert error_str in caplog.text
 
 
-@pytest.mark.dependency(depends=["test_extract_parameters"])
 def test_smelt_project_object_use_default_schema(
     smelter: Smelter,
     raw_project: RawProject,
@@ -109,7 +107,6 @@ def test_smelt_project_no_schema(caplog, smelter: Smelter, raw_project: RawProje
     assert error_str in caplog.text
 
 
-@pytest.mark.dependency(depends=["test_extract_parameters"])
 def test_smelt_project_use_default_institution(
     smelter: Smelter,
     raw_project: RawProject,
@@ -141,7 +138,6 @@ def test_smelt_project_no_institution(
     assert error_str in caplog.text
 
 
-@pytest.mark.dependency(depends=["test_extract_parameters"])
 def test_smelt_experiment(
     smelter: Smelter,
     raw_experiment: RawExperiment,
@@ -158,7 +154,7 @@ def test_smelt_experiment_projects_enabled(
     caplog, smelter: Smelter, raw_experiment: RawExperiment
 ):
     caplog.set_level(logging.WARNING)
-    error_str = "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided " #pylint: disable=line-too-long
+    error_str = "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided "  # pylint: disable=line-too-long
     raw_experiment.projects = None
     if not smelter.overseer.mytardis_setup.projects_enabled:
         smelter.overseer.mytardis_setup.projects_enabled = True
@@ -167,7 +163,6 @@ def test_smelt_experiment_projects_enabled(
     assert error_str in caplog.text
 
 
-@pytest.mark.dependency(depends=["test_extract_parameters"])
 def test_smelt_experiment_object_use_default_schema(
     smelter: Smelter,
     raw_experiment: RawExperiment,
@@ -197,7 +192,6 @@ def test_smelt_experiment_no_schema(
     assert error_str in caplog.text
 
 
-@pytest.mark.dependency(depends=["test_extract_parameters"])
 def test_smelt_experiment_use_default_institution(
     smelter: Smelter,
     raw_experiment: RawExperiment,
@@ -226,7 +220,6 @@ def test_smelt_experiment_no_institution(
     assert error_str in caplog.text
 
 
-@pytest.mark.dependency(depends=["test_extract_parameters"])
 def test_smelt_dataset(
     smelter: Smelter,
     raw_dataset: RawDataset,
@@ -239,7 +232,6 @@ def test_smelt_dataset(
     )
 
 
-@pytest.mark.dependency(depends=["test_extract_parameters"])
 def test_smelt_dataset_use_default_schema(
     smelter: Smelter,
     raw_dataset: RawDataset,
@@ -267,43 +259,19 @@ def test_smelt_dataset_no_schema(caplog, smelter: Smelter, raw_dataset: RawDatas
     assert error_str in caplog.text
 
 
-@pytest.mark.dependency(depends=["test_extract_parameters"])
-@responses.activate
 def test_smelt_datafile(
     smelter: Smelter,
     raw_datafile: RawDatafile,
     refined_datafile: RefinedDatafile,
-    connection: ConnectionConfig,
-    storage: StorageConfig,
-    storage_box_response_dict,
 ):
-    url = urljoin(connection.api_template, "storagebox")
-    responses.get(
-        url,
-        match=[matchers.query_param_matcher({"name": storage.box})],
-        status=200,
-        json=(storage_box_response_dict),
-    )
     assert smelter.smelt_datafile(raw_datafile) == refined_datafile
 
 
-@pytest.mark.dependency(depends=["test_extract_parameters"])
-@responses.activate
 def test_smelt_datafile_use_default_schema(
     smelter: Smelter,
     raw_datafile: RawDatafile,
     refined_datafile: RefinedDatafile,
-    connection: ConnectionConfig,
-    storage: StorageConfig,
-    storage_box_response_dict,
 ):
-    url = urljoin(connection.api_template, "storagebox")
-    responses.get(
-        url,
-        match=[matchers.query_param_matcher({"name": storage.box})],
-        status=200,
-        json=(storage_box_response_dict),
-    )
     raw_datafile.object_schema = None
 
     result = smelter.smelt_datafile(raw_datafile)

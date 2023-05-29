@@ -37,25 +37,57 @@ class Parameter(BaseModel):
     name: str
     value: Union[str, int, float, bool]
 
-    def __lt__(self, other) -> bool:
-        if not self.name == other.name:
+    def __lt__(self, other: "Parameter") -> bool:
+        if self.name != other.name:
             return self.name < other.name
-        return self.value < other.value
+        if isinstance(self.value, (int, float)) and isinstance(
+            other.value, (int, float)
+        ):
+            return self.value < other.value
+        if isinstance(self.value, str) and isinstance(other.value, str):
+            return self.value < other.value
+        if isinstance(self.value, bool) and isinstance(other.value, bool):
+            return self.value and other.value
+        raise ValueError("Trying to compare different value types")
 
-    def __gt__(self, other) -> bool:
-        if not self.name == other.name:
+    def __gt__(self, other: "Parameter") -> bool:
+        if self.name != other.name:
             return self.name > other.name
-        return self.value > other.value
+        if isinstance(self.value, (int, float)) and isinstance(
+            other.value, (int, float)
+        ):
+            return self.value > other.value
+        if isinstance(self.value, str) and isinstance(other.value, str):
+            return self.value > other.value
+        if isinstance(self.value, bool) and isinstance(other.value, bool):
+            return self.value and other.value
+        raise ValueError("Trying to compare different value types")
 
-    def __le__(self, other) -> bool:
-        if not self.name == other.name:
+    def __le__(self, other: "Parameter") -> bool:
+        if self.name != other.name:
             return self.name <= other.name
-        return self.value <= other.value
+        if isinstance(self.value, (int, float)) and isinstance(
+            other.value, (int, float)
+        ):
+            return self.value <= other.value
+        if isinstance(self.value, str) and isinstance(other.value, str):
+            return self.value <= other.value
+        if isinstance(self.value, bool) and isinstance(other.value, bool):
+            return self.value and other.value
+        raise ValueError("Trying to compare different value types")
 
-    def __ge__(self, other) -> bool:
-        if not self.name == other.name:
+    def __ge__(self, other: "Parameter") -> bool:
+        if self.name != other.name:
             return self.name >= other.name
-        return self.value >= other.value
+        if isinstance(self.value, (int, float)) and isinstance(
+            other.value, (int, float)
+        ):
+            return self.value >= other.value
+        if isinstance(self.value, str) and isinstance(other.value, str):
+            return self.value >= other.value
+        if isinstance(self.value, bool) and isinstance(other.value, bool):
+            return self.value and other.value
+        raise ValueError("Trying to compare different value types")
 
 
 class ParameterSet(BaseModel):

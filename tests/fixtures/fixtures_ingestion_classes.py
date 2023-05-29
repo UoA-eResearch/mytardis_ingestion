@@ -1,4 +1,6 @@
 # pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
+from typing import Any, Callable
+
 import responses
 from pytest import fixture
 
@@ -21,21 +23,29 @@ from tests.fixtures.mock_rest_factory import MockMtRest
 
 
 @fixture
-def rest_factory(auth: AuthConfig, connection: ConnectionConfig):
+def rest_factory(
+    auth: AuthConfig,
+    connection: ConnectionConfig,
+) -> MyTardisRESTFactory:
     return MyTardisRESTFactory(auth, connection)
 
 
 @fixture
-def overseer(rest_factory: MyTardisRESTFactory, mytardis_setup: IntrospectionConfig):
+def overseer(
+    rest_factory: MyTardisRESTFactory,
+    mytardis_setup: IntrospectionConfig,
+) -> Overseer:
     overseer = Overseer(rest_factory)
-    overseer._mytardis_setup = mytardis_setup #pylint: disable=W0212
+    overseer._mytardis_setup = mytardis_setup  # pylint: disable=W0212
     return overseer
 
 
 @fixture
-def mock_overseer(mock_mt_rest: MockMtRest):
-    def _get_mock_overseer(mock_responses: responses.RequestsMock):
-        return Overseer(mock_mt_rest(mock_responses)) #type: ignore[operator]
+def mock_overseer(
+    mock_mt_rest: MockMtRest,
+) -> Callable[[responses.RequestsMock], Any]:
+    def _get_mock_overseer(mock_responses: responses.RequestsMock) -> Overseer:
+        return Overseer(mock_mt_rest(mock_responses))  # type: ignore[operator]
 
     return _get_mock_overseer
 
@@ -45,19 +55,30 @@ def smelter(
     overseer: Overseer,
     general: GeneralConfig,
     default_schema: SchemaConfig,
-    storage: StorageConfig,
-):
-    return Smelter(overseer, general, default_schema, storage)
+    active_store: StorageConfig,
+    archive: StorageConfig,
+) -> Smelter:
+    return Smelter(overseer, general, default_schema, active_store, archive)
 
 
 @fixture
-def forge(rest_factory: MyTardisRESTFactory):
+def forge(
+    rest_factory: MyTardisRESTFactory,
+) -> Forge:
     return Forge(rest_factory)
 
 
 @fixture
-def crucible(overseer: Overseer):
-    return Crucible(overseer)
+def crucible(
+    overseer: Overseer,
+    active_store: StorageConfig,
+    archive: StorageConfig,
+) -> Crucible:
+    return Crucible(
+        overseer=overseer,
+        active_stores=active_store,
+        archive=archive,
+    )
 
 
 @fixture
@@ -68,7 +89,7 @@ def factory(
     smelter: Smelter,
     forge: Forge,
     crucible: Crucible,
-):
+) -> IngestionFactory:
     return IngestionFactory(
         config=mytardis_settings,
         mt_rest=rest_factory,

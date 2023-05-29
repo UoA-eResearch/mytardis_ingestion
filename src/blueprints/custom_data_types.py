@@ -5,7 +5,7 @@ handling.
 """
 
 import re
-from datetime import datetime
+from typing import Any, Callable, Generator
 
 KNOWN_MYTARDIS_OBJECTS = [
     "datafileparameterset",
@@ -38,9 +38,14 @@ uri_regex = re.compile(r"^/api/v1/([a-z]{1,}|dataset_file)/[0-9]{1,}/$")
 iso_time_regex = re.compile(
     r"^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]+)?(Z|[+-](?:2[0-3]|[01][0-9]):[0-5][0-9])?$"  # pylint: disable=line-too-long
 )
+iso_date_regex = re.compile(
+    r"^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])"
+)
 
 
-def gen_uri_regex(object_type):  # pylint: disable=missing-function-docstring
+def gen_uri_regex(  # pylint: disable=missing-function-docstring
+    object_type: str,
+) -> str:
     return f"^/api/v1/{object_type}/[0-9]{{1,}}/"
 
 
@@ -53,7 +58,9 @@ class Username(str):
     """
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(  # type: ignore[return]
+        cls,
+    ) -> Generator[Callable[[str], str], str, str]:
         """One or more validators may be yieled which will be called in order to validate the
         input. Each validator will receive as an input the value returned from the previous
         validator. (As per the Pydantic help manual).
@@ -61,19 +68,19 @@ class Username(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value):
+    def validate(cls, value: Any) -> str:
         """Custom validator to ensure that the value is a string object and that it matches
         the regex defined for users"""
         if not isinstance(value, str):
-            raise TypeError('Unexpected type for Username: "%s"' % type(value))
-        match = user_regex.fullmatch(value.lower())
-        if not match:
+            raise TypeError(f'Unexpected type for Username: "{type(value)}"')
+        if match := user_regex.fullmatch(value.lower()):
+            return cls(f"{match.group(0)}")
+        else:
             raise ValueError(
-                'Passed string value "%s" is not a well formatted ' "Username" % (value)
+                f'Passed string value "{value}" is not a well formatted Username'
             )
-        return cls(f"{match.group(0)}")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Indicate that the username object is a username"""
         return f"Username({super().__repr__()})"
 
@@ -82,7 +89,9 @@ class URI(str):
     """Defines a MyTardis URI as a subclass of the string class"""
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(  # type: ignore[return]
+        cls,
+    ) -> Generator[Callable[[str], str], str, str]:
         """One or more validators may be yieled which will be called in order to validate the
         input. Each validator will receive as an input the value returned from the previous
         validator. (As per the Pydantic help manual).
@@ -90,23 +99,23 @@ class URI(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value):
+    def validate(cls, value: Any) -> str:
         """Custom validator to ensure that the value is a string object and that it matches
         the regex defined for users"""
         if not isinstance(value, str):
-            raise TypeError('Unexpected type for URI: "%s"' % type(value))
+            raise TypeError(f'Unexpected type for URI: "{type(value)}"')
         object_type = uri_regex.search(value.lower())
         if not object_type:
             raise ValueError(
                 'Passed string value "%s" is not a well formatted '
                 "MyTardis URI" % (value)
             )
-        object_type = object_type.group(1)
-        if not object_type.lower() in KNOWN_MYTARDIS_OBJECTS:
-            raise ValueError(f'Unknown object type: "{object_type}"')
+        object_type_str = object_type.group(1)
+        if object_type_str.lower() not in KNOWN_MYTARDIS_OBJECTS:
+            raise ValueError(f'Unknown object type: "{object_type_str}"')
         return cls(f"{value}")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Indicate that it is a URI in the __repr__"""
         return f"URI({super().__repr__()})"
 
@@ -118,7 +127,9 @@ class ISODateTime(str):
     """
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(  # type: ignore[return]
+        cls,
+    ) -> Generator[Callable[[str], str], str, str]:
         """One or more validators may be yieled which will be called in order to validate the
         input. Each validator will receive as an input the value returned from the previous
         validator. (As per the Pydantic help manual).
@@ -126,23 +137,21 @@ class ISODateTime(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value):
+    def validate(cls, value: Any) -> str:
         """Custom validator to ensure that the value is a string object and that it matches
         the regex defined for an ISO 8601 formated datestime string"""
         if not isinstance(value, str):
-            raise TypeError(
-                'Unexpected type for ISO date/time stamp: "%s"' % type(value)
-            )
-        match = iso_time_regex.fullmatch(value)
-        if not match:
+            raise TypeError(f'Unexpected type for ISO date/time stamp: "{type(value)}"')
+        if match := iso_time_regex.fullmatch(value):  # pylint: disable=unused-variable
+            return cls(f"{value}")
+        else:
             raise ValueError(
                 'Passed string value "%s" is not an ISO 8601 formatted '
                 "date/time string. Format should follow "
                 "YYYY-MM-DDTHH:MM:SS.SSSSSS+HH:MM convention" % (value)
             )
-        return cls(f"{value}")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Indicate that it is a formatted ISODateTime string via __repr__"""
         return f"ISODateTime({super().__repr__()})"
 
@@ -163,7 +172,9 @@ class BaseObjectType(str):
     ]
 
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(  # type: ignore[return]
+        cls,
+    ) -> Generator[Callable[[str], str], str, str]:
         """One or more validators may be yieled which will be called in order to validate the
         input. Each validator will receive as an input the value returned from the previous
         validator. (As per the Pydantic help manual).
@@ -171,11 +182,11 @@ class BaseObjectType(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value):
+    def validate(cls, value: Any) -> str:
         """Custom validator to ensure that the string is one of the known objects in
         MyTardis."""
         if not isinstance(value, str):
-            raise TypeError('Unexpected type for BaseObjectType "%s"' % type(value))
+            raise TypeError(f'Unexpected type for BaseObjectType "{type(value)}"')
         if value not in cls.BASE_OBJECTS:
             raise ValueError(
                 'Passed string value "%s" is not a recognised MyTardis '
@@ -183,6 +194,6 @@ class BaseObjectType(str):
             )
         return cls(f"{value}")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Indicate that it is a formatted BaseObjectType string via __repr__"""
         return f"BaseObjectType({super().__repr__()})"

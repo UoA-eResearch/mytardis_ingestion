@@ -2,17 +2,19 @@
 
 """Tests of the Overseer class and its functions"""
 import logging
+from typing import Any, Dict
 from urllib.parse import urljoin
 
 import mock
 import pytest
 import responses
+from pytest import LogCaptureFixture
 from requests import HTTPError
 from responses import matchers
 
-from src.blueprints import StorageBox
 from src.blueprints.custom_data_types import URI
-from src.helpers.config import ConfigFromEnv, ConnectionConfig, IntrospectionConfig
+from src.blueprints.storage_boxes import StorageBox
+from src.helpers.config import ConnectionConfig, IntrospectionConfig
 from src.helpers.enumerators import ObjectSearchEnum
 from src.helpers.mt_rest import MyTardisRESTFactory
 from src.overseers import Overseer
@@ -21,22 +23,24 @@ logger = logging.getLogger(__name__)
 logger.propagate = True
 
 
-@pytest.fixture
-def overseer_plain(
-    rest_factory: MyTardisRESTFactory, mytardis_setup: IntrospectionConfig
-):
+@pytest.fixture(name="overseer_plain")
+def fixture_overseer_plain(
+    rest_factory: MyTardisRESTFactory,
+) -> Overseer:
     return Overseer(rest_factory)
 
 
-def test_staticmethod_resource_uri_to_id():
+def test_staticmethod_resource_uri_to_id() -> None:
     test_uri = URI("/v1/user/10/")
     assert Overseer.resource_uri_to_id(test_uri) == 10
 
 
 @responses.activate
 def test_get_objects(
-    overseer: Overseer, connection: ConnectionConfig, project_response_dict
-):
+    overseer: Overseer,
+    connection: ConnectionConfig,
+    project_response_dict: dict[str, Any],
+) -> None:
     object_type = ObjectSearchEnum.PROJECT.value
     search_string = "Project_1"
     responses.add(
@@ -72,10 +76,10 @@ def test_get_objects(
 
 @responses.activate
 def test_get_objects_http_error(
-    caplog,
+    caplog: LogCaptureFixture,
     connection: ConnectionConfig,
     overseer: Overseer,
-):
+) -> None:
     object_type = ObjectSearchEnum.PROJECT.value
     search_string = "Project_1"
     responses.add(
@@ -116,10 +120,10 @@ def test_get_objects_http_error(
 
 @mock.patch("src.helpers.mt_rest.MyTardisRESTFactory.mytardis_api_request")
 def test_get_objects_general_error(
-    mock_mytardis_api_request,
-    caplog,
+    mock_mytardis_api_request: Any,
+    caplog: LogCaptureFixture,
     overseer: Overseer,
-):
+) -> None:
     mock_mytardis_api_request.side_effect = IOError()
     object_type = ObjectSearchEnum.PROJECT.value
     search_string = "Project_1"
@@ -140,8 +144,8 @@ def test_get_objects_general_error(
 def test_get_objects_no_objects(
     overseer: Overseer,
     connection: ConnectionConfig,
-    response_dict_not_found,
-):
+    response_dict_not_found: dict[str, Any],
+) -> None:
     object_type = ObjectSearchEnum.PROJECT.value
     search_string = "Project_1"
     responses.add(
@@ -180,8 +184,8 @@ def test_get_objects_no_objects(
 def test_get_uris(
     connection: ConnectionConfig,
     overseer: Overseer,
-    project_response_dict,
-):
+    project_response_dict: dict[str, Any],
+) -> None:
     object_type = ObjectSearchEnum.PROJECT.value
     search_string = "Project_1"
     responses.add(
@@ -216,8 +220,8 @@ def test_get_uris(
 def test_get_uris_no_objects(
     connection: ConnectionConfig,
     overseer: Overseer,
-    response_dict_not_found,
-):
+    response_dict_not_found: dict[str, Any],
+) -> None:
     object_type = ObjectSearchEnum.PROJECT.value
     search_string = "Project_1"
     responses.add(
@@ -253,11 +257,11 @@ def test_get_uris_no_objects(
 
 @responses.activate
 def test_get_uris_malformed_return_dict(
-    caplog,
+    caplog: LogCaptureFixture,
     connection: ConnectionConfig,
     overseer: Overseer,
-    project_response_dict,
-):
+    project_response_dict: dict[str, Any],
+) -> None:
     caplog.set_level(logging.ERROR)
     test_dict = project_response_dict
     test_dict["objects"][0].pop("resource_uri")
@@ -299,10 +303,10 @@ def test_get_uris_malformed_return_dict(
 
 @responses.activate
 def test_get_uris_ensure_http_errors_caught_by_get_objects(
-    caplog,
+    caplog: LogCaptureFixture,
     connection: ConnectionConfig,
     overseer: Overseer,
-):
+) -> None:
     caplog.set_level(logging.WARNING)
     object_type = ObjectSearchEnum.PROJECT.value
     search_string = "Project_1"
@@ -343,9 +347,9 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
 
 @mock.patch("src.helpers.mt_rest.MyTardisRESTFactory.mytardis_api_request")
 def test_get_uris_general_error(
-    mock_mytardis_api_request,
+    mock_mytardis_api_request: Any,
     overseer: Overseer,
-):
+) -> None:
     mock_mytardis_api_request.side_effect = IOError()
     object_type = ObjectSearchEnum.PROJECT.value
     search_string = "Project_1"
@@ -358,12 +362,12 @@ def test_get_uris_general_error(
 
 @responses.activate
 def test_get_storagebox(
-    storage_box_response_dict,
+    storage_box_response_dict: Dict[str, str],
     overseer: Overseer,
     storage_box: StorageBox,
     storage_box_name: str,
     connection: ConnectionConfig,
-):
+) -> None:
     responses.add(
         responses.GET,
         urljoin(connection.api_template, ObjectSearchEnum.STORAGE_BOX.value["type"]),
@@ -382,12 +386,12 @@ def test_get_storagebox(
 
 @responses.activate
 def test_get_storagebox_no_storage_box_found(
-    response_dict_not_found,
-    caplog,
+    response_dict_not_found: dict[str, Any],
+    caplog: LogCaptureFixture,
     overseer: Overseer,
     storage_box_name: str,
     connection: ConnectionConfig,
-):
+) -> None:
     caplog.set_level(logging.WARNING)
     warning_str = f"Unable to locate storage box called {storage_box_name}"
     responses.add(
@@ -422,12 +426,12 @@ def test_get_storagebox_no_storage_box_found(
 
 @responses.activate
 def test_get_storagebox_too_many_returns(
-    storage_box_response_dict,
-    caplog,
+    storage_box_response_dict: Dict[str, Any],
+    caplog: LogCaptureFixture,
     overseer: Overseer,
     storage_box_name: str,
     connection: ConnectionConfig,
-):
+) -> None:
     warning_str = (
         "Unable to uniquely identify the storage box based on the "
         f"name provided ({storage_box_name}). Please check with your "
@@ -467,12 +471,12 @@ def test_get_storagebox_too_many_returns(
 
 @responses.activate
 def test_get_storagebox_no_name(
-    storage_box_response_dict,
+    storage_box_response_dict: Dict[str, Any],
     overseer: Overseer,
     storage_box_name: str,
     connection: ConnectionConfig,
-    caplog,
-):
+    caplog: LogCaptureFixture,
+) -> None:
     caplog.set_level(logging.WARNING)
     storage_box_response_dict["objects"][0].pop("name")
     warning_str = (
@@ -511,12 +515,12 @@ def test_get_storagebox_no_name(
 
 @responses.activate
 def test_get_storagebox_no_location(
-    storage_box_response_dict,
+    storage_box_response_dict: Dict[str, Any],
     overseer: Overseer,
     storage_box_name: str,
     connection: ConnectionConfig,
-    caplog,
-):
+    caplog: LogCaptureFixture,
+) -> None:
     caplog.set_level(logging.WARNING)
     storage_box_response_dict["objects"][0]["options"] = [
         {"key": "not_location", "value": "Nothing"},
@@ -554,13 +558,13 @@ def test_get_storagebox_no_location(
 
 @responses.activate
 def test_get_storagebox_no_description(
-    storage_box_response_dict,
+    storage_box_response_dict: Dict[str, Any],
     overseer: Overseer,
-    caplog,
-    storage_box,
+    caplog: LogCaptureFixture,
+    storage_box: StorageBox,
     storage_box_name: str,
     connection: ConnectionConfig,
-):
+) -> None:
     caplog.set_level(logging.WARNING)
     storage_box_response_dict["objects"][0].pop("description")
     warning_str = f"No description given for Storage Box, {storage_box_name}"
@@ -599,10 +603,10 @@ def test_get_storagebox_no_description(
 def test_get_mytardis_setup(
     overseer_plain: Overseer,
     connection: ConnectionConfig,
-    introspection_response_dict,
-    mytardis_setup,
-):
-    assert overseer_plain._mytardis_setup is None
+    introspection_response_dict: dict[str, Any],
+    mytardis_setup: IntrospectionConfig,
+) -> None:
+    assert overseer_plain._mytardis_setup is None  # pylint: disable=protected-access
 
     responses.add(
         responses.GET,
@@ -619,8 +623,10 @@ def test_get_mytardis_setup(
 
 @responses.activate
 def test_get_mytardis_setup_http_error(
-    caplog, overseer: Overseer, connection: ConnectionConfig
-):
+    caplog: LogCaptureFixture,
+    overseer: Overseer,
+    connection: ConnectionConfig,
+) -> None:
     responses.add(
         responses.GET,
         urljoin(connection.api_template, "introspection"),
@@ -636,10 +642,10 @@ def test_get_mytardis_setup_http_error(
 
 @mock.patch("src.overseers.overseer.Overseer.get_mytardis_setup")
 def test_get_mytardis_setup_general_error(
-    mock_get_mytardis_setup,
-    caplog,
+    mock_get_mytardis_setup: Any,
+    caplog: LogCaptureFixture,
     overseer: Overseer,
-):
+) -> None:
     mock_get_mytardis_setup.side_effect = IOError()
     error_str = "Non-HTTP exception in ConfigFromEnv.get_mytardis_setup"
     with pytest.raises(IOError):
@@ -649,11 +655,11 @@ def test_get_mytardis_setup_general_error(
 
 @responses.activate
 def test_get_mytardis_setup_no_objects(
-    caplog,
+    caplog: LogCaptureFixture,
     overseer: Overseer,
     connection: ConnectionConfig,
-    response_dict_not_found,
-):
+    response_dict_not_found: dict[str, Any],
+) -> None:
     responses.add(
         responses.GET,
         urljoin(
@@ -664,7 +670,10 @@ def test_get_mytardis_setup_no_objects(
         status=200,
     )
     caplog.set_level(logging.ERROR)
-    error_str = "MyTardis introspection did not return any data when called from ConfigFromEnv.get_mytardis_setup"
+    error_str = (
+        "MyTardis introspection did not return any data when called from "
+        "ConfigFromEnv.get_mytardis_setup"
+    )
     with pytest.raises(ValueError, match=error_str):
         _ = overseer.get_mytardis_setup()
         assert error_str in caplog.text
@@ -672,11 +681,11 @@ def test_get_mytardis_setup_no_objects(
 
 @responses.activate
 def test_get_mytardis_setup_too_many_objects(
-    caplog,
+    caplog: LogCaptureFixture,
     overseer: Overseer,
     connection: ConnectionConfig,
-    introspection_response_dict,
-):
+    introspection_response_dict: dict[str, Any],
+) -> None:
     test_dict = introspection_response_dict
     test_dict["objects"].append("Some Fake Data")
     responses.add(
@@ -692,7 +701,10 @@ def test_get_mytardis_setup_too_many_objects(
     log_error_str = f"""MyTardis introspection returned more than one object when called from
         ConfigFromEnv.get_mytardis_setup\n
         Returned response was: {test_dict}"""
-    error_str = "MyTardis introspection returned more than one object when called from ConfigFromEnv.get_mytardis_setup"
+    error_str = (
+        "MyTardis introspection returned more than one object when called from "
+        "ConfigFromEnv.get_mytardis_setup"
+    )
 
     with pytest.raises(ValueError, match=error_str):
         _ = overseer.get_mytardis_setup()

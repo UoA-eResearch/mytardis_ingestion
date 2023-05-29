@@ -5,24 +5,16 @@ matching existing objects in MyTardis.
 In addition to splitting the raw dataclasses up it also injects some default values
 where appropriate"""
 import logging
-from pathlib import Path
 from typing import Optional, Tuple
 
 from pydantic import AnyUrl, ValidationError
+from slugify import slugify
 
-from src.blueprints import (
-    DatafileReplica,
-    ParameterSet,
-    RawDatafile,
-    RawDataset,
-    RawExperiment,
-    RawProject,
-    RefinedDatafile,
-    RefinedDataset,
-    RefinedExperiment,
-    RefinedProject,
-)
-from src.blueprints.common_models import Parameter
+from src.blueprints.common_models import Parameter, ParameterSet
+from src.blueprints.datafile import RawDatafile, RefinedDatafile
+from src.blueprints.dataset import RawDataset, RefinedDataset
+from src.blueprints.experiment import RawExperiment, RefinedExperiment
+from src.blueprints.project import RawProject, RefinedProject
 from src.helpers import GeneralConfig, SchemaConfig, log_if_projects_disabled
 from src.helpers.config import StorageConfig
 from src.overseers.overseer import Overseer
@@ -43,25 +35,29 @@ class Smelter:
         overseer: Overseer,
         general: GeneralConfig,
         default_schema: SchemaConfig,
-        storage: StorageConfig,
+        active_store: StorageConfig,
+        archive: StorageConfig,
     ) -> None:
         """Class initialisation to set options for dictionary processing
         Stores MyTardis set up information from the introspection API to allow the parser
         to prepare only objects that exist and to handle additional keys in the dictionaries
         gracefully.
         Args:
-            projects_enabled: a boolean flag indicating whether or not to process projects
-            objects_with_pids: a list of objects that have identifiers. Defaults to empty
-            objects_with_profiles: a list of objects that have profiles. Defaults to empty
-            default_schema: a dictionary of schema namespaces to use for projects,
-                experiments, datasets and datafiles
+            overseer (Overseer): An instance of the Overseer class for inspecting what is present in
+                MyTardis
+            general (GeneralConfig): A general configuration as a catch all for config that doesn't
+                belong elsewhere
+            default_schema (SchemaConfig): The default schema to use as a fallback if one is not
+                provided.
+            active_store (StorageConfig): The active storage for use by MyTardis
+            archive (StorageConfig): Archive storage for use by MyTardis.
         """
 
         self.overseer = overseer
-
         self.default_schema = default_schema
         self.default_institution = general.default_institution
-        self.storage = storage
+        self.active_store = active_store
+        self.archive = archive
 
     def extract_parameters(
         self,
@@ -85,6 +81,16 @@ class Smelter:
                 )
                 continue
         return ParameterSet(schema=schema, parameters=parameter_list)
+
+    def __create_storage_box_names(
+        self,
+        project_name: str,
+        archive: bool = False,
+    ) -> str:
+        """Create a storage box name if one hasn't been assigned."""
+        if archive:
+            return slugify(f"archive {project_name}")
+        return slugify(f"active {project_name}")
 
     def smelt_project(
         self, raw_project: RawProject
@@ -110,6 +116,12 @@ class Smelter:
                 "Unable to find default institution and no institution provided"
             )
             return None
+        active_stores = raw_project.active_stores
+        archives = raw_project.archives
+        if not active_stores:
+            active_stores = [self.__create_storage_box_names(raw_project.name)]
+        if not archives:
+            archives = [self.__create_storage_box_names(raw_project.name, archive=True)]
         try:
             refined_project = RefinedProject(
                 name=raw_project.name,
@@ -125,6 +137,8 @@ class Smelter:
                 start_time=raw_project.start_time,
                 end_time=raw_project.end_time,
                 embargo_until=raw_project.embargo_until,
+                active_stores=active_stores,
+                archives=archives,
             )
         except ValidationError:
             logger.warning(
@@ -155,7 +169,7 @@ class Smelter:
             and not raw_experiment.projects
         ):  # test this
             logger.warning(
-                "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided %s", # pylint: disable=line-too-long
+                "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided %s",  # pylint: disable=line-too-long
                 raw_experiment,
             )
             return None
@@ -234,42 +248,17 @@ class Smelter:
         parameters = self.extract_parameters(schema, raw_dataset)
         return (refined_dataset, parameters)
 
-    def _create_replica(self, relative_file_path: Path) -> DatafileReplica | None:
-        """Create a datafile replica using the filepath and the storage
-        box"""
-        storage_box = self.overseer.get_storage_box(self.storage.box)
-        if not storage_box:
-            logger.warning("Could not find storage box name %s", self.storage.box)
-            return None
-        try:
-            return DatafileReplica(
-                uri=relative_file_path.as_posix(),
-                location=storage_box.name,
-                protocol="file",
-            )
-        except ValidationError:
-            logger.warning(
-                "Unable to create a replica for %s",
-                relative_file_path,
-                exc_info=True,
-            )
-            return None
-
     def smelt_datafile(  # pylint: disable=too-many-return-statements
         self, raw_datafile: RawDatafile
     ) -> RefinedDatafile | None:
         """Inject the schema into the datafile dictionary if it's not
         already present.
-        Process the file path into a replica and append to the dictionary
-        Convert to a RawDatafile dataclass for validation."""
+        Convert to a RefinedDatafile dataclass for validation."""
         schema = raw_datafile.object_schema or self.default_schema.datafile
         if not schema:
             logger.warning(
                 "Unable to find default datafile schema and no schema provided"
             )
-            return None
-        replicas = self._create_replica(raw_datafile.directory)
-        if not replicas:
             return None
         parameters = self.extract_parameters(schema, raw_datafile)
         try:
@@ -282,8 +271,11 @@ class Smelter:
                 users=raw_datafile.users,
                 groups=raw_datafile.groups,
                 dataset=raw_datafile.dataset,
-                replicas=[replicas],
                 parameter_sets=parameters,
+                archive_date=raw_datafile.archive_date,
+                delete_date=raw_datafile.delete_date,
+                archive_offset=raw_datafile.archive_offset,
+                delete_offset=raw_datafile.delete_offset,
             )
         except ValidationError:
             logger.warning(
