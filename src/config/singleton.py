@@ -24,3 +24,7 @@ class Singleton(type):
                 **kwargs,
             )
         return cls._instances[cls]
+
+    def clear(cls: Any) -> None:  # sourcery skip: instance-method-first-arg-name
+        """Clear the singleton so a new instance can be instatiated."""
+        cls._instances = {}

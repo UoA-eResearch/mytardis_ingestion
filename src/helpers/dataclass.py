@@ -11,8 +11,12 @@ from src.blueprints.experiment import (
     RefinedExperiment,
 )
 from src.blueprints.project import ProjectParameterSet, RawProject, RefinedProject
-from src.helpers import ObjectEnum
-from src.helpers.enumerators import ObjectDict, ObjectPostDict, ObjectPostEnum
+from src.helpers.enumerators import (
+    ObjectDict,
+    ObjectEnum,
+    ObjectPostDict,
+    ObjectPostEnum,
+)
 
 
 def get_object_name(
