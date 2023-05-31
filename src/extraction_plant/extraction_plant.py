@@ -4,15 +4,14 @@ Pre-ingestion_factory tasks include prospecting, mining, and beneficiation.
 """
 # ---Imports
 import logging
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Optional
 
 from src.beneficiations.beneficiation import Beneficiation
-from src.config.singleton import Singleton
-from src.extraction_output_manager.ingestibles import IngestibleDataclasses
-from src.extraction_output_manager.output_manager import OutputManager
 from src.miners.miner import Miner
+from src.profiles import profile_consts as pc
+from src.profiles.output_manager import OutputManager
 from src.prospectors.prospector import Prospector
+from src.utils.ingestibles import IngestibleDataclasses
 
 
 # ---Constants
@@ -21,7 +20,7 @@ logger.setLevel(logging.DEBUG)
 
 
 # ---Code
-class ExtractionPlant(metaclass=Singleton):
+class ExtractionPlant:
     """Used for extracting data from a given profile and path. Involves prospecting, mining and beneficiating.
     Prospecting is used to check and filter out data and metadata files that can be staged for ingestion.
     Mining is used to generate metadata files that contain fields compatible with the raw dataclasses.
@@ -30,35 +29,42 @@ class ExtractionPlant(metaclass=Singleton):
 
     def __init__(
         self,
-        prospector: Union[Prospector, None],
-        miner: Union[Miner, None],
-        beneficiation: Beneficiation,
+        profile: Optional[str] = None,
+        prospector: Optional[Prospector] = None,
+        miner: Optional[Miner] = None,
+        beneficiation: Optional[Beneficiation] = None,
     ) -> None:
         """Initializes an ExtractionPlant instance with the given parameters.
 
         Args:
-            prospector (Prospector): The prospector instance.
-            miner (Miner): The miner instance.
-            beneficiation (Beneficiation): The beneficiation instance.
+            profile (str, optional): The profile name. Defaults to None.
+            prospector (Prospector, optional): The prospector instance. Defaults to None.
+            miner (Miner, optional): The miner instance. Defaults to None.
+            beneficiation (Beneficiation, optional): The beneficiation instance. Defaults to None.
 
         Returns:
             None
 
         """
-        self.prospector = prospector
-        self.miner = miner
-        self.beneficiation = beneficiation
+        self.profile = profile
+
+        if profile:
+            self.propsector = prospector if prospector else Prospector(profile)
+
+            self.miner = miner if miner else Miner(profile)
+
+        self.beneficiation = beneficiation if beneficiation else Beneficiation()
 
     def run_extraction(
-        self, pth: Path, ingest_dict: Optional[Dict[str, list[Any]]] = None
+        self,
+        pth: str,
+        file_frmt: str,
     ) -> IngestibleDataclasses:
-        """Runs the full extraction process on the given path and file format. In the absence of a custom prospector in the
-        prospector singleton and a custom miner in the miner singleton, the prospector and the miner will be skipped as this
-        assumes the IDW was used.
+        """Runs the full extraction process on the given path and file format.
 
         Args:
-            pth (Path): The path of the files.
-            ingest_dict (Optional[Dict[str, list[Any]]]): A dictionary containing metadata files to ingest. Used when IDW was used.
+            pth (str): The path of the files.
+            file_frmt (str): The file format of the metadata.
 
         Returns:
             IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
@@ -66,57 +72,59 @@ class ExtractionPlant(metaclass=Singleton):
         Raises:
             Exception: If profile for extraction is not set.
         """
-        out_man = OutputManager()
-        ing_dclasses = IngestibleDataclasses()
+        if self.profile:
+            out_man = self._prospect(self.profile, pth)
+            out_man = self._mine(self.profile, pth, out_man)
+        else:
+            logger.error("Profile not set")
+            raise Exception("Profile for extraction not set")
 
-        if self.prospector.custom_prospector:
-            out_man = self._prospect(pth, out_man)
+        ingest_dict = out_man.metadata_files_to_ingest_dict
+        ingestible_dataclasses = self._beneficiate(ingest_dict, file_frmt)
+        return ingestible_dataclasses
 
-        if self.miner.custom_miner:
-            out_man = self._mine(pth, out_man)
+    def run_extraction_with_IDW(
+        self,
+        ingest_dict: dict[str, list[str]],
+        file_frmt: str,
+    ) -> IngestibleDataclasses:
+        """Runs extraction process on the given path and file format after using the IDW.
 
-        if not ingest_dict:
-            ingest_dict = out_man.metadata_files_to_ingest_dict
-        # ingestible_dataclasses_out = self._beneficiate(ingest_dict, ing_dclasses) # Libby: changed to below
-        ingestible_dataclasses_out = self._beneficiate(pth, ing_dclasses)
-        return ingestible_dataclasses_out
+        Args:
+            ingest_dict (dict[str, list[str]]): A dictionary of ingest files.
+            file_frmt (str): The file format of the metadata.
+
+        Returns:
+            IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
+        """
+        ingestible_dataclasses = self._beneficiate(ingest_dict, file_frmt)
+        return ingestible_dataclasses
 
     def _prospect(
         self,
-        pth: Path,
-        out_man: OutputManager,
+        profile: str,
+        pth: str,
     ) -> OutputManager:
         logger.info("prospecting")
-        out_man_fnl: OutputManager = self.prospector.prospect_directory(
-            pth, True, out_man
-        )
-        return out_man_fnl
+        prospector = Prospector(profile)
+        return prospector.prospect_directory(pth)
 
-    def _mine(
-        self,
-        pth: Path,
-        out_man: OutputManager,
-    ) -> OutputManager:
+    def _mine(self, profile: str, pth: str, out_man: OutputManager) -> OutputManager:
         logger.info("mining")
-        return self.miner.mine_directory(pth, True, out_man)
+        miner = Miner(profile)
+        return miner.mine_directory(pth, True, out_man)
 
-    #    def _beneficiate(
-    #        self,
-    #        ingest_dict: Dict[str, list[Any]],
-    #        ing_dclasses: IngestibleDataclasses,
-    #    ) -> IngestibleDataclasses:
-    #        logger.info("beneficiating")
-    #        ingestible_dataclasses = self.beneficiation.beneficiation.beneficiate(ingest_dict, ing_dclasses)
-    #        return ingestible_dataclasses
-
-    # Libby: changes to IDW _beneficiate - need to test with ABI-music
     def _beneficiate(
         self,
-        ingest_dict: Dict[str, List[str]],
-        ing_dclasses: IngestibleDataclasses,
+        ingest_dict: dict[str, list[str]],
+        file_format: str,
     ) -> IngestibleDataclasses:
         logger.info("beneficiating")
-        ingestible_dataclasses = self.beneficiation.beneficiation.beneficiate(
-            pth, ing_dclasses
+        proj_files = ingest_dict[pc.PROJECT_NAME]
+        expt_files = ingest_dict[pc.EXPERIMENT_NAME]
+        dset_files = ingest_dict[pc.DATASET_NAME]
+        dfile_files = ingest_dict[pc.DATAFILE_NAME]
+        ingestible_dataclasses = self.beneficiation.beneficiate(
+            proj_files, expt_files, dset_files, dfile_files, file_format
         )
         return ingestible_dataclasses

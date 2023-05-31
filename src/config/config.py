@@ -203,6 +203,9 @@ class IntrospectionConfig(BaseModel):
 class ProfileConfig(BaseModel):
     """Profile data for extraction plant.
 
+class ProfileConfig(BaseModel):
+    """Profile data for extraction plant.
+
     Pydantic model for the extraction plant profile. This profile is used to
     determine how the prospecting and mining processes are performed.
     """
@@ -273,7 +276,5 @@ class ConfigFromEnv(BaseSettings):
     connection: ConnectionConfig
     storage: StorageConfig
     default_schema: SchemaConfig
-    # profile: ProfileConfig
-    model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", env_nested_delimiter="__"
-    )
+    archive: StorageConfig
+    profile: ProfileConfig

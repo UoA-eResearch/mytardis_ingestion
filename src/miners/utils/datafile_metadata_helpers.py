@@ -2,13 +2,11 @@
 
 import hashlib
 import mimetypes
-from pathlib import Path
-
 
 def calculate_md5sum(
-    fp: Path,
+    fp: str,
 ) -> str:
-    with fp.open(mode="rb") as f:
+    with open(fp, mode="rb") as f:
         d = hashlib.md5()
         for buf in iter(lambda: f.read(128 * 1024), b""):
             d.update(buf)
@@ -17,8 +15,6 @@ def calculate_md5sum(
 
 def determine_mimetype(
     fn: str,
-) -> str:
+) -> str | None:
     mimetype, encoding = mimetypes.guess_type(fn)
-    if not mimetype:
-        mimetype = fn.split(".")[-1]
     return mimetype

@@ -6,13 +6,13 @@
 import copy
 import json
 import logging
-from pathlib import Path
-from typing import Any, Dict, Optional
+import os
 
-from src.extraction_output_manager import output_manager as om
+from src.profiles import output_manager as om
 from src.profiles import profile_consts as pc
-from src.profiles.abi_music import abi_music_consts as amc
 from src.profiles.abi_music.miner_helpers import metadata_helpers as mh
+from src.profiles.abi_music import abi_music_consts as amc
+from typing import Optional, Any
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -28,18 +28,18 @@ class DatasetMiner:
 
     def mine_dataset_metadata(
         self,
-        path: Path,
-        dclass_struct: Dict[str, Any],
-        mappings: Dict[str, Any],
+        path: str,
+        dclass_struct: dict[str, Any],
+        mappings: dict[str, Any],
         out_man: om.OutputManager,
     ) -> om.OutputManager:
         """
         Mine dataset metadata from a given dictionary of dataset keys and mappings.
 
         Args:
-            path (Path): Path of the dataset.
-            dclass_struct (Dict[str, Any]): Dictionary of dataset keys.
-            mappings (Dict[str, Any]): Mappings of dataset keys.
+            path (str): Path of the dataset.
+            dclass_struct (dict[str, Any]): Dictionary of dataset keys.
+            mappings (dict[str, dict[str, Any]): Mappings of dataset keys.
             out_man (om.OutputManager): OutputManager object.
 
         Returns:
@@ -47,15 +47,16 @@ class DatasetMiner:
         """
         new_out_man = copy.deepcopy(out_man)
         for proj_key in dclass_struct.keys():
-            proj_pth = Path(proj_key)
             for expt_key in dclass_struct[proj_key].keys():
-                expt_pth = Path(expt_key)
                 for dset_key in dclass_struct[proj_key][expt_key].keys():
-                    dset_pth = Path(dset_key)
-                    fname = Path(dset_key + amc.METADATA_FILE_TYPE)
-                    fp = path / proj_pth / expt_pth / dset_pth / fname
-                    dset_metadata_fp = fp
-                    with dset_metadata_fp.open("r") as f:
+                    dset_metadata_fp = os.path.join(
+                        path,
+                        proj_key,
+                        expt_key,
+                        dset_key,
+                        dset_key + amc.METADATA_FILE_TYPE,
+                    )
+                    with open(dset_metadata_fp, "r") as f:
                         dset_metadata = json.load(f)
                     config_key = "config"
                     if config_key in dset_metadata:
@@ -74,10 +75,12 @@ class DatasetMiner:
                         flat_dset_metadata, mappings
                     )
                     remapped_metadata = mh.add_schema_to_metadata(remapped_metadata)
-                    fname = Path(
-                        dset_key + pc.METADATA_FILE_SUFFIX + amc.METADATA_FILE_TYPE
+                    fp = os.path.join(
+                        path,
+                        proj_key,
+                        expt_key,
+                        dset_key + pc.METADATA_FILE_SUFFIX + amc.METADATA_FILE_TYPE,
                     )
-                    fp = path / proj_pth / expt_pth / fname
                     mh.write_metadata_file(fp, remapped_metadata)
                     new_out_man.add_success_entry_to_dict(
                         fp, pc.PROCESS_MINER, "dataset metadata file written"
@@ -87,17 +90,17 @@ class DatasetMiner:
 
     def _remap_dataset_fields(
         self,
-        flattened_dict: Dict[str, str | int | float],
-        mappings: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        flattened_dict: dict[str, str | int | float],
+        mappings: dict[str, Any],
+    ) -> dict[str, Any]:
         """Remap a dataset fields according to a set of mappings.
 
         Args:
-            flattened_dict (Dict[str, str|int|float]): A dictionary of fields to remap.
-            mappings (Dict[str, Any]): A dictionary containing the mappings to remap the fields.
+            flattened_dict (dict[str, str|int|float]): A dictionary of fields to remap.
+            mappings (dict[str, Any]): A dictionary containing the mappings to remap the fields.
 
         Returns:
-            Dict[str, Any]: A dictionary of the remapped fields.
+            dict[str, Any]: A dictionary of the remapped fields.
         """
         remapped_dict = {}
         req_keys = [key for key in mappings.keys() if mappings[key][pc.REQUIRED_KEY]]
@@ -124,7 +127,7 @@ class DatasetMiner:
                 param_sets[key] = flattened_dict[key]
                 # remapped_dict[key] = flattened_dict[key]
                 if key == "SequenceID":
-                    remapped_dict["identifiers"] = [str(flattened_dict[key])]
+                    remapped_dict["identifiers"] = [flattened_dict[key]]
         param_sets["summary"] = flattened_dict["Description"]
 
         remapped_dict["experiments"] = [remapped_dict["experiments"]]
@@ -138,15 +141,15 @@ class DatasetMiner:
 
     def _flatten_dataset_dict(
         self,
-        d: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        d: dict[str, Any],
+    ) -> dict[str, Any]:
         """Flatten a dataset dictionary.
 
         Args:
-            d (Dict[str, Any]): A dictionary to flatten.
+            d (dict[str, Any]): A dictionary to flatten.
 
         Returns:
-            Dict[str, Any]: A flattened dictionary.
+            dict[str, Any]: A flattened dictionary.
         """
         flat_dset_metadata = {}
         for key, value in d.items():
