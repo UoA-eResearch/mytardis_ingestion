@@ -21,7 +21,7 @@ import logging
 import subprocess
 from pathlib import Path
 
-from src.helpers.config import ConfigFromEnv
+from src.config.config import ConfigFromEnv
 from src.ingestion_factory.factory import IngestionFactory
 from src.smelters.smelter import YAMLSmelter
 

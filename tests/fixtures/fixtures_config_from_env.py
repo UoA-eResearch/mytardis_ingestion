@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 
 from pytest import fixture
 
-from src.helpers.config import (
+from src.config.config import (
     AuthConfig,
     ConfigFromEnv,
     ConnectionConfig,

@@ -1,43 +1,47 @@
 # Old style - at some point in the future could be refactored to use the fixtures
-
+# pylint: disable=missing-function-docstring,missing-module-docstring
 import logging
+from typing import Any, Dict
 from urllib.parse import urljoin
+
+import mock
 import pytest
 import responses
+from pytest import LogCaptureFixture
+
 from src.blueprints.custom_data_types import URI
 from src.blueprints.project import Project
-
-from src.forges import Forge
-from src.helpers.config import ConnectionConfig
+from src.config.config import ConnectionConfig
+from src.forges.forge import Forge
 from src.helpers.enumerators import ObjectPostEnum
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
-test_object_name = "Test Project"
+TEST_OBJECT_NAME = "Test Project"
 
-test_object_type = "project"
+TEST_OBJECT_TYPE = "project"
 
-test_object_id = 1
+TEST_OBJECT_ID = 1
 
 
 @responses.activate
-def test_post_returns_URI_on_success(
-    caplog,
+def test_post_returns_URI_on_success(  # pylint: disable=invalid-name
+    caplog: LogCaptureFixture,
     project_uri: URI,
     connection: ConnectionConfig,
     forge: Forge,
     project: Project,
-    project_creation_response_dict,
-):
+    project_creation_response_dict: Dict[str, Any],
+) -> None:
     caplog.set_level(logging.INFO)
     responses.add(
         responses.POST,
-        urljoin(connection.api_template, test_object_type),
+        urljoin(connection.api_template, TEST_OBJECT_TYPE),
         status=200,
         json=(project_creation_response_dict),
     )
-    test_value = forge.forge_object(project, test_object_id)
+    test_value = forge.forge_object(project, TEST_OBJECT_ID)
 
     info_str = (
         f"Object: {project.name} successfully "
@@ -50,18 +54,18 @@ def test_post_returns_URI_on_success(
 
 @responses.activate
 def test_post_returns_none_on_missing_body(
-    caplog,
+    caplog: LogCaptureFixture,
     connection: ConnectionConfig,
     forge: Forge,
     project: Project,
-):
+) -> None:
     caplog.set_level(logging.INFO)
     responses.add(
         responses.POST,
-        urljoin(connection.api_template, test_object_type),
+        urljoin(connection.api_template, TEST_OBJECT_TYPE),
         status=201,
     )
-    test_value = forge.forge_object(project, test_object_id)
+    test_value = forge.forge_object(project, TEST_OBJECT_ID)
 
     info_str = (
         f"Expected a JSON return from the POST request "
@@ -73,41 +77,11 @@ def test_post_returns_none_on_missing_body(
     assert info_str in caplog.text
 
 
-# TODO I don't understand what this test is doing
-@responses.activate
-@pytest.mark.skip(reason="What does this test do?")
-def test_overwrite_updates_action(
-    caplog,
-    project_uri: URI,
-    connection: ConnectionConfig,
-    forge: Forge,
-    project: Project,
-    project_creation_response_dict,
-):
-    caplog.set_level(logging.INFO)
-    url = urljoin(connection.api_template, test_object_type)
-    # Catch any accidental POSTs - will cause test to fail if POST not PUT
-    responses.add(responses.POST, url, status=404)
-    responses.add(
-        responses.PUT,
-        urljoin(url, "1/"),
-        status=200,
-        json=(project_creation_response_dict),
-    )
-    test_value = forge.forge_object(project, test_object_id, True)
-    info_str = (
-        f"Object: {test_object_name} successfully created in MyTardis\n"
-        f"Object Type: {test_object_type}"
-    )
-    assert test_value == project_uri
-    assert info_str in caplog.text
-
-
 def test_overwrite_without_object_id_logs_warning(
-    caplog,
+    caplog: LogCaptureFixture,
     forge: Forge,
     project: Project,
-):
+) -> None:
     caplog.set_level(logging.WARNING)
     forge.forge_object(project, overwrite_objects=True)
 
@@ -120,20 +94,20 @@ def test_overwrite_without_object_id_logs_warning(
 
 @pytest.mark.dependency()
 @responses.activate
-def test_HTTPError_logs_warning(
-    caplog,
+def test_HTTPError_logs_warning(  # pylint: disable=invalid-name
+    caplog: LogCaptureFixture,
     connection: ConnectionConfig,
     forge: Forge,
     project: Project,
-):
-    url = urljoin(connection.api_template, test_object_type)
+) -> None:
+    url = urljoin(connection.api_template, TEST_OBJECT_TYPE)
     responses.add(
         responses.POST,
         url,
         status=504,
     )
     caplog.set_level(logging.WARNING)
-    test_value = forge.forge_object(project, test_object_type)
+    test_value = forge.forge_object(project)
 
     warning_str = (
         "Failed HTTP request from forge_object call\n"
@@ -145,44 +119,42 @@ def test_HTTPError_logs_warning(
 
 @pytest.mark.dependency(depends=["test_HTTPError_logs_warning"])
 @responses.activate
-def test_HTTPError_fully_logs_error_at_error(
-    caplog,
+def test_HTTPError_fully_logs_error_at_error(  # pylint: disable=invalid-name
+    caplog: LogCaptureFixture,
     connection: ConnectionConfig,
     forge: Forge,
     project: Project,
-):
-    url = urljoin(connection.api_template, test_object_type)
+) -> None:
+    url = urljoin(connection.api_template, TEST_OBJECT_TYPE)
     responses.add(
         responses.POST,
         url,
         status=504,
     )
     caplog.set_level(logging.ERROR)
-    _ = forge.forge_object(project, test_object_type)
+    _ = forge.forge_object(project)
     info_str = "504 Server Error: Gateway Timeout for url: " f"{url}"
     assert info_str in caplog.text
 
 
-def side_effect_raise_value_error(action, url, **kwargs):
-    raise ValueError
-
-
-def test_non_HTTPError_logs_error(
-    caplog,
+@mock.patch("src.helpers.mt_rest.MyTardisRESTFactory.mytardis_api_request")
+def test_non_HTTPError_logs_error(  # pylint: disable=invalid-name
+    mock_mytardis_api_request: Any,
+    caplog: LogCaptureFixture,
     connection: ConnectionConfig,
     forge: Forge,
     project: Project,
-):
-    url = urljoin(connection.api_template, test_object_type)
+) -> None:
+    url = urljoin(connection.api_template, TEST_OBJECT_TYPE)
     caplog.set_level(logging.WARNING)
-    forge.rest_factory.mytardis_api_request = side_effect_raise_value_error
+    mock_mytardis_api_request.side_effect = ValueError()
     warning_str = (
         "Non-HTTP request from forge_object call\n"
         f"Url: {url}\nAction: POST"
         f"\nData: {project.json(exclude_none=True)}"
     )
     with pytest.raises(ValueError):
-        _ = forge.forge_object(project, test_object_type)
+        _ = forge.forge_object(project)
 
     assert warning_str in caplog.text
     assert "ValueError" in caplog.text
@@ -191,20 +163,20 @@ def test_non_HTTPError_logs_error(
 @pytest.mark.parametrize("status_code", [300, 301, 302])
 @responses.activate
 def test_response_status_larger_than_300_logs_error(
-    caplog,
+    caplog: Any,
     connection: ConnectionConfig,
     status_code: int,
     forge: Forge,
     project: Project,
-):
-    url = urljoin(connection.api_template, test_object_type)
+) -> None:
+    url = urljoin(connection.api_template, TEST_OBJECT_TYPE)
     responses.add(
         responses.POST,
         url,
         status=status_code,
     )
     caplog.set_level(logging.WARNING)
-    test_value = forge.forge_object(project, test_object_type)
+    test_value = forge.forge_object(project)
     warning_str = (
         "Object not successfully created in forge_object call\n"
         f"Url: {url}\nAction: {responses.POST}\nData: {project.json(exclude_none=True)}"
@@ -216,22 +188,22 @@ def test_response_status_larger_than_300_logs_error(
 
 @responses.activate
 def test_no_uri_returns_warning(
-    caplog,
+    caplog: LogCaptureFixture,
     connection: ConnectionConfig,
     forge: Forge,
     project: Project,
-    project_creation_response_dict,
-):
+    project_creation_response_dict: Dict[str, Any],
+) -> None:
     test_response_dict_without_uri = project_creation_response_dict
     test_response_dict_without_uri.pop("resource_uri")
     responses.add(
         responses.POST,
-        urljoin(connection.api_template, test_object_type),
+        urljoin(connection.api_template, TEST_OBJECT_TYPE),
         status=200,
         json=test_response_dict_without_uri,
     )
     caplog.set_level(logging.WARNING)
-    test_value = forge.forge_object(project, test_object_type)
+    test_value = forge.forge_object(project)
     warning_str = (
         "No URI was able to be discerned when creating object: "
         f"{project.name}. Object may have "

@@ -14,7 +14,7 @@ from responses import matchers
 
 from src.blueprints.custom_data_types import URI
 from src.blueprints.storage_boxes import StorageBox
-from src.helpers.config import ConnectionConfig, IntrospectionConfig
+from src.config.config import ConnectionConfig, IntrospectionConfig
 from src.helpers.enumerators import ObjectSearchEnum
 from src.helpers.mt_rest import MyTardisRESTFactory
 from src.overseers import Overseer
@@ -26,7 +26,7 @@ logger.propagate = True
 @pytest.fixture(name="overseer_plain")
 def fixture_overseer_plain(
     rest_factory: MyTardisRESTFactory,
-) -> Overseer:
+) -> Any:
     return Overseer(rest_factory)
 
 
@@ -72,6 +72,7 @@ def test_get_objects(
         )
         == project_response_dict["objects"]
     )
+    Overseer.clear()
 
 
 @responses.activate
@@ -116,6 +117,7 @@ def test_get_objects_http_error(
         == []
     )
     assert warning_str in caplog.text
+    Overseer.clear()
 
 
 @mock.patch("src.helpers.mt_rest.MyTardisRESTFactory.mytardis_api_request")
@@ -138,6 +140,7 @@ def test_get_objects_general_error(
             search_string,
         )
         assert error_str in caplog.text
+    Overseer.clear()
 
 
 @responses.activate
@@ -178,6 +181,7 @@ def test_get_objects_no_objects(
         )
         == []
     )
+    Overseer.clear()
 
 
 @responses.activate
@@ -214,6 +218,7 @@ def test_get_uris(
         object_type,
         search_string,
     ) == [URI("/api/v1/project/1/")]
+    Overseer.clear()
 
 
 @responses.activate
@@ -253,6 +258,7 @@ def test_get_uris_no_objects(
         )
         == []
     )
+    Overseer.clear()
 
 
 @responses.activate
@@ -299,6 +305,7 @@ def test_get_uris_malformed_return_dict(
             search_string,
         )
         assert error_str in caplog.text
+    Overseer.clear()
 
 
 @responses.activate
@@ -343,6 +350,7 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
         == []
     )
     assert warning_str in caplog.text
+    Overseer.clear()
 
 
 @mock.patch("src.helpers.mt_rest.MyTardisRESTFactory.mytardis_api_request")
@@ -358,6 +366,7 @@ def test_get_uris_general_error(
             object_type,
             search_string,
         )
+    Overseer.clear()
 
 
 @responses.activate
@@ -382,6 +391,7 @@ def test_get_storagebox(
         status=200,
     )
     assert overseer.get_storage_box(storage_box_name) == storage_box
+    Overseer.clear()
 
 
 @responses.activate
@@ -422,6 +432,7 @@ def test_get_storagebox_no_storage_box_found(
     )
     assert overseer.get_storage_box(storage_box_name) is None
     assert warning_str in caplog.text
+    Overseer.clear()
 
 
 @responses.activate
@@ -467,6 +478,7 @@ def test_get_storagebox_too_many_returns(
     print(overseer.get_storage_box(storage_box_name))
     assert overseer.get_storage_box(storage_box_name) is None
     assert warning_str in caplog.text
+    Overseer.clear()
 
 
 @responses.activate
@@ -511,6 +523,7 @@ def test_get_storagebox_no_name(
     )
     assert overseer.get_storage_box(storage_box_name) is None
     assert warning_str in caplog.text
+    Overseer.clear()
 
 
 @responses.activate
@@ -554,6 +567,7 @@ def test_get_storagebox_no_location(
     )
     assert overseer.get_storage_box(storage_box_name) is None
     assert warning_str in caplog.text
+    Overseer.clear()
 
 
 @responses.activate
@@ -597,6 +611,7 @@ def test_get_storagebox_no_description(
     storage_box.description = "No description"
     assert overseer.get_storage_box(storage_box_name) == storage_box
     assert warning_str in caplog.text
+    Overseer.clear()
 
 
 @responses.activate
@@ -606,6 +621,7 @@ def test_get_mytardis_setup(
     introspection_response_dict: dict[str, Any],
     mytardis_setup: IntrospectionConfig,
 ) -> None:
+    overseer_plain._mytardis_setup = None  # pylint: disable=protected-access
     assert overseer_plain._mytardis_setup is None  # pylint: disable=protected-access
 
     responses.add(
@@ -619,6 +635,7 @@ def test_get_mytardis_setup(
     )
 
     assert overseer_plain.mytardis_setup == mytardis_setup
+    Overseer.clear()
 
 
 @responses.activate
@@ -638,6 +655,7 @@ def test_get_mytardis_setup_http_error(
     with pytest.raises(HTTPError):
         _ = overseer.get_mytardis_setup()
         assert error_str in caplog.text
+    Overseer.clear()
 
 
 @mock.patch("src.overseers.overseer.Overseer.get_mytardis_setup")
@@ -651,6 +669,7 @@ def test_get_mytardis_setup_general_error(
     with pytest.raises(IOError):
         _ = overseer.get_mytardis_setup()
         assert error_str in caplog.text
+    Overseer.clear()
 
 
 @responses.activate
@@ -677,6 +696,7 @@ def test_get_mytardis_setup_no_objects(
     with pytest.raises(ValueError, match=error_str):
         _ = overseer.get_mytardis_setup()
         assert error_str in caplog.text
+    Overseer.clear()
 
 
 @responses.activate
@@ -709,3 +729,4 @@ def test_get_mytardis_setup_too_many_objects(
     with pytest.raises(ValueError, match=error_str):
         _ = overseer.get_mytardis_setup()
         assert log_error_str in caplog.text
+    Overseer.clear()

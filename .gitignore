@@ -27,3 +27,5 @@ docs/build/
 .venv/
 
 .DS_Store
+
+settings.json

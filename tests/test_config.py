@@ -6,7 +6,7 @@ import pytest
 import responses
 from requests.exceptions import HTTPError
 
-from src.helpers.config import ConfigFromEnv
+from src.config.config import ConfigFromEnv
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
