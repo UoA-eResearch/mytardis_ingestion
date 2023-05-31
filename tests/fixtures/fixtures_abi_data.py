@@ -1,19 +1,15 @@
 # pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
-import copy
+
 import json
-import responses
+import os
 import shutil
 
-from pathlib import Path
+import responses
 from pytest import fixture
+
 from src.beneficiations import beneficiation_consts as bc
 from src.profiles import profile_consts as pc
-from src.extraction_output_manager.output_manager import OutputManager
-
-import logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
+from src.profiles.output_manager import OutputManager
 
 
 @fixture
@@ -37,79 +33,77 @@ def tmpdir_metadata():
     dir1 = None
     dir2 = None
 
-    base_pth = Path(".")
+    tempdir = "tempdir"
+    if not os.path.exists(tempdir):
+        os.mkdir(tempdir)
 
-    tempdir = base_pth / Path("tempdir")
-    if not tempdir.exists():
-        tempdir.mkdir()
+    dir1name = "dir1"
+    dir1 = os.path.join(tempdir, dir1name)
+    if not os.path.exists(dir1):
+        os.mkdir(dir1)
 
-    dir1name = Path("dir1")
-    dir1 = tempdir / dir1name
-    if not dir1.exists():
-        dir1.mkdir()
+    dir2name = "dir2"
+    dir2 = os.path.join(dir1, dir2name)
+    if not os.path.exists(dir2):
+        os.mkdir(dir2)
 
-    dir2name = Path("dir2")
-    dir2 = dir1 / dir2name
-    if not dir2.exists():
-        dir2.mkdir()
+    dir3rawname = "dir3-Raw"
+    dir3raw = os.path.join(dir2, dir3rawname)
+    if not os.path.exists(dir3raw):
+        os.mkdir(dir3raw)
 
-    dir3rawname = Path("dir3-Raw")
-    dir3raw = dir2 / dir3rawname
-    if not dir3raw.exists():
-        dir3raw.mkdir()
+    dir3deconvname = "dir3-Deconv"
+    dir3deconv = os.path.join(dir2, dir3deconvname)
+    if not os.path.exists(dir3deconv):
+        os.mkdir(dir3deconv)
 
-    dir3deconvname = Path("dir3-Deconv")
-    dir3deconv = dir2 / dir3deconvname
-    if not dir3deconv.exists():
-        dir3deconv.mkdir()
+    dirrawname = "dir-Raw"
+    dirraw = os.path.join(dir2, dirrawname)
+    if not os.path.exists(dirraw):
+        os.mkdir(dirraw)
 
-    dirrawname = Path("dir-Raw")
-    dirraw = dir2 / dirrawname
-    if not dirraw.exists():
-        dirraw.mkdir()
-
-    dir3name = Path("dir3")
+    dir3name = "dir3"
 
     dummy_data_raw = {
-        "Basename": {"Project": str(dir1name), "Sample": str(dir2name), "Sequence": str(dir3name)},
+        "Basename": {"Project": dir1name, "Sample": dir2name, "Sequence": dir3name},
         "Description": "Dummy Description",
         "SequenceID": 123456789,
         "Camera Settings": {"Fan": False, "Pixel Correction": False, "Cooling": False},
     }
 
     dummy_data_deconv = {
-        "Basename": {"Project": str(dir1name), "Sample": str(dir2name), "Sequence": str(dir3name)},
+        "Basename": {"Project": dir1name, "Sample": dir2name, "Sequence": dir3name},
         "Description": "Dummy Description",
         "SequenceID": 123456789,
         "Camera Settings": {"Fan": False, "Pixel Correction": False, "Cooling": False},
     }
 
     dummy_data_bad = {
-        "Basename": {"Project": str(dir1name), "Sample": str(dir2name), "Sequence": str(dir3name)},
+        "Basename": {"Project": dir1name, "Sample": dir2name, "Sequence": dirrawname},
         "Description": "Dummy Description",
         "SequenceID": 123456789,
         "Camera Settings": {"Fan": False, "Pixel Correction": False, "Cooling": False},
     }
 
     json_file_suffix = ".json"
-    fpRaw = dir3raw / Path(str(dir3rawname) + json_file_suffix)
-    with fpRaw.open("w") as f:
+    fpRaw = os.path.join(dir3raw, dir3rawname + json_file_suffix)
+    with open(fpRaw, "w") as f:
         json.dump(dummy_data_raw, f)
 
-    raw_datafile = dir3raw / Path("raw_datafile.txt")
-    with raw_datafile.open("w") as f:
+    raw_datafile = os.path.join(dir3raw, "raw_datafile.txt")
+    with open(raw_datafile, "w") as f:
         f.write("test data.txt")
 
-    fpDeconv = dir3deconv / Path(str(dir3deconvname) + json_file_suffix)
-    with fpDeconv.open("w") as f:
+    fpDeconv = os.path.join(dir3deconv, dir3deconvname + json_file_suffix)
+    with open(fpDeconv, "w") as f:
         json.dump(dummy_data_deconv, f)
 
-    osfile = dir3deconv / Path(".DS_Store")
-    with osfile.open("w") as f:
+    osfile = os.path.join(dir3deconv, ".DS_Store")
+    with open(osfile, "w") as f:
         f.write("")
 
-    fpBadFilePth = dirraw / Path("dir3Chicken.json")
-    with fpBadFilePth.open("w") as f:
+    fpBadFilePth = os.path.join(dirraw, "dir3Chicken.json")
+    with open(fpBadFilePth, "w") as f:
         json.dump(dummy_data_bad, f)
 
     yield tempdir, dir1name, dir2name, dirraw, osfile
@@ -124,87 +118,87 @@ def tmpdir_metadata_files():
     dir2 = None
     md_file_sfx = pc.METADATA_FILE_SUFFIX + "." + bc.JSON_FORMAT
 
-    tempdir = Path("tempdir")
-    if not tempdir.exists():
-        tempdir.mkdir()
+    tempdir = "tempdir"
+    if not os.path.exists(tempdir):
+        os.mkdir(tempdir)
 
-    dir1name = Path("dir1")
-    dir1 = tempdir / dir1name
-    if not dir1.exists():
-        dir1.mkdir()
+    dir1name = "dir1"
+    dir1 = os.path.join(tempdir, dir1name)
+    if not os.path.exists(dir1):
+        os.mkdir(dir1)
 
     dir1_md = {
         "name": "dir1",
         "description": "dummy description",
         "principal_investigator": "abcd123",
     }
-    dir1md_fp = tempdir / Path(str(dir1name) + md_file_sfx)
-    with dir1md_fp.open("w") as f:
+    dir1md_fp = os.path.join(tempdir, dir1name + md_file_sfx)
+    with open(dir1md_fp, "w") as f:
         json.dump(dir1_md, f)
 
-    dir2name = Path("dir2")
-    dir2 = dir1 / dir2name
-    if not dir2.exists():
-        dir2.mkdir()
+    dir2name = "dir2"
+    dir2 = os.path.join(dir1, dir2name)
+    if not os.path.exists(dir2):
+        os.mkdir(dir2)
 
     dir2_md = {
         "title": "dir2",
         "description": "dummy description",
     }
-    dir2md_fp = dir1 / Path(str(dir2name) + md_file_sfx)
-    with dir2md_fp.open("w") as f:
+    dir2md_fp = os.path.join(dir1, dir2name + md_file_sfx)
+    with open(dir2md_fp, "w") as f:
         json.dump(dir2_md, f)
 
-    dir3rawname = Path("dir3-Raw")
-    dir3raw = dir2 / dir3rawname
-    if not dir3raw.exists():
-        dir3raw.mkdir()
+    dir3rawname = "dir3-Raw"
+    dir3raw = os.path.join(dir2, dir3rawname)
+    if not os.path.exists(dir3raw):
+        os.mkdir(dir3raw)
 
     dir3raw_md = {
         "description": "dir3-Raw",
         "experiments": ["dir2"],
         "instrument": "some instrument",
     }
-    dir3rawmd_fp = dir2 / Path(str(dir3rawname) + md_file_sfx)
-    with dir3rawmd_fp.open("w") as f:
+    dir3rawmd_fp = os.path.join(dir2, dir3rawname + md_file_sfx)
+    with open(dir3rawmd_fp, "w") as f:
         json.dump(dir3raw_md, f)
 
-    dir3deconvname = Path("dir3-Deconv")
-    dir3deconv = dir2 / dir3deconvname
-    if not dir3deconv.exists():
-        dir3deconv.mkdir()
+    dir3deconvname = "dir3-Deconv"
+    dir3deconv = os.path.join(dir2, dir3deconvname)
+    if not os.path.exists(dir3deconv):
+        os.mkdir(dir3deconv)
 
     dir3deconv_md = {
         "description": "dir3-Deconv",
         "experiments": ["dir2"],
         "instrument": "some instrument",
     }
-    dir3deconvmd_fp = dir2 / Path(str(dir3deconvname) + md_file_sfx)
-    with dir3deconvmd_fp.open("w") as f:
+    dir3deconvmd_fp = os.path.join(dir2, dir3deconvname + md_file_sfx)
+    with open(dir3deconvmd_fp, "w") as f:
         json.dump(dir3deconv_md, f)
 
-    dfilename = Path("datafile.txt")
-    dfilepth = dir3raw / dfilename
-    with dfilepth.open("w") as f:
+    dfilename = "datafile.txt"
+    dfilepth = os.path.join(dir3raw, dfilename)
+    with open(dfilepth, "w") as f:
         f.write("test")
 
     dfileraw_md = {
         "filename": "datafile.txt",
-        "directory": str(dir3raw),
+        "directory": dir3raw,
         "md5sum": "12345678910111213",
         "mimetype": ".txt",
         "size": 123456789,
-        "dataset": str(dir3rawname),
+        "dataset": dir3rawname,
     }
-    dfilename_md_pth = dir3raw / Path(str(dfilename) + md_file_sfx)
-    with dfilename_md_pth.open("w") as f:
+    dfilename_md_pth = os.path.join(dir3raw, dfilename + md_file_sfx)
+    with open(dfilename_md_pth, "w") as f:
         json.dump(dfileraw_md, f)
 
     bad_dfileraw_md = {
         "badfield": "badvalue",
     }
-    bad_dfilename_md_pth = dir3raw / Path("bad_datafile" + md_file_sfx)
-    with bad_dfilename_md_pth.open("w") as f:
+    bad_dfilename_md_pth = os.path.join(dir3raw, "bad_datafile" + md_file_sfx)
+    with open(bad_dfilename_md_pth, "w") as f:
         json.dump(bad_dfileraw_md, f)
 
     projs = [dir1md_fp]
@@ -212,15 +206,7 @@ def tmpdir_metadata_files():
     dsets = [dir3rawmd_fp, dir3deconvmd_fp]
     dfiles = [dfilename_md_pth]
     bad_dfiles = [bad_dfilename_md_pth]
-    bnfc_data = {}
-    bnfc_data[pc.PROJECT_NAME] = projs
-    bnfc_data[pc.EXPERIMENT_NAME] = expts
-    bnfc_data[pc.DATASET_NAME] = dsets
-    bnfc_data[pc.DATAFILE_NAME] = dfiles
 
-    bad_bnfc_data = copy.deepcopy(bnfc_data)
-    bad_bnfc_data[pc.DATAFILE_NAME] = bad_dfiles
-
-    yield bnfc_data, bad_bnfc_data
+    yield projs, expts, dsets, dfiles, bad_dfiles
 
     shutil.rmtree(str(tempdir))
