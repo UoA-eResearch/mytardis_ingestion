@@ -1,27 +1,29 @@
-"""ABI JSON parser module. 
+"""JSON parser module. 
 
-Main objective of this module is to map the ABI json files to 
+Main objective of this module is to map the json files to 
 a format accepted by the mytardis_ingestion
 """
 
 
 # ---Imports
+import copy
 import json
 import logging
 
-from pydantic import AnyUrl, ValidationError
-
-from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
+from pathlib import Path
 from src.profiles import profile_consts as pc
+from src.beneficiations.parsers.parser import Parser
+from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
 from src.utils.ingestibles import IngestibleDataclasses
 from typing import Any, Optional
+
 
 # ---Constants
 logger = logging.getLogger(__name__)
 
 
 # ---Code
-class Parser:
+class JsonParser(Parser):
     """A class to parse dataclass files into IngestibleDataclasses objects."""
 
     def __init__(
@@ -31,72 +33,120 @@ class Parser:
 
     def parse(
         self,
-        proj_files: list[str],
-        expt_files: list[str],
-        dset_files: list[str],
-        dfile_files: list[str],
+        beneficiation_data: dict[str, Any],
+        ingestible_dclasses: IngestibleDataclasses,
     ) -> IngestibleDataclasses:
         """Parse dataclass files into IngestibleDataclasses objects.
 
         Args:
-            proj_files (list[str]): List of project file paths.
-            expt_files (list[str]): List of experiment file paths.
-            dset_files (list[str]): List of dataset file paths.
-            dfile_files (list[str]): List of datafile file paths.
+            beneficiation_data (dict[str, Any]): Data that contains information about the dataclasses to parse
+            ingestible_dclasses (IngestibleDataclasses): object that conatins parsed dataclasses
 
         Returns:
             IngestibleDataclasses: object containing parsed dataclass objects.
         """
+        proj_files: list[Path] = beneficiation_data[pc.PROJECT_NAME]
+        expt_files: list[Path] = beneficiation_data[pc.EXPERIMENT_NAME]
+        dset_files: list[Path] = beneficiation_data[pc.DATASET_NAME]
+        dfile_files: list[Path] = beneficiation_data[pc.DATAFILE_NAME]
 
-        ingestible_dataclasses = IngestibleDataclasses()
+        ing_dclasses : IngestibleDataclasses = copy.deepcopy(ingestible_dclasses)
+        logger.debug(f"proj_files = {str(proj_files)}")
+        projects = self._parse_project_files(proj_files)
+        ing_dclasses.add_projects(projects)
 
-        logger.debug("proj_files = {0}".format(str(proj_files)))
-        projects = self._parse_dataclass_files(proj_files, pc.PROJECT_NAME)
-        ingestible_dataclasses.add_projects(projects)
+        logger.debug(f"expt_files = {str(expt_files)}")
+        experiments = self._parse_experiment_files(expt_files)
+        ing_dclasses.add_experiments(experiments)
 
-        logger.debug("expt_files = {0}".format(str(expt_files)))
-        experiments = self._parse_dataclass_files(expt_files, pc.EXPERIMENT_NAME)
-        ingestible_dataclasses.add_experiments(experiments)
+        logger.debug(f"dset_files = {str(dset_files)}")
+        datasets = self._parse_dataset_files(dset_files)
+        ing_dclasses.add_datasets(datasets)
 
-        logger.debug("dset_files = {0}".format(str(dset_files)))
-        datasets = self._parse_dataclass_files(dset_files, pc.DATASET_NAME)
-        ingestible_dataclasses.add_datasets(datasets)
+        logger.debug(f"dfile_files = {str(dfile_files)}")
+        datafiles = self._parse_datafile_files(dfile_files)
+        ing_dclasses.add_datafiles(datafiles)
 
-        logger.debug("dfile_files = {0}".format(str(dfile_files)))
-        datafiles = self._parse_dataclass_files(dfile_files, pc.DATAFILE_NAME)
-        ingestible_dataclasses.add_datafiles(datafiles)
+        return ing_dclasses
 
-        return ingestible_dataclasses
-
-    def _parse_dataclass_files(
+    def _parse_project_files(
         self,
-        dclass_files: list[str],
-        dclass: str,
-    ) -> list[Any]:
-        """Parse a given list of dataclass files.
+        dclass_files: list[Path],
+    ) -> list[RawProject]:
+        """Parse a given list of project files.
 
         Args:
-            dclass_files (list[str]): List of dataclass file paths.
+            dclass_files (list[Path]): List of dataclass file paths.
             dclass (str): The name of the dataclass to be parsed.
 
         Returns:
-            list[Any]: List of parsed dataclass objects.
+            list[RawProject]: List of parsed RawProject objects.
         """
-        raw_dclasses: list[Any] = []
-        dclass_type: Any
-        if dclass == pc.PROJECT_NAME:
-            dclass_type = RawProject
-        elif dclass == pc.EXPERIMENT_NAME:
-            dclass_type = RawExperiment
-        elif dclass == pc.DATASET_NAME:
-            dclass_type = RawDataset
-        elif dclass == pc.DATAFILE_NAME:
-            dclass_type = RawDatafile
+        return self._parse_json_files(dclass_files, RawProject)
 
+    def _parse_experiment_files(
+        self,
+        dclass_files: list[Path],
+    ) -> list[RawExperiment]:
+        """Parse a given list of experiment files.
+
+        Args:
+            dclass_files (list[Path]): List of dataclass file paths.
+            dclass (str): The name of the dataclass to be parsed.
+
+        Returns:
+            list[RawExperiment]: List of parsed RawExperiment objects.
+        """
+        return self._parse_json_files(dclass_files, RawExperiment)
+
+    def _parse_dataset_files(
+        self,
+        dclass_files: list[Path],
+    ) -> list[RawDataset]:
+        """Parse a given list of dataset files.
+
+        Args:
+            dclass_files (list[Path]): List of dataclass file paths.
+            dclass (str): The name of the dataclass to be parsed.
+
+        Returns:
+            list[RawDataset]: List of parsed RawDataset objects.
+        """
+        return self._parse_json_files(dclass_files, RawDataset)
+
+    def _parse_datafile_files(
+        self,
+        dclass_files: list[Path],
+    ) -> list[RawDatafile]:
+        """Parse a given list of datafile files.
+
+        Args:
+            dclass_files (list[Path]): List of dataclass file paths.
+            dclass (str): The name of the dataclass to be parsed.
+
+        Returns:
+            list[RawDatafile]: List of parsed RawDatafile objects.
+        """
+        return self._parse_json_files(dclass_files, RawDatafile)
+
+    def _parse_json_files(
+        self,
+        dclass_files: list[Path],
+        dclass_type: RawProject|RawExperiment|RawDataset|RawDatafile,
+    ) -> list[RawProject|RawExperiment|RawDataset|RawDatafile]:
+        """Casts the json object into the relevant raw dataclass
+
+        Args:
+            dclass_files (list[Path]): list of filepaths of a set of raw dataclasses
+            dclass_type (RawProject | RawExperiment | RawDataset | RawDatafile): the type to parse into
+
+        Returns:
+            list[RawProject|RawExperiment|RawDataset|RawDatafile]: list of parsed raw dataclasses
+        """
+        raw_dclasses: list[RawProject|RawExperiment|RawDataset|RawDatafile] = []
         for fp in dclass_files:
-            with open(fp, "r") as f:
+            with fp.open('r') as f:
                 json_obj = json.load(f)
                 raw_dclass = dclass_type(**json_obj)
                 raw_dclasses.append(raw_dclass)
-
         return raw_dclasses

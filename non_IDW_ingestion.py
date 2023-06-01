@@ -39,7 +39,8 @@ from src.crucible import crucible
 from src.forges import forge
 from src.extraction_plant import extraction_plant
 from src.profiles import profile_consts as pc
-from src.beneficiations import beneficiation_consts as bc
+from src.beneficiations.beneficiation import Beneficiation
+from src.beneficiations.parsers.json_parser import JsonParser
 from src.helpers.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 
@@ -61,14 +62,17 @@ def main():
     ###Extraction
     pth = "Replace/This/With/Your/Ingestion/Path/Here"
     profile = "replace_this_with_your_profile_name"
-    ext_plant = extraction_plant.ExtractionPlant(profile)
-    ingestibles = ext_plant.run_extraction(pth, bc.JSON_FORMAT) #for json files
+    json_parser = JsonParser()
+    beneficiation = Beneficiation(json_parser)
+    
+   #  ext_plant = extraction_plant.ExtractionPlant(profile)
+   #  ingestibles = ext_plant.run_extraction(pth, bc.JSON_FORMAT) #for json files
 
 
     ###Ingestion
     mt_rest = MyTardisRESTFactory(config.auth, config.connection)
     overseer = Overseer(mt_rest)
-    #TODO YJ complete the rest of the template script here
+    #TODO YJ complete the rest of the template script here once the ingestion factory is renovated
 
 
 if __name__ == "__main__":
