@@ -6,9 +6,10 @@ into raw dataclasses.
 # ---Imports
 import logging
 
-from src.beneficiations import beneficiation_consts as bc
-from src.beneficiations.parsers import json_parser
+from src.config import singleton
+from src.beneficiations.parsers.parser import Parser
 from src.utils.ingestibles import IngestibleDataclasses
+from typing import Any
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -16,7 +17,7 @@ logger.setLevel(logging.DEBUG)
 
 
 # ---Code
-class Beneficiation:
+class Beneficiation(metaclass=singleton):
     """
     This class provides a means of beneficiating project, experiment, dataset and datafile files.
     It takes a list of files in the specified format and parses them into a dictionary of objects.
@@ -24,55 +25,26 @@ class Beneficiation:
 
     def __init__(
         self,
+        parser: Parser,
     ) -> None:
-        pass
+        self.parser = Parser
 
     def beneficiate(
         self,
-        proj_files: list[str],
-        expt_files: list[str],
-        dset_files: list[str],
-        dfile_files: list[str],
-        file_format: str,
+        beneficiation_data: dict[str, Any],
+        ingestible_dataclasses: IngestibleDataclasses,
     ) -> IngestibleDataclasses:
         """Parse metadata files of a given file type into raw dataclasses
 
         Args:
-            proj_files (list[str]): List of project file paths.
-            expt_files (list[str]): List of experiment file paths.
-            dset_files (list[str]): List of dataset file paths.
-            dfile_files (list[str]): List of datafile file paths.
-            file_format (str): File format of the input files.
-
-        Raises:
-            Exception: Raised when file format not supported.
+            beneficiation_data (dict[str, Any]): Data that contains information about the dataclasses to parse
+            ingestible_dataclasses (IngestibleDataclasses): A class that contains the raw datafiles, datasets, experiments, and projects.
 
         Returns:
             IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
         """
-        ingestible_dataclasses = IngestibleDataclasses()
-        if file_format == bc.JSON_FORMAT:
-            parser = json_parser.Parser()
-            ingestible_dataclasses = parser.parse(
-                proj_files, expt_files, dset_files, dfile_files
-            )
-        elif file_format == bc.YAML_FORMAT:
-            logger.error(
-                "Beneficiation file format is recognised but yet to be implemented: {0}".format(
-                    file_format
-                )
-            )
-            raise Exception(
-                "Beneficiation file format is recognised but yet to be implemented: {0}".format(
-                    file_format
-                )
-            )
-        else:
-            logger.error(
-                "Beneficiation file format not recognised: {0}".format(file_format)
-            )
-            raise Exception(
-                "Beneficiation file format not recognised: {0}".format(file_format)
-            )
-
-        return ingestible_dataclasses
+        logger.info("beneficiating")
+        ing_dclasses = ingestible_dataclasses.copy()
+        ing_dclasses_out = self.parser.parse(beneficiation_data, ing_dclasses)
+        
+        return ing_dclasses_out
