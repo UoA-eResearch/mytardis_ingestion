@@ -10,13 +10,14 @@ import os
 
 import yaml
 
+from pathlib import Path
 from src.profiles import output_manager as om
 from src.profiles.abi_music.miner_helpers.project_miner import ProjectMiner
 from src.profiles.abi_music.miner_helpers.experiment_miner import ExperimentMiner
 from src.profiles.abi_music.miner_helpers.dataset_miner import DatasetMiner
 from src.profiles.abi_music.miner_helpers.datafile_miner import DatafileMiner
 from src.profiles.abi_music.miner_helpers.dataclass_identifier import DataclassIdentifier
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -39,18 +40,18 @@ class CustomMiner:
 
     def mine(
         self,
-        path: str,
+        path: Path,
         recursive: bool = True,
         out_man: Optional[om.OutputManager] = None,
-        options: Optional[dict[str, Any]] = None,
+        options: Optional[Dict[str, Any]] = None,
     ) -> om.OutputManager:
         """Mines metadata in a path
 
         Args:
-            path (str): the path to inspect for metadata
+            path (Path): the path to inspect for metadata
             recursive (bool): True to inspect all subdirectories in path, False to inspect path only
             out_man (om.OutputManager): class which stores info of outputs of the pre-ingestion processes
-            options (dict[str, any]): extra options for the inspection
+            options (Dict[str, any]): extra options for the inspection
 
         Returns:
             om.OutputManager: output manager instance containing the outputs of the process

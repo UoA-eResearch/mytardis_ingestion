@@ -5,14 +5,14 @@
 # ---Imports
 import copy
 import logging
-import os
 
+from pathlib import Path
 from src.profiles import output_manager as om
 from src.profiles import profile_consts as pc
 from src.profiles.abi_music.miner_helpers import metadata_helpers as mh
 from src.profiles.abi_music import abi_music_consts as amc
 
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -27,18 +27,18 @@ class ExperimentMiner:
 
     def mine_experiment_metadata(
         self,
-        path: str,
-        dclass_struct: dict[str, Any],
-        mappings: dict[str, dict[str, int | str | bool | float]],
+        path: Path,
+        dclass_struct: Dict[str, Any],
+        mappings: Dict[str, Dict[str, int | str | bool | float]],
         out_man: om.OutputManager,
     ) -> om.OutputManager:
         """
         Mine experiment metadata from a given dictionary of experiment keys and mappings.
 
         Args:
-            path (str): Path of the experiment.
-            dclass_struct (dict[str, Any]): Dictionary of experiment keys.
-            mappings (dict[str, dict[str, int|str|bool|float]]): Mappings of experiment keys.
+            path (Path): Path of the experiment.
+            dclass_struct (Dict[str, Any]): Dictionary of experiment keys.
+            mappings (Dict[str, Dict[str, int|str|bool|float]]): Mappings of experiment keys.
             out_man (om.OutputManager): OutputManager object.
 
         Returns:
@@ -50,11 +50,9 @@ class ExperimentMiner:
                 metadata = self._generate_experiment_metadata(
                     proj_key, expt_key, mappings
                 )
-                fp = os.path.join(
-                    path,
-                    proj_key,
-                    expt_key + pc.METADATA_FILE_SUFFIX + amc.METADATA_FILE_TYPE,
-                )
+                proj_path = Path(proj_key)
+                f_name = Path(expt_key + pc.METADATA_FILE_SUFFIX + amc.METADATA_FILE_TYPE)
+                fp = path / proj_path / f_name
                 mh.write_metadata_file(fp, metadata)
                 new_out_man.add_success_entry_to_dict(
                     fp, pc.PROCESS_MINER, "experiment metadata file written"
@@ -66,18 +64,18 @@ class ExperimentMiner:
         self,
         proj_key: str,
         expt_key: str,
-        mappings: dict[str, Any],
-    ) -> dict[str, Any]:
+        mappings: Dict[str, Any],
+    ) -> Dict[str, Any]:
         """
         Generate experiment metadata from a given project key, experiment key and mappings.
 
         Args:
             proj_key (str): Project key.
             expt_key (str): Experiment key.
-            mappings (dict[str, Any]): Mappings of experiment keys.
+            mappings (Dict[str, Any]): Mappings of experiment keys.
 
         Returns:
-            dict[str, Any]: Dictionary of experiment metadata.
+            Dict[str, Any]: Dictionary of experiment metadata.
         """
         metadata = {}
         req_keys = [key for key in mappings.keys() if mappings[key][pc.REQUIRED_KEY]]

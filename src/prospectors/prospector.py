@@ -7,6 +7,7 @@ Prospecting checks files and metadata files for any potential issues.
 import copy
 import logging
 
+from pathlib import Path
 from src.profiles import output_manager as om
 from src.profiles import profile_selector
 from src.prospectors.common_file_checks import CommonDirectoryTreeChecks
@@ -34,7 +35,7 @@ class Prospector:
 
     def prospect_directory(
         self,
-        path: str,
+        path: Path,
         recursive: bool = True,
         out_man: Optional[om.OutputManager] = None,
     ) -> om.OutputManager:
@@ -42,7 +43,7 @@ class Prospector:
         This method prospect_directory is used to prospect a given directory for files.
 
         Parameters:
-            path (str): Path to directory.
+            path (Path): Path to directory.
             recursive (bool): Whether to recursively search for files.
             out_man (om.OutputManager): Output manager instance.
 

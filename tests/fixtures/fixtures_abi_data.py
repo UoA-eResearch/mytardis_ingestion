@@ -1,7 +1,8 @@
 # pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
-
+import copy
 import json
 import os
+import pathlib
 import shutil
 
 import responses
@@ -206,7 +207,15 @@ def tmpdir_metadata_files():
     dsets = [dir3rawmd_fp, dir3deconvmd_fp]
     dfiles = [dfilename_md_pth]
     bad_dfiles = [bad_dfilename_md_pth]
+    bnfc_data = {}
+    bnfc_data[pc.PROJECT_NAME] = projs
+    bnfc_data[pc.EXPERIMENT_NAME] = expts
+    bnfc_data[pc.DATASET_NAME] = dsets
+    bnfc_data[pc.DATAFILE_NAME] = dfiles
 
-    yield projs, expts, dsets, dfiles, bad_dfiles
+    bad_bnfc_data = copy.deepcopy(bnfc_data)
+    bad_bnfc_data[pc.DATAFILE_NAME] = bad_dfiles
+
+    yield bnfc_data, bad_bnfc_data
 
     shutil.rmtree(str(tempdir))

@@ -1,26 +1,27 @@
 """Helpers used throughout a profile in the Extraction Plant 
 """
 from src.profiles import profile_consts as pc
-from typing import Any
+from typing import Any, Dict, List
 
 
-def create_dataclass_entry_dict() -> dict[str, Any]:
-    return dict.fromkeys(pc.DATACLASS_ENTRY_DICT_KEYS)
+def create_dataclass_entry_dict() -> Dict[str, Any]:
+    return Dict.fromkeys(pc.DATACLASS_ENTRY_DICT_KEYS)
 
 
-def create_output_dict() -> dict[str, Any]:
-    return dict.fromkeys(pc.OUTPUT_DICT_KEYS)
+def create_output_dict() -> Dict[str, Any]:
+    return Dict.fromkeys(pc.OUTPUT_DICT_KEYS)
 
 
-def create_output_subdict() -> dict[str, Any]:
-    return dict.fromkeys(pc.OUTPUT_SUBDICT_KEYS)
+def create_output_subdict() -> Dict[str, Any]:
+    return Dict.fromkeys(pc.OUTPUT_SUBDICT_KEYS)
 
 
-def create_ingestion_dict() -> dict[str, Any]:
-    return dict.fromkeys(pc.DATACLASSES_LIST)
+def create_ingestion_dict() -> Dict[str, Any]:
+    return Dict.fromkeys(pc.DATACLASSES_LIST)
+
 
 def format_field_for_key_seq(
-    key_seq: list[str],
+    key_seq: List[str],
 ) -> str:
     frmtd_key = key_seq[0]
     for i in range(len(key_seq) - 1):

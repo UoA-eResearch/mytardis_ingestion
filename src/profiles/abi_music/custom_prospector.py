@@ -8,6 +8,7 @@ import json
 import logging
 import os
 
+from pathlib import Path
 from src.profiles import output_manager as om
 from src.profiles import profile_consts as pc
 from src.profiles.abi_music import abi_music_consts as amc
@@ -37,14 +38,14 @@ class CustomProspector:
 
     def inspect(
         self,
-        path: str,
+        path: Path,
         recursive: bool,
         out_man: Optional[om.OutputManager] = None,
     ) -> om.OutputManager:
         """Prospects metadata in a path
 
         Args:
-            path (str): the path to inspect for metadata
+            path (Path): the path to inspect for metadata
             recursive (bool): True to inspect all subdirectories in path, False to inspect path only
             out_man (om.OutputManager): class which stores info of outputs of the pre-ingestion processes
 

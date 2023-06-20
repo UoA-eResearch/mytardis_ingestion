@@ -5,9 +5,10 @@ extraction plant.
 # ---Imports
 import logging
 
+from pathlib import Path
 from src.profiles import profile_consts as pc
 from src.profiles import profile_helpers as ph
-from typing import Any
+from typing import Any, Dict, List, Union
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -23,13 +24,13 @@ class OutputManager:
     as the value for the 'value' subkey, a process (prospecting/mining/beneficiating) where the entry
     was made for the 'process' subkey, and notes pertaining to the value in the 'notes' subkey.
 
-    The dirs_to_ignore and files_to_ignore are used in mining and/or beneficiating where files/folders
-    from
+    The dirs_to_ignore and files_to_ignore are used in mining and/or beneficiating where the files/folders
+    have been tagged from the prospector.
 
     Attributes:
-        output_dict (dict): Stores the output results.
-        dirs_to_ignore (list): List of dirs to ignore.
-        files_to_ignore (list): List of files to ignore.
+        output_dict (Dict): Stores the output results.
+        dirs_to_ignore (List): List of dirs to ignore.
+        files_to_ignore (List): List of files to ignore.
         metadata_files_to_ingest_dict (dict): Stores the metadata files to ingest.
     """
 
@@ -37,16 +38,18 @@ class OutputManager:
         self,
     ) -> None:
         self.output_dict = self._create_output_dict()
-        self.dirs_to_ignore: list[str] = []
-        self.files_to_ignore: list[str] = []
+        self.dirs_to_ignore: List[Path] = []
+        self.files_to_ignore: List[Path] = []
         self.metadata_files_to_ingest_dict = self._create_ingestion_dict()
 
     def add_success_entry_to_dict(
         self,
-        value: str,
+        value: Union[str, Path],
         process: str,
         note: str,
     ) -> None:
+        if type(value) == Path:
+            value = str(value)
         entry_subdict = self._create_output_subdict()
         entry_subdict[pc.OUTPUT_VALUE_SUBKEY] = value
         entry_subdict[pc.OUTPUT_PROCESS_SUBKEY] = process
@@ -55,10 +58,12 @@ class OutputManager:
 
     def add_ignored_entry_to_dict(
         self,
-        value: str,
+        value: Union[str, Path],
         process: str,
         note: str,
     ) -> None:
+        if type(value) == Path:
+            value = str(value)
         entry_subdict = self._create_output_subdict()
         entry_subdict[pc.OUTPUT_VALUE_SUBKEY] = value
         entry_subdict[pc.OUTPUT_PROCESS_SUBKEY] = process
@@ -67,10 +72,12 @@ class OutputManager:
 
     def add_issues_entry_to_dict(
         self,
-        value: str,
+        value: Union[str, Path],
         process: str,
         note: str,
     ) -> None:
+        if type(value) == Path:
+            value = str(value)
         entry_subdict = self._create_output_subdict()
         entry_subdict[pc.OUTPUT_VALUE_SUBKEY] = value
         entry_subdict[pc.OUTPUT_PROCESS_SUBKEY] = process
@@ -79,39 +86,39 @@ class OutputManager:
 
     def add_dir_to_ignore(
         self,
-        dir: str,
+        dir: Path,
     ) -> None:
         self.dirs_to_ignore.append(dir)
 
     def add_file_to_ignore(
         self,
-        fp: str,
+        fp: Path,
     ) -> None:
         self.files_to_ignore.append(fp)
 
     def add_files_to_ignore(
         self,
-        files: list[str],
+        files: List[Path],
     ) -> None:
         self.files_to_ignore.extend(files)
 
     def add_metadata_file_to_ingest(
         self,
-        file: str,
+        file: Path,
         dataclass: str,
     ) -> None:
         self.metadata_files_to_ingest_dict[dataclass].append(file)
 
     def add_metadata_files_to_ingest(
         self,
-        files: list[str],
+        files: List[Path],
         dataclass: str,
     ) -> None:
         self.metadata_files_to_ingest_dict[dataclass].extend(files)
 
     def _create_output_dict(
         self,
-    ) -> dict[str, list[dict[str, str]]]:
+    ) -> Dict[str, List[Dict[str, str]]]:
         out_dict = ph.create_output_dict()
         for key in out_dict.keys():
             out_dict[key] = []
@@ -119,12 +126,12 @@ class OutputManager:
 
     def _create_output_subdict(
         self,
-    ) -> dict[str, Any]:
+    ) -> Dict[str, Any]:
         return ph.create_output_subdict()
 
     def _create_ingestion_dict(
         self,
-    ) -> dict[str, list[Any]]:
+    ) -> Dict[str, List[Any]]:
         ingestion_dict = ph.create_ingestion_dict()
         for key in ingestion_dict.keys():
             ingestion_dict[key] = []

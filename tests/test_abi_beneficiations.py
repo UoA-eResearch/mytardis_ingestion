@@ -10,30 +10,29 @@ from src.beneficiations import beneficiation_consts as bc
 from src.beneficiations.beneficiation import Beneficiation
 from src.profiles import profile_consts as pc
 from src.profiles.output_manager import OutputManager
+from src.utils.ingestibles import IngestibleDataclasses
 from tests.fixtures.fixtures_abi_data import (
     get_bad_beneficiation_format,
     tmpdir_metadata_files,
 )
+from tests.fixtures.fixtures_abi_beneficiation import (spawn_bnfc)
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
+@pytest.mark.usefixtures("tmpdir_metadata_files", "spawn_bnfc")
+def test_json_parse(tmpdir_metadata_files, spawn_bnfc):
+    bnfc = spawn_bnfc
+    ingestible_dataclasses: IngestibleDataclasses = IngestibleDataclasses()
 
-@pytest.mark.usefixtures("tmpdir_metadata_files")
-def test_json_parse(tmpdir_metadata_files):
-    bnfc = Beneficiation()
-    ingestible_dataclasses = bnfc.beneficiate(
-        tmpdir_metadata_files[0],
-        tmpdir_metadata_files[1],
-        tmpdir_metadata_files[2],
-        tmpdir_metadata_files[3],
-        bc.JSON_FORMAT,
-    )
+    ing_files = tmpdir_metadata_files[0]
+    ing_dclasses = bnfc.beneficiate(beneficiation_data = ing_files, 
+                                    ingestible_dataclasses = ingestible_dataclasses)
 
-    rawprojs = ingestible_dataclasses.get_projects()
-    rawexpts = ingestible_dataclasses.get_experiments()
-    rawdsets = ingestible_dataclasses.get_datasets()
-    rawdfiles = ingestible_dataclasses.get_datafiles()
+    rawprojs = ing_dclasses.get_projects()
+    rawexpts = ing_dclasses.get_experiments()
+    rawdsets = ing_dclasses.get_datasets()
+    rawdfiles = ing_dclasses.get_datafiles()
 
     assert len(rawprojs) == 1
     assert len(rawexpts) == 1
@@ -41,27 +40,26 @@ def test_json_parse(tmpdir_metadata_files):
     assert len(rawdfiles) == 1
 
 
-@pytest.mark.usefixtures("tmpdir_metadata_files")
-def test_bad_json_parse(tmpdir_metadata_files):
-    bnfc = Beneficiation()
+@pytest.mark.usefixtures("tmpdir_metadata_files", "spawn_bnfc")
+def test_bad_json_parse(tmpdir_metadata_files, spawn_bnfc):
+    bnfc = spawn_bnfc
+    ingestible_dataclasses: IngestibleDataclasses = IngestibleDataclasses()
+    
+    ing_files = tmpdir_metadata_files[1]
     with pytest.raises(pydantic.error_wrappers.ValidationError):
-        ingestible_dataclasses = bnfc.beneficiate(
-            tmpdir_metadata_files[0],
-            tmpdir_metadata_files[1],
-            tmpdir_metadata_files[2],
-            tmpdir_metadata_files[4],
-            bc.JSON_FORMAT,
-        )
+        ing_dclasses = bnfc.beneficiate(beneficiation_data = ing_files, 
+                                    ingestible_dataclasses = ingestible_dataclasses)
 
 
-@pytest.mark.usefixtures("tmpdir_metadata_files", "get_bad_beneficiation_format")
-def test_bad_file_format(tmpdir_metadata_files, get_bad_beneficiation_format):
-    bnfc = Beneficiation()
-    with pytest.raises(Exception):
-        ingestible_dataclasses = bnfc.beneficiate(
-            tmpdir_metadata_files[0],
-            tmpdir_metadata_files[1],
-            tmpdir_metadata_files[2],
-            tmpdir_metadata_files[4],
-            get_bad_beneficiation_format,
-        )
+
+# @pytest.mark.usefixtures("tmpdir_metadata_files", "get_bad_beneficiation_format", "spawn_bnfc")
+# def test_bad_file_format(tmpdir_metadata_files, get_bad_beneficiation_format, spawn_bnfc):
+#     bnfc = spawn_bnfc[0]
+#     with pytest.raises(Exception):
+#         ingestible_dataclasses = bnfc.beneficiate(
+#             tmpdir_metadata_files[0],
+#             tmpdir_metadata_files[1],
+#             tmpdir_metadata_files[2],
+#             tmpdir_metadata_files[4],
+#             get_bad_beneficiation_format,
+#         )
