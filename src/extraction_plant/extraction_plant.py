@@ -12,7 +12,7 @@ from src.profiles import profile_consts as pc
 from src.profiles.output_manager import OutputManager
 from src.prospectors.prospector import Prospector
 from src.utils.ingestibles import IngestibleDataclasses
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 
 # ---Constants
@@ -55,13 +55,13 @@ class ExtractionPlant:
     def run_extraction(
         self,
         pth: Path,
-        file_frmt: str,
+        ing_dclasses: IngestibleDataclasses,
     ) -> IngestibleDataclasses:
         """Runs the full extraction process on the given path and file format.
 
         Args:
             pth (str): The path of the files.
-            file_frmt (str): The file format of the metadata.
+            ing_dclasses (IngestibleDataclasses): A class that contains the raw dataclasses for ingestion.
 
         Returns:
             IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
@@ -77,24 +77,24 @@ class ExtractionPlant:
             raise Exception("Profile for extraction not set")
 
         ingest_dict = out_man.metadata_files_to_ingest_dict
-        ingestible_dataclasses = self._beneficiate(ingest_dict, file_frmt)
-        return ingestible_dataclasses
+        ingestible_dataclasses_out = self._beneficiate(ingest_dict, ing_dclasses)
+        return ingestible_dataclasses_out
 
     def run_extraction_with_IDW(
         self,
-        ingest_dict: Dict[str, list[str]],
-        file_frmt: str,
+        ingest_dict: Dict[str, List[str]],
+        ing_dclasses: IngestibleDataclasses,
     ) -> IngestibleDataclasses:
         """Runs extraction process on the given path and file format after using the IDW.
 
         Args:
             ingest_dict (Dict[str, list[str]]): A dictionary of ingest files.
-            file_frmt (str): The file format of the metadata.
+            ing_dclasses (IngestibleDataclasses): A class that contains the raw dataclasses for ingestion.
 
         Returns:
             IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
         """
-        ingestible_dataclasses = self._beneficiate(ingest_dict, file_frmt)
+        ingestible_dataclasses = self._beneficiate(ingest_dict, ing_dclasses)
         return ingestible_dataclasses
 
     def _prospect(
@@ -117,11 +117,11 @@ class ExtractionPlant:
 
     def _beneficiate(
         self,
-        ingest_dict: Dict[str, list[str]],
-        file_format: str,
+        ingest_dict: Dict[str, List[str]],
+        ing_dclasses: IngestibleDataclasses,
     ) -> IngestibleDataclasses:
         logger.info("beneficiating")
         ingestible_dataclasses = self.beneficiation.beneficiate(
-            ingest_dict, file_format
+            ingest_dict, ing_dclasses
         )
         return ingestible_dataclasses

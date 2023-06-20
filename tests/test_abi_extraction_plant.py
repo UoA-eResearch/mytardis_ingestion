@@ -6,18 +6,27 @@ import pytest
 from pytest import fixture
 
 from src.beneficiations import beneficiation_consts as bc
+from src.beneficiations.beneficiation import Beneficiation
 from src.extraction_plant.extraction_plant import ExtractionPlant
+from src.utils.ingestibles import IngestibleDataclasses
+from src.miners.miner import Miner
+from src.prospectors.prospector import Prospector
 from tests.fixtures.fixtures_abi_data import get_abi_profile, tmpdir_metadata
+from tests.fixtures.fixtures_abi_beneficiation import (spawn_bnfc)
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
 
-@pytest.mark.usefixtures("tmpdir_metadata", "get_abi_profile")
-def test_extraction_plant(tmpdir_metadata, get_abi_profile):
-    ext_plant = ExtractionPlant(get_abi_profile)
+@pytest.mark.usefixtures("tmpdir_metadata", "get_abi_profile", "spawn_bnfc")
+def test_extraction_plant(tmpdir_metadata, get_abi_profile, spawn_bnfc):
+    bnfc = spawn_bnfc
+    ingestible_dataclasses: IngestibleDataclasses = IngestibleDataclasses()
+    prospector = Prospector(get_abi_profile)
+    miner = Miner(get_abi_profile)
+    ext_plant = ExtractionPlant(get_abi_profile, prospector, miner, bnfc)
     ingestible_dataclasses = ext_plant.run_extraction(
-        tmpdir_metadata[0], bc.JSON_FORMAT
+        tmpdir_metadata[0], ingestible_dataclasses
     )
     projs = ingestible_dataclasses.get_projects()
     expts = ingestible_dataclasses.get_experiments()
@@ -35,6 +44,10 @@ def test_extraction_plant(tmpdir_metadata, get_abi_profile):
 
 @pytest.mark.usefixtures("tmpdir_metadata")
 def test_extraction_plant_no_profile(tmpdir_metadata):
-    ext_plant = ExtractionPlant()
+    bnfc = spawn_bnfc
+    ingestible_dataclasses: IngestibleDataclasses = IngestibleDataclasses()
+    prospector = Prospector(get_abi_profile)
+    miner = Miner(get_abi_profile)
+    ext_plant = ExtractionPlant(get_abi_profile, prospector, miner, bnfc)
     with pytest.raises(Exception):
-        ext_plant.run_extraction(tmpdir_metadata[0], bc.JSON_FORMAT)
+        ext_plant.run_extraction(tmpdir_metadata[0], ingestible_dataclasses)
