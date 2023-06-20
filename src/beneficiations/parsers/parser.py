@@ -8,7 +8,7 @@ import logging
 
 from abc import ABC, abstractmethod
 from src.utils.ingestibles import IngestibleDataclasses
-from typing import Any, Optional
+from typing import Any, Dict
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -24,13 +24,13 @@ class Parser(ABC):
 
     @abstractmethod
     def parse(self,
-              beneficiation_data: dict[str, Any],
+              beneficiation_data: Dict[str, Any],
               ingestible_dclasses: IngestibleDataclasses,
               ) -> IngestibleDataclasses:
         """Parse metadata files of a given file type into raw dataclasses
 
         Args:
-            beneficiation_data (dict[str, Any]): Data that contains information about the dataclasses to parse
+            beneficiation_data (Dict[str, Any]): Data that contains information about the dataclasses to parse
             ingestible_dataclasses (IngestibleDataclasses): A class that contains the raw datafiles, datasets, experiments, and projects.
 
         Returns:

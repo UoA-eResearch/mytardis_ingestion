@@ -1,19 +1,20 @@
 import json
 import copy
+
+from pathlib import Path
 from src.profiles.abi_music import abi_music_consts as amc
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 
 def write_metadata_file(
-    fp: str,
-    metadata: dict[str, Any],
+    fp: Path,
+    metadata: Dict[str, Any],
     ) -> None:
-        with open(fp, "w") as outfile:
+        with fp.open("w") as outfile:
             json.dump(metadata, outfile, ensure_ascii=False)
 
-
 def add_schema_to_metadata(
-        metadata: dict[str, Any],
-    ) -> dict[str, Any]:
+        metadata: Dict[str, Any],
+    ) -> Dict[str, Any]:
         """Add ABI schema to the given metadata.
 
         Args:

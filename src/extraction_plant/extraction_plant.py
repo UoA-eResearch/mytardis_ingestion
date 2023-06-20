@@ -4,14 +4,15 @@ Pre-ingestion_factory tasks include prospecting, mining, and beneficiation.
 """
 # ---Imports
 import logging
-from typing import Optional
 
+from pathlib import Path
 from src.beneficiations.beneficiation import Beneficiation
 from src.miners.miner import Miner
 from src.profiles import profile_consts as pc
 from src.profiles.output_manager import OutputManager
 from src.prospectors.prospector import Prospector
 from src.utils.ingestibles import IngestibleDataclasses
+from typing import Optional, Dict
 
 
 # ---Constants
@@ -29,10 +30,10 @@ class ExtractionPlant:
 
     def __init__(
         self,
-        profile: Optional[str] = None,
-        prospector: Optional[Prospector] = None,
-        miner: Optional[Miner] = None,
-        beneficiation: Optional[Beneficiation] = None,
+        profile: str,
+        prospector: Prospector,
+        miner: Miner,
+        beneficiation: Beneficiation,
     ) -> None:
         """Initializes an ExtractionPlant instance with the given parameters.
 
@@ -40,24 +41,20 @@ class ExtractionPlant:
             profile (str, optional): The profile name. Defaults to None.
             prospector (Prospector, optional): The prospector instance. Defaults to None.
             miner (Miner, optional): The miner instance. Defaults to None.
-            beneficiation (Beneficiation, optional): The beneficiation instance. Defaults to None.
+            beneficiation (Beneficiation): The beneficiation instance. Defaults to None.
 
         Returns:
             None
 
         """
         self.profile = profile
-
-        if profile:
-            self.propsector = prospector if prospector else Prospector(profile)
-
-            self.miner = miner if miner else Miner(profile)
-
-        self.beneficiation = beneficiation if beneficiation else Beneficiation()
+        self.propsector = prospector
+        self.miner = miner
+        self.beneficiation = beneficiation
 
     def run_extraction(
         self,
-        pth: str,
+        pth: Path,
         file_frmt: str,
     ) -> IngestibleDataclasses:
         """Runs the full extraction process on the given path and file format.
@@ -85,13 +82,13 @@ class ExtractionPlant:
 
     def run_extraction_with_IDW(
         self,
-        ingest_dict: dict[str, list[str]],
+        ingest_dict: Dict[str, list[str]],
         file_frmt: str,
     ) -> IngestibleDataclasses:
         """Runs extraction process on the given path and file format after using the IDW.
 
         Args:
-            ingest_dict (dict[str, list[str]]): A dictionary of ingest files.
+            ingest_dict (Dict[str, list[str]]): A dictionary of ingest files.
             file_frmt (str): The file format of the metadata.
 
         Returns:
@@ -103,28 +100,28 @@ class ExtractionPlant:
     def _prospect(
         self,
         profile: str,
-        pth: str,
+        pth: Path,
     ) -> OutputManager:
         logger.info("prospecting")
         prospector = Prospector(profile)
         return prospector.prospect_directory(pth)
 
-    def _mine(self, profile: str, pth: str, out_man: OutputManager) -> OutputManager:
+    def _mine(self, 
+              profile: str, 
+              pth: Path, 
+              out_man: OutputManager
+              ) -> OutputManager:
         logger.info("mining")
         miner = Miner(profile)
         return miner.mine_directory(pth, True, out_man)
 
     def _beneficiate(
         self,
-        ingest_dict: dict[str, list[str]],
+        ingest_dict: Dict[str, list[str]],
         file_format: str,
     ) -> IngestibleDataclasses:
         logger.info("beneficiating")
-        proj_files = ingest_dict[pc.PROJECT_NAME]
-        expt_files = ingest_dict[pc.EXPERIMENT_NAME]
-        dset_files = ingest_dict[pc.DATASET_NAME]
-        dfile_files = ingest_dict[pc.DATAFILE_NAME]
         ingestible_dataclasses = self.beneficiation.beneficiate(
-            proj_files, expt_files, dset_files, dfile_files, file_format
+            ingest_dict, file_format
         )
         return ingestible_dataclasses

@@ -7,6 +7,7 @@ are present that are required in dataclasses.
 import copy
 import logging
 
+from pathlib import Path
 from src.profiles import output_manager as om
 from src.profiles.profile_selector import ProfileSelector
 from typing import Optional
@@ -31,7 +32,7 @@ class MetadataCheck:
     def check_metadata_in_path(
         self,
         profile_sel: ProfileSelector,
-        path: str,
+        path: Path,
         recursive: bool = True,
         out_man: Optional[om.OutputManager] = None,
     ) -> om.OutputManager:

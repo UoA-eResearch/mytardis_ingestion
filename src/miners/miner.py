@@ -7,6 +7,7 @@ The mining process involves generating metadata files for MyTardis ingestion.
 # ---Imports
 import logging
 
+from pathlib import Path
 from src.profiles import output_manager as om
 from src.profiles import profile_selector
 from typing import Optional
@@ -33,14 +34,14 @@ class Miner:
 
     def mine_directory(
         self,
-        path: str,
+        path: Path,
         recursive: bool = True,
         out_man: Optional[om.OutputManager] = None,
     ) -> om.OutputManager:
         """Mine a directory according to the selected profile
 
         Args:
-            path (str): Path of the directory to mine.
+            path (Path): Path of the directory to mine.
             recursive (bool): Whether to recursively mine subdirectories.
             out_man (om.OutputManager): Output Manager to store the results.
 

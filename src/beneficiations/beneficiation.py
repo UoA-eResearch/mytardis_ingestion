@@ -4,12 +4,14 @@ into raw dataclasses.
 
 
 # ---Imports
+import copy
 import logging
 
-from src.config import singleton
+from src.config.singleton import Singleton
 from src.beneficiations.parsers.parser import Parser
 from src.utils.ingestibles import IngestibleDataclasses
-from typing import Any
+from typing import Any, Dict
+
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -17,7 +19,7 @@ logger.setLevel(logging.DEBUG)
 
 
 # ---Code
-class Beneficiation(metaclass=singleton):
+class Beneficiation(metaclass=Singleton):
     """
     This class provides a means of beneficiating project, experiment, dataset and datafile files.
     It takes a list of files in the specified format and parses them into a dictionary of objects.
@@ -27,24 +29,24 @@ class Beneficiation(metaclass=singleton):
         self,
         parser: Parser,
     ) -> None:
-        self.parser = Parser
+        self.parser = parser
 
     def beneficiate(
         self,
-        beneficiation_data: dict[str, Any],
+        beneficiation_data: Dict[str, Any],
         ingestible_dataclasses: IngestibleDataclasses,
     ) -> IngestibleDataclasses:
         """Parse metadata files of a given file type into raw dataclasses
 
         Args:
-            beneficiation_data (dict[str, Any]): Data that contains information about the dataclasses to parse
+            beneficiation_data (Dict[str, Any]): Data that contains information about the dataclasses to parse
             ingestible_dataclasses (IngestibleDataclasses): A class that contains the raw datafiles, datasets, experiments, and projects.
 
         Returns:
             IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
         """
         logger.info("beneficiating")
-        ing_dclasses = ingestible_dataclasses.copy()
-        ing_dclasses_out = self.parser.parse(beneficiation_data, ing_dclasses)
+        ing_dclasses_out = self.parser.parse(beneficiation_data = beneficiation_data, 
+                                             ingestible_dclasses = ingestible_dataclasses)
         
         return ing_dclasses_out

@@ -8,9 +8,10 @@ whether the files and directory structure can be used for ingestion.
 import logging
 import os
 
+from pathlib import Path
 from src.profiles import profile_consts as pc
 from src.prospectors.common_system_files import CommonSystemFiles
-from typing import Optional, Any
+from typing import Optional, Any, Dict, List, Tuple
 
 
 # ---Constants
@@ -35,25 +36,26 @@ class CommonDirectoryTreeChecks:
 
     def perform_common_file_checks(
         self,
-        path: str,
+        path: Path,
         recursive: bool = True,
-    ) -> tuple[list[str], list[str]]:
+    ) -> Tuple[List[Path], List[Path]]:
         """Performs the checking procedures and determines which files
         should be rejected based on common system file names and common
         file prefixes.
         Args:
-            path (str): the path to perform the check on.
+            path (Path): the path to perform the check on.
             recursive (bool): whether to perform checks on child directories recursively.
         Returns:
-            tuple[[list[str], list[str]]]: lists of filepaths that are rejected or accepted.
+            Tuple[[List[Path], List[Path]]]: lists of filepaths that are rejected or accepted.
         """
-        rejection_list: list[str] = []
-        ingestion_list: list[str] = []
+        rejection_list: List[Path] = []
+        ingestion_list: List[Path] = []
 
         if recursive:
             for root, dirs, files in os.walk(path):
+                root_pth = Path(root)
                 out = self._iterate_dir(
-                    root,
+                    root_pth,
                     self.common_fnames_lut,
                     self.reject_prefix_lut,
                 )
@@ -62,7 +64,8 @@ class CommonDirectoryTreeChecks:
                 ingestion_list = self._extend_list(ingestion_list, out[1])
 
                 for dir in dirs:
-                    dirlist = os.listdir(os.path.join(root, dir))
+                    dir_pth = Path(dir)
+                    dirlist = os.listdir(root_pth / dir_pth)
                     if len(dirlist) == 0:
                         logger.debug("Empty dir {0} found in {1}".format(root, dir))
         else:
@@ -79,9 +82,9 @@ class CommonDirectoryTreeChecks:
 
     def _extend_list(
         self,
-        main_list: list[str],
-        ext_list: list[str],
-    ) -> list[str]:
+        main_list: List[Path],
+        ext_list: List[Path],
+    ) -> List[Path]:
         extended_list = main_list.copy()
         extended_list.extend(ext_list)
         return extended_list
@@ -89,29 +92,29 @@ class CommonDirectoryTreeChecks:
 
     def _iterate_dir(
         self,
-        dir: str,
-        cmn_fnames_lut: dict[str, Any],
-        rej_prfx_lut: dict[str, Any],
-    ) -> tuple[list[str], list[str]]:
+        dir: Path,
+        cmn_fnames_lut: Dict[str, Any],
+        rej_prfx_lut: Dict[str, Any],
+    ) -> Tuple[List[Path], List[Path]]:
         """Iterates through a specified directory to perform common checks
         Args:
-            dir (str): directory to check
-            cmn_fnames_lut (dict[str, str]): look-up table of common system filenames
-            rej_prfx_lut (dict[str, str]): look-up table of file prefixes to reject
+            dir (Path): directory to check
+            cmn_fnames_lut (Dict[str, str]): look-up table of common system filenames
+            rej_prfx_lut (Dict[str, str]): look-up table of file prefixes to reject
             chk_eqv_file (bool):
         Returns:
-            tuple([list[str], list[str]]): lists of filepaths that
+            Tuple([List[Path], List[Path]]): lists of filepaths that
             rejected or accepted in this directory.
         """
-        rejection_list: list[str] = []
-        ingestion_list: list[str] = []
+        rejection_list: List[Path] = []
+        ingestion_list: List[Path] = []
 
         dir_list = [
-            item for item in os.listdir(dir) if os.path.isfile(os.path.join(dir, item))
+            item for item in os.listdir(dir) if os.path.isfile(dir / Path(item))
         ]
         dir_lut = dict.fromkeys(dir_list)
         for item in dir_list:
-            test_fp = os.path.join(dir, item)
+            test_fp = dir / Path(item)
             if os.path.isfile(test_fp):
                 if item in cmn_fnames_lut:
                     rejection_list.append(test_fp)
@@ -133,8 +136,8 @@ class CommonDirectoryTreeChecks:
 
     def _check_for_equivalent_file_in_folder(
         self,
-        dir_lut: dict[str, Any],
-        rej_prfx_lut: dict[str, Any],
+        dir_lut: Dict[str, Any],
+        rej_prfx_lut: Dict[str, Any],
         file: str,
     ) -> bool:
         """Checks a file against its residing folder by first determining
@@ -142,8 +145,8 @@ class CommonDirectoryTreeChecks:
         that already exists if the prefixed was removed. If so, this indicates
         that the file was an operating-system-generated metafile.
         Args:
-            dir_lut (dict[str, Any]): lookup table of all items in the directory
-            rej_prfx_lut (dict[str, Any]): lookup table of all file prefixes
+            dir_lut (Dict[str, Any]): lookup table of all items in the directory
+            rej_prfx_lut (Dict[str, Any]): lookup table of all file prefixes
             file (str): file to check
         Returns:
             bool: True if file is metafile, False otherwise
@@ -159,8 +162,8 @@ class CommonDirectoryTreeChecks:
 
     def _check_for_leading_dot_underscore(
         self,
-        dir_lut: dict[str, Any],
-        rej_prfx_lut: dict[str, Any],
+        dir_lut: Dict[str, Any],
+        rej_prfx_lut: Dict[str, Any],
         file: str,
     ) -> bool:
         """Checks a file for a leading '._' which is a strong indicator that
@@ -170,8 +173,8 @@ class CommonDirectoryTreeChecks:
         function should be called/ignored accordingly.
 
         Args:
-            dir_lut (dict[str, Any]): lookup table of all items in the directory
-            rej_prfx_lut (dict[str, any]): lookup table of all file prefixes
+            dir_lut (Dict[str, Any]): lookup table of all items in the directory
+            rej_prfx_lut (Dict[str, any]): lookup table of all file prefixes
             file (str): file to check
         Returns:
             bool: True if file is metafile, False otherwise
