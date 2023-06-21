@@ -10,6 +10,11 @@ from src.beneficiations import beneficiation_consts as bc
 from src.profiles import profile_consts as pc
 from src.profiles.output_manager import OutputManager
 
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+
 
 @fixture
 def output_manager_generation():
@@ -32,34 +37,36 @@ def tmpdir_metadata():
     dir1 = None
     dir2 = None
 
-    tempdir = Path("tempdir")
+    base_pth = Path(".")
+
+    tempdir = base_pth / Path("tempdir")
     if not tempdir.exists():
-        Path.mkdir(tempdir)
+        tempdir.mkdir()
 
     dir1name = Path("dir1")
     dir1 = tempdir / dir1name
     if not dir1.exists():
-        Path.mkdir(dir1)
+        dir1.mkdir()
 
     dir2name = Path("dir2")
     dir2 = dir1 / dir2name
     if not dir2.exists():
-        Path.mkdir(dir2)
+        dir2.mkdir()
 
     dir3rawname = Path("dir3-Raw")
     dir3raw = dir2 / dir3rawname
     if not dir3raw.exists():
-        Path.mkdir(dir3raw)
+        dir3raw.mkdir()
 
     dir3deconvname = Path("dir3-Deconv")
     dir3deconv = dir2 / dir3deconvname
     if not dir3deconv.exists():
-        Path.mkdir(dir3deconv)
+        dir3deconv.mkdir()
 
     dirrawname = Path("dir-Raw")
     dirraw = dir2 / dirrawname
     if not dirraw.exists():
-        Path.mkdir(dirraw)
+        dirraw.mkdir()
 
     dir3name = Path("dir3")
 
@@ -119,12 +126,12 @@ def tmpdir_metadata_files():
 
     tempdir = Path("tempdir")
     if not tempdir.exists():
-        Path.mkdir(tempdir)
+        tempdir.mkdir()
 
     dir1name = Path("dir1")
     dir1 = tempdir / dir1name
     if not dir1.exists():
-        Path.mkdir(dir1)
+        dir1.mkdir()
 
     dir1_md = {
         "name": "dir1",
@@ -138,7 +145,7 @@ def tmpdir_metadata_files():
     dir2name = Path("dir2")
     dir2 = dir1 / dir2name
     if not dir2.exists():
-        Path.mkdir(dir2)
+        dir2.mkdir()
 
     dir2_md = {
         "title": "dir2",
@@ -151,7 +158,7 @@ def tmpdir_metadata_files():
     dir3rawname = Path("dir3-Raw")
     dir3raw = dir2 / dir3rawname
     if not dir3raw.exists():
-        Path.mkdir(dir3raw)
+        dir3raw.mkdir()
 
     dir3raw_md = {
         "description": "dir3-Raw",
@@ -165,7 +172,7 @@ def tmpdir_metadata_files():
     dir3deconvname = Path("dir3-Deconv")
     dir3deconv = dir2 / dir3deconvname
     if not dir3deconv.exists():
-        Path.mkdir(dir3deconv)
+        dir3deconv.mkdir()
 
     dir3deconv_md = {
         "description": "dir3-Deconv",

@@ -1,6 +1,7 @@
 import logging
 from typing import Literal
 from unittest.mock import MagicMock, Mock
+import os
 
 import pytest
 from pytest import fixture
@@ -25,6 +26,7 @@ def test_extraction_plant(tmpdir_metadata, get_abi_profile, spawn_bnfc):
     prospector = Prospector(get_abi_profile)
     miner = Miner(get_abi_profile)
     ext_plant = ExtractionPlant(get_abi_profile, prospector, miner, bnfc)
+
     ingestible_dataclasses = ext_plant.run_extraction(
         tmpdir_metadata[0], ingestible_dataclasses
     )
@@ -36,8 +38,8 @@ def test_extraction_plant(tmpdir_metadata, get_abi_profile, spawn_bnfc):
     proj = projs[0]
     expt = expts[0]
 
-    assert proj.name == tmpdir_metadata[1]
-    assert expt.title == tmpdir_metadata[2]
+    assert proj.name == str(tmpdir_metadata[1])
+    assert expt.title == str(tmpdir_metadata[2])
     assert len(dsets) == 2
     assert len(dfiles) == 3
 
@@ -45,9 +47,9 @@ def test_extraction_plant(tmpdir_metadata, get_abi_profile, spawn_bnfc):
 @pytest.mark.usefixtures("tmpdir_metadata")
 def test_extraction_plant_no_profile(tmpdir_metadata):
     bnfc = spawn_bnfc
-    ingestible_dataclasses: IngestibleDataclasses = IngestibleDataclasses()
-    prospector = Prospector(get_abi_profile)
-    miner = Miner(get_abi_profile)
-    ext_plant = ExtractionPlant(get_abi_profile, prospector, miner, bnfc)
     with pytest.raises(Exception):
+        ingestible_dataclasses: IngestibleDataclasses = IngestibleDataclasses()
+        prospector = Prospector("")
+        miner = Miner("")
+        ext_plant = ExtractionPlant("", prospector, miner, bnfc)
         ext_plant.run_extraction(tmpdir_metadata[0], ingestible_dataclasses)

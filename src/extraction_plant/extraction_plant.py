@@ -60,7 +60,7 @@ class ExtractionPlant:
         """Runs the full extraction process on the given path and file format.
 
         Args:
-            pth (str): The path of the files.
+            pth (Path): The path of the files.
             ing_dclasses (IngestibleDataclasses): A class that contains the raw dataclasses for ingestion.
 
         Returns:

@@ -103,7 +103,7 @@ class DatafileMiner:
 
         metadata["dataset"] = dset_key
         metadata["filename"] = fn
-        metadata["directory"] = rel_path
+        metadata["directory"] = str(rel_path)
         metadata["md5sum"] = dmh.calculate_md5sum(fp)
         metadata["mimetype"] = dmh.determine_mimetype(fn)
         metadata["size"] = fp.stat().st_size

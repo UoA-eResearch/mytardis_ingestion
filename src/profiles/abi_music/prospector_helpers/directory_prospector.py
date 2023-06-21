@@ -1,7 +1,6 @@
 """Prospects a directory to check whether the directory path can be ingested
 """
 
-
 # ---Imports
 import copy
 import json
@@ -17,7 +16,6 @@ from typing import Optional, Any
 # ---Constants
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # set the level for which this logger will be printed.
-
 
 # ---Code
 class DirectoryProspector:
@@ -85,16 +83,17 @@ class DirectoryProspector:
         for root, dirs, files in os.walk(path):
             root_pth = Path(root)
             rel_path = root_pth.relative_to(path)
-            if not rel_path.exists():
+
+            if not root_pth.exists():
                 continue
             elif len(rel_path.parts) != 3:
                 continue
 
             # target_dir = os.path.normpath(rel_path).name
             json_sufx = ".json"
-            target_dir = rel_path.resolve()
-            target_file = copy.deepcopy(target_dir)
-            target_file = target_file / Path(json_sufx)
+            target_dir = rel_path.resolve().name
+            target_file = Path(target_dir + json_sufx)
+
             has_match = False
             for file in files:
                 if rej_list:
@@ -105,12 +104,11 @@ class DirectoryProspector:
                     if str(target_file) == file:
                         has_match = True
                         matched_filepath = root_pth / Path(file)
-
+            
             if has_match:
-                json_matches_folder_path = self._determine_json_matches_folder_path(
+                if self._determine_json_matches_folder_path(
                     matched_filepath, rel_path
-                )
-                if json_matches_folder_path: #YJ try to use the Walrus operator for this line and the previous statement :)
+                ):
                     new_out_man.add_success_entry_to_dict(
                         matched_filepath,
                         pc.PROCESS_PROSPECTOR,
@@ -163,8 +161,8 @@ class DirectoryProspector:
         ref_path = Path(prj_name) / Path(smp_name) / Path(seq_name)
         if not str(ref_path) in str(rel_path):
             return False
-        # dir_sufx = rel_path.split(ref_path)[1]
-        dir_sufx = rel_path.relative_to(ref_path)
+        
+        dir_sufx = str(rel_path).split(str(ref_path))[1]
         if dir_sufx in amc.FOLDER_SUFFIX_LUT:
             return True
         else:
