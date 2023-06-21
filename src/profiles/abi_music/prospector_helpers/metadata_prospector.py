@@ -119,7 +119,7 @@ class MetadataProspector:
             missing_fields.append(amc.BASENAME_FIELD)
 
         for field_to_check in fields_to_check:
-            if field_to_check not in sub_dict:
+            if field_to_check not in md_dict:
                 missing_fields.append(field_to_check)
 
         return missing_fields

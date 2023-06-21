@@ -66,4 +66,10 @@ class Prospector:
             self.profile_sel, path, recursive, new_out_man
         )
 
+        logger.info("prospecting complete")
+        logger.info(f"ignored dirs = {new_out_man.dirs_to_ignore}")
+        logger.info(f"ignored files = {new_out_man.files_to_ignore}")
+        logger.info(f"files to ingest = {new_out_man.metadata_files_to_ingest_dict}")
+        logger.info(f"output dict = {new_out_man.output_dict}")
+
         return new_out_man

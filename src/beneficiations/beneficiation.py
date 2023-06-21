@@ -49,4 +49,9 @@ class Beneficiation(metaclass=Singleton):
         ing_dclasses_out = self.parser.parse(beneficiation_data = beneficiation_data, 
                                              ingestible_dclasses = ingestible_dataclasses)
         
+        logger.info(f"ingestible projects = {ing_dclasses_out.projects}")
+        logger.info(f"ingestible experiments = {ing_dclasses_out.experiments}")
+        logger.info(f"ingestible datasets = {ing_dclasses_out.datasets}")
+        logger.info(f"ingestible datafiles = {ing_dclasses_out.datafiles}")
+        
         return ing_dclasses_out

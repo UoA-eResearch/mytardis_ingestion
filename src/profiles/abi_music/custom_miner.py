@@ -61,24 +61,26 @@ class CustomMiner:
         else:
             out_man = copy.deepcopy(out_man)
         # Write the main inspection implementation here
-        base_yaml_pth = os.path.join(".", "src", "profiles", "abi_music")
-        proj_yaml_fp = os.path.join(base_yaml_pth, "project.yaml")
-        expt_yaml_fp = os.path.join(base_yaml_pth, "experiment.yaml")
-        dset_yaml_fp = os.path.join(base_yaml_pth, "dataset.yaml")
-        dfile_yaml_fp = os.path.join(base_yaml_pth, "datafile.yaml")
+        base_yaml_pth = Path("src") / Path("profiles") / Path("abi_music")
+        proj_yaml_fp = base_yaml_pth / Path("project.yaml")
+        expt_yaml_fp = base_yaml_pth / Path("experiment.yaml")
+        dset_yaml_fp = base_yaml_pth / Path("dataset.yaml")
+        dfile_yaml_fp = base_yaml_pth / Path("datafile.yaml")
 
-        with open(proj_yaml_fp, "r") as stream:
+        with proj_yaml_fp.open("r") as stream:
             proj_mappings = yaml.safe_load(stream)
-        with open(expt_yaml_fp, "r") as stream:
+        with expt_yaml_fp.open("r") as stream:
             expt_mappings = yaml.safe_load(stream)
-        with open(dset_yaml_fp, "r") as stream:
+        with dset_yaml_fp.open("r") as stream:
             dset_mappings = yaml.safe_load(stream)
-        with open(dfile_yaml_fp, "r") as stream:
+        with dfile_yaml_fp.open("r") as stream:
             dfile_mappings = yaml.safe_load(stream)
         
         dset_idntfr = DataclassIdentifier()
+        logger.info(f"path = {path}")
         dclass_struct = dset_idntfr.identify_data_classes(path, out_man)
 
+        logger.info(f"dclass_struct = {dclass_struct}")
         proj_miner = ProjectMiner()
         out_man = proj_miner.mine_project_metadata(
             path, dclass_struct, proj_mappings, out_man

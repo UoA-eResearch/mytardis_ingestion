@@ -55,8 +55,7 @@ class DataclassIdentifier:
         for root, dirs, files in os.walk(path):
             root_pth = Path(root)
             rel_path = root_pth.relative_to(path)
-
-            if str(rel_path) not in rel_dir_rej_lut and rel_path.exists():
+            if str(rel_path) not in rel_dir_rej_lut and str(rel_path) != ".":
                 pth_components = rel_path.parts
                 dir_levels = len(pth_components)
                 if dir_levels < 4:

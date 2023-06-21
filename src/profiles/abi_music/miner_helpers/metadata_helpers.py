@@ -5,10 +5,16 @@ from pathlib import Path
 from src.profiles.abi_music import abi_music_consts as amc
 from typing import Optional, Any, Dict
 
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 def write_metadata_file(
     fp: Path,
     metadata: Dict[str, Any],
     ) -> None:
+        logger.info(str(fp))
+        logger.info(f"metadata = {metadata}")
         with fp.open("w") as outfile:
             json.dump(metadata, outfile, ensure_ascii=False)
 
