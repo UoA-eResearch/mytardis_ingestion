@@ -5,7 +5,7 @@ Pre-ingestion_factory tasks include prospecting, mining, and beneficiation.
 # ---Imports
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from src.beneficiations.beneficiation import Beneficiation
 from src.config.singleton import Singleton
@@ -52,11 +52,15 @@ class ExtractionPlant(metaclass = Singleton):
     def run_extraction(
         self,
         pth: Path,
+        ingest_dict: Optional[Dict[str, list[Any]]] = None
     ) -> IngestibleDataclasses:
-        """Runs the full extraction process on the given path and file format.
+        """Runs the full extraction process on the given path and file format. In the absence of a custom prospector in the
+        prospector singleton and a custom miner in the miner singleton, the prospector and the miner will be skipped as this
+        assumes the IDW was used.
 
         Args:
             pth (Path): The path of the files.
+            ingest_dict (Optional[Dict[str, list[Any]]]): A dictionary containing metadata files to ingest. Used when IDW was used.
 
         Returns:
             IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
@@ -67,13 +71,14 @@ class ExtractionPlant(metaclass = Singleton):
         out_man = OutputManager()
         ing_dclasses = IngestibleDataclasses()
 
-        if self.prospector:
+        if self.prospector.custom_prospector:
             out_man = self._prospect(pth, out_man)
 
-        if self.miner:
+        if self.miner.custom_miner:
             out_man = self._mine(pth, out_man)
 
-        ingest_dict = out_man.metadata_files_to_ingest_dict
+        if not ingest_dict:
+            ingest_dict = out_man.metadata_files_to_ingest_dict
         ingestible_dataclasses_out = self._beneficiate(ingest_dict, ing_dclasses)
         return ingestible_dataclasses_out
 
