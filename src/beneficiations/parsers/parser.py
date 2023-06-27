@@ -5,13 +5,14 @@ This is an abstract parser that defines the protocols
 
 # ---Imports
 import logging
-
 from abc import ABC, abstractmethod
-from src.utils.ingestibles import IngestibleDataclasses
 from typing import Any, Dict
+
+from src.utils.ingestibles import IngestibleDataclasses
 
 # ---Constants
 logger = logging.getLogger(__name__)
+
 
 # ---Code
 class Parser(ABC):
@@ -23,10 +24,11 @@ class Parser(ABC):
         pass
 
     @abstractmethod
-    def parse(self,
-              beneficiation_data: Dict[str, Any],
-              ingestible_dclasses: IngestibleDataclasses,
-              ) -> IngestibleDataclasses:
+    def parse(
+        self,
+        beneficiation_data: Dict[str, Any],
+        ingestible_dclasses: IngestibleDataclasses,
+    ) -> IngestibleDataclasses:
         """Parse metadata files of a given file type into raw dataclasses
 
         Args:
@@ -37,4 +39,3 @@ class Parser(ABC):
             IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
         """
         pass
-    

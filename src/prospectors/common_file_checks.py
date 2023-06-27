@@ -7,12 +7,11 @@ whether the files and directory structure can be used for ingestion.
 # ---Imports
 import logging
 import os
-
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
 from src.profiles import profile_consts as pc
 from src.prospectors.common_system_files import CommonSystemFiles
-from typing import Optional, Any, Dict, List, Tuple
-
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -32,7 +31,6 @@ class CommonDirectoryTreeChecks:
         csf = CommonSystemFiles()
         self.common_fnames_lut = csf.fnames_lut
         self.reject_prefix_lut = csf.reject_prefixes_lut
-
 
     def perform_common_file_checks(
         self,
@@ -79,7 +77,6 @@ class CommonDirectoryTreeChecks:
 
         return (rejection_list, ingestion_list)
 
-
     def _extend_list(
         self,
         main_list: List[Path],
@@ -88,7 +85,6 @@ class CommonDirectoryTreeChecks:
         extended_list = main_list.copy()
         extended_list.extend(ext_list)
         return extended_list
-
 
     def _iterate_dir(
         self,
@@ -133,7 +129,6 @@ class CommonDirectoryTreeChecks:
 
         return (rejection_list, ingestion_list)
 
-
     def _check_for_equivalent_file_in_folder(
         self,
         dir_lut: Dict[str, Any],
@@ -158,7 +153,6 @@ class CommonDirectoryTreeChecks:
                     return True
 
         return False
-
 
     def _check_for_leading_dot_underscore(
         self,

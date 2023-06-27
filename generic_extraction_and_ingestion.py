@@ -31,19 +31,20 @@ import logging
 import subprocess
 from pathlib import Path
 
-from src.helpers.config import ConfigFromEnv
-from src.ingestion_factory.factory import IngestionFactory
 from src import profiles
-from src.smelters import smelter
-from src.crucible import crucible
-from src.forges import forge
-from src.extraction_plant import extraction_plant
-from src.profiles import profile_consts as pc
 from src.beneficiations.beneficiation import Beneficiation
 from src.beneficiations.parsers.json_parser import JsonParser
+from src.config.config import ConfigFromEnv
+from src.crucible import crucible
+from src.extraction_plant.extraction_plant import ExtractionPlant
+from src.forges import forge
 from src.helpers.mt_rest import MyTardisRESTFactory
+from src.ingestion_factory.factory import IngestionFactory
+from src.miners.miner import Miner
 from src.overseers.overseer import Overseer
-
+from src.profiles.profile_loader import ProfileLoader
+from src.prospectors.prospector import Prospector
+from src.smelters import smelter
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -59,17 +60,23 @@ def main():
     The ingestion is done using the IngestionFactory class that runs the smelter, crucible, and forge
     """
     
-    ###Extraction
+    ###Extraction step
     pth = "Replace/This/With/Your/Ingestion/Path/Here"
-    profile = "replace_this_with_your_profile_name"
-    json_parser = JsonParser()
-    beneficiation = Beneficiation(json_parser)
+    profile = Path("replace_this_with_your_profile_name")
+    profile_loader = ProfileLoader(profile)
     
-   #  ext_plant = extraction_plant.ExtractionPlant(profile)
+    prospector = Prospector(profile_loader.load_custom_prospector)
+    miner = Miner(profile_loader.load_custom_miner)
+
+    parser = JsonParser() #JsonParser was picked, but it can really be anything as long as it has been implemented
+    beneficiation = Beneficiation(parser)
+    
+    ext_plant = ExtractionPlant(prospector, miner, beneficiation)
+    ingestible_dataclasses = ext_plant.run_extraction(pth)
    #  ingestibles = ext_plant.run_extraction(pth, bc.JSON_FORMAT) #for json files
 
 
-    ###Ingestion
+    ###Ingestion step
     mt_rest = MyTardisRESTFactory(config.auth, config.connection)
     overseer = Overseer(mt_rest)
     #TODO YJ complete the rest of the template script here once the ingestion factory is renovated

@@ -5,14 +5,13 @@
 # ---Imports
 import copy
 import logging
-
 from pathlib import Path
-from src.profiles import output_manager as om
-from src.profiles import profile_consts as pc
-from src.profiles.abi_music.miner_helpers import metadata_helpers as mh
-from src.profiles.abi_music import abi_music_consts as amc
+from typing import Any, Dict, Optional
 
-from typing import Optional, Any, Dict
+from src.extraction_output_manager import output_manager as om
+from src.profiles import profile_consts as pc
+from src.profiles.abi_music import abi_music_consts as amc
+from src.profiles.abi_music.miner_helpers import metadata_helpers as mh
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -22,6 +21,7 @@ logger.setLevel(logging.DEBUG)  # set the level for which this logger will be pr
 # ---Code
 class ExperimentMiner:
     """Mines experiment metadata"""
+
     def __init__(self) -> None:
         pass
 
@@ -51,7 +51,9 @@ class ExperimentMiner:
                     proj_key, expt_key, mappings
                 )
                 proj_path = Path(proj_key)
-                f_name = Path(expt_key + pc.METADATA_FILE_SUFFIX + amc.METADATA_FILE_TYPE)
+                f_name = Path(
+                    expt_key + pc.METADATA_FILE_SUFFIX + amc.METADATA_FILE_TYPE
+                )
                 fp = path / proj_path / f_name
                 mh.write_metadata_file(fp, metadata)
                 new_out_man.add_success_entry_to_dict(

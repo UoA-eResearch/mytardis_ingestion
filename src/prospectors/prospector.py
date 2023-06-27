@@ -6,13 +6,13 @@ Prospecting checks files and metadata files for any potential issues.
 # ---Imports
 import copy
 import logging
-
 from pathlib import Path
-from src.profiles import output_manager as om
-from src.profiles import profile_selector
+from typing import Optional, Union
+
+from src.config.singleton import Singleton
+from src.extraction_output_manager import output_manager as om
+from src.prospectors.abstract_custom_prospector import AbstractCustomProspector
 from src.prospectors.common_file_checks import CommonDirectoryTreeChecks
-from src.prospectors.metadata_check import MetadataCheck
-from typing import Optional
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ logger.setLevel(logging.DEBUG)
 
 
 # ---Code
-class Prospector:
+class Prospector(metaclass=Singleton):
     """This class Prospector is used to prospect a given directory for files.
 
     Attributes:
@@ -29,9 +29,9 @@ class Prospector:
 
     def __init__(
         self,
-        profile: str,
+        custom_prospector: Union[AbstractCustomProspector, None],
     ) -> None:
-        self.profile_sel = profile_selector.ProfileSelector(profile)
+        self.custom_prospector = custom_prospector
 
     def prospect_directory(
         self,
@@ -52,24 +52,24 @@ class Prospector:
         """
 
         if not out_man:
-            new_out_man = om.OutputManager()
-        else:
-            new_out_man = copy.deepcopy(out_man)
+            out_man = om.OutputManager()
+
         cmn_dir_tree_c = CommonDirectoryTreeChecks()
-        metadata_c = MetadataCheck()
 
         out = cmn_dir_tree_c.perform_common_file_checks(path, recursive)
         rej_list = out[0]
-        new_out_man.add_files_to_ignore(rej_list)
+        out_man.add_files_to_ignore(rej_list)
 
-        new_out_man = metadata_c.check_metadata_in_path(
-            self.profile_sel, path, recursive, new_out_man
-        )
+        if self.custom_prospector:
+            out_man_fnl = self.custom_prospector.prospect(path, recursive, out_man)
+        else:
+            out_man_fnl = out_man
+            logger.info("No custom prospector set, thus will not be used")
 
         logger.info("prospecting complete")
-        logger.info(f"ignored dirs = {new_out_man.dirs_to_ignore}")
-        logger.info(f"ignored files = {new_out_man.files_to_ignore}")
-        logger.info(f"files to ingest = {new_out_man.metadata_files_to_ingest_dict}")
-        logger.info(f"output dict = {new_out_man.output_dict}")
+        logger.info(f"ignored dirs = {out_man_fnl.dirs_to_ignore}")
+        logger.info(f"ignored files = {out_man_fnl.files_to_ignore}")
+        logger.info(f"files to ingest = {out_man_fnl.metadata_files_to_ingest_dict}")
+        logger.info(f"output dict = {out_man_fnl.output_dict}")
 
-        return new_out_man
+        return out_man_fnl

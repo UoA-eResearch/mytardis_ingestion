@@ -6,6 +6,10 @@ import importlib
 import logging
 from types import ModuleType
 
+from src.miners.abstract_custom_miner import AbstractCustomMiner
+from src.prospectors.abstract_custom_prospector import AbstractCustomProspector
+from src.config.singleton import Singleton
+
 # ---Constants
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -15,7 +19,7 @@ custom_miner_lib = ".custom_miner"
 
 
 # ---Code
-class ProfileSelector:
+class ProfileLoader(metaclass=Singleton):
     """
     This class is used to load a profile and the associated profile modules.
 
@@ -46,14 +50,14 @@ class ProfileSelector:
 
     def load_custom_prospector(
         self,
-    ) -> ModuleType:
+    ) -> AbstractCustomProspector:
         module_pth = self.profile_module_str + custom_prspctr_lib
-        custom_prospector = importlib.import_module(module_pth)
+        custom_prospector: AbstractCustomProspector = importlib.import_module(module_pth).CustomProspector()
         return custom_prospector
 
     def load_custom_miner(
         self,
-    ) -> ModuleType:
+    ) -> AbstractCustomMiner:
         module_pth = self.profile_module_str + custom_miner_lib
-        custom_miner = importlib.import_module(module_pth)
+        custom_miner: AbstractCustomMiner = importlib.import_module(module_pth).CustomMiner()
         return custom_miner

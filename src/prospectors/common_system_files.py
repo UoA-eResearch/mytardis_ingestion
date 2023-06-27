@@ -6,7 +6,6 @@
 # ---Imports
 import logging
 
-
 # ---Constants
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

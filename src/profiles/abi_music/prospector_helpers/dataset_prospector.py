@@ -5,13 +5,12 @@
 # ---Imports
 import logging
 import os
-
 from pathlib import Path
-from src.profiles import output_manager as om
+from typing import Any, Dict, List, Optional
+
+from src.extraction_output_manager import output_manager as om
 from src.profiles import profile_consts as pc
 from src.profiles.abi_music import abi_music_consts as amc
-from typing import Optional, Any, Dict, List
-
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -20,8 +19,7 @@ logger.setLevel(logging.DEBUG)  # set the level for which this logger will be pr
 
 # ---Code
 class DatasetProspector:
-    """Prospects the datasets for checking raw and processed folders.
-"""
+    """Prospects the datasets for checking raw and processed folders."""
 
     def __init__(
         self,
@@ -75,4 +73,3 @@ class DatasetProspector:
                 logger.warning("missing processed folder for {0}".format(key))
             elif used_lut[key] == 2:
                 logger.warning("missing raw folder for {0}".format(key))
-

@@ -6,11 +6,12 @@
 import copy
 import logging
 import os
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
 import yaml
 
-from pathlib import Path
-from src.profiles import output_manager as om
-from typing import Optional, Any, Dict, List
+from src.extraction_output_manager import output_manager as om
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -19,8 +20,7 @@ logger.setLevel(logging.DEBUG)  # set the level for which this logger will be pr
 
 # ---Code
 class DataclassIdentifier:
-    """Determines the dataclass based on the path
-    """
+    """Determines the dataclass based on the path"""
 
     def __init__(
         self,
@@ -59,17 +59,18 @@ class DataclassIdentifier:
                 pth_components = rel_path.parts
                 dir_levels = len(pth_components)
                 if dir_levels < 4:
-                    dclass_struct = self.add_dclass_struct_entry(dclass_struct, dir_levels, list(pth_components))
-                    
+                    dclass_struct = self.add_dclass_struct_entry(
+                        dclass_struct, dir_levels, list(pth_components)
+                    )
+
         return dclass_struct
 
-    
-    def add_dclass_struct_entry(self,
-                                dclass_struct: Dict[str, Any],
-                                dir_levels: int,
-                                pth_components: List[str],
-                                ) -> Dict[str, Any]:
-        
+    def add_dclass_struct_entry(
+        self,
+        dclass_struct: Dict[str, Any],
+        dir_levels: int,
+        pth_components: List[str],
+    ) -> Dict[str, Any]:
         new_struct: Dict[str, Any] = copy.deepcopy(dclass_struct)
         for i in range(dir_levels):
             if i == 0:
@@ -78,14 +79,19 @@ class DataclassIdentifier:
             elif i == 1:
                 if pth_components[i - 1] not in dclass_struct:
                     new_struct[pth_components[i - 1]] = {}
-                if (pth_components[i] not in dclass_struct[pth_components[i - 1]]):
+                if pth_components[i] not in dclass_struct[pth_components[i - 1]]:
                     new_struct[pth_components[i - 1]][pth_components[i]] = {}
             elif i == 2:
                 if pth_components[i - 2] not in dclass_struct:
                     new_struct[pth_components[i - 2]] = {}
-                if (pth_components[i - 1] not in dclass_struct[pth_components[i - 2]]):
+                if pth_components[i - 1] not in dclass_struct[pth_components[i - 2]]:
                     new_struct[pth_components[i - 2]][pth_components[i - 1]] = {}
-                if (pth_components[i] not in dclass_struct[pth_components[i - 2]][pth_components[i - 1]]):
-                    new_struct[pth_components[i - 2]][pth_components[i - 1]][pth_components[i]] = {}
-        
+                if (
+                    pth_components[i]
+                    not in dclass_struct[pth_components[i - 2]][pth_components[i - 1]]
+                ):
+                    new_struct[pth_components[i - 2]][pth_components[i - 1]][
+                        pth_components[i]
+                    ] = {}
+
         return new_struct

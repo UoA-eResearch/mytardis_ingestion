@@ -4,6 +4,7 @@ import hashlib
 import mimetypes
 from pathlib import Path
 
+
 def calculate_md5sum(
     fp: Path,
 ) -> str:

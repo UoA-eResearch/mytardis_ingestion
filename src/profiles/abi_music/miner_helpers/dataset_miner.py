@@ -6,13 +6,13 @@
 import copy
 import json
 import logging
-
 from pathlib import Path
-from src.profiles import output_manager as om
+from typing import Any, Dict, Optional
+
+from src.extraction_output_manager import output_manager as om
 from src.profiles import profile_consts as pc
-from src.profiles.abi_music.miner_helpers import metadata_helpers as mh
 from src.profiles.abi_music import abi_music_consts as amc
-from typing import Optional, Any, Dict
+from src.profiles.abi_music.miner_helpers import metadata_helpers as mh
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -61,7 +61,9 @@ class DatasetMiner:
                     if config_key in dset_metadata:
                         preproc_dset_metadata = {}
                         for con_key in dset_metadata[config_key].keys():
-                            preproc_dset_metadata[con_key] = dset_metadata[config_key][con_key]
+                            preproc_dset_metadata[con_key] = dset_metadata[config_key][
+                                con_key
+                            ]
                         for key in dset_metadata.keys():
                             if key == config_key:
                                 continue
@@ -72,7 +74,9 @@ class DatasetMiner:
                         flat_dset_metadata, mappings
                     )
                     remapped_metadata = mh.add_schema_to_metadata(remapped_metadata)
-                    fname = Path(dset_key + pc.METADATA_FILE_SUFFIX + amc.METADATA_FILE_TYPE)
+                    fname = Path(
+                        dset_key + pc.METADATA_FILE_SUFFIX + amc.METADATA_FILE_TYPE
+                    )
                     fp = path / proj_pth / expt_pth / fname
                     mh.write_metadata_file(fp, remapped_metadata)
                     new_out_man.add_success_entry_to_dict(

@@ -7,12 +7,12 @@ import copy
 import json
 import logging
 import os
-
 from pathlib import Path
-from src.profiles import output_manager as om
+from typing import Any, Dict, List, Optional
+
+from src.extraction_output_manager import output_manager as om
 from src.profiles import profile_consts as pc
 from src.profiles.abi_music import abi_music_consts as amc
-from typing import Optional, Any, Dict, List
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -21,8 +21,7 @@ logger.setLevel(logging.DEBUG)  # set the level for which this logger will be pr
 
 # ---Code
 class MetadataProspector:
-    """Inspects metadata and performs related checks on a path.
-    """
+    """Inspects metadata and performs related checks on a path."""
 
     def __init__(
         self,
@@ -84,7 +83,6 @@ class MetadataProspector:
 
         return new_out_man
 
-
     def _search_for_missing_fields(
         self,
         md_dict: Dict[str, Any],
@@ -99,13 +97,14 @@ class MetadataProspector:
             List[str]: A list of missing fields.
         """
         missing_fields: List[str] = []
-        
-        sub_dict_fields_to_check: List[str] = [amc.PROJECT_FIELD, 
-                                      amc.SAMPLE_FIELD,
-                                      amc.SEQUENCE_FIELD]
-        
-        fields_to_check: List[str] = [amc.DESCRIPTION_FIELD,
-                                      amc.INSTRUMENT_FIELD]
+
+        sub_dict_fields_to_check: List[str] = [
+            amc.PROJECT_FIELD,
+            amc.SAMPLE_FIELD,
+            amc.SEQUENCE_FIELD,
+        ]
+
+        fields_to_check: List[str] = [amc.DESCRIPTION_FIELD, amc.INSTRUMENT_FIELD]
 
         if amc.CONFIG_FIELD in md_dict:
             md_dict = md_dict[amc.CONFIG_FIELD]

@@ -7,17 +7,19 @@ format on a path.
 import copy
 import logging
 import os
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 import yaml
 
-from pathlib import Path
-from src.profiles import output_manager as om
-from src.profiles.abi_music.miner_helpers.project_miner import ProjectMiner
-from src.profiles.abi_music.miner_helpers.experiment_miner import ExperimentMiner
-from src.profiles.abi_music.miner_helpers.dataset_miner import DatasetMiner
+from src.extraction_output_manager import output_manager as om
+from src.profiles.abi_music.miner_helpers.dataclass_identifier import (
+    DataclassIdentifier,
+)
 from src.profiles.abi_music.miner_helpers.datafile_miner import DatafileMiner
-from src.profiles.abi_music.miner_helpers.dataclass_identifier import DataclassIdentifier
-from typing import Optional, Any, Dict
+from src.profiles.abi_music.miner_helpers.dataset_miner import DatasetMiner
+from src.profiles.abi_music.miner_helpers.experiment_miner import ExperimentMiner
+from src.profiles.abi_music.miner_helpers.project_miner import ProjectMiner
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -75,7 +77,7 @@ class CustomMiner:
             dset_mappings = yaml.safe_load(stream)
         with dfile_yaml_fp.open("r") as stream:
             dfile_mappings = yaml.safe_load(stream)
-        
+
         dset_idntfr = DataclassIdentifier()
         logger.info(f"path = {path}")
         dclass_struct = dset_idntfr.identify_data_classes(path, out_man)
@@ -96,7 +98,7 @@ class CustomMiner:
             path, dclass_struct, dset_mappings, out_man
         )
 
-        dfile_miner = DatafileMiner() 
+        dfile_miner = DatafileMiner()
         out_man = dfile_miner.mine_datafile_metadata(
             path, dclass_struct, dfile_mappings, out_man
         )

@@ -6,11 +6,12 @@ The mining process involves generating metadata files for MyTardis ingestion.
 
 # ---Imports
 import logging
-
 from pathlib import Path
-from src.profiles import output_manager as om
-from src.profiles import profile_selector
 from typing import Optional
+
+from src.config.singleton import Singleton
+from src.extraction_output_manager import output_manager as om
+from src.miners.abstract_custom_miner import AbstractCustomMiner
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -18,19 +19,19 @@ logger.setLevel(logging.DEBUG)
 
 
 # ---Code
-class Miner:
+class Miner(metaclass=Singleton):
     """Miner class for mining files according to a profile"""
 
     def __init__(
         self,
-        profile: str,
+        custom_miner: AbstractCustomMiner,
     ) -> None:
         """Initialize the miner object.
 
         Args:
             profile (str): Name of the profile to use for mining.
         """
-        self.profile_sel = profile_selector.ProfileSelector(profile)
+        self.custom_miner = custom_miner
 
     def mine_directory(
         self,
@@ -51,14 +52,18 @@ class Miner:
         if not out_man:
             out_man = om.OutputManager()
 
-        custom_miner = self.profile_sel.load_custom_miner()
-        miner = custom_miner.CustomMiner()
-        new_out_man : om.OutputManager = miner.mine(path, recursive, out_man)
+        if self.custom_miner:
+            out_man_fnl: om.OutputManager = self.custom_miner.mine(
+                path, recursive, out_man
+            )
+        else:
+            out_man_fnl = out_man
+            logger.info("No custom miner set, thus will not be used")
 
         logger.info("mining complete")
-        logger.info(f"ignored dirs = {new_out_man.dirs_to_ignore}")
-        logger.info(f"ignored files = {new_out_man.files_to_ignore}")
-        logger.info(f"files to ingest = {new_out_man.metadata_files_to_ingest_dict}")
-        logger.info(f"output dict = {new_out_man.output_dict}")
+        logger.info(f"ignored dirs = {out_man_fnl.dirs_to_ignore}")
+        logger.info(f"ignored files = {out_man_fnl.files_to_ignore}")
+        logger.info(f"files to ingest = {out_man_fnl.metadata_files_to_ingest_dict}")
+        logger.info(f"output dict = {out_man_fnl.output_dict}")
 
-        return new_out_man
+        return out_man_fnl

@@ -6,21 +6,21 @@ import copy
 import json
 import logging
 import os
-
 from pathlib import Path
-from src.profiles import output_manager as om
+from typing import Any, Optional
+
+from src.extraction_output_manager import output_manager as om
 from src.profiles import profile_consts as pc
 from src.profiles.abi_music import abi_music_consts as amc
-from typing import Optional, Any
 
 # ---Constants
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # set the level for which this logger will be printed.
 
+
 # ---Code
 class DirectoryProspector:
-    """Prospects a directory to check whether the directory path can be ingested
-    """
+    """Prospects a directory to check whether the directory path can be ingested"""
 
     def __init__(
         self,
@@ -28,35 +28,37 @@ class DirectoryProspector:
         return
 
     def check_for_files_outside_dataset(
-            self,
-            path: Path,
-            out_man: om.OutputManager,
-        ) -> om.OutputManager:
-            """Check for files outside dataset folders and store them in the output manager
-            as well as log the files
+        self,
+        path: Path,
+        out_man: om.OutputManager,
+    ) -> om.OutputManager:
+        """Check for files outside dataset folders and store them in the output manager
+        as well as log the files
 
-            Args:
-                path (Path): the path that is at least a level above the dataset
-                out_man (om.OutputManager): the output manager to store information of the offending files
+        Args:
+            path (Path): the path that is at least a level above the dataset
+            out_man (om.OutputManager): the output manager to store information of the offending files
 
-            Returns:
-                om.OutputManager: the output manager to store information of the offending files
-            """
-            new_out_man = copy.deepcopy(out_man)
-            for root, dirs, files in os.walk(path):
-                root_pth = Path(root)
-                rel_path = root_pth.relative_to(path)
-                if len(rel_path.parts) < 3:
-                    for file in files:
-                        if pc.METADATA_FILE_SUFFIX in file:
-                            continue
-                        fp = root_pth / Path(file)
-                        new_out_man.add_issues_entry_to_dict(
-                            fp, pc.PROCESS_PROSPECTOR, "not in a dataset folder"
-                        )
-                        new_out_man.add_file_to_ignore(fp)
-                        logger.warning(f"{file} file found in {rel_path} which is not in a dataset folder")
-            return new_out_man
+        Returns:
+            om.OutputManager: the output manager to store information of the offending files
+        """
+        new_out_man = copy.deepcopy(out_man)
+        for root, dirs, files in os.walk(path):
+            root_pth = Path(root)
+            rel_path = root_pth.relative_to(path)
+            if len(rel_path.parts) < 3:
+                for file in files:
+                    if pc.METADATA_FILE_SUFFIX in file:
+                        continue
+                    fp = root_pth / Path(file)
+                    new_out_man.add_issues_entry_to_dict(
+                        fp, pc.PROCESS_PROSPECTOR, "not in a dataset folder"
+                    )
+                    new_out_man.add_file_to_ignore(fp)
+                    logger.warning(
+                        f"{file} file found in {rel_path} which is not in a dataset folder"
+                    )
+        return new_out_man
 
     def check_json_folder_path_mismatch(
         self,
@@ -104,11 +106,9 @@ class DirectoryProspector:
                     if str(target_file) == file:
                         has_match = True
                         matched_filepath = root_pth / Path(file)
-            
+
             if has_match:
-                if self._determine_json_matches_folder_path(
-                    matched_filepath, rel_path
-                ):
+                if self._determine_json_matches_folder_path(matched_filepath, rel_path):
                     new_out_man.add_success_entry_to_dict(
                         matched_filepath,
                         pc.PROCESS_PROSPECTOR,
@@ -161,7 +161,7 @@ class DirectoryProspector:
         ref_path = Path(prj_name) / Path(smp_name) / Path(seq_name)
         if not str(ref_path) in str(rel_path):
             return False
-        
+
         dir_sufx = str(rel_path).split(str(ref_path))[1]
         if dir_sufx in amc.FOLDER_SUFFIX_LUT:
             return True
