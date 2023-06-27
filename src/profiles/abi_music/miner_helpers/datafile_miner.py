@@ -7,16 +7,17 @@ import copy
 import json
 import logging
 import os
+from pathlib import Path
+from typing import Any, Dict, Optional
+
 import yaml
 
-from pathlib import Path
-from src.profiles import output_manager as om
+from src.miners.utils import datafile_metadata_helpers as dmh
+from src.extraction_output_manager import output_manager as om
 from src.profiles import profile_consts as pc
 from src.profiles import profile_helpers as ph
-from src.miners.utils import datafile_metadata_helpers as dmh
-from src.profiles.abi_music.miner_helpers import metadata_helpers as mh
 from src.profiles.abi_music import abi_music_consts as amc
-from typing import Optional, Any, Dict
+from src.profiles.abi_music.miner_helpers import metadata_helpers as mh
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ logger.setLevel(logging.DEBUG)  # set the level for which this logger will be pr
 # ---Code
 class DatafileMiner:
     """Mines datafile metadata"""
-    
+
     def __init__(self) -> None:
         pass
 
@@ -68,8 +69,12 @@ class DatafileMiner:
                             fp = root_pth / fname
                             if fp in files_to_ignore_lut:
                                 continue
-                            metadata = self._generate_datafile_metadata(root_pth, rel_path, dset_key, file)
-                            fname = Path(file + pc.METADATA_FILE_SUFFIX + amc.METADATA_FILE_TYPE)
+                            metadata = self._generate_datafile_metadata(
+                                root_pth, rel_path, dset_key, file
+                            )
+                            fname = Path(
+                                file + pc.METADATA_FILE_SUFFIX + amc.METADATA_FILE_TYPE
+                            )
                             fp = root_pth / fname
                             mh.write_metadata_file(fp, metadata)
                             new_out_man.add_success_entry_to_dict(

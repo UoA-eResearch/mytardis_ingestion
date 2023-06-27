@@ -9,14 +9,13 @@ a format accepted by the mytardis_ingestion
 import copy
 import json
 import logging
-
 from pathlib import Path
-from src.profiles import profile_consts as pc
+from typing import Any, Dict, List, Optional, Union
+
 from src.beneficiations.parsers.parser import Parser
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
+from src.profiles import profile_consts as pc
 from src.utils.ingestibles import IngestibleDataclasses
-from typing import Any, Optional, Dict, Union, List
-
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -50,7 +49,7 @@ class JsonParser(Parser):
         dset_files: List[Path] = beneficiation_data[pc.DATASET_NAME]
         dfile_files: List[Path] = beneficiation_data[pc.DATAFILE_NAME]
 
-        ing_dclasses : IngestibleDataclasses = copy.deepcopy(ingestible_dclasses)
+        ing_dclasses: IngestibleDataclasses = copy.deepcopy(ingestible_dclasses)
         logger.debug(f"proj_files = {str(proj_files)}")
         projects = self._parse_project_files(proj_files)
         ing_dclasses.add_projects(projects)
@@ -145,7 +144,7 @@ class JsonParser(Parser):
         """
         raw_dclasses: List[Any] = []
         for fp in dclass_files:
-            with fp.open('r') as f:
+            with fp.open("r") as f:
                 json_obj = json.load(f)
                 raw_dclass = dclass_type(**json_obj)
                 raw_dclasses.append(raw_dclass)

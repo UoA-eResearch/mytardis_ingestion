@@ -8,7 +8,7 @@ from pathlib import Path
 from pytest import fixture
 from src.beneficiations import beneficiation_consts as bc
 from src.profiles import profile_consts as pc
-from src.profiles.output_manager import OutputManager
+from src.extraction_output_manager.output_manager import OutputManager
 
 import logging
 logger = logging.getLogger(__name__)

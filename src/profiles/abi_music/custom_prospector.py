@@ -7,15 +7,21 @@ import copy
 import json
 import logging
 import os
-
 from pathlib import Path
-from src.profiles import output_manager as om
+from typing import Any, Optional
+
+from src.extraction_output_manager import output_manager as om
 from src.profiles import profile_consts as pc
 from src.profiles.abi_music import abi_music_consts as amc
-from src.profiles.abi_music.prospector_helpers.dataset_prospector import DatasetProspector
-from src.profiles.abi_music.prospector_helpers.directory_prospector import DirectoryProspector
-from src.profiles.abi_music.prospector_helpers.metadata_prospector import MetadataProspector
-from typing import Optional, Any
+from src.profiles.abi_music.prospector_helpers.dataset_prospector import (
+    DatasetProspector,
+)
+from src.profiles.abi_music.prospector_helpers.directory_prospector import (
+    DirectoryProspector,
+)
+from src.profiles.abi_music.prospector_helpers.metadata_prospector import (
+    MetadataProspector,
+)
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -36,7 +42,7 @@ class CustomProspector:
         """Do not modify this method"""
         return None
 
-    def inspect(
+    def prospect(
         self,
         path: Path,
         recursive: bool,
@@ -64,13 +70,19 @@ class CustomProspector:
             "Checking for whether .json metadata file matches the file's path prescribed in its metadata"
         )
         dir_prosp = DirectoryProspector()
-        out_man1, metadata_fp_list = dir_prosp.check_json_folder_path_mismatch(path, out_man)
+        out_man1, metadata_fp_list = dir_prosp.check_json_folder_path_mismatch(
+            path, out_man
+        )
 
         logger.info("Checking files outside dataset folders")
-        out_man2 : om.OutputManager = dir_prosp.check_for_files_outside_dataset(path, out_man1)
-        
+        out_man2: om.OutputManager = dir_prosp.check_for_files_outside_dataset(
+            path, out_man1
+        )
+
         logger.info("Checking metadata files for their required fields")
         md_prosp = MetadataProspector()
-        out_man3 : om.OutputManager = md_prosp.check_metadata_for_mining(out_man2, metadata_fp_list)
+        out_man3: om.OutputManager = md_prosp.check_metadata_for_mining(
+            out_man2, metadata_fp_list
+        )
 
         return out_man3

@@ -4,15 +4,15 @@ Pre-ingestion_factory tasks include prospecting, mining, and beneficiation.
 """
 # ---Imports
 import logging
-
 from pathlib import Path
+from typing import Dict, List, Optional
+
 from src.beneficiations.beneficiation import Beneficiation
+from src.config.singleton import Singleton
+from src.extraction_output_manager.output_manager import OutputManager
 from src.miners.miner import Miner
-from src.profiles import profile_consts as pc
-from src.profiles.output_manager import OutputManager
 from src.prospectors.prospector import Prospector
 from src.utils.ingestibles import IngestibleDataclasses
-from typing import Optional, Dict, List
 
 
 # ---Constants
@@ -21,7 +21,7 @@ logger.setLevel(logging.DEBUG)
 
 
 # ---Code
-class ExtractionPlant:
+class ExtractionPlant(metaclass = Singleton):
     """Used for extracting data from a given profile and path. Involves prospecting, mining and beneficiating.
     Prospecting is used to check and filter out data and metadata files that can be staged for ingestion.
     Mining is used to generate metadata files that contain fields compatible with the raw dataclasses.
@@ -30,7 +30,6 @@ class ExtractionPlant:
 
     def __init__(
         self,
-        profile: str,
         prospector: Prospector,
         miner: Miner,
         beneficiation: Beneficiation,
@@ -38,30 +37,26 @@ class ExtractionPlant:
         """Initializes an ExtractionPlant instance with the given parameters.
 
         Args:
-            profile (str, optional): The profile name. Defaults to None.
-            prospector (Prospector, optional): The prospector instance. Defaults to None.
-            miner (Miner, optional): The miner instance. Defaults to None.
-            beneficiation (Beneficiation): The beneficiation instance. Defaults to None.
+            prospector (Prospector): The prospector instance.
+            miner (Miner): The miner instance.
+            beneficiation (Beneficiation): The beneficiation instance.
 
         Returns:
             None
 
         """
-        self.profile = profile
-        self.propsector = prospector
+        self.prospector = prospector
         self.miner = miner
         self.beneficiation = beneficiation
 
     def run_extraction(
         self,
         pth: Path,
-        ing_dclasses: IngestibleDataclasses,
     ) -> IngestibleDataclasses:
         """Runs the full extraction process on the given path and file format.
 
         Args:
             pth (Path): The path of the files.
-            ing_dclasses (IngestibleDataclasses): A class that contains the raw dataclasses for ingestion.
 
         Returns:
             IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
@@ -69,51 +64,35 @@ class ExtractionPlant:
         Raises:
             Exception: If profile for extraction is not set.
         """
-        if self.profile:
-            out_man = self._prospect(self.profile, pth)
-            out_man = self._mine(self.profile, pth, out_man)
-        else:
-            logger.error("Profile not set")
-            raise Exception("Profile for extraction not set")
+        out_man = OutputManager()
+        ing_dclasses = IngestibleDataclasses()
+
+        if self.prospector:
+            out_man = self._prospect(pth, out_man)
+
+        if self.miner:
+            out_man = self._mine(pth, out_man)
 
         ingest_dict = out_man.metadata_files_to_ingest_dict
         ingestible_dataclasses_out = self._beneficiate(ingest_dict, ing_dclasses)
         return ingestible_dataclasses_out
 
-    def run_extraction_with_IDW(
-        self,
-        ingest_dict: Dict[str, List[str]],
-        ing_dclasses: IngestibleDataclasses,
-    ) -> IngestibleDataclasses:
-        """Runs extraction process on the given path and file format after using the IDW.
-
-        Args:
-            ingest_dict (Dict[str, list[str]]): A dictionary of ingest files.
-            ing_dclasses (IngestibleDataclasses): A class that contains the raw dataclasses for ingestion.
-
-        Returns:
-            IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
-        """
-        ingestible_dataclasses = self._beneficiate(ingest_dict, ing_dclasses)
-        return ingestible_dataclasses
-
     def _prospect(
         self,
-        profile: str,
         pth: Path,
+        out_man: OutputManager,
     ) -> OutputManager:
         logger.info("prospecting")
-        prospector = Prospector(profile)
-        return prospector.prospect_directory(pth)
+        out_man_fnl: OutputManager = self.prospector.prospect_directory(pth, True, out_man)
+        return out_man_fnl
 
-    def _mine(self, 
-              profile: str, 
-              pth: Path, 
-              out_man: OutputManager
-              ) -> OutputManager:
+    def _mine(
+        self,
+        pth: Path,
+        out_man: OutputManager,
+    ) -> OutputManager:
         logger.info("mining")
-        miner = Miner(profile)
-        return miner.mine_directory(pth, True, out_man)
+        return self.miner.mine_directory(pth, True, out_man)
 
     def _beneficiate(
         self,

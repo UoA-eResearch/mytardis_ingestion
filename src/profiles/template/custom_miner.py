@@ -8,9 +8,12 @@ import copy
 import logging
 import os
 
-from src.profiles import output_manager as om
+from pathlib import Path
+from typing import Any, Optional
+
+from src.extraction_output_manager import output_manager as om
+from src.miners.abstract_custom_miner import AbstractCustomMiner
 from src.profiles import profile_consts as pc
-from typing import Optional, Any
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -33,10 +36,9 @@ class CustomMiner:
 
     def mine(
         self,
-        path: str,
+        path: Path,
         recursive: bool,
         out_man: Optional[om.OutputManager] = None,
-        options: Optional[dict[str, Any]] = None,
     ) -> om.OutputManager:
         """Mines metadata in a path
 
@@ -56,5 +58,5 @@ class CustomMiner:
         # Write the main inspection implementation here
 
         return out_man
-    
+
     # Write rest of implementation here, use leading underscores for each method

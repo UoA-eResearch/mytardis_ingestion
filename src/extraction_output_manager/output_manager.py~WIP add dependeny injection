@@ -4,11 +4,12 @@ extraction plant.
 
 # ---Imports
 import logging
-
 from pathlib import Path
+from typing import Any, Dict, List, Union
+
 from src.profiles import profile_consts as pc
 from src.profiles import profile_helpers as ph
-from typing import Any, Dict, List, Union
+
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ class OutputManager:
         output_dict (Dict): Stores the output results.
         dirs_to_ignore (List): List of dirs to ignore.
         files_to_ignore (List): List of files to ignore.
-        metadata_files_to_ingest_dict (dict): Stores the metadata files to ingest.
+        metadata_files_to_ingest_dict (Dict): Stores the metadata files to ingest.
     """
 
     def __init__(

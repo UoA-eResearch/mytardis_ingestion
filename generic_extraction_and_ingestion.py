@@ -46,7 +46,6 @@ from src.profiles.profile_loader import ProfileLoader
 from src.prospectors.prospector import Prospector
 from src.smelters import smelter
 
-
 # ---Constants
 logger = logging.getLogger(__name__)
 config = ConfigFromEnv()
@@ -61,7 +60,6 @@ def main():
     The ingestion is done using the IngestionFactory class that runs the smelter, crucible, and forge
     """
     
-    
     ###Extraction step
     pth = "Replace/This/With/Your/Ingestion/Path/Here"
     profile = Path("replace_this_with_your_profile_name")
@@ -70,7 +68,8 @@ def main():
     prospector = Prospector(profile_loader.load_custom_prospector)
     miner = Miner(profile_loader.load_custom_miner)
 
-    beneficiation = Beneficiation(profile_loader.load_custom_beneficiation)
+    parser = JsonParser() #JsonParser was picked, but it can really be anything as long as it has been implemented
+    beneficiation = Beneficiation(parser)
     
     ext_plant = ExtractionPlant(prospector, miner, beneficiation)
     ingestible_dataclasses = ext_plant.run_extraction(pth)

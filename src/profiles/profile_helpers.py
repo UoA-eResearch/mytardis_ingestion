@@ -1,7 +1,8 @@
 """Helpers used throughout a profile in the Extraction Plant 
 """
-from src.profiles import profile_consts as pc
 from typing import Any, Dict, List
+
+from src.profiles import profile_consts as pc
 
 
 def create_dataclass_entry_dict() -> Dict[str, Any]:
