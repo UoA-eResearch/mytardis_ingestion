@@ -46,6 +46,7 @@ from src.profiles.profile_loader import ProfileLoader
 from src.prospectors.prospector import Prospector
 from src.smelters import smelter
 
+
 # ---Constants
 logger = logging.getLogger(__name__)
 config = ConfigFromEnv()
@@ -59,6 +60,7 @@ def main():
 
     The ingestion is done using the IngestionFactory class that runs the smelter, crucible, and forge
     """
+    
     
     ###Extraction step
     pth = "Replace/This/With/Your/Ingestion/Path/Here"

@@ -13,12 +13,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
-from src.blueprints.datafile import RawDatafile
-from src.blueprints.dataset import RawDataset
-from src.blueprints.experiment import RawExperiment
-from src.blueprints.project import RawProject
+from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
 from src.profiles import profile_consts as pc
-from src.extraction_output_manager.ingestibles import IngestibleDataclasses
+from src.utils.ingestibles import IngestibleDataclasses
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -33,15 +30,15 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
     ) -> None:
         pass
 
-    def beneficiate(
+    def parse(
         self,
-        beneficiation_data: Any,
+        beneficiation_data: Dict[str, Any],
         ingestible_dclasses: IngestibleDataclasses,
     ) -> IngestibleDataclasses:
         """Parse dataclass files into IngestibleDataclasses objects.
 
         Args:
-            beneficiation_data (Any): Data that contains information about the dataclasses to parse
+            beneficiation_data (Dict[str, Any]): Data that contains information about the dataclasses to parse
             ingestible_dclasses (IngestibleDataclasses): object that conatins parsed dataclasses
 
         Returns:

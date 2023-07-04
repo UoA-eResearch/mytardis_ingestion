@@ -6,6 +6,7 @@ import importlib
 import logging
 from types import ModuleType
 
+from src.beneficiations.abstract_custom_benefication import AbstractCustomBeneficiation
 from src.miners.abstract_custom_miner import AbstractCustomMiner
 from src.prospectors.abstract_custom_prospector import AbstractCustomProspector
 from src.config.singleton import Singleton
@@ -16,6 +17,7 @@ logger.setLevel(logging.DEBUG)
 prof_base_lib = "src.profiles."
 custom_prspctr_lib = ".custom_prospector"
 custom_miner_lib = ".custom_miner"
+custom_beneficiation_lib = ".custom_beneficiation"
 
 
 # ---Code
@@ -61,3 +63,10 @@ class ProfileLoader(metaclass=Singleton):
         module_pth = self.profile_module_str + custom_miner_lib
         custom_miner: AbstractCustomMiner = importlib.import_module(module_pth).CustomMiner()
         return custom_miner
+
+    def load_custom_beneficiation(
+        self,
+    ) -> AbstractCustomBeneficiation:
+        module_pth = self.profile_module_str + custom_beneficiation_lib
+        custom_beneficiation: AbstractCustomMiner = importlib.import_module(module_pth).CustomBeneficiation()
+        return custom_beneficiation

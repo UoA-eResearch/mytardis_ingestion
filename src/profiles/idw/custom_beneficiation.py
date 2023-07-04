@@ -14,13 +14,13 @@ from yaml.loader import Loader
 from yaml.nodes import MappingNode, Node
 
 # User-defined imports
-from src.profiles.idw.beneficiation_helpers.models import ( 
+from src.profile.idw.beneficiation_helpers.models import ( 
     RawProject,
    RawExperiment,
     RawDataset,
     RawDatafile,
 )
-from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
+from src.beneficiation.abstract_custom_beneficiation import AbstractCustomBenefication
 
 # Constants
 logger = logging.getLogger(__name__)
@@ -30,8 +30,7 @@ dset_tag = "!Dataset"
 dfile_tag = "!Datafile"
 tags = [prj_tag, expt_tag, dset_tag, dfile_tag]
 
-
-class CustomBeneficiation(AbstractCustomBeneficiation):
+class CustomBeneficiation(AbstractCustomBenefication):
     """
     A class that provides methods to parse YAML files and construct objects.
 
@@ -174,14 +173,5 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         logger.info("parsing {0}".format(fpath))
         with open(fpath) as f:
             data = yaml.safe_load_all(f)
-
-            for obj in data:
-                if isinstance(obj, RawProject):
-                    ingestible_dclasses.add_project(obj)
-                if isinstance(obj, RawExperiment):
-                    ingestible_dclasses.add_experiment(obj)
-                if isinstance(obj, RawDataset):
-                    ingestible_dclasses.add_dataset(obj)
-                if isinstance(obj, RawDatafile):
-                    ingestible_dclasses.add_datafile(obj)
-        return ingestible_dclasses
+            loaded_data = list(data)
+            return loaded_data
