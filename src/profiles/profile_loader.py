@@ -6,7 +6,7 @@ import importlib
 import logging
 from types import ModuleType
 
-from src.beneficiations.abstract_custom_benefication import AbstractCustomBeneficiation
+from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
 from src.miners.abstract_custom_miner import AbstractCustomMiner
 from src.prospectors.abstract_custom_prospector import AbstractCustomProspector
 from src.config.singleton import Singleton
@@ -43,7 +43,7 @@ class ProfileLoader(metaclass=Singleton):
             self.profile_module = importlib.import_module(self.profile_module_str)
         except Exception as e:
             logger.error(e)
-            raise Exception("Error loading profile module")
+            raise Exception("Error loading profile module, profile not found")
 
     def load_profile_module(
         self,
@@ -52,17 +52,27 @@ class ProfileLoader(metaclass=Singleton):
 
     def load_custom_prospector(
         self,
-    ) -> AbstractCustomProspector:
+    ) -> AbstractCustomProspector|None:
         module_pth = self.profile_module_str + custom_prspctr_lib
-        custom_prospector: AbstractCustomProspector = importlib.import_module(module_pth).CustomProspector()
-        return custom_prospector
+        try:
+            custom_prospector: AbstractCustomProspector = importlib.import_module(module_pth).CustomProspector()
+            return custom_prospector
+        except Exception as e:
+            logger.info("AbstractCustomMiner not loaded, will be set to None. Below are the details:")
+            logger.info(e)
+            return None
 
     def load_custom_miner(
         self,
-    ) -> AbstractCustomMiner:
+    ) -> AbstractCustomMiner|None:
         module_pth = self.profile_module_str + custom_miner_lib
-        custom_miner: AbstractCustomMiner = importlib.import_module(module_pth).CustomMiner()
-        return custom_miner
+        try:    
+            custom_miner: AbstractCustomMiner = importlib.import_module(module_pth).CustomMiner()
+            return custom_miner
+        except Exception as e:
+            logger.info("AbstractCustomMiner not loaded, will be set to None. Below are the details:")
+            logger.info(e)
+            return None
 
     def load_custom_beneficiation(
         self,
@@ -70,3 +80,4 @@ class ProfileLoader(metaclass=Singleton):
         module_pth = self.profile_module_str + custom_beneficiation_lib
         custom_beneficiation: AbstractCustomBeneficiation = importlib.import_module(module_pth).CustomBeneficiation()
         return custom_beneficiation
+        

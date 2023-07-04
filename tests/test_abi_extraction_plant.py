@@ -9,23 +9,22 @@ from pytest import fixture
 from src.beneficiations import beneficiation_consts as bc
 from src.beneficiations.beneficiation import Beneficiation
 from src.extraction_plant.extraction_plant import ExtractionPlant
-from src.utils.ingestibles import IngestibleDataclasses
+from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 from src.miners.miner import Miner
 from src.profiles.profile_loader import ProfileLoader
 from src.prospectors.prospector import Prospector
 from tests.fixtures.fixtures_abi_data import get_abi_profile, tmpdir_metadata
-from tests.fixtures.fixtures_abi_beneficiation import (spawn_bnfc)
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
 
-@pytest.mark.usefixtures("tmpdir_metadata", "get_abi_profile", "spawn_bnfc")
-def test_extraction_plant(tmpdir_metadata, get_abi_profile, spawn_bnfc):
-    bnfc = spawn_bnfc
+@pytest.mark.usefixtures("tmpdir_metadata", "get_abi_profile")
+def test_extraction_plant(tmpdir_metadata, get_abi_profile):
     prof_loader = ProfileLoader(get_abi_profile)
     prospector = Prospector(prof_loader.load_custom_prospector())
     miner = Miner(prof_loader.load_custom_miner())
+    bnfc: Beneficiation = Beneficiation(prof_loader.load_custom_beneficiation())
     ext_plant = ExtractionPlant(prospector, miner, bnfc)
 
     ingestible_dataclasses = ext_plant.run_extraction(
@@ -45,21 +44,23 @@ def test_extraction_plant(tmpdir_metadata, get_abi_profile, spawn_bnfc):
 
     Prospector.clear()
     Miner.clear()
+    Beneficiation.clear()
     ProfileLoader.clear()
     ExtractionPlant.clear()
 
 
 @pytest.mark.usefixtures("tmpdir_metadata")
 def test_extraction_plant_no_profile(tmpdir_metadata):
-    bnfc = spawn_bnfc
     with pytest.raises(Exception):
         prof_loader = ProfileLoader("")
         prospector = Prospector(prof_loader.load_custom_prospector())
         miner = Miner(prof_loader.load_custom_miner())
+        bnfc: Beneficiation = Beneficiation(prof_loader.load_custom_beneficiation())
         ext_plant = ExtractionPlant(prospector, miner, bnfc)
         ext_plant.run_extraction(tmpdir_metadata[0])
 
     Prospector.clear()
     Miner.clear()
+    Beneficiation.clear()
     ProfileLoader.clear()
     ExtractionPlant.clear()

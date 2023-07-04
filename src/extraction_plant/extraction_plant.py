@@ -5,7 +5,7 @@ Pre-ingestion_factory tasks include prospecting, mining, and beneficiation.
 # ---Imports
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from src.beneficiations.beneficiation import Beneficiation
 from src.config.singleton import Singleton
@@ -30,8 +30,8 @@ class ExtractionPlant(metaclass = Singleton):
 
     def __init__(
         self,
-        prospector: Prospector,
-        miner: Miner,
+        prospector: Union[Prospector,None],
+        miner: Union[Miner,None],
         beneficiation: Beneficiation,
     ) -> None:
         """Initializes an ExtractionPlant instance with the given parameters.
