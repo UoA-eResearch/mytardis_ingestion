@@ -10,7 +10,7 @@ from typing import Any, Dict, Union
 
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
 from src.config.singleton import Singleton
-from src.utils.ingestibles import IngestibleDataclasses
+from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ class Beneficiation(metaclass=Singleton):
 
     def __init__(
         self,
-        beneficiation: Union[AbstractCustomBeneficiation, None],
+        beneficiation: AbstractCustomBeneficiation,
     ) -> None:
         self.beneficiation = beneficiation
 
@@ -45,6 +45,7 @@ class Beneficiation(metaclass=Singleton):
             IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
         """
         logger.info("beneficiating")
+
         ing_dclasses_out = self.beneficiation.beneficiate(
             beneficiation_data=beneficiation_data,
             ingestible_dclasses=ingestible_dataclasses,

@@ -30,15 +30,15 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
     ) -> None:
         pass
 
-    def parse(
+    def beneficiate(
         self,
-        beneficiation_data: Dict[str, Any],
+        beneficiation_data: Any,
         ingestible_dclasses: IngestibleDataclasses,
     ) -> IngestibleDataclasses:
         """Parse dataclass files into IngestibleDataclasses objects.
 
         Args:
-            beneficiation_data (Dict[str, Any]): Data that contains information about the dataclasses to parse
+            beneficiation_data (Any): Data that contains information about the dataclasses to parse
             ingestible_dclasses (IngestibleDataclasses): object that conatins parsed dataclasses
 
         Returns:

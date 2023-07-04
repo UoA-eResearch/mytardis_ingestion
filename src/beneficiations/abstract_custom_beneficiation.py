@@ -27,16 +27,16 @@ class AbstractCustomBeneficiation(ABC):
     @abstractmethod
     def beneficiate(
         self,
-        beneficiation_data: Union[Path, Dict[str, List[Path]], List[Path]],
+        beneficiation_data: Any,
         ingestible_dclasses: IngestibleDataclasses,
     ) -> IngestibleDataclasses:
         """Parse metadata files of a given file type into raw dataclasses
 
         Args:
-            beneficiation_data (Union[Path, Dict[str, List[Path]], List[Path]]): A filepath or a structure of filepaths that contains metadata to parse into raw dataclasses
-            ingestible_dataclasses (IngestibleDataclasses): A class that contains the raw datafiles, datasets, experiments, and projects.
+            beneficiation_data (Any): An object that contains a filepath or a structure of filepaths that contains metadata to parse into raw dataclasses
+            ingestible_dataclasses (IngestibleDataclasses): A class that contains the raw datafiles, datasets, experiments, and projects
 
         Returns:
-            IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
+            IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects
         """
         pass

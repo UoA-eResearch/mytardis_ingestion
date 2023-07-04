@@ -14,13 +14,13 @@ from yaml.loader import Loader
 from yaml.nodes import MappingNode, Node
 
 # User-defined imports
-from src.profile.idw.beneficiation_helpers.models import ( 
+from src.profiles.idw.beneficiation_helpers.models import ( 
     RawProject,
    RawExperiment,
     RawDataset,
     RawDatafile,
 )
-from src.beneficiation.abstract_custom_beneficiation import AbstractCustomBenefication
+from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
 
 # Constants
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ dset_tag = "!Dataset"
 dfile_tag = "!Datafile"
 tags = [prj_tag, expt_tag, dset_tag, dfile_tag]
 
-class CustomBeneficiation(AbstractCustomBenefication):
+class CustomBeneficiation(AbstractCustomBeneficiation):
     """
     A class that provides methods to parse YAML files and construct objects.
 
