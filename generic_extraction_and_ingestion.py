@@ -70,8 +70,7 @@ def main():
     prospector = Prospector(profile_loader.load_custom_prospector)
     miner = Miner(profile_loader.load_custom_miner)
 
-    parser = JsonParser() #JsonParser was picked, but it can really be anything as long as it has been implemented
-    beneficiation = Beneficiation(parser)
+    beneficiation = Beneficiation(profile_loader.load_custom_beneficiation)
     
     ext_plant = ExtractionPlant(prospector, miner, beneficiation)
     ingestible_dataclasses = ext_plant.run_extraction(pth)

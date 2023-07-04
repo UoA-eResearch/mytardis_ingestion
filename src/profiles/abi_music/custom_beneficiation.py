@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Union
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
 from src.profiles import profile_consts as pc
-from src.utils.ingestibles import IngestibleDataclasses
+from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 
 # ---Constants
 logger = logging.getLogger(__name__)

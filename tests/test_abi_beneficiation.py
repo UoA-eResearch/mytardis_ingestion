@@ -51,7 +51,7 @@ def test_bad_json_parse(tmpdir_metadata_files, get_abi_profile):
     ingestible_dataclasses: IngestibleDataclasses = IngestibleDataclasses()
     
     ing_files = tmpdir_metadata_files[1]
-    with pytest.raises(pydantic.ValidationError):
+    with pytest.raises(pydantic.error_wrappers.ValidationError):
         ing_dclasses = bnfc.beneficiate(beneficiation_data = ing_files, 
                                     ingestible_dataclasses = ingestible_dataclasses)
         
