@@ -6,9 +6,9 @@ into raw dataclasses.
 # ---Imports
 import copy
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
-from src.beneficiations.parsers.parser import Parser
+from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
 from src.config.singleton import Singleton
 from src.utils.ingestibles import IngestibleDataclasses
 
@@ -26,9 +26,9 @@ class Beneficiation(metaclass=Singleton):
 
     def __init__(
         self,
-        parser: Parser,
+        beneficiation: Union[AbstractCustomBeneficiation, None],
     ) -> None:
-        self.parser = parser
+        self.beneficiation = beneficiation
 
     def beneficiate(
         self,
@@ -45,7 +45,7 @@ class Beneficiation(metaclass=Singleton):
             IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
         """
         logger.info("beneficiating")
-        ing_dclasses_out = self.parser.parse(
+        ing_dclasses_out = self.beneficiation.beneficiate(
             beneficiation_data=beneficiation_data,
             ingestible_dclasses=ingestible_dataclasses,
         )

@@ -12,7 +12,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from src.beneficiations.parsers.parser import Parser
+from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
 from src.profiles import profile_consts as pc
 from src.utils.ingestibles import IngestibleDataclasses
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 # ---Code
-class JsonParser(Parser):
+class CustomBeneficiation(AbstractCustomBeneficiation):
     """A class to parse dataclass files into IngestibleDataclasses objects."""
 
     def __init__(
