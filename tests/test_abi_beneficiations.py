@@ -8,9 +8,9 @@ from pytest import fixture
 
 from src.beneficiations import beneficiation_consts as bc
 from src.beneficiations.beneficiation import Beneficiation
+from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 from src.extraction_output_manager.output_manager import OutputManager
 from src.profiles import profile_consts as pc
-from src.utils.ingestibles import IngestibleDataclasses
 from tests.fixtures.fixtures_abi_data import (
     get_bad_beneficiation_format,
     tmpdir_metadata_files,

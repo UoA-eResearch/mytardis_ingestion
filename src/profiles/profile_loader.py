@@ -68,5 +68,5 @@ class ProfileLoader(metaclass=Singleton):
         self,
     ) -> AbstractCustomBeneficiation:
         module_pth = self.profile_module_str + custom_beneficiation_lib
-        custom_beneficiation: AbstractCustomMiner = importlib.import_module(module_pth).CustomBeneficiation()
+        custom_beneficiation: AbstractCustomBeneficiation = importlib.import_module(module_pth).CustomBeneficiation()
         return custom_beneficiation

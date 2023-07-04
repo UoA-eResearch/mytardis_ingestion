@@ -9,10 +9,10 @@ from typing import Any, Dict, List, Optional
 
 from src.beneficiations.beneficiation import Beneficiation
 from src.config.singleton import Singleton
+from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 from src.extraction_output_manager.output_manager import OutputManager
 from src.miners.miner import Miner
 from src.prospectors.prospector import Prospector
-from src.utils.ingestibles import IngestibleDataclasses
 
 
 # ---Constants
