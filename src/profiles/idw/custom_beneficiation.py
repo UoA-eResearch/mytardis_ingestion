@@ -21,6 +21,7 @@ from src.profiles.idw.beneficiation_helpers.models import (
     RawDatafile,
 )
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
+from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 
 # Constants
 logger = logging.getLogger(__name__)
@@ -160,7 +161,24 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
 
     #TODO Libby to convert all strings to pathlib.Path objects, and convert "loaded_data" into "ingestible_dataclasses" object.
     #The "ingestible_dataclasses" object is simply a list for each level in PEDD. This list contains the raw dataclasses.
-    def beneficiate(self, fpath: str) -> list:
+    def parse_yaml_file(self, fpath: str) -> list:
+        """
+        Parse a YAML file at the specified path and return a list of loaded objects.
+
+        Args:
+            fpath (str): The path to the YAML file.
+            ingestible_dataclasses (IngestibleDataclasses): _description_
+
+        Returns:
+            IngestibleDataclasses: _description_
+        """
+        logger.info("parsing {0}".format(fpath))
+        with open(fpath) as f:
+            data = yaml.safe_load_all(f)
+            loaded_data = list(data)
+            return loaded_data
+        
+    def beneficiate(self, data_loaded: list, ingestible_dataclasses: IngestibleDataclasses) -> IngestibleDataclasses:
         """
         Parse a YAML file at the specified path and return a list of loaded objects.
 
@@ -170,8 +188,7 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         Returns:
             List[Union[RawDatafile, RawDataset, RawExperiment, RawProject]]: A list of loaded objects.
         """
-        logger.info("parsing {0}".format(fpath))
-        with open(fpath) as f:
-            data = yaml.safe_load_all(f)
-            loaded_data = list(data)
-            return loaded_data
+        
+        ing_dclasses_out = self.beneficiate(data_loaded, ingestible_dataclasses = ingestible_dataclasses)
+
+        return ing_dclasses_out

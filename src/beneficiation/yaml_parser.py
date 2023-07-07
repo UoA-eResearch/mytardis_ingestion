@@ -14,12 +14,18 @@ from yaml.loader import Loader
 from yaml.nodes import MappingNode, Node
 
 # User-defined imports
+'''
 from src.beneficiation.models import ( 
     RawProject,
    RawExperiment,
     RawDataset,
     RawDatafile,
 )
+'''
+from src.blueprints.datafile import RawDatafile
+from src.blueprints.dataset import RawDataset
+from src.blueprints.experiment import RawExperiment
+from src.blueprints.project import RawProject
 
 # Constants
 logger = logging.getLogger(__name__)
