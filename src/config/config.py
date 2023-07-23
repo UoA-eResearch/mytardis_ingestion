@@ -99,7 +99,7 @@ class ConnectionConfig(BaseModel):
     """
 
     hostname: HttpUrl
-    verify_certificate = True
+    verify_certificate: bool = True
     proxy: Optional[ProxyConfig] = None
     _api_stub: str = PrivateAttr("/api/v1/")
 
