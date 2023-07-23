@@ -34,7 +34,7 @@ class RawProject(BaseProject):
     """Concrete class to hold data from the concrete smelter class
     with a validated format as an entry point into the smelting process."""
 
-    institution: Optional[List[str]]
+    institution: Optional[List[str]] = None
     metadata: Optional[Dict[str, str | int | float | bool]] = None
     object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
     start_time: Optional[datetime | str] = None

@@ -94,4 +94,4 @@ class ParameterSet(BaseModel):
     """Pydantic class to hold a parameter set ready for ingestion into MyTardis."""
 
     parameter_schema: AnyUrl = Field(alias="schema")
-    parameters: Optional[List[Parameter]]
+    parameters: Optional[List[Parameter]] = None

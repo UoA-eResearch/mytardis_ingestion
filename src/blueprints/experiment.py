@@ -32,7 +32,7 @@ class RawExperiment(BaseExperiment):
     with a validated format as an entry point into the smelting process."""
 
     projects: Optional[List[str]] = None
-    institution_name: Optional[str]
+    institution_name: Optional[str] = None
     metadata: Optional[Dict[str, str | int | float | bool]] = None
     object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
     start_time: Optional[datetime | str] = None

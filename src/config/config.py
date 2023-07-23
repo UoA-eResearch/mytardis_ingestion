@@ -15,7 +15,8 @@ from pathlib import Path
 from typing import Dict, Optional
 from urllib.parse import urljoin
 
-from pydantic import AnyUrl, BaseModel, BaseSettings, HttpUrl, PrivateAttr
+from pydantic import AnyUrl, BaseModel, ConfigDict, HttpUrl, PrivateAttr
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from requests import PreparedRequest
 from requests.auth import AuthBase
 
@@ -32,7 +33,7 @@ class GeneralConfig(BaseModel):
         source_directory: The root directory to the data source.
     """
 
-    default_institution: Optional[str]
+    default_institution: Optional[str] = None
     source_directory: Path
 
 
@@ -142,8 +143,8 @@ class StorageConfig(BaseModel):
     """
 
     storage_class: str = "django.core.files.storage.FileSystemStorage"
-    options: Optional[Dict[str, str]]
-    attributes: Optional[Dict[str, str]]
+    options: Optional[Dict[str, str]] = None
+    attributes: Optional[Dict[str, str]] = None
 
 
 class IntrospectionConfig(BaseModel):
@@ -163,11 +164,9 @@ class IntrospectionConfig(BaseModel):
 
     old_acls: bool
     projects_enabled: bool
-    objects_with_ids: Optional[list[MyTardisObject]]
-    objects_with_profiles: Optional[list[MyTardisObject]]
-
-    class Config:  # pylint: disable=missing-class-docstring
-        use_enum_values = True
+    objects_with_ids: Optional[list[MyTardisObject]] = None
+    objects_with_profiles: Optional[list[MyTardisObject]] = None
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class ConfigFromEnv(BaseSettings):
@@ -236,10 +235,6 @@ class ConfigFromEnv(BaseSettings):
     storage: StorageConfig
     default_schema: SchemaConfig
     archive: StorageConfig
-
-    class Config:
-        """Pydantic config to enable .env file support"""
-
-        env_file = ".env"  # this path must be relative to the current working directory, i.e. if this class needs to be instantiated in a script running in the root directory
-        env_file_encoding = "utf-8"
-        env_nested_delimiter = "__"
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", env_nested_delimiter="__"
+    )
