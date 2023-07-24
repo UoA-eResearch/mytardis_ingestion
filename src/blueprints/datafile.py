@@ -5,10 +5,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from pydantic import AnyUrl, BaseModel, Field
+from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
-from src.blueprints.custom_data_types import URI, ISODateTime
+from src.blueprints.custom_data_types import URI, ISODateTime, MTUrl
 
 
 class DatafileReplica(BaseModel):
@@ -57,7 +57,7 @@ class RawDatafile(BaseDatafile):
 
     dataset: str
     metadata: Optional[Dict[str, str | int | float | bool]] = None
-    object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
+    object_schema: Optional[MTUrl] = Field(default=None, alias="schema")
     archive_date: Optional[datetime] = None
     delete_date: Optional[datetime] = None
     archive_offset: Optional[int] = None

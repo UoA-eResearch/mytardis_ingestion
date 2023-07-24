@@ -15,10 +15,12 @@ from pathlib import Path
 from typing import Dict, Optional
 from urllib.parse import urljoin
 
-from pydantic import AnyUrl, BaseModel, BaseSettings, HttpUrl, PrivateAttr
+from pydantic import BaseModel, ConfigDict, PrivateAttr
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from requests import PreparedRequest
 from requests.auth import AuthBase
 
+from src.blueprints.custom_data_types import MTUrl
 from src.helpers.enumerators import MyTardisObject
 
 logger = logging.getLogger(__name__)
@@ -32,7 +34,7 @@ class GeneralConfig(BaseModel):
         source_directory: The root directory to the data source.
     """
 
-    default_institution: Optional[str]
+    default_institution: Optional[str] = None
     source_directory: Path
 
 
@@ -76,8 +78,8 @@ class ProxyConfig(BaseModel):
             https proxy address
     """
 
-    http: Optional[HttpUrl] = None
-    https: Optional[HttpUrl] = None
+    http: Optional[MTUrl] = None
+    https: Optional[MTUrl] = None
 
 
 class ConnectionConfig(BaseModel):
@@ -97,8 +99,8 @@ class ConnectionConfig(BaseModel):
             Returns the stub of the MyTardis API route
     """
 
-    hostname: HttpUrl
-    verify_certificate = True
+    hostname: MTUrl
+    verify_certificate: bool = True
     proxy: Optional[ProxyConfig] = None
     _api_stub: str = PrivateAttr("/api/v1/")
 
@@ -124,10 +126,10 @@ class SchemaConfig(BaseModel):
             default datafile schema
     """
 
-    project: Optional[AnyUrl] = None
-    experiment: Optional[AnyUrl] = None
-    dataset: Optional[AnyUrl] = None
-    datafile: Optional[AnyUrl] = None
+    project: Optional[MTUrl] = None
+    experiment: Optional[MTUrl] = None
+    dataset: Optional[MTUrl] = None
+    datafile: Optional[MTUrl] = None
 
 
 class StorageConfig(BaseModel):
@@ -142,8 +144,8 @@ class StorageConfig(BaseModel):
     """
 
     storage_class: str = "django.core.files.storage.FileSystemStorage"
-    options: Optional[Dict[str, str]]
-    attributes: Optional[Dict[str, str]]
+    options: Optional[Dict[str, str]] = None
+    attributes: Optional[Dict[str, str]] = None
 
 
 class IntrospectionConfig(BaseModel):
@@ -163,11 +165,9 @@ class IntrospectionConfig(BaseModel):
 
     old_acls: bool
     projects_enabled: bool
-    objects_with_ids: Optional[list[MyTardisObject]]
-    objects_with_profiles: Optional[list[MyTardisObject]]
-
-    class Config:  # pylint: disable=missing-class-docstring
-        use_enum_values = True
+    objects_with_ids: Optional[list[MyTardisObject]] = None
+    objects_with_profiles: Optional[list[MyTardisObject]] = None
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class ConfigFromEnv(BaseSettings):
@@ -236,10 +236,6 @@ class ConfigFromEnv(BaseSettings):
     storage: StorageConfig
     default_schema: SchemaConfig
     archive: StorageConfig
-
-    class Config:
-        """Pydantic config to enable .env file support"""
-
-        env_file = ".env"  # this path must be relative to the current working directory, i.e. if this class needs to be instantiated in a script running in the root directory
-        env_file_encoding = "utf-8"
-        env_nested_delimiter = "__"
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", env_nested_delimiter="__"
+    )
