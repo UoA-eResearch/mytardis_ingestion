@@ -4,10 +4,10 @@
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from pydantic import AnyUrl, BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
-from src.blueprints.custom_data_types import URI, ISODateTime, Username
+from src.blueprints.custom_data_types import URI, ISODateTime, MTUrl, Username
 from src.blueprints.storage_boxes import RawStorageBox
 from src.helpers.enumerators import DataClassification
 
@@ -24,7 +24,7 @@ class BaseProject(BaseModel):
     autoarchive_offset: int = 365  # default 1 year
     delete_offset: int = -1  #
     created_by: Optional[str] = None
-    url: Optional[HttpUrl] = None
+    url: Optional[str] = None
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None
     identifiers: Optional[List[str]] = None
@@ -36,7 +36,7 @@ class RawProject(BaseProject):
 
     institution: Optional[List[str]] = None
     metadata: Optional[Dict[str, str | int | float | bool]] = None
-    object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
+    object_schema: Optional[MTUrl] = Field(default=None, alias="schema")
     start_time: Optional[datetime | str] = None
     end_time: Optional[datetime | str] = None
     embargo_until: Optional[datetime | str] = None

@@ -15,11 +15,12 @@ from pathlib import Path
 from typing import Dict, Optional
 from urllib.parse import urljoin
 
-from pydantic import AnyUrl, BaseModel, ConfigDict, HttpUrl, PrivateAttr
+from pydantic import BaseModel, ConfigDict, PrivateAttr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from requests import PreparedRequest
 from requests.auth import AuthBase
 
+from src.blueprints.custom_data_types import MTUrl
 from src.helpers.enumerators import MyTardisObject
 
 logger = logging.getLogger(__name__)
@@ -77,8 +78,8 @@ class ProxyConfig(BaseModel):
             https proxy address
     """
 
-    http: Optional[HttpUrl] = None
-    https: Optional[HttpUrl] = None
+    http: Optional[MTUrl] = None
+    https: Optional[MTUrl] = None
 
 
 class ConnectionConfig(BaseModel):
@@ -98,7 +99,7 @@ class ConnectionConfig(BaseModel):
             Returns the stub of the MyTardis API route
     """
 
-    hostname: HttpUrl
+    hostname: MTUrl
     verify_certificate: bool = True
     proxy: Optional[ProxyConfig] = None
     _api_stub: str = PrivateAttr("/api/v1/")
@@ -125,10 +126,10 @@ class SchemaConfig(BaseModel):
             default datafile schema
     """
 
-    project: Optional[AnyUrl] = None
-    experiment: Optional[AnyUrl] = None
-    dataset: Optional[AnyUrl] = None
-    datafile: Optional[AnyUrl] = None
+    project: Optional[MTUrl] = None
+    experiment: Optional[MTUrl] = None
+    dataset: Optional[MTUrl] = None
+    datafile: Optional[MTUrl] = None
 
 
 class StorageConfig(BaseModel):

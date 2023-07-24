@@ -5,10 +5,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from pydantic import AnyUrl, BaseModel, Field
+from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
-from src.blueprints.custom_data_types import URI, ISODateTime
+from src.blueprints.custom_data_types import URI, ISODateTime, MTUrl
 from src.helpers.enumerators import DataClassification
 
 
@@ -33,7 +33,7 @@ class RawDataset(BaseDataset):
     experiments: List[str]
     instrument: str
     metadata: Optional[Dict[str, str | int | float | bool]] = None
-    object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
+    object_schema: Optional[MTUrl] = Field(default=None, alias="schema")
     created_time: Optional[datetime | str] = None
     modified_time: Optional[datetime | str] = None
 
