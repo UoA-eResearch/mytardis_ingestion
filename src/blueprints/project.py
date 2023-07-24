@@ -1,6 +1,7 @@
 # pylint: disable=too-few-public-methods,no-name-in-module,duplicate-code
 """ Pydantic model defining a Project for ingestion into MyTardis."""
 
+from abc import ABC
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -12,7 +13,7 @@ from src.blueprints.storage_boxes import RawStorageBox
 from src.helpers.enumerators import DataClassification
 
 
-class BaseProject(BaseModel):
+class BaseProject(BaseModel, ABC):
     """Abstract base class for a project. The two concrete child classes
     validate against different standards, with the Project having a more strict
     validation than the RawProject class."""
