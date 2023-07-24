@@ -1,6 +1,7 @@
 # pylint: disable=too-few-public-methods,no-name-in-module
 """Pydantic model defining a Dataset for ingestion into MyTardis"""
 
+from abc import ABC
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -20,7 +21,7 @@ class DatafileReplica(BaseModel):
     protocol: str = "file"
 
 
-class BaseDatafile(BaseModel):
+class BaseDatafile(BaseModel, ABC):
     """Abstract base class for a dataset. The two concrete child classes
     validate against different standards, with the Dataset having a more strict
     validation than the RawDataset class.
