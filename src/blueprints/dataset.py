@@ -1,18 +1,19 @@
 # pylint: disable=too-few-public-methods,no-name-in-module,duplicate-code
 """Pydantic model defining a Dataset for ingestion into MyTardis"""
 
+from abc import ABC
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from pydantic import AnyUrl, BaseModel, Field
+from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
-from src.blueprints.custom_data_types import URI, ISODateTime
+from src.blueprints.custom_data_types import URI, ISODateTime, MTUrl
 from src.helpers.enumerators import DataClassification
 
 
-class BaseDataset(BaseModel):
+class BaseDataset(BaseModel, ABC):
     """Abstract base class for a dataset. The two concrete child classes
     validate against different standards, with the Dataset having a more strict
     validation than the RawDataset class."""
@@ -33,7 +34,7 @@ class RawDataset(BaseDataset):
     experiments: List[str]
     instrument: str
     metadata: Optional[Dict[str, str | int | float | bool]] = None
-    object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
+    object_schema: Optional[MTUrl] = Field(default=None, alias="schema")
     created_time: Optional[datetime | str] = None
     modified_time: Optional[datetime | str] = None
 

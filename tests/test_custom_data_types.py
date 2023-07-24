@@ -46,8 +46,9 @@ def test_UPI_wrong_type() -> None:  # pylint: disable=invalid-name
         debug(test_class)
     debug(e_info.value)
     assert str(e_info.value) == (
-        "1 validation error for DummyUsernames\nuser\n  Unexpected type for "
-        "Username: \"<class 'bool'>\" (type=type_error)"
+        "1 validation error for DummyUsernames\nuser\n  Input should be a valid string "
+        "[type=string_type, input_value=True, input_type=bool]\n    "
+        "For further information visit https://errors.pydantic.dev/2.0.3/v/string_type"
     )
 
 
@@ -60,8 +61,11 @@ def test_malformed_UPI(upis: Username) -> None:  # pylint: disable=invalid-name
         debug(test_class)
     assert str(e_info.value) == (
         (
-            f'1 validation error for DummyUsernames\nuser\n  Passed string value "{upis}" '
-            "is not a well formatted Username (type=value_error)"
+            "1 validation error for DummyUsernames\nuser\n  "
+            f'Value error, Passed string value "{upis}" '
+            f"is not a well formatted Username [type=value_error, input_value='{upis}', "
+            "input_type=str]\n    "
+            "For further information visit https://errors.pydantic.dev/2.0.3/v/value_error"
         )
     )
 
@@ -77,8 +81,9 @@ def test_URI_wrong_type() -> None:  # pylint: disable=invalid-name
     with pytest.raises(ValidationError) as e_info:
         _ = DummyURI(uri=bad_uri)
     assert str(e_info.value) == (
-        "1 validation error for DummyURI\nuri\n  Unexpected type for URI: "
-        "\"<class 'float'>\" (type=type_error)"
+        "1 validation error for DummyURI\nuri\n  Input should be a valid string "
+        "[type=string_type, input_value=1.23, input_type=float]\n    "
+        "For further information visit https://errors.pydantic.dev/2.0.3/v/string_type"
     )
 
 
@@ -88,30 +93,39 @@ def test_URI_wrong_type() -> None:  # pylint: disable=invalid-name
         (
             "totally wrong",
             (
-                '1 validation error for DummyURI\nuri\n  Passed string value "totally wrong" '
-                "is not a well formatted MyTardis URI (type=value_error)"
+                "1 validation error for DummyURI\nuri\n  Value error, "
+                'Passed string value "totally wrong" '
+                "is not a well formatted MyTardis URI "
+                "[type=value_error, input_value='totally wrong', input_type=str]\n    "
+                "For further information visit https://errors.pydantic.dev/2.0.3/v/value_error"
             ),
         ),
         (
             "/api/v1/banana/1/",
             (
-                '1 validation error for DummyURI\nuri\n  Unknown object type: "banana" '
-                "(type=value_error)"
+                "1 validation error for DummyURI\nuri\n  Value error, Unknown object type: "
+                "\"banana\" [type=value_error, input_value='/api/v1/banana/1/', "
+                "input_type=str]\n    "
+                "For further information visit https://errors.pydantic.dev/2.0.3/v/value_error"
             ),
         ),
         (
             "/api/v1/project",
             (
-                '1 validation error for DummyURI\nuri\n  Passed string value "/api/v1/project" '
-                "is not a well formatted MyTardis URI (type=value_error)"
+                "1 validation error for DummyURI\nuri\n  Value error, Passed string value "
+                '"/api/v1/project" is not a well formatted MyTardis URI [type=value_error,'
+                " input_value='/api/v1/project', input_type=str]\n    "
+                "For further information visit https://errors.pydantic.dev/2.0.3/v/value_error"
             ),
         ),
         (
             "/api/v1/project/1/additional/",
             (
-                "1 validation error for DummyURI\nuri\n  Passed string value "
+                "1 validation error for DummyURI\nuri\n  Value error, Passed string value "
                 '"/api/v1/project/1/additional/" is not a well formatted MyTardis URI '
-                "(type=value_error)"
+                "[type=value_error, input_value='/api/v1/project/1/additional/', "
+                "input_type=str]\n    "
+                "For further information visit https://errors.pydantic.dev/2.0.3/v/value_error"
             ),
         ),
     ],

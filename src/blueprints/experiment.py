@@ -1,17 +1,18 @@
 # pylint: disable=too-few-public-methods,no-name-in-module,duplicate-code
 """Pydantic model defining an Experiment for ingestion into MyTardis"""
 
+from abc import ABC
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from pydantic import AnyUrl, BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
-from src.blueprints.custom_data_types import URI, ISODateTime
+from src.blueprints.custom_data_types import URI, ISODateTime, MTUrl
 from src.helpers.enumerators import DataClassification
 
 
-class BaseExperiment(BaseModel):
+class BaseExperiment(BaseModel, ABC):
     """Abstract base class for an experiment. The two concrete child classes
     validate against different standards, with the Experiment having a more strict
     validation than the RawExperiment class."""
@@ -20,7 +21,7 @@ class BaseExperiment(BaseModel):
     description: str
     data_classification: Optional[DataClassification] = None
     created_by: Optional[str] = None
-    url: Optional[HttpUrl] = None
+    url: Optional[MTUrl] = None
     locked: bool = False
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None
@@ -32,9 +33,9 @@ class RawExperiment(BaseExperiment):
     with a validated format as an entry point into the smelting process."""
 
     projects: Optional[List[str]] = None
-    institution_name: Optional[str]
+    institution_name: Optional[str] = None
     metadata: Optional[Dict[str, str | int | float | bool]] = None
-    object_schema: Optional[AnyUrl] = Field(default=None, alias="schema")
+    object_schema: Optional[MTUrl] = Field(default=None, alias="schema")
     start_time: Optional[datetime | str] = None
     end_time: Optional[datetime | str] = None
     created_time: Optional[datetime | str] = None
