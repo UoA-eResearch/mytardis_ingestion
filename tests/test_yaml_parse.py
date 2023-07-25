@@ -2,15 +2,15 @@ import logging
 
 import pytest
 
-from src.beneficiation.yaml_parser import YamlParser
+from src.profiles.idw.custom_beneficiation import CustomBeneficiation
 from src.smelters.smelter import Smelter
 
 logger = logging.getLogger(__name__)
 
 
 def test_yaml_parse():
-    yp = YamlParser()
-    data_load = yp.parse_yaml_file(
+    yp = CustomBeneficiation()
+    data_load = yp.beneficiate(
         "tests/fixtures/fixtures_example.yaml"
     )
     assert data_load[0].name == "BIRU_MultipleLungCancer"
