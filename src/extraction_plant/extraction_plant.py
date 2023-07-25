@@ -71,11 +71,13 @@ class ExtractionPlant(metaclass = Singleton):
         out_man = OutputManager()
         ing_dclasses = IngestibleDataclasses()
 
-        if self.prospector.custom_prospector:
-            out_man = self._prospect(pth, out_man)
+        if self.prospector:
+            if self.prospector.custom_prospector:
+                out_man = self._prospect(pth, out_man, self.prospector)
 
-        if self.miner.custom_miner:
-            out_man = self._mine(pth, out_man)
+        if self.miner:
+            if self.miner.custom_miner:
+                out_man = self._mine(pth, out_man, self.miner)
 
         if not ingest_dict:
             ingest_dict = out_man.metadata_files_to_ingest_dict
@@ -86,18 +88,20 @@ class ExtractionPlant(metaclass = Singleton):
         self,
         pth: Path,
         out_man: OutputManager,
+        prospector: Prospector,
     ) -> OutputManager:
         logger.info("prospecting")
-        out_man_fnl: OutputManager = self.prospector.prospect_directory(pth, True, out_man)
+        out_man_fnl: OutputManager = prospector.prospect_directory(pth, True, out_man)
         return out_man_fnl
 
     def _mine(
         self,
         pth: Path,
         out_man: OutputManager,
+        miner: Miner,
     ) -> OutputManager:
         logger.info("mining")
-        return self.miner.mine_directory(pth, True, out_man)
+        return miner.mine_directory(pth, True, out_man)
 
     def _beneficiate(
         self,
