@@ -248,9 +248,6 @@ class ConfigFromEnv(BaseSettings):
     archive: StorageConfig
     profile: ProfileConfig
 
-    class Config:
-        """Pydantic config to enable .env file support"""
-
-        env_file = ".env"  # this path must be relative to the current working directory, i.e. if this class needs to be instantiated in a script running in the root directory
-        env_file_encoding = "utf-8"
-        env_nested_delimiter = "__"
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", env_nested_delimiter="__"
+    )
