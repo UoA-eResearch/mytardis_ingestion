@@ -61,7 +61,6 @@ def main():
     The ingestion is done using the IngestionFactory class that runs the smelter, crucible, and forge
     """
     
-    
     ###Extraction step
     pth = "Replace/This/With/Your/Ingestion/Path/Here"
     profile = Path("replace_this_with_your_profile_name")

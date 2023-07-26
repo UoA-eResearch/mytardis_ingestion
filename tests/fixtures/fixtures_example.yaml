@@ -1,229 +1,344 @@
 !Project
-admin_groups: []
-admin_users: []
+data_classification: 1
+data_status: 5
 description: ''
-download_groups: []
-download_users: []
+groups:
+- !GroupACL
+  can_download: true
+  group: biru-group1
+  is_owner: true
+  see_sensitive: true
+identifiers:
+- p1
+lead_researcher: ''
 metadata: {}
-name: BIRU_MultipleLungCancer
-principal_investigator: csea004
-identifiers: ["biru-multipleLungcancer"]
-read_groups: []
-read_users: []
-sensitive_groups: []
-sensitive_users: []
+name: biru-p1
+object_schema: https://130.216.218.45/ProjectSchema-BIRUbbbbb
+principal_investigator: 'xli677'
+users:
+- !UserACL
+  can_download: true
+  is_owner: false
+  see_sensitive: true
+  user: !Username 'xli677'
 --- !Project
-admin_groups: []
-admin_users: []
+data_classification: 1
+data_status: null
 description: ''
-download_groups: []
-download_users: []
-metadata: {}
-name: BIRU_GastricCancer
-principal_investigator: csea004
-identifiers: ["biru-gastriccancer"]
-read_groups: []
-read_users: []
-sensitive_groups: []
-sensitive_users: []
---- !Experiment
-admin_groups: []
-admin_users: []
-description: ''
-download_groups: []
-download_users: []
-identifiers: ["biru-lungcancer1"]
-metadata: {}
-projects: ["biru-multipleLungcancer"]
-read_groups: []
-read_users: []
-sensitive_groups: []
-sensitive_users: []
-title: BIRU lungcancer1_NoTreatment
---- !Experiment
-admin_groups: []
-admin_users: []
-description: ''
-download_groups: []
-download_users: []
-identifiers: ["biru-lungcancer2"]
-metadata: {}
-projects: ["biru-multipleLungcancer"]
-read_groups: []
-read_users: []
-sensitive_groups: []
-sensitive_users: []
-title: BIRU lungcancer2_DrugA
---- !Experiment
-admin_groups: []
-admin_users: []
-description: ''
-download_groups: []
-download_users: []
-identifiers: ["biru-gastriccancer"]
-metadata: {}
-projects: ["biru-gastriccancer"]
-read_groups: []
-read_users: []
-sensitive_groups: []
-sensitive_users: []
-title: BIRU gastriccancer
---- !Dataset
-admin_groups: []
-admin_users: []
-description: BIRU-DataSet1
-identifiers: ["BIRU-DataSet1"]
-download_groups: []
-download_users: []
-experiments:
-- ["biru-lungcancer1"]
-experiments: []
-instrument: 'Olympus FV1000 live cell imaging confocal microscope'
-metadata: {}
-read_groups: []
-read_users: []
-sensitive_groups: []
-sensitive_users: []
---- !Dataset
-admin_groups: []
-admin_users: []
-description: BIRU-DataSet2
-identifiers: ["BIRU-DataSet2"]
-download_groups: []
-download_users: []
+groups: null
 identifiers:
-- ["biru-lungcancer1"]
-experiments: []
-instrument: 'Olympus FV1000 live cell imaging confocal microscope'
+- p2
+lead_researcher: ''
 metadata: {}
-read_groups: []
-read_users: []
-sensitive_groups: []
-sensitive_users: []
---- !Dataset
-admin_groups: []
-admin_users: []
-description: BIRU-DataSet33
-identifiers: ["BIRU-DataSet33"]
-download_groups: []
-download_users: []
+name: biru-p2
+object_schema: ''
+principal_investigator: 'xli677'
+users: null
+--- !Experiment
+data_classification: 1
+data_status: null
+description: ''
+experiment_id: ''
+groups:
+- !GroupACL
+  can_download: true
+  group: biru-group1
+  is_owner: true
+  see_sensitive: true
 identifiers:
-- ["biru-lungcancer2"]
-experiments: []
-instrument: 'Olympus FV1000 live cell imaging confocal microscope'
+- exp1
 metadata: {}
-read_groups: []
-read_users: []
-sensitive_groups: []
-sensitive_users: []
---- !Dataset
-admin_groups: []
-admin_users: []
-description: BIRU-DataSet4
-identifiers: ["BIRU-DataSet4"]
-download_groups: []
-download_users: []
+object_schema: https://130.216.218.45/ExperimentSchema-BIRU
+project_id: p1
+title: biru-exp1
+users:
+- !UserACL
+  can_download: true
+  is_owner: false
+  see_sensitive: true
+  user: !Username 'xli677'
+--- !Experiment
+data_classification: 1
+data_status: null
+description: ''
+experiment_id: ''
+groups: null
 identifiers:
-- ["biru-gastriccancer"]
-experiments: []
-instrument: 'Olympus FV1000 live cell imaging confocal microscope'
+- exp2
 metadata: {}
-read_groups: []
-read_users: []
-sensitive_groups: []
-sensitive_users: []
+object_schema: ''
+project_id: p1
+title: biru-exp2
+users: null
+--- !Experiment
+data_classification: 1
+data_status: null
+description: ''
+experiment_id: ''
+groups: null
+identifiers:
+- exp3
+metadata: {}
+object_schema: ''
+project_id: p2
+title: biru-exp3
+users: null
+--- !Dataset
+data_classification: 1
+data_status: null
+dataset_name: biru-ds1
+description: ''
+experiment_id:
+- exp1
+experiments: []
+groups:
+- !GroupACL
+  can_download: true
+  group: biru-group1
+  is_owner: true
+  see_sensitive: true
+identifiers:
+- ds1
+instrument: ''
+instrument_id: ''
+metadata: {}
+object_schema: https://130.216.218.45/DatasetSchema-BIRU
+users:
+- !UserACL
+  can_download: true
+  is_owner: false
+  see_sensitive: true
+  user: !Username 'xli677'
+--- !Dataset
+data_classification: 1
+data_status: 5
+dataset_name: biru-ds2
+description: ''
+experiment_id:
+- exp1
+experiments: []
+groups: null
+identifiers:
+- ds2
+instrument: ''
+instrument_id: ''
+metadata: {}
+object_schema: ''
+users: null
+--- !Dataset
+data_classification: 1
+data_status: 5
+dataset_name: biru-ds3
+description: ''
+experiment_id:
+- exp2
+experiments: []
+groups: null
+identifiers:
+- ds3
+instrument: ''
+instrument_id: ''
+metadata: {}
+object_schema: ''
+users: null
+--- !Dataset
+data_classification: 1
+data_status: null
+dataset_name: biru-ds4
+description: ''
+experiment_id:
+- exp3
+experiments: []
+groups: null
+identifiers:
+- ds4
+instrument: ''
+instrument_id: ''
+metadata: {}
+object_schema: ''
+users: null
 --- !Datafile
-admin_groups: []
-admin_users: []
-dataset: BIRU-DataSet4
-directory: ''
-download_groups: []
-download_users: []
-filename: 20190812 NT 100x 01 slice.oib
+data_status: null
+dataset: ''
+dataset_id: ds1
+directory: !Path 'ime/tests/ime/tests'
+filename: test_metadata_tab.py
+groups: null
 md5sum: ''
 metadata: {}
 mimetype: ''
-read_groups: []
-read_users: []
-sensitive_groups: []
-sensitive_users: []
-size: 10911744.0
+object_schema: ''
+size: 3452
+users: null
 --- !Datafile
-admin_groups: []
-admin_users: []
-dataset: BIRU-DataSet4
-directory: ''
-download_groups: []
-download_users: []
+data_status: null
+dataset: ''
+dataset_id: ds2
+directory: !Path 'ime/tests'
+filename: test_access_control_tab.py
+groups: null
+md5sum: ''
+metadata: {}
+mimetype: ''
+object_schema: ''
+size: 5544
+users: null
+--- !Datafile
+data_status: null
+dataset: ''
+dataset_id: ds2
+directory: !Path 'ime/tests'
+filename: fixtures.yaml
+groups: null
+md5sum: ''
+metadata: {}
+mimetype: ''
+object_schema: ''
+size: 3813
+users: null
+--- !Datafile
+data_status: null
+dataset: ''
+dataset_id: ds3
+directory: !Path 'ime/tests'
+filename: conftest.py
+groups: null
+md5sum: ''
+metadata: {}
+mimetype: ''
+object_schema: ''
+size: 373
+users: null
+--- !Datafile
+data_status: 5
+dataset: ''
+dataset_id: ds4
+directory: !Path 'ime/tests'
+filename: test_qt_models.py
+groups: null
+md5sum: ''
+metadata: {}
+mimetype: ''
+object_schema: ''
+size: 2300
+users: null
+--- !Datafile
+data_status: null
+dataset: ''
+dataset_id: ds2
+directory: !Path 'ime/tests'
 filename: 20190812 HF 01 stack.oib
+groups: null
 md5sum: ''
-metadata: {}
+metadata:
+  Image|Pixels|Channel|Channel:0:0|DetectorSettings|ID: Detector:0:0
+  Image|Pixels|Channel|Channel:0:0|EmissionWavelength: '520.0'
+  Image|Pixels|Channel|Channel:0:0|EmissionWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:0|ExcitationWavelength: '473.0'
+  Image|Pixels|Channel|Channel:0:0|ExcitationWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:0|ID: Channel:0:0
+  Image|Pixels|Channel|Channel:0:0|IlluminationType: Epifluorescence
+  Image|Pixels|Channel|Channel:0:0|LightPath|DichroicRef|ID: Dichroic:0:1
+  Image|Pixels|Channel|Channel:0:0|LightPath|EmissionFilterRef|ID: Filter:0:0
+  Image|Pixels|Channel|Channel:0:0|LightSourceSettings|ID: LightSource:0:0
+  Image|Pixels|Channel|Channel:0:0|LightSourceSettings|Wavelength: '473.0'
+  Image|Pixels|Channel|Channel:0:0|LightSourceSettings|WavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:0|Name: CHS1
+  Image|Pixels|Channel|Channel:0:0|SamplesPerPixel: '1'
+  Image|Pixels|Channel|Channel:0:1|DetectorSettings|ID: Detector:0:1
+  Image|Pixels|Channel|Channel:0:1|EmissionWavelength: '603.0'
+  Image|Pixels|Channel|Channel:0:1|EmissionWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:1|ExcitationWavelength: '559.0'
+  Image|Pixels|Channel|Channel:0:1|ExcitationWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:1|ID: Channel:0:1
+  Image|Pixels|Channel|Channel:0:1|IlluminationType: Epifluorescence
+  Image|Pixels|Channel|Channel:0:1|LightPath|DichroicRef|ID: Dichroic:0:3
+  Image|Pixels|Channel|Channel:0:1|LightPath|EmissionFilterRef|ID: Filter:0:1
+  Image|Pixels|Channel|Channel:0:1|LightSourceSettings|ID: LightSource:0:1
+  Image|Pixels|Channel|Channel:0:1|LightSourceSettings|Wavelength: '559.0'
+  Image|Pixels|Channel|Channel:0:1|LightSourceSettings|WavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:1|Name: CHS2
+  Image|Pixels|Channel|Channel:0:1|SamplesPerPixel: '1'
+  Image|Pixels|DimensionOrder: XYCZT
+  Image|Pixels|SizeX: '640'
+  Image|Pixels|SizeY: '640'
+  Instrument|Detector|Detector:0:0|Gain: '1000.0'
+  Instrument|Detector|Detector:0:0|ID: Detector:0:0
+  Instrument|Detector|Detector:0:0|Type: PMT
+  Instrument|Detector|Detector:0:0|Voltage: '718.0'
+  Instrument|Detector|Detector:0:0|VoltageUnit: V
+  Instrument|Detector|Detector:0:1|Gain: '1000.0'
+  Instrument|Detector|Detector:0:1|ID: Detector:0:1
+  Instrument|Detector|Detector:0:1|Type: PMT
+  Instrument|Detector|Detector:0:1|Voltage: '657.0'
+  Instrument|Detector|Detector:0:1|VoltageUnit: V
+  Instrument|Objective|ID: Objective:0:0
+  Instrument|Objective|Immersion: Other
+  Instrument|Objective|Model: UPLSAPO   60X O  NA:1.35
+  Instrument|Objective|NominalMagnification: '60.0'
+  Instrument|Objective|WorkingDistance: '9999.0'
+  Instrument|Objective|WorkingDistanceUnit: "\xB5m"
 mimetype: ''
-read_groups: []
-read_users: []
-sensitive_groups: []
-sensitive_users: []
-size: 43941888.0
+object_schema: ''
+size: 43941888
+users: null
 --- !Datafile
-admin_groups: []
-admin_users: []
-dataset: BIRU-DataSet3
-directory: ''
-download_groups: []
-download_users: []
-filename: beads 20190925.oib
+data_status: null
+dataset: ''
+dataset_id: ds2
+directory: !Path 'ime/tests'
+filename: 20190812 NT 100x 01 slice.oib
+groups: null
 md5sum: ''
-metadata: {}
+metadata:
+  Image|Pixels|Channel|Channel:0:0|DetectorSettings|ID: Detector:0:0
+  Image|Pixels|Channel|Channel:0:0|EmissionWavelength: '520.0'
+  Image|Pixels|Channel|Channel:0:0|EmissionWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:0|ExcitationWavelength: '473.0'
+  Image|Pixels|Channel|Channel:0:0|ExcitationWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:0|ID: Channel:0:0
+  Image|Pixels|Channel|Channel:0:0|IlluminationType: Epifluorescence
+  Image|Pixels|Channel|Channel:0:0|LightPath|DichroicRef|ID: Dichroic:0:1
+  Image|Pixels|Channel|Channel:0:0|LightPath|EmissionFilterRef|ID: Filter:0:0
+  Image|Pixels|Channel|Channel:0:0|LightSourceSettings|ID: LightSource:0:0
+  Image|Pixels|Channel|Channel:0:0|LightSourceSettings|Wavelength: '473.0'
+  Image|Pixels|Channel|Channel:0:0|LightSourceSettings|WavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:0|Name: CHS1
+  Image|Pixels|Channel|Channel:0:0|SamplesPerPixel: '1'
+  Image|Pixels|Channel|Channel:0:1|DetectorSettings|ID: Detector:0:1
+  Image|Pixels|Channel|Channel:0:1|EmissionWavelength: '603.0'
+  Image|Pixels|Channel|Channel:0:1|EmissionWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:1|ExcitationWavelength: '559.0'
+  Image|Pixels|Channel|Channel:0:1|ExcitationWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:1|ID: Channel:0:1
+  Image|Pixels|Channel|Channel:0:1|IlluminationType: Epifluorescence
+  Image|Pixels|Channel|Channel:0:1|LightPath|DichroicRef|ID: Dichroic:0:3
+  Image|Pixels|Channel|Channel:0:1|LightPath|EmissionFilterRef|ID: Filter:0:1
+  Image|Pixels|Channel|Channel:0:1|LightSourceSettings|ID: LightSource:0:1
+  Image|Pixels|Channel|Channel:0:1|LightSourceSettings|Wavelength: '559.0'
+  Image|Pixels|Channel|Channel:0:1|LightSourceSettings|WavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:1|Name: CHS2
+  Image|Pixels|Channel|Channel:0:1|SamplesPerPixel: '1'
+  Image|Pixels|DimensionOrder: XYCZT
+  Image|Pixels|SizeX: '1600'
+  Image|Pixels|SizeY: '1600'
+  Instrument|Detector|Detector:0:0|Gain: '1000.0'
+  Instrument|Detector|Detector:0:0|ID: Detector:0:0
+  Instrument|Detector|Detector:0:0|Type: PMT
+  Instrument|Detector|Detector:0:0|Voltage: '608.0'
+  Instrument|Detector|Detector:0:0|VoltageUnit: V
+  Instrument|Detector|Detector:0:1|Gain: '1000.0'
+  Instrument|Detector|Detector:0:1|ID: Detector:0:1
+  Instrument|Detector|Detector:0:1|Type: PMT
+  Instrument|Detector|Detector:0:1|Voltage: '720.0'
+  Instrument|Detector|Detector:0:1|VoltageUnit: V
+  Instrument|Objective|ID: Objective:0:0
+  Instrument|Objective|Immersion: Other
+  Instrument|Objective|Model: UPLSAPO  100X O  NA:1.40
+  Instrument|Objective|NominalMagnification: '100.0'
+  Instrument|Objective|WorkingDistance: '9999.0'
+  Instrument|Objective|WorkingDistanceUnit: "\xB5m"
 mimetype: ''
-read_groups: []
-read_users: []
-sensitive_groups: []
-sensitive_users: []
-size: 26977064.0
---- !Datafile
-admin_groups: null
-admin_users: null
-dataset: BIRU-DataSet2
-directory: ''
-download_groups: null
-download_users: null
-filename: sequt_488_594_stk.oib
-md5sum: ''
-metadata: {}
-mimetype: ''
-read_groups: null
-read_users: null
-sensitive_groups: null
-sensitive_users: null
-size: 4964352.0
---- !Datafile
-admin_groups: null
-admin_users: null
-dataset: BIRU-DataSet2
-directory: ''
-download_groups: null
-download_users: null
-filename: sequt_405_488_594_stk.oib
-md5sum: ''
-metadata: {}
-mimetype: ''
-read_groups: null
-read_users: null
-sensitive_groups: null
-sensitive_users: null
-size: 7389184.0
---- !Datafile
-admin_groups: null
-dataset: BIRU-DataSet1
-directory: ''
-download_groups: null
-download_users: null
-filename: good image 02.oib
-md5sum: ''
-metadata: {}
-mimetype: ''
-read_groups: null
-read_users: null
-sensitive_groups: null
-sensitive_users: null
-size: 4861952.0
+object_schema: ''
+size: 10911744
+users: null
