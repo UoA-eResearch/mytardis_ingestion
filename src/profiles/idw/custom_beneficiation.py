@@ -14,14 +14,14 @@ import yaml
 from yaml.loader import Loader
 from yaml.nodes import MappingNode, Node
 
-from src.blueprints.custom_data_types import Username
-from src.blueprints.common_models import GroupACL, UserACL
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
-from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 
 # User-defined imports
-#from src.profiles.idw.beneficiation_helpers.models import IngestionMetadata
+# from src.profiles.idw.beneficiation_helpers.models import IngestionMetadata
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
+from src.blueprints.common_models import GroupACL, UserACL
+from src.blueprints.custom_data_types import Username
+from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 
 # Constants
 logger = logging.getLogger(__name__)
@@ -33,7 +33,16 @@ groupacl_tag = "!GroupACL"
 useracl_tag = "!UserACL"
 username_tag = "!Username"
 path_tag = "!Path"
-tags = [prj_tag, expt_tag, dset_tag, dfile_tag, groupacl_tag, useracl_tag, username_tag, path_tag]
+tags = [
+    prj_tag,
+    expt_tag,
+    dset_tag,
+    dfile_tag,
+    groupacl_tag,
+    useracl_tag,
+    username_tag,
+    path_tag,
+]
 
 
 class CustomBeneficiation(AbstractCustomBeneficiation):
@@ -79,7 +88,9 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         Returns:
             None
         """
-        yaml.add_constructor(prj_tag, self._rawproject_constructor) #add object constructor
+        yaml.add_constructor(
+            prj_tag, self._rawproject_constructor
+        )  # add object constructor
         yaml.constructor.SafeConstructor.add_constructor(
             prj_tag, self._rawproject_constructor
         )  # assign YAML tag to object constructor
@@ -132,16 +143,16 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         """
 
         return dict(**loader.construct_mapping(node))
-    
+
     def _groupacl_constructor(self, loader: Loader, node: MappingNode) -> GroupACL:
         return GroupACL(**loader.construct_mapping(node))
-    
+
     def _useracl_constructor(self, loader: Loader, node: MappingNode) -> UserACL:
         return UserACL(**loader.construct_mapping(node))
 
     def _username_constructor(self, loader: Loader, node: MappingNode) -> Username:
         return Username(node.value)
-    
+
     def _path_constructor(self, loader: Loader, node: MappingNode) -> Path:
         return Path(node.value)
 
@@ -215,7 +226,7 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         logger.info("parsing {0}".format(fpath))
         with open(fpath) as f:
             data = yaml.safe_load_all(f)
-            
+
             for obj in data:
                 if isinstance(obj, RawProject):
                     ingestible_dclasses.add_project(obj)

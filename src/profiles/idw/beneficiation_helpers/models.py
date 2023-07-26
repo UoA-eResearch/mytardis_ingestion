@@ -1,19 +1,22 @@
-from typing import List, Dict, Any, Optional, Sequence, Type
+import logging
 from dataclasses import dataclass, field, fields, is_dataclass
 from enum import Enum
-import yaml
-from yaml.loader import Loader
-from yaml import MappingNode, Dumper, FullLoader, Loader, Node, ScalarNode, UnsafeLoader
-import logging
 from os.path import relpath
 from pathlib import Path
-from .yaml_helpers import initialise_yaml_helpers
+from typing import Any, Dict, List, Optional, Sequence, Type
+
+import yaml
+from yaml import Dumper, FullLoader, Loader, MappingNode, Node, ScalarNode, UnsafeLoader
+from yaml.loader import Loader
 
 from src.blueprints.custom_data_types import Username
 
+from .yaml_helpers import initialise_yaml_helpers
+
+
 class YAMLDataclass(yaml.YAMLObject):
-    """A metaclass for dataclass objects to be serialised and deserialised by pyyaml.
-    """
+    """A metaclass for dataclass objects to be serialised and deserialised by pyyaml."""
+
     @classmethod
     def from_yaml(cls: Type, loader: Loader, node: MappingNode) -> Any:
         """
@@ -42,16 +45,18 @@ class YAMLDataclass(yaml.YAMLObject):
         """
         assert is_dataclass(self)
         return {
-            field.name: getattr(self, field.name) 
-            for field in fields(self) 
-            if field.repr is True # Only include repr=True fields
+            field.name: getattr(self, field.name)
+            for field in fields(self)
+            if field.repr is True  # Only include repr=True fields
         }
+
 
 @dataclass
 class UserACL(YAMLDataclass):
     """Model to define user access control. This differs from the group
     access control in that it validates the username against a known regex.
     """
+
     yaml_tag = "!UserACL"
     yaml_loader = yaml.SafeLoader
     user: Username = field(default=Username(), metadata={"label": "Username"})
@@ -59,15 +64,18 @@ class UserACL(YAMLDataclass):
     can_download: bool = field(default=False, metadata={"label": "Can download?"})
     see_sensitive: bool = field(default=False, metadata={"label": "See sensitive?"})
 
+
 @dataclass
 class GroupACL(YAMLDataclass):
     """Model to define group access control."""
+
     yaml_tag = "!GroupACL"
     yaml_loader = yaml.SafeLoader
     group: str = field(default="", metadata={"label": "Group ID"})
     is_owner: bool = field(default=False, metadata={"label": "Is owner?"})
     can_download: bool = field(default=False, metadata={"label": "Can download?"})
     see_sensitive: bool = field(default=False, metadata={"label": "See sensitive?"})
+
 
 @dataclass
 class IAccessControl:
@@ -78,8 +86,10 @@ class IAccessControl:
     access control fields from the Project, Experiment or Dataset higher up
     in the hierarchy.
     """
+
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None
+
 
 class IIdentifiers:
     """An abstract class for methods working with identifiers,
@@ -87,25 +97,25 @@ class IIdentifiers:
     override with specific constraints, for example to enforce
     uniqueness.
     """
+
     identifiers: Optional[List[str]]
 
     def __init__(self, identifiers: Optional[List[str]]) -> None:
         self.identifiers = identifiers
-    
+
     def first(self) -> str:
-        """Returns the first identifier in the list, if any. 
+        """Returns the first identifier in the list, if any.
         Otherwise return an empty string.
 
         Returns:
             str: The value of the ID.
         """
-        if (self.identifiers is not None and 
-            len(self.identifiers) > 0):
+        if self.identifiers is not None and len(self.identifiers) > 0:
             return self.identifiers[0]
         else:
             return ""
 
-    def has(self, ids: str|List[str]) -> bool:
+    def has(self, ids: str | List[str]) -> bool:
         """Returns whether this object has identifier `ids`_ .
         If `ids`_ is a list, then returns whether this object has any
         identifier matching any in `ids`_
@@ -129,7 +139,7 @@ class IIdentifiers:
             compare_set = set(ids)
             intersection = id_set & compare_set
             return len(intersection) > 0
-    
+
     def add(self, value: str) -> bool:
         """Adds an identifier to the list. Classes
         inheriting may override with custom behaviour.
@@ -147,7 +157,7 @@ class IIdentifiers:
             self.identifiers.append(value)
             return True
         else:
-            # If the id is already in the list, 
+            # If the id is already in the list,
             # then don't do anything.
             return False
 
@@ -164,7 +174,6 @@ class IIdentifiers:
         self.identifiers[idx] = id
         return True
 
-
     def delete(self, id_to_delete: str) -> bool:
         """Method for deleting an identifier. Classes
         inheriting may override with custom behaviour.
@@ -176,50 +185,63 @@ class IIdentifiers:
         self.identifiers.remove(id_to_delete)
         return True
 
+
 class DataClassification(Enum):
     """An enumerator for data classification.
     Gaps have been left deliberately in the enumeration to allow for intermediate
     classifications of data that may arise. The larger the integer that the classification
     resolves to, the less sensitive the data is.
     """
+
     RESTRICTED = 1
     SENSITIVE = 25
     INTERNAL = 100
     PUBLIC = 100
+
 
 @dataclass
 class IDataClassification:
     """
     Common interface for MyTardis models with data classification labels.
     """
+
     data_classification: Optional[DataClassification] = None
+
 
 class DataStatus(Enum):
     """An enumerator for data status.
     Gaps have been left deliberately in the enumeration to allow for intermediate
     status of data that may arise.
     """
+
     NOT_INGESTED = 1
     INGESTED = 5
+
 
 @dataclass
 class IDataStatus:
     """
     Common interface for MyTardis models with data statud labels.
     """
+
     data_status: Optional[DataStatus] = None
+
 
 @dataclass
 class IMetadata:
     """
     A class representing fields related to schema parameters.
     """
+
     # change to Optional[]
     metadata: Dict[str, Any] = field(default_factory=dict)
     object_schema: str = ""
 
+
 @dataclass
-class Project(YAMLDataclass, IAccessControl, IMetadata, IDataClassification, IDataStatus):
+class Project(
+    YAMLDataclass, IAccessControl, IMetadata, IDataClassification, IDataStatus
+):
     """
     A class representing MyTardis Project objects.
 
@@ -238,20 +260,21 @@ class Project(YAMLDataclass, IAccessControl, IMetadata, IDataClassification, IDa
     name: str = ""
     principal_investigator: str = ""
     identifiers: Optional[list[str]] = field(default_factory=list)
-    _store: Optional['IngestionMetadata'] = field(repr=False, default=None)
-    
+    _store: Optional["IngestionMetadata"] = field(repr=False, default=None)
+
     def __post_init__(self):
         self.identifiers_delegate = ProjectIdentifiers(self)
 
 
 class ProjectIdentifiers(IIdentifiers):
     """Project-specific methods related to identifiers."""
+
     def __init__(self, project: Project):
         self.project = project
         super().__init__(project.identifiers)
-    
+
     def _is_unique(self, id: str) -> bool:
-        """Private method to check whether an id is unique across all 
+        """Private method to check whether an id is unique across all
         Projects in the store.
 
         Args:
@@ -308,9 +331,9 @@ class ProjectIdentifiers(IIdentifiers):
     def delete(self, id_to_delete: str) -> bool:
         """Deletes an identifier in this Project,
         and updates identifiers in related objects to use
-        an alternative identifier. 
+        an alternative identifier.
         Returns True if successfully deleted and updated, False if
-        there are no other identifiers to use for related objects. 
+        there are no other identifiers to use for related objects.
 
         Args:
             id_to_delete (str): The identifier to delete.
@@ -331,8 +354,11 @@ class ProjectIdentifiers(IIdentifiers):
                 experiment.project_id = new_id
         return True
 
+
 @dataclass
-class Experiment(YAMLDataclass, IAccessControl, IMetadata, IDataClassification, IDataStatus):
+class Experiment(
+    YAMLDataclass, IAccessControl, IMetadata, IDataClassification, IDataStatus
+):
     """
     A class representing MyTardis Experiment objects.
     """
@@ -345,19 +371,21 @@ class Experiment(YAMLDataclass, IAccessControl, IMetadata, IDataClassification, 
     description: str = ""
     title: str = ""
     identifiers: Optional[list[str]] = field(default_factory=list)
-    _store: Optional['IngestionMetadata'] = field(repr=False, default=None)
+    _store: Optional["IngestionMetadata"] = field(repr=False, default=None)
 
     def __post_init__(self):
         self.identifiers_delegate = ExperimentIdentifiers(self)
 
+
 class ExperimentIdentifiers(IIdentifiers):
     """Experiment-specific methods related to identifiers."""
+
     def __init__(self, experiment: Experiment):
         self.experiment = experiment
         super().__init__(experiment.identifiers)
 
     def _is_unique(self, id: str):
-        """Private method to check whether an id is unique across all 
+        """Private method to check whether an id is unique across all
         Projects in the store.
 
         Args:
@@ -414,9 +442,9 @@ class ExperimentIdentifiers(IIdentifiers):
     def delete(self, id_to_delete: str):
         """Deletes an identifier in this Experiment,
         and updates identifiers in related Datasets to use
-        an alternative identifier. 
+        an alternative identifier.
         Returns True if successfully deleted and updated, False if
-        there are no other identifiers to use for related objects. 
+        there are no other identifiers to use for related objects.
 
         Args:
             id_to_delete (str): The identifier to delete.
@@ -438,8 +466,11 @@ class ExperimentIdentifiers(IIdentifiers):
                 dataset.experiment_id.append(new_id)
         return True
 
+
 @dataclass
-class Dataset(YAMLDataclass, IAccessControl, IMetadata, IDataClassification, IDataStatus):
+class Dataset(
+    YAMLDataclass, IAccessControl, IMetadata, IDataClassification, IDataStatus
+):
     """
     A class representing MyTardis Dataset objects.
     """
@@ -453,19 +484,21 @@ class Dataset(YAMLDataclass, IAccessControl, IMetadata, IDataClassification, IDa
     instrument: str = ""
     identifiers: Optional[list[str]] = field(default_factory=list)
     experiments: List[str] = field(default_factory=list)
-    _store: Optional['IngestionMetadata'] = field(repr=False, default=None)
+    _store: Optional["IngestionMetadata"] = field(repr=False, default=None)
 
     def __post_init__(self):
         self.identifiers_delegate = DatasetIdentifiers(self)
 
+
 class DatasetIdentifiers(IIdentifiers):
     """Dataset-specific methods related to identifiers."""
+
     def __init__(self, dataset: Dataset):
         self.dataset = dataset
         super().__init__(dataset.identifiers)
 
     def _is_unique(self, id: str) -> bool:
-        """Private method to check whether an id is unique across all 
+        """Private method to check whether an id is unique across all
         Projects in the store.
 
         Args:
@@ -479,7 +512,7 @@ class DatasetIdentifiers(IIdentifiers):
             # If the experiment has this ID, then it isn't unique.
             if dataset.identifiers_delegate.has(id or []):
                 return False
-        return True    
+        return True
 
     def add(self, value: str) -> bool:
         """Adds a new identifier after checking
@@ -520,9 +553,9 @@ class DatasetIdentifiers(IIdentifiers):
     def delete(self, id_to_delete: str) -> bool:
         """Deletes an identifier in this Dataset,
         and updates identifiers in related Datafiles to use
-        an alternative identifier. 
+        an alternative identifier.
         Returns True if successfully deleted and updated, False if
-        there are no other identifiers to use for related objects. 
+        there are no other identifiers to use for related objects.
 
         Args:
             id_to_delete (str): The identifier to delete.
@@ -543,11 +576,13 @@ class DatasetIdentifiers(IIdentifiers):
                 datafile.dataset_id = new_id
         return True
 
+
 @dataclass
 class Datafile(YAMLDataclass, IAccessControl, IMetadata, IDataStatus):
     """
     A class representing MyTardis Datafile objects.
     """
+
     yaml_tag = "!Datafile"
     yaml_loader = yaml.SafeLoader
     filename: str = ""
@@ -560,15 +595,16 @@ class Datafile(YAMLDataclass, IAccessControl, IMetadata, IDataStatus):
     mimetype: str = ""
     dataset: str = ""
     dataset_id: str = ""
-    _store: Optional['IngestionMetadata'] = field(repr=False, default=None)
+    _store: Optional["IngestionMetadata"] = field(repr=False, default=None)
 
-def Username_yaml_representer(dumper: Dumper, data: 'Username') -> ScalarNode:
+
+def Username_yaml_representer(dumper: Dumper, data: "Username") -> ScalarNode:
     """Function for representing this Username in YAML.
     When serialising to YAML that contains Username instances, you'll
     need to add this function as a representer.
 
     `yaml.add_representer(Username, Username.yaml_representer)`_
-    
+
     Args:
         dumper (Dumper): The pyyaml dumper.
         data (Username): The Username to dump.
@@ -576,13 +612,16 @@ def Username_yaml_representer(dumper: Dumper, data: 'Username') -> ScalarNode:
     Returns:
         ScalarNode: A serialised yaml Node.
     """
-    return dumper.represent_scalar(u"!Username", str(data))
+    return dumper.represent_scalar("!Username", str(data))
 
-def Username_yaml_constructor(loader: Loader | FullLoader | UnsafeLoader, node: Node) -> 'Username':
+
+def Username_yaml_constructor(
+    loader: Loader | FullLoader | UnsafeLoader, node: Node
+) -> "Username":
     """Function for deserialising a node from YAML.
     When parsing YAML that contains Username instances, you'll
     need to add this function as a constructor.
-    
+
     `yaml.add_constructor('!Username', Username.yaml_constructor)`_
 
     Args:
@@ -595,6 +634,7 @@ def Username_yaml_constructor(loader: Loader | FullLoader | UnsafeLoader, node: 
     assert type(node) == ScalarNode
     value = loader.construct_scalar(node)
     return Username(value)
+
 
 @dataclass
 class IngestionMetadata:
@@ -610,13 +650,14 @@ class IngestionMetadata:
     datasets: List[Dataset] = field(default_factory=list)
     datafiles: List[Datafile] = field(default_factory=list)
     # Ingestion metadata file location
-    file_path: Optional[Path] = None      
+    file_path: Optional[Path] = None
 
     def is_empty(self) -> bool:
-        return (len(self.projects) == 0 and
-            len(self.experiments) == 0 and
-            len(self.datasets) == 0 and
-            len(self.datafiles) == 0
+        return (
+            len(self.projects) == 0
+            and len(self.experiments) == 0
+            and len(self.datasets) == 0
+            and len(self.datafiles) == 0
         )
 
     def to_file(self, file_path: str):
@@ -627,14 +668,14 @@ class IngestionMetadata:
             file_path (str): The file path to save the metadata file in.
         """
         path = Path(file_path)
-        with open(path, 'w') as file:
+        with open(path, "w") as file:
             self._relativise_file_paths(path.parent)
             file.write(self._to_yaml())
         self.file_path = path
 
     def _relativise_file_paths(self, relative_to_dir: Path) -> None:
         """Private method for changing the Datafile paths to be relative
-        to `relative_to_dir`_ . This is necessary before saving. 
+        to `relative_to_dir`_ . This is necessary before saving.
 
         Args:
             relative_to_dir (Path): The directory that it would be relative to.
@@ -665,7 +706,7 @@ class IngestionMetadata:
         concatenated.extend(self.datafiles)
         yaml_file = yaml.dump_all(concatenated)
         return yaml_file
-    
+
     def get_files_by_dataset(self, dataset: Dataset) -> List[Datafile]:
         """
         Returns datafiles that belong to a dataset.
@@ -690,7 +731,7 @@ class IngestionMetadata:
                 continue
             all_datasets.append(dataset)
         return all_datasets
-    
+
     def get_experiments_by_project(self, proj: Project) -> List[Experiment]:
         """
         Returns experiments that belong to a project.
@@ -703,7 +744,7 @@ class IngestionMetadata:
         return all_exps
 
     @staticmethod
-    def from_file(loc: str) -> 'IngestionMetadata':
+    def from_file(loc: str) -> "IngestionMetadata":
         """Factory method for importing a metadata file from path.
 
         Args:
@@ -719,7 +760,7 @@ class IngestionMetadata:
         return IngestionMetadata._from_yaml(data_load, metadata)
 
     @staticmethod
-    def _from_yaml(yaml_rep: str, metadata: Optional['IngestionMetadata']):
+    def _from_yaml(yaml_rep: str, metadata: Optional["IngestionMetadata"]):
         """Returns a IngestionMetadata object by loading metadata from content of a YAML file.
 
         Parameters
@@ -754,6 +795,7 @@ class IngestionMetadata:
                     obj,
                 )
         return metadata
+
 
 # Initialise the representers and constructors required for
 # loading YAML elements.
