@@ -1752,20 +1752,20 @@ use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
 name = "responses"
-version = "0.23.1"
+version = "0.23.2"
 description = "A utility library for mocking out the `requests` Python library."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "responses-0.23.1-py3-none-any.whl", hash = "sha256:8a3a5915713483bf353b6f4079ba8b2a29029d1d1090a503c70b0dc5d9d0c7bd"},
-    {file = "responses-0.23.1.tar.gz", hash = "sha256:c4d9aa9fc888188f0c673eff79a8dadbe2e75b7fe879dc80a221a06e0a68138f"},
+    {file = "responses-0.23.2-py3-none-any.whl", hash = "sha256:9d49c218ba3079022bd63427f12b0a43b43d2f6aaf5ed859b9df9d733b4dd775"},
+    {file = "responses-0.23.2.tar.gz", hash = "sha256:5d5a2ce3285f84e1f107d2e942476b6c7dff3747f289c0eae997cb77d2ab68e8"},
 ]
 
 [package.dependencies]
 pyyaml = "*"
-requests = ">=2.22.0,<3.0"
+requests = ">=2.30.0,<3.0"
 types-PyYAML = "*"
-urllib3 = ">=1.25.10"
+urllib3 = ">=2.0.0,<3.0"
 
 [package.extras]
 tests = ["coverage (>=6.0.0)", "flake8", "mypy", "pytest (>=7.0.0)", "pytest-asyncio", "pytest-cov", "pytest-httpserver", "tomli", "tomli-w", "types-requests"]
@@ -1945,13 +1945,13 @@ files = [
 
 [[package]]
 name = "sphinx"
-version = "7.0.1"
+version = "7.1.0"
 description = "Python documentation generator"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "Sphinx-7.0.1.tar.gz", hash = "sha256:61e025f788c5977d9412587e733733a289e2b9fdc2fef8868ddfbfc4ccfe881d"},
-    {file = "sphinx-7.0.1-py3-none-any.whl", hash = "sha256:60c5e04756c1709a98845ed27a2eed7a556af3993afb66e77fec48189f742616"},
+    {file = "sphinx-7.1.0-py3-none-any.whl", hash = "sha256:9bdfb5a2b28351d4fdf40a63cd006dbad727f793b243e669fc950d7116c634af"},
+    {file = "sphinx-7.1.0.tar.gz", hash = "sha256:8f336d0221c3beb23006b3164ed1d46db9cebcce9cb41cdb9c5ecd4bcc509be0"},
 ]
 
 [package.dependencies]
@@ -2423,4 +2423,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "829801d4e85367ad8ecdf872487382b09fb926e9b4385aa680b6c5e3bc3ecbfb"
+content-hash = "3311d83adbffe4841dbe2a3aa3f5d02415ff1f6d37780e7458d98bf9ae0b5626"
