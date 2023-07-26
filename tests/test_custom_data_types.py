@@ -45,11 +45,10 @@ def test_UPI_wrong_type() -> None:  # pylint: disable=invalid-name
         test_class = DummyUsernames(user=bad_upi)
         debug(test_class)
     debug(e_info.value)
-    assert str(e_info.value) == (
+    assert (
         "1 validation error for DummyUsernames\nuser\n  Input should be a valid string "
         "[type=string_type, input_value=True, input_type=bool]\n    "
-        "For further information visit https://errors.pydantic.dev/2.0.3/v/string_type"
-    )
+    ) in str(e_info.value)
 
 
 @pytest.mark.parametrize(
@@ -59,15 +58,14 @@ def test_malformed_UPI(upis: Username) -> None:  # pylint: disable=invalid-name
     with pytest.raises(ValidationError) as e_info:
         test_class = DummyUsernames(user=upis)
         debug(test_class)
-    assert str(e_info.value) == (
+    assert (
         (
             "1 validation error for DummyUsernames\nuser\n  "
             f'Value error, Passed string value "{upis}" '
             f"is not a well formatted Username [type=value_error, input_value='{upis}', "
             "input_type=str]\n    "
-            "For further information visit https://errors.pydantic.dev/2.0.3/v/value_error"
         )
-    )
+    ) in str(e_info.value)
 
 
 @pytest.mark.parametrize("uris", gen_uris())
@@ -80,11 +78,10 @@ def test_URI_wrong_type() -> None:  # pylint: disable=invalid-name
     bad_uri = 1.23
     with pytest.raises(ValidationError) as e_info:
         _ = DummyURI(uri=bad_uri)
-    assert str(e_info.value) == (
+    assert (
         "1 validation error for DummyURI\nuri\n  Input should be a valid string "
         "[type=string_type, input_value=1.23, input_type=float]\n    "
-        "For further information visit https://errors.pydantic.dev/2.0.3/v/string_type"
-    )
+    ) in str(e_info.value)
 
 
 @pytest.mark.parametrize(
@@ -136,7 +133,7 @@ def test_malformed_URIs(  # pylint: disable=invalid-name
 ) -> None:
     with pytest.raises(ValidationError) as e_info:
         _ = DummyURI(uri=uris)
-    assert str(e_info.value) == expected_error
+    assert expected_error in str(e_info.value)
 
 
 @pytest.mark.parametrize(
