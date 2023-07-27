@@ -14,7 +14,7 @@ lead_researcher: ''
 metadata: {}
 name: biru-p1
 object_schema: https://130.216.218.45/ProjectSchema-BIRUbbbbb
-principal_investigator: 'xli677'
+principal_investigator: !Username 'xli677'
 users:
 - !UserACL
   can_download: true
@@ -32,7 +32,7 @@ lead_researcher: ''
 metadata: {}
 name: biru-p2
 object_schema: ''
-principal_investigator: 'xli677'
+principal_investigator: !Username 'xli677'
 users: null
 --- !Experiment
 data_classification: 1
