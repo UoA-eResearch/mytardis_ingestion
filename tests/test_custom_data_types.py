@@ -94,7 +94,6 @@ def test_URI_wrong_type() -> None:  # pylint: disable=invalid-name
                 'Passed string value "totally wrong" '
                 "is not a well formatted MyTardis URI "
                 "[type=value_error, input_value='totally wrong', input_type=str]\n    "
-                "For further information visit https://errors.pydantic.dev/2.0.3/v/value_error"
             ),
         ),
         (
@@ -103,7 +102,6 @@ def test_URI_wrong_type() -> None:  # pylint: disable=invalid-name
                 "1 validation error for DummyURI\nuri\n  Value error, Unknown object type: "
                 "\"banana\" [type=value_error, input_value='/api/v1/banana/1/', "
                 "input_type=str]\n    "
-                "For further information visit https://errors.pydantic.dev/2.0.3/v/value_error"
             ),
         ),
         (
@@ -112,7 +110,6 @@ def test_URI_wrong_type() -> None:  # pylint: disable=invalid-name
                 "1 validation error for DummyURI\nuri\n  Value error, Passed string value "
                 '"/api/v1/project" is not a well formatted MyTardis URI [type=value_error,'
                 " input_value='/api/v1/project', input_type=str]\n    "
-                "For further information visit https://errors.pydantic.dev/2.0.3/v/value_error"
             ),
         ),
         (
@@ -122,7 +119,6 @@ def test_URI_wrong_type() -> None:  # pylint: disable=invalid-name
                 '"/api/v1/project/1/additional/" is not a well formatted MyTardis URI '
                 "[type=value_error, input_value='/api/v1/project/1/additional/', "
                 "input_type=str]\n    "
-                "For further information visit https://errors.pydantic.dev/2.0.3/v/value_error"
             ),
         ),
     ],
