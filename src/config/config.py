@@ -170,6 +170,16 @@ class IntrospectionConfig(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
 
+class ProfileConfig(BaseModel):
+    """Profile data for extraction plant.
+
+    Pydantic model for the extraction plant profile. This profile is used to
+    determine how the prospecting and mining processes are performed.
+    """
+
+    profile_name: str
+
+
 class ConfigFromEnv(BaseSettings):
     """Full MyTardis settings model.
 
@@ -236,6 +246,7 @@ class ConfigFromEnv(BaseSettings):
     storage: StorageConfig
     default_schema: SchemaConfig
     archive: StorageConfig
+    profile: ProfileConfig
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", env_nested_delimiter="__"
     )

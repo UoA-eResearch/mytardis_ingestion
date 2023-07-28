@@ -12,6 +12,10 @@
 echo "---Starting install..."
 sudo echo
 
+echo "---Updating system---"
+sudo apt-get -y update
+sudo apt-get -y upgrade
+
 echo "---Installing git"
 sudo apt install -y git
 
