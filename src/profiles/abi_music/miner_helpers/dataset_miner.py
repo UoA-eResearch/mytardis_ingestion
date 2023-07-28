@@ -124,7 +124,7 @@ class DatasetMiner:
                 param_sets[key] = flattened_dict[key]
                 # remapped_dict[key] = flattened_dict[key]
                 if key == "SequenceID":
-                    remapped_dict["identifiers"] = [flattened_dict[key]]
+                    remapped_dict["identifiers"] = [str(flattened_dict[key])]
         param_sets["summary"] = flattened_dict["Description"]
 
         remapped_dict["experiments"] = [remapped_dict["experiments"]]
