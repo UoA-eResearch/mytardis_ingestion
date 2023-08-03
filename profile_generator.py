@@ -13,7 +13,6 @@ import shutil
 import yaml
 
 from pathlib import Path
-from pydantic.fields import ModelField
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
@@ -131,17 +130,18 @@ class ProfileGenerator:
             Dict[str,Any]: A dictionary containing the raw dataclasses's fields as the keys to a dictionary of
         """
         raw_dataclass_dict = {}
-        fields_dict = class_type.__dict__['__fields__']
+        fields_dict = class_type.__dict__['model_fields']
+        
         for key in fields_dict.keys():
             field_entry = fields_dict[key]
             entry_dict = dict.fromkeys(pc.DATACLASS_ENTRY_DICT_KEYS)
             entry_dict[pc.DEFAULT_KEY] = ""
-            entry_dict[pc.NAME_KEY] = field_entry.name
+            entry_dict[pc.NAME_KEY] = key
             entry_dict[pc.NATIVE_KEY] = True
-            entry_dict[pc.REQUIRED_KEY] = field_entry.required
+            entry_dict[pc.REQUIRED_KEY] = field_entry.is_required()
             entry_dict[pc.USEDEFAULT_KEY] = False
             
-            raw_dataclass_dict[field_entry.name] = entry_dict
+            raw_dataclass_dict[key] = entry_dict
 
         return raw_dataclass_dict
     
