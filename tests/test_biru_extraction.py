@@ -1,16 +1,16 @@
 import logging
+import os
+from pathlib import Path
 from typing import Literal
 from unittest.mock import MagicMock, Mock
-import os
 
 import pytest
 from pytest import fixture
-from pathlib import Path
 
 from src.beneficiations import beneficiation_consts as bc
 from src.beneficiations.beneficiation import Beneficiation
-from src.extraction_plant.extraction_plant import ExtractionPlant
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
+from src.extraction_plant.extraction_plant import ExtractionPlant
 from src.miners.miner import Miner
 from src.profiles.profile_loader import ProfileLoader
 from src.prospectors.prospector import Prospector
@@ -20,9 +20,10 @@ logger = logging.getLogger(__name__)
 logger.propagate = True
 config = ConfigFromEnv()
 
+
 def test_extraction_plant(tmpdir_metadata, get_abi_profile):
     pth = "tests/fixtures/fixtures_example.yaml"
-    profile = str(Path("idw"))    
+    profile = str(Path("idw"))
     prof_loader = ProfileLoader(get_abi_profile)
 
     prospector = Prospector(prof_loader.load_custom_prospector())
@@ -30,8 +31,7 @@ def test_extraction_plant(tmpdir_metadata, get_abi_profile):
     bnfc: Beneficiation = Beneficiation(prof_loader.load_custom_beneficiation())
     ext_plant = ExtractionPlant(prospector, miner, bnfc)
 
-    ingestible_dataclasses = ext_plant.run_extraction(
-        tmpdir_metadata[0])
+    ingestible_dataclasses = ext_plant.run_extraction(tmpdir_metadata[0])
     projs = ingestible_dataclasses.get_projects()
     expts = ingestible_dataclasses.get_experiments()
     dsets = ingestible_dataclasses.get_datasets()
@@ -51,7 +51,8 @@ def test_extraction_plant(tmpdir_metadata, get_abi_profile):
     ProfileLoader.clear()
     ExtractionPlant.clear()
 
-'''
+
+"""
 @pytest.mark.usefixtures("tmpdir_metadata")
 def test_extraction_plant_no_profile(tmpdir_metadata):
     with pytest.raises(Exception):
@@ -67,4 +68,4 @@ def test_extraction_plant_no_profile(tmpdir_metadata):
     Beneficiation.clear()
     ProfileLoader.clear()
     ExtractionPlant.clear()
-'''
+"""
