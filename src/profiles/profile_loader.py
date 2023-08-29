@@ -76,8 +76,12 @@ class ProfileLoader(metaclass=Singleton):
 
     def load_custom_beneficiation(
         self,
-    ) -> AbstractCustomBeneficiation:
+    ) -> AbstractCustomBeneficiation|None:
         module_pth = self.profile_module_str + custom_beneficiation_lib
-        custom_beneficiation: AbstractCustomBeneficiation = importlib.import_module(module_pth).CustomBeneficiation()
-        return custom_beneficiation
-        
+        try:
+            custom_beneficiation: AbstractCustomBeneficiation = importlib.import_module(module_pth).CustomBeneficiation()
+            return custom_beneficiation
+        except Exception as e:
+            logger.info("AbstractCustomBeneficiation not loaded, will be set to None. Below are the details:")
+            logger.info(e)
+            return None

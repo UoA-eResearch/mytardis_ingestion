@@ -1,6 +1,6 @@
 !Project
 data_classification: 1
-data_status: 5
+data_status: null
 description: ''
 groups:
 - !GroupACL
@@ -126,23 +126,7 @@ metadata: {}
 object_schema: ''
 users: null
 --- !Dataset
-data_classification: 1
-data_status: 5
-dataset_name: biru-ds3
-description: ''
-experiment_id:
-- exp2
-experiments: []
-groups: null
-identifiers:
-- ds3
-instrument: ''
-instrument_id: ''
-metadata: {}
-object_schema: ''
-users: null
---- !Dataset
-data_classification: 1
+data_classification: 25
 data_status: null
 dataset_name: biru-ds4
 description: ''

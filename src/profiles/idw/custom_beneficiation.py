@@ -13,11 +13,11 @@ from pathlib import Path
 import yaml
 from yaml.loader import Loader
 from yaml.nodes import MappingNode, Node
-
-from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
+from typing import Any, Union, List
 
 # User-defined imports
 # from src.profiles.idw.beneficiation_helpers.models import IngestionMetadata
+from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
 from src.blueprints.common_models import GroupACL, UserACL
 from src.blueprints.custom_data_types import Username
@@ -43,7 +43,6 @@ tags = [
     username_tag,
     path_tag,
 ]
-
 
 class CustomBeneficiation(AbstractCustomBeneficiation):
     """
@@ -211,7 +210,7 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         return RawProject(**loader.construct_mapping(node))
 
     def beneficiate(
-        self, fpath: Path, ingestible_dclasses: IngestibleDataclasses
+        self, fpath: Any, ingestible_dclasses: IngestibleDataclasses
     ) -> IngestibleDataclasses:
         """
         Parse a YAML file at the specified path and return a list of loaded objects.

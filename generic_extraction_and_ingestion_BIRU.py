@@ -26,10 +26,15 @@ pth = "tests/fixtures/fixtures_example.yaml"
 profile = str(Path("idw"))
 profile_loader = ProfileLoader(profile)
 
-prospector = Prospector(profile_loader.load_custom_prospector)
-miner = Miner(profile_loader.load_custom_miner)
+prospector = Prospector(profile_loader.load_custom_prospector())
+miner = Miner(profile_loader.load_custom_miner())
 
-beneficiation = Beneficiation(profile_loader.load_custom_beneficiation)
+beneficiation = Beneficiation(profile_loader.load_custom_beneficiation())
 
 ext_plant = ExtractionPlant(prospector, miner, beneficiation)
-# ingestible_dataclasses = ext_plant.run_extraction(pth)
+ingestible_dataclasses = ext_plant.run_extraction(pth)
+
+###Ingestion step
+#mt_rest = MyTardisRESTFactory(config.auth, config.connection)
+#overseer = Overseer(mt_rest)
+#TODO Libby complete the rest of the template script here once the ingestion factory is renovated

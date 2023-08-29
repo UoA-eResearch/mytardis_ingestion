@@ -60,7 +60,7 @@ class ExtractionPlant(metaclass = Singleton):
 
         Args:
             pth (Path): The path of the files.
-            ingest_dict (Optional[Dict[str, list[Any]]]): A dictionary containing metadata files to ingest. Used when IDW was used.
+            ingest_dict (Optional[Dict[str, list[Any]]]): A dictionary containing metadata files to ingest. Used when IDW was used. ---> Libby: used when IDW was not used?
 
         Returns:
             IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
@@ -79,7 +79,8 @@ class ExtractionPlant(metaclass = Singleton):
 
         if not ingest_dict:
             ingest_dict = out_man.metadata_files_to_ingest_dict
-        ingestible_dataclasses_out = self._beneficiate(ingest_dict, ing_dclasses)
+        #ingestible_dataclasses_out = self._beneficiate(ingest_dict, ing_dclasses) # Libby: changed to below
+        ingestible_dataclasses_out = self._beneficiate(pth, ing_dclasses)
         return ingestible_dataclasses_out
 
     def _prospect(
@@ -99,13 +100,21 @@ class ExtractionPlant(metaclass = Singleton):
         logger.info("mining")
         return self.miner.mine_directory(pth, True, out_man)
 
+#    def _beneficiate(
+#        self,
+#        ingest_dict: Dict[str, list[Any]],
+#        ing_dclasses: IngestibleDataclasses,
+#    ) -> IngestibleDataclasses:
+#        logger.info("beneficiating")
+#        ingestible_dataclasses = self.beneficiation.beneficiation.beneficiate(ingest_dict, ing_dclasses)
+#        return ingestible_dataclasses
+
+# Libby: changes to IDW _beneficiate - need to test with ABI-music
     def _beneficiate(
         self,
-        ingest_dict: Dict[str, List[str]],
+        pth: Path,
         ing_dclasses: IngestibleDataclasses,
     ) -> IngestibleDataclasses:
         logger.info("beneficiating")
-        ingestible_dataclasses = self.beneficiation.beneficiate(
-            ingest_dict, ing_dclasses
-        )
+        ingestible_dataclasses = self.beneficiation.beneficiation.beneficiate(pth, ing_dclasses)
         return ingestible_dataclasses

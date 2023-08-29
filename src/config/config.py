@@ -277,4 +277,7 @@ class ConfigFromEnv(BaseSettings):
     storage: StorageConfig
     default_schema: SchemaConfig
     archive: StorageConfig
-    profile: ProfileConfig
+    #profile: ProfileConfig
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", env_nested_delimiter="__"
+    )
