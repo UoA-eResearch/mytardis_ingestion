@@ -41,6 +41,7 @@ repos:
     rev: v1.0.6
     hooks:
     - id: python-bandit-vulnerability-check
+      stages: [pre-push]
 -   repo: local
     hooks:
     - id: pytest
