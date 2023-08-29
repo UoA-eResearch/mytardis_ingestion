@@ -74,7 +74,8 @@ class Overseer(metaclass=Singleton):
         Returns:
             The integer id that maps to the URI
         """
-        return int(urlparse(uri).path.rstrip(os.sep).split(os.sep).pop())
+        uri_sep: str = "/"
+        return int(urlparse(uri).path.rstrip(uri_sep).split(uri_sep).pop())
 
     def _get_object_from_mytardis(
         self,
