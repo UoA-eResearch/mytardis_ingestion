@@ -31,6 +31,9 @@ def fixture_overseer_plain(
 
 
 def test_staticmethod_resource_uri_to_id() -> None:
+    test_uri = URI("/v1/user/10")
+    assert Overseer.resource_uri_to_id(test_uri) == 10
+
     test_uri = URI("/v1/user/10/")
     assert Overseer.resource_uri_to_id(test_uri) == 10
 
