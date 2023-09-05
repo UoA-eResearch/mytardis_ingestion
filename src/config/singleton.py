@@ -16,10 +16,7 @@ class Singleton(type):
     ) -> Any:  # sourcery skip: instance-method-first-arg-name
         """Check if a copy of the object already exists and return it if it does."""
         if cls not in cls._instances:
-            cls._instances[cls] = super(
-                Singleton,
-                cls,
-            ).__call__(
+            cls._instances[cls] = super(Singleton, cls,).__call__(
                 *args,
                 **kwargs,
             )

@@ -8,7 +8,6 @@ import logging
 from typing import Optional, Tuple
 
 from pydantic import AnyUrl, ValidationError
-from slugify import slugify
 
 from src.blueprints.common_models import Parameter, ParameterSet
 from src.blueprints.datafile import RawDatafile, RefinedDatafile
@@ -19,6 +18,7 @@ from src.config.config import GeneralConfig, SchemaConfig, StorageConfig
 from src.config.singleton import Singleton
 from src.helpers.project_aware import log_if_projects_disabled
 from src.overseers.overseer import Overseer
+from src.smelters.smelt_storage_boxes import create_storage_box
 
 logger = logging.getLogger(__name__)
 
@@ -36,8 +36,7 @@ class Smelter(metaclass=Singleton):
         overseer: Overseer,
         general: GeneralConfig,
         default_schema: SchemaConfig,
-        active_store: StorageConfig,
-        archive: StorageConfig,
+        storage: StorageConfig,
     ) -> None:
         """Class initialisation to set options for dictionary processing
         Stores MyTardis set up information from the introspection API to allow the parser
@@ -50,15 +49,15 @@ class Smelter(metaclass=Singleton):
                 belong elsewhere
             default_schema (SchemaConfig): The default schema to use as a fallback if one is not
                 provided.
-            active_store (StorageConfig): The active storage for use by MyTardis
-            archive (StorageConfig): Archive storage for use by MyTardis.
+            active_stores (list(StorageBoxConfig)): The active storage for use by MyTardis
+            archives (list(StorageBoxConfig)): Archive storage for use by MyTardis.
         """
 
         self.overseer = overseer
         self.default_schema = default_schema
         self.default_institution = general.default_institution
-        self.active_store = active_store
-        self.archive = archive
+        self.active_stores = storage.active_stores
+        self.archives = storage.archives
 
     def extract_parameters(
         self,
@@ -66,7 +65,15 @@ class Smelter(metaclass=Singleton):
         raw_object: RawProject | RawExperiment | RawDataset | RawDatafile,
     ) -> Optional[ParameterSet]:
         """Extract the metadata field and the schema field from a RawObject dataclass
-        and use it to create a Parameterset"""
+        and use it to create a Parameterset
+
+        Args:
+            schema (AnyURL): a schema namespace from MyTardis
+            raw_object (RawMTObject): A RawProject/Experiment/Dataset/Datafile object
+
+        Returns:
+            Optional(ParameterSet): The metadata processed into a parameterset
+        """
 
         if not raw_object.metadata:
             return None
@@ -82,16 +89,6 @@ class Smelter(metaclass=Singleton):
                 )
                 continue
         return ParameterSet(schema=schema, parameters=parameter_list)
-
-    def __create_storage_box_names(
-        self,
-        project_name: str,
-        archive: bool = False,
-    ) -> str:
-        """Create a storage box name if one hasn't been assigned."""
-        if archive:
-            return slugify(f"archive {project_name}")
-        return slugify(f"active {project_name}")
 
     def smelt_project(
         self, raw_project: RawProject
@@ -117,12 +114,24 @@ class Smelter(metaclass=Singleton):
                 "Unable to find default institution and no institution provided"
             )
             return None
-        active_stores = raw_project.active_stores
-        archives = raw_project.archives
-        if not active_stores:
-            active_stores = [self.__create_storage_box_names(raw_project.name)]
-        if not archives:
-            archives = [self.__create_storage_box_names(raw_project.name, archive=True)]
+        active_stores = [
+            create_storage_box(
+                raw_project.name,
+                config,
+                raw_project.delete_in_days,
+                raw_project.archive_in_days,
+            )
+            for config in self.active_stores
+        ]
+        archives = [
+            create_storage_box(
+                raw_project.name,
+                config,
+                raw_project.delete_in_days,
+                raw_project.archive_in_days,
+            )
+            for config in self.archives
+        ]
         try:
             refined_project = RefinedProject(
                 name=raw_project.name,

@@ -3,14 +3,47 @@
 
 from abc import ABC
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime, MTUrl, Username
-from src.blueprints.storage_boxes import RawStorageBox
 from src.helpers.enumerators import DataClassification
+
+
+class ProjectStorageBox(BaseModel, ABC):
+    """Abstract base class for a project storage box. Concrete child classes
+    will need to be constructed for each new Django storage types
+
+    Attributes:
+        name (str): the storage box name
+        storage_class (str): The Django storage class
+        options (dict): A dictionary of options for the storage type that are project specific
+        delete_in_days (int): duration after which time the data can be flagged for deletion
+        archive_in_days (int): duration after which the data can be removed from active
+            stores
+    """
+
+    name: Optional[str] = None
+    storage_class: str
+    options: Optional[Dict[str, str]] = None
+    delete_in_days: int
+    archive_in_days: int
+
+
+class ProjectFileSystemStorageBox(ProjectStorageBox):
+    """Concrete sub-class of the ProjectStorageBox for unix filesystems"""
+
+    target_directory: Path
+
+
+class ProjectS3StorageBox(ProjectStorageBox):
+    """Concrete sub-class of the ProjectStorageBox for S3 buckets"""
+
+    bucket: str
+    target_key: str
 
 
 class BaseProject(BaseModel, ABC):
@@ -22,8 +55,6 @@ class BaseProject(BaseModel, ABC):
     description: str
     principal_investigator: Username
     data_classification: DataClassification = DataClassification.SENSITIVE
-    autoarchive_offset: int = 365  # default 1 year
-    delete_offset: int = -1  #
     created_by: Optional[str] = None
     url: Optional[str] = None
     users: Optional[List[UserACL]] = None
@@ -41,8 +72,10 @@ class RawProject(BaseProject):
     start_time: Optional[datetime | str] = None
     end_time: Optional[datetime | str] = None
     embargo_until: Optional[datetime | str] = None
-    archives: Optional[List[str]] = None
-    active_stores: Optional[List[str]] = None
+    active_stores: Optional[List[ProjectStorageBox]] = None
+    archives: Optional[List[ProjectStorageBox]] = None
+    delete_in_days: Optional[int]
+    archive_in_days: Optional[int]
 
 
 class RefinedProject(BaseProject):
@@ -54,8 +87,8 @@ class RefinedProject(BaseProject):
     start_time: Optional[datetime | str] = None
     end_time: Optional[datetime | str] = None
     embargo_until: Optional[datetime | str] = None
-    archives: List[str]
-    active_stores: List[str]
+    active_stores: List[ProjectStorageBox]
+    archives: List[ProjectStorageBox]
 
 
 class Project(BaseProject):
@@ -67,8 +100,8 @@ class Project(BaseProject):
     start_time: Optional[ISODateTime] = None
     end_time: Optional[ISODateTime] = None
     embargo_until: Optional[ISODateTime] = None
-    archives: List[RawStorageBox]
-    active_stores: List[RawStorageBox]
+    active_stores: List[ProjectStorageBox]
+    archives: List[ProjectStorageBox]
 
 
 class ProjectParameterSet(ParameterSet):

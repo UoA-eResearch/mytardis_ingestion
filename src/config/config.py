@@ -11,8 +11,10 @@ the environment automatically and verifies their types and values.
 """
 
 import logging
+from abc import ABC
+from enum import Enum
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 from urllib.parse import urljoin
 
 from pydantic import BaseModel, ConfigDict, PrivateAttr
@@ -24,6 +26,14 @@ from src.blueprints.custom_data_types import MTUrl
 from src.helpers.enumerators import MyTardisObject
 
 logger = logging.getLogger(__name__)
+
+
+class StorageTypesEnum(Enum):
+    """An enumerator to host the different storage types that can be used by
+    MyTardis"""
+
+    FILE_SYSTEM = "file_system"
+    S3 = "s3"
 
 
 class GeneralConfig(BaseModel):
@@ -132,20 +142,40 @@ class SchemaConfig(BaseModel):
     datafile: Optional[MTUrl] = None
 
 
-class StorageConfig(BaseModel):
-    """MyTardis storage box configuration.
+class StorageBoxConfig(BaseModel, ABC):
+    """MyTardis abstract storage box configuration.
 
     Pydantic model for Mytardis storage configuration. Contains enough information
     to allow for the creation of a storage box via the project API.
 
     Attributes:
-        target_directory (Path): file location on remote storage
-        name (str): name of the storage box
+        storage_name (str): an identifier that allows the Project to access the
+            options and attributes to set up an appropriate set of storage boxes
+        storage_class (str): the Django storage class
+        options (dict): dictionary of storage box options NB: if the storage box
+            is a file system type then this MUST contain a key 'target_root_dir'
+            with a file path to the target root directory.
+            if the storage box is an s3 bucket then this MUST contain a key 's3_bucket'
+            with the bucket name in it.
+        attributes (dict): dictionary of the storage box attributes
     """
 
-    storage_class: str = "django.core.files.storage.FileSystemStorage"
+    storage_name: str
+    storage_class: StorageTypesEnum
     options: Optional[Dict[str, str]] = None
     attributes: Optional[Dict[str, str]] = None
+
+
+class StorageConfig(BaseModel):
+    """Default storage box information for MyTardis
+
+    Attributes:
+        active_stores (List(StorageBoxConfig)): The active storage boxes
+        archives (List(StorageBoxConfig)): The archive storage boxes
+    """
+
+    active_stores: List[StorageBoxConfig]
+    archives: List[StorageBoxConfig]
 
 
 class IntrospectionConfig(BaseModel):
@@ -229,9 +259,7 @@ class ConfigFromEnv(BaseSettings):
     # DEFAULT_SCHEMA__DATASET=
     # DEFAULT_SCHEMA__DATAFILE=
     # Archive, prefix with ARCHIVE__
-    ARCHIVE__STORAGE_BOX__STORAGE_CLASS=django.core.files.storage.FileSystemStorage
-    ARCHIVE__STORAGE_BOX__OPTIONS__KEY=value
-    ARCHIVE__STORAGE_BOX__ATTRIBUTES__KEY=value
+
     ```
     ## Example
     ```python
@@ -245,8 +273,7 @@ class ConfigFromEnv(BaseSettings):
     connection: ConnectionConfig
     storage: StorageConfig
     default_schema: SchemaConfig
-    archive: StorageConfig
-    profile: ProfileConfig
+    # profile: ProfileConfig
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", env_nested_delimiter="__"
     )

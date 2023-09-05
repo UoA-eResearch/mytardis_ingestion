@@ -2,19 +2,22 @@
 """Pydantic model defining a Dataset for ingestion into MyTardis"""
 
 from abc import ABC
-from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
-from src.blueprints.custom_data_types import URI, ISODateTime, MTUrl
+from src.blueprints.custom_data_types import URI, MTUrl
 
 
 class DatafileReplica(BaseModel):
     """Pydantic model to ensure there is a validated replica of the file
-    for ingestion into MyTardis."""
+    for ingestion into MyTardis.
+
+    Attributes:
+        location (str): The storage box associated with the replica
+    """
 
     uri: str
     location: str
@@ -59,10 +62,6 @@ class RawDatafile(BaseDatafile):
     dataset: str
     metadata: Optional[Dict[str, str | int | float | bool]] = None
     object_schema: Optional[MTUrl] = Field(default=None, alias="schema")
-    archive_date: Optional[datetime] = None
-    delete_date: Optional[datetime] = None
-    archive_offset: Optional[int] = None
-    delete_offset: Optional[int] = None
 
 
 class RefinedDatafile(BaseDatafile):
@@ -70,10 +69,6 @@ class RefinedDatafile(BaseDatafile):
 
     dataset: str
     parameter_sets: Optional[ParameterSet] = None
-    archive_date: Optional[datetime | int] = None
-    delete_date: Optional[datetime | int] = None
-    archive_offset: Optional[int] = None
-    delete_offset: Optional[int] = None
 
 
 class Datafile(BaseDatafile):
@@ -82,5 +77,3 @@ class Datafile(BaseDatafile):
     replicas: List[DatafileReplica]
     parameter_sets: Optional[ParameterSet] = None
     dataset: URI
-    archive_date: ISODateTime
-    delete_date: ISODateTime

@@ -30,6 +30,7 @@ dset_tag = "!Dataset"
 dfile_tag = "!Datafile"
 tags = [prj_tag, expt_tag, dset_tag, dfile_tag]
 
+
 class CustomBeneficiation(AbstractCustomBeneficiation):
     """
     A class that provides methods to parse YAML files and construct objects.
@@ -173,5 +174,14 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         logger.info("parsing {0}".format(fpath))
         with open(fpath) as f:
             data = yaml.safe_load_all(f)
-            loaded_data = list(data)
-            return loaded_data
+
+            for obj in data:
+                if isinstance(obj, RawProject):
+                    ingestible_dclasses.add_project(obj)
+                if isinstance(obj, RawExperiment):
+                    ingestible_dclasses.add_experiment(obj)
+                if isinstance(obj, RawDataset):
+                    ingestible_dclasses.add_dataset(obj)
+                if isinstance(obj, RawDatafile):
+                    ingestible_dclasses.add_datafile(obj)
+        return ingestible_dclasses

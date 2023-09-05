@@ -21,7 +21,7 @@ logger.setLevel(logging.DEBUG)
 
 
 # ---Code
-class ExtractionPlant(metaclass = Singleton):
+class ExtractionPlant(metaclass=Singleton):
     """Used for extracting data from a given profile and path. Involves prospecting, mining and beneficiating.
     Prospecting is used to check and filter out data and metadata files that can be staged for ingestion.
     Mining is used to generate metadata files that contain fields compatible with the raw dataclasses.
@@ -30,8 +30,8 @@ class ExtractionPlant(metaclass = Singleton):
 
     def __init__(
         self,
-        prospector: Union[Prospector,None],
-        miner: Union[Miner,None],
+        prospector: Union[Prospector, None],
+        miner: Union[Miner, None],
         beneficiation: Beneficiation,
     ) -> None:
         """Initializes an ExtractionPlant instance with the given parameters.
@@ -50,9 +50,7 @@ class ExtractionPlant(metaclass = Singleton):
         self.beneficiation = beneficiation
 
     def run_extraction(
-        self,
-        pth: Path,
-        ingest_dict: Optional[Dict[str, list[Any]]] = None
+        self, pth: Path, ingest_dict: Optional[Dict[str, list[Any]]] = None
     ) -> IngestibleDataclasses:
         """Runs the full extraction process on the given path and file format. In the absence of a custom prospector in the
         prospector singleton and a custom miner in the miner singleton, the prospector and the miner will be skipped as this
@@ -79,7 +77,8 @@ class ExtractionPlant(metaclass = Singleton):
 
         if not ingest_dict:
             ingest_dict = out_man.metadata_files_to_ingest_dict
-        ingestible_dataclasses_out = self._beneficiate(ingest_dict, ing_dclasses)
+        # ingestible_dataclasses_out = self._beneficiate(ingest_dict, ing_dclasses) # Libby: changed to below
+        ingestible_dataclasses_out = self._beneficiate(pth, ing_dclasses)
         return ingestible_dataclasses_out
 
     def _prospect(
@@ -88,7 +87,9 @@ class ExtractionPlant(metaclass = Singleton):
         out_man: OutputManager,
     ) -> OutputManager:
         logger.info("prospecting")
-        out_man_fnl: OutputManager = self.prospector.prospect_directory(pth, True, out_man)
+        out_man_fnl: OutputManager = self.prospector.prospect_directory(
+            pth, True, out_man
+        )
         return out_man_fnl
 
     def _mine(
@@ -99,13 +100,23 @@ class ExtractionPlant(metaclass = Singleton):
         logger.info("mining")
         return self.miner.mine_directory(pth, True, out_man)
 
+    #    def _beneficiate(
+    #        self,
+    #        ingest_dict: Dict[str, list[Any]],
+    #        ing_dclasses: IngestibleDataclasses,
+    #    ) -> IngestibleDataclasses:
+    #        logger.info("beneficiating")
+    #        ingestible_dataclasses = self.beneficiation.beneficiation.beneficiate(ingest_dict, ing_dclasses)
+    #        return ingestible_dataclasses
+
+    # Libby: changes to IDW _beneficiate - need to test with ABI-music
     def _beneficiate(
         self,
         ingest_dict: Dict[str, List[str]],
         ing_dclasses: IngestibleDataclasses,
     ) -> IngestibleDataclasses:
         logger.info("beneficiating")
-        ingestible_dataclasses = self.beneficiation.beneficiate(
-            ingest_dict, ing_dclasses
+        ingestible_dataclasses = self.beneficiation.beneficiation.beneficiate(
+            pth, ing_dclasses
         )
         return ingestible_dataclasses
