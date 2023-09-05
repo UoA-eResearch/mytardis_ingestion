@@ -30,4 +30,4 @@ from src.blueprints.project import (
     RawProject,
     RefinedProject,
 )
-from src.blueprints.storage_boxes import RawStorageBox, StorageBox
+from src.blueprints.storage_boxes import StorageBox

@@ -12,8 +12,8 @@ from typing import Any, Dict, Optional
 
 import yaml
 
-from src.miners.utils import datafile_metadata_helpers as dmh
 from src.extraction_output_manager import output_manager as om
+from src.miners.utils import datafile_metadata_helpers as dmh
 from src.profiles import profile_consts as pc
 from src.profiles import profile_helpers as ph
 from src.profiles.abi_music import abi_music_consts as amc

@@ -1,4 +1,4 @@
-"""Abstract parser module. 
+"""Abstract parser module.
 
 This is an abstract parser that defines the protocols
 """

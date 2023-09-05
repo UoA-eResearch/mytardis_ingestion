@@ -7,9 +7,9 @@ import logging
 from types import ModuleType
 
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
+from src.config.singleton import Singleton
 from src.miners.abstract_custom_miner import AbstractCustomMiner
 from src.prospectors.abstract_custom_prospector import AbstractCustomProspector
-from src.config.singleton import Singleton
 
 # ---Constants
 logger = logging.getLogger(__name__)

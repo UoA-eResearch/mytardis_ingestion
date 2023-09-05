@@ -1,6 +1,6 @@
-"""JSON parser module. 
+"""JSON parser module.
 
-Main objective of this module is to map the json files to 
+Main objective of this module is to map the json files to
 a format accepted by the mytardis_ingestion
 """
 
@@ -17,8 +17,8 @@ from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
-from src.profiles import profile_consts as pc
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
+from src.profiles import profile_consts as pc
 
 # ---Constants
 logger = logging.getLogger(__name__)

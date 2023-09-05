@@ -7,7 +7,7 @@ experiment_id: # Multiple samples can be associated with a dataset. If this is t
   - # If a rigorous directory structure is used then this can be inferred from the directory and only needs explicit definition if multiple samples are associated with the dataset
   - <one of the identifiers associated with the experiment/sample that this dataset is part of>
   - <one of the identifiers associated with the experiment/sample that this dataset is part of>
-dataset_ids: 
+dataset_ids:
   - <a list of identifiers that are used for this object>
   - <a list of identifiers that are used for this object>
 instrument_id: <one of the identifiers associated with the instrument (or commercial entity if outsourced) used to generate the dataset>

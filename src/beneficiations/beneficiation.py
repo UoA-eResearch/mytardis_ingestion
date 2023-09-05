@@ -1,5 +1,5 @@
 """Part of the Extraction Plant where generated metadata files are parsed
-into raw dataclasses. 
+into raw dataclasses.
 """
 
 

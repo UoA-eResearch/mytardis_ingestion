@@ -1,19 +1,19 @@
 # pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
 import copy
 import json
-import responses
-import shutil
-
-from pathlib import Path
-from pytest import fixture
-from src.beneficiations import beneficiation_consts as bc
-from src.profiles import profile_consts as pc
-from src.extraction_output_manager.output_manager import OutputManager
-
 import logging
+import shutil
+from pathlib import Path
+
+import responses
+from pytest import fixture
+
+from src.beneficiations import beneficiation_consts as bc
+from src.extraction_output_manager.output_manager import OutputManager
+from src.profiles import profile_consts as pc
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
 
 
 @fixture
@@ -71,21 +71,33 @@ def tmpdir_metadata():
     dir3name = Path("dir3")
 
     dummy_data_raw = {
-        "Basename": {"Project": str(dir1name), "Sample": str(dir2name), "Sequence": str(dir3name)},
+        "Basename": {
+            "Project": str(dir1name),
+            "Sample": str(dir2name),
+            "Sequence": str(dir3name),
+        },
         "Description": "Dummy Description",
         "SequenceID": 123456789,
         "Camera Settings": {"Fan": False, "Pixel Correction": False, "Cooling": False},
     }
 
     dummy_data_deconv = {
-        "Basename": {"Project": str(dir1name), "Sample": str(dir2name), "Sequence": str(dir3name)},
+        "Basename": {
+            "Project": str(dir1name),
+            "Sample": str(dir2name),
+            "Sequence": str(dir3name),
+        },
         "Description": "Dummy Description",
         "SequenceID": 123456789,
         "Camera Settings": {"Fan": False, "Pixel Correction": False, "Cooling": False},
     }
 
     dummy_data_bad = {
-        "Basename": {"Project": str(dir1name), "Sample": str(dir2name), "Sequence": str(dir3name)},
+        "Basename": {
+            "Project": str(dir1name),
+            "Sample": str(dir2name),
+            "Sequence": str(dir3name),
+        },
         "Description": "Dummy Description",
         "SequenceID": 123456789,
         "Camera Settings": {"Fan": False, "Pixel Correction": False, "Cooling": False},

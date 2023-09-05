@@ -3,10 +3,11 @@ YAML parser module. This module is used for parsing YAML files into
 appropriate dataclasses.
 """
 
-# Standard library imports
-from copy import deepcopy
 import logging
 import os
+
+# Standard library imports
+from copy import deepcopy
 
 # Third-party imports
 import yaml
@@ -14,12 +15,7 @@ from yaml.loader import Loader
 from yaml.nodes import MappingNode, Node
 
 # User-defined imports
-from src.beneficiation.models import ( 
-    RawProject,
-   RawExperiment,
-    RawDataset,
-    RawDatafile,
-)
+from src.beneficiation.models import RawDatafile, RawDataset, RawExperiment, RawProject
 
 # Constants
 logger = logging.getLogger(__name__)
@@ -28,6 +24,7 @@ expt_tag = "!Experiment"
 dset_tag = "!Dataset"
 dfile_tag = "!Datafile"
 tags = [prj_tag, expt_tag, dset_tag, dfile_tag]
+
 
 class YamlParser:
     """
@@ -59,6 +56,7 @@ class YamlParser:
         A method that reads a YAML file, parses it and constructs objects using the constructor functions.
         Returns a list of objects constructed from the YAML file.
     """
+
     def __init__(
         self,
     ) -> None:
@@ -71,27 +69,27 @@ class YamlParser:
         Returns:
             None
         """
-        #yaml.add_constructor(prj_tag, self._rawproject_constructor) #add object constructor
+        # yaml.add_constructor(prj_tag, self._rawproject_constructor) #add object constructor
         yaml.constructor.SafeConstructor.add_constructor(
             prj_tag, self._rawproject_constructor
-        ) #assign YAML tag to object constructor
+        )  # assign YAML tag to object constructor
 
-        #yaml.add_constructor(expt_tag, self._rawexperiment_constructor)
+        # yaml.add_constructor(expt_tag, self._rawexperiment_constructor)
         yaml.constructor.SafeConstructor.add_constructor(
             expt_tag, self._rawexperiment_constructor
         )
 
-        #yaml.add_constructor(dset_tag, self._rawdataset_constructor)
+        # yaml.add_constructor(dset_tag, self._rawdataset_constructor)
         yaml.constructor.SafeConstructor.add_constructor(
             dset_tag, self._rawdataset_constructor
         )
 
-        #yaml.add_constructor(dfile_tag, self._rawdatafile_constructor)
+        # yaml.add_constructor(dfile_tag, self._rawdatafile_constructor)
         yaml.constructor.SafeConstructor.add_constructor(
             dfile_tag, self._rawdatafile_constructor
         )
 
-    def _constructor_setup(self, loader:Loader, node:MappingNode) -> dict:
+    def _constructor_setup(self, loader: Loader, node: MappingNode) -> dict:
         """
         A helper method that returns a dictionary containing the arguments of the constructor.
 
@@ -102,10 +100,12 @@ class YamlParser:
         Returns:
             dict: A dictionary containing the arguments of the constructor.
         """
-        
+
         return dict(**loader.construct_mapping(node))
 
-    def _rawdatafile_constructor(self, loader: Loader, node: MappingNode) -> RawDatafile:
+    def _rawdatafile_constructor(
+        self, loader: Loader, node: MappingNode
+    ) -> RawDatafile:
         """
         A method that constructs a RawDatafile object using the constructor_setup helper method.
 

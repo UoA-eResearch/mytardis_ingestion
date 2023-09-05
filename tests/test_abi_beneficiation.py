@@ -12,9 +12,9 @@ from src.extraction_output_manager.output_manager import OutputManager
 from src.profiles import profile_consts as pc
 from src.profiles.profile_loader import ProfileLoader
 from tests.fixtures.fixtures_abi_data import (
+    get_abi_profile,
     get_bad_beneficiation_format,
     tmpdir_metadata_files,
-    get_abi_profile,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,8 +28,9 @@ def test_json_parse(tmpdir_metadata_files, get_abi_profile):
     ingestible_dataclasses: IngestibleDataclasses = IngestibleDataclasses()
 
     ing_files = tmpdir_metadata_files[0]
-    ing_dclasses = bnfc.beneficiate(beneficiation_data = ing_files, 
-                                    ingestible_dataclasses = ingestible_dataclasses)
+    ing_dclasses = bnfc.beneficiate(
+        beneficiation_data=ing_files, ingestible_dataclasses=ingestible_dataclasses
+    )
 
     rawprojs = ing_dclasses.get_projects()
     rawexpts = ing_dclasses.get_experiments()
@@ -49,10 +50,11 @@ def test_bad_json_parse(tmpdir_metadata_files, get_abi_profile):
     profile_loader = ProfileLoader(get_abi_profile)
     bnfc = Beneficiation(profile_loader.load_custom_beneficiation())
     ingestible_dataclasses: IngestibleDataclasses = IngestibleDataclasses()
-    
+
     ing_files = tmpdir_metadata_files[1]
     with pytest.raises(pydantic.ValidationError):
-        ing_dclasses = bnfc.beneficiate(beneficiation_data = ing_files, 
-                                    ingestible_dataclasses = ingestible_dataclasses)
-        
+        ing_dclasses = bnfc.beneficiate(
+            beneficiation_data=ing_files, ingestible_dataclasses=ingestible_dataclasses
+        )
+
     Beneficiation.clear()
