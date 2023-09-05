@@ -37,16 +37,17 @@ repos:
         - types-mock
         - pydantic
       exclude: tests, docs
--   repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
-    rev: v1.0.6
+-   repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
     hooks:
-    - id: python-bandit-vulnerability-check
+    - id: bandit
+      args: ["-r", "src/"]
       stages: [pre-push]
 -   repo: local
     hooks:
     - id: pytest
       name: pytest
-      stages: [commit]
+      stages: [pre-push]
       language: python
       additional_dependencies:
         - pytest
@@ -63,3 +64,12 @@ repos:
     rev: v1.3.2
     hooks:
     -   id: python-safety-dependencies-check
+-   repo: local
+    hooks:
+     -   id: wily
+         stages: [pre-push]
+         name: wily
+         entry: wily diff
+         verbose: true
+         language: python
+         additional_dependencies: [wily]
