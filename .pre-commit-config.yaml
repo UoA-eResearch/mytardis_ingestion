@@ -41,7 +41,7 @@ repos:
     rev: 1.7.5
     hooks:
     - id: bandit
-      args: ["-r", "src/", "-x", "docs,tests"]
+      args: ["-r", "src/", "-x", "tests/"]
       stages: [pre-push]
 -   repo: local
     hooks:
