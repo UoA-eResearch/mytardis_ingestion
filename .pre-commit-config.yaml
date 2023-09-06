@@ -41,8 +41,9 @@ repos:
     rev: 1.7.5
     hooks:
     - id: bandit
-      args: ["-r", "src/", "-x", "tests/"]
+      args: ["-r", "src/"]
       stages: [pre-push]
+      exclude: tests, docs
 -   repo: local
     hooks:
     - id: pytest
