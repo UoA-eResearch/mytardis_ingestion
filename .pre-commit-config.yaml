@@ -61,6 +61,7 @@ repos:
         - pydantic
         - devtools
         - pydantic-settings
+        - validators
       entry: pytest -v tests
       types: [python]
       pass_filenames: false
