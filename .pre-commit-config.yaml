@@ -64,6 +64,7 @@ repos:
         - validators
         - pytz
         - python-slugify
+        - python-dateutil
       entry: pytest -v tests
       types: [python]
       pass_filenames: false
