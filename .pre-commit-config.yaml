@@ -60,7 +60,7 @@ repos:
         - PyYAML
         - pydantic
         - devtools
-      entry: pytest -v src
+      entry: pytest -v tests
       types: [python]
       pass_filenames: false
 -   repo: https://github.com/Lucas-C/pre-commit-hooks-safety
