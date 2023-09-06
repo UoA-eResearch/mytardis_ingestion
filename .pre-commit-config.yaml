@@ -60,6 +60,7 @@ repos:
         - PyYAML
         - pydantic
         - devtools
+        - pydantic-settings
       entry: pytest -v tests
       types: [python]
       pass_filenames: false
