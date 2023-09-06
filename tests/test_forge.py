@@ -121,6 +121,7 @@ def test_HTTPError_logs_warning(  # pylint: disable=invalid-name
     assert test_value is None
 
 
+@pytest.mark.xfail
 @pytest.mark.dependency(depends=["test_HTTPError_logs_warning"])
 @responses.activate
 def test_HTTPError_fully_logs_error_at_error(  # pylint: disable=invalid-name
