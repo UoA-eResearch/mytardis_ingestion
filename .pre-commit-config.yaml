@@ -63,6 +63,7 @@ repos:
         - pydantic-settings
         - validators
         - pytz
+        - python-slugify
       entry: pytest -v tests
       types: [python]
       pass_filenames: false
