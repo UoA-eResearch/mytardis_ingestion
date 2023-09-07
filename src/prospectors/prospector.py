@@ -46,23 +46,3 @@ class AbstractProspector(ABC):
             OutputManager: output manager instance containing the outputs of the process
         """
         return None
-
-    def __remove_common_system_files(
-        self,
-        path: Path,
-        recursive: bool = True,
-        reject_hidden: bool = False,
-    ) -> Tuple[List[Path], List[Path]]:
-        """Using the perform_common_file_checks function, remove common system files from those
-        prospected
-
-        Args:
-            path (Path): the path to inspect for metadata
-            recursive (bool, optional): True to inspect all subdirectories in path,
-                False to inspect path only. Defaults to True.
-            reject_hidden (bool, optional): True to remove all dot files. Defaults to False.
-
-        Returns:
-            Tuple[List[Path],List[Path]]: a tuple of lists of rejected and ingested file paths
-        """
-        return perform_common_file_checks(path, recursive, reject_hidden)

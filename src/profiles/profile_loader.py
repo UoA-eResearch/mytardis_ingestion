@@ -61,7 +61,7 @@ class ProfileLoader(metaclass=Singleton):
         Returns:
             ModuleType: A reference to the loaded prospector python module
         """
-        module_pth = Path(self.profile_path / Path(custom_prospector))
+        module_pth = self.profile_path / Path(custom_prospector)
         try:
             return importlib.import_module(module_pth.as_posix())
         except Exception as err:
