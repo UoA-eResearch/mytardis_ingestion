@@ -1,4 +1,4 @@
-"""A model-like class that is designed to contain the raw dataclasses for 
+"""A model-like class that is designed to contain the raw dataclasses for
 refinery/ingestion. The raw dataclasses are stored in lists.
 """
 
@@ -34,56 +34,75 @@ class IngestibleDataclasses:
     def __init__(
         self,
     ) -> None:
-        self._setup()
-
-    def _setup(
-        self,
-    ) -> None:
         self.projects: List[RawProject] = []
         self.experiments: List[RawExperiment] = []
         self.datasets: List[RawDataset] = []
         self.datafiles: List[RawDatafile] = []
 
-    def get_projects(
+    def get_projects(  # pylint: disable=missing-function-docstring
         self,
     ) -> List[RawProject]:
         return self.projects
 
-    def get_experiments(
+    def get_experiments(  # pylint: disable=missing-function-docstring
         self,
     ) -> List[RawExperiment]:
         return self.experiments
 
-    def get_datasets(
+    def get_datasets(  # pylint: disable=missing-function-docstring
         self,
     ) -> List[RawDataset]:
         return self.datasets
 
-    def get_datafiles(
+    def get_datafiles(  # pylint: disable=missing-function-docstring
         self,
     ) -> List[RawDatafile]:
         return self.datafiles
 
-    def add_project(self, project: RawProject) -> None:
+    def add_project(  # pylint: disable=missing-function-docstring
+        self,
+        project: RawProject,
+    ) -> None:
         self.projects.append(project)
 
-    def add_experiment(self, experiment: RawExperiment) -> None:
+    def add_experiment(  # pylint: disable=missing-function-docstring
+        self,
+        experiment: RawExperiment,
+    ) -> None:
         self.experiments.append(experiment)
 
-    def add_dataset(self, dataset: RawDataset) -> None:
+    def add_dataset(  # pylint: disable=missing-function-docstring
+        self,
+        dataset: RawDataset,
+    ) -> None:
         self.datasets.append(dataset)
 
-    def add_datafile(self, datafile: RawDatafile) -> None:
+    def add_datafile(  # pylint: disable=missing-function-docstring
+        self,
+        datafile: RawDatafile,
+    ) -> None:
         self.datafiles.append(datafile)
 
-    def add_projects(self, projects: List[RawProject]) -> None:
+    def add_projects(  # pylint: disable=missing-function-docstring
+        self,
+        projects: List[RawProject],
+    ) -> None:
         self.projects.extend(projects)
 
-    def add_experiments(self, experiments: List[RawExperiment]) -> None:
+    def add_experiments(  # pylint: disable=missing-function-docstring
+        self,
+        experiments: List[RawExperiment],
+    ) -> None:
         self.experiments.extend(experiments)
 
-    def add_datasets(self, datasets: List[RawDataset]) -> None:
+    def add_datasets(  # pylint: disable=missing-function-docstring
+        self,
+        datasets: List[RawDataset],
+    ) -> None:
         self.datasets.extend(datasets)
 
-    def add_datafiles(self, datafiles: List[RawDatafile]) -> None:
+    def add_datafiles(  # pylint: disable=missing-function-docstring
+        self,
+        datafiles: List[RawDatafile],
+    ) -> None:
         self.datafiles.extend(datafiles)

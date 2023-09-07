@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 ### PASTED CODE
 
 
-class Crucible(metaclass=Singleton):
+class Crucible:
     """The Crucible class reads in a RefinedObject and replaces the identified
     fields with URIs."""
 

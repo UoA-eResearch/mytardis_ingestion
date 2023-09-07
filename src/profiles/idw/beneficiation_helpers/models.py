@@ -3,13 +3,14 @@ And how to parse the YAML file into Python objects.
 """
 import logging
 from dataclasses import dataclass, field
-from pathlib import Path 
+from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Type, TypeAlias, TypeVar, Union
 
 import yaml
 from yaml.loader import Loader
 from yaml.nodes import MappingNode, Node
-from src.blueprints.custom_data_types import URI, Username, ISODateTime
+
+from src.blueprints.custom_data_types import URI, ISODateTime, Username
 from src.helpers.enumerators import DataClassification
 
 
@@ -25,6 +26,7 @@ class YAMLSerializable(yaml.YAMLObject):
     Methods:
         from_yaml(cls: Type, loader: Loader, node: MappingNode) -> Any: A class method that loads and constructs an object from a YAML node.
     """
+
     @classmethod
     def from_yaml(cls: Type, loader: Loader, node: MappingNode) -> Any:
         """
@@ -50,6 +52,7 @@ class IProjectAccessControl:
     while the IDerviedAccessControl class represents fields
     for experiments, datasets and datafiles.
     """
+
     admin_groups: List[str] = field(default_factory=list)
     admin_users: List[str] = field(default_factory=list)
     read_groups: List[str] = field(default_factory=list)
@@ -70,6 +73,7 @@ class IDerivedAccessControl:
     When set to None, the fields represent that they are inheriting
     access control fields from the containing object.
     """
+
     admin_groups: Optional[List[str]] = field(default=None)
     admin_users: Optional[List[str]] = field(default=None)
     read_groups: Optional[List[str]] = field(default=None)
@@ -94,8 +98,10 @@ class IMetadata:
     Attributes:
         metadata (Dict[str, Any]): A dictionary representing metadata for the object.
     """
+
     # change to Optional[]
     metadata: Dict[str, Any] = field(default_factory=dict)
+
 
 @dataclass
 class RawProject(YAMLSerializable, IProjectAccessControl, IMetadata):
@@ -109,6 +115,7 @@ class RawProject(YAMLSerializable, IProjectAccessControl, IMetadata):
         data_classification (DataClassification): The data classification of the project.
         principal_investigator (str): The name of the principal investigator for the project.
     """
+
     yaml_tag = "!Project"
     yaml_loader = yaml.SafeLoader
     name: str = ""
@@ -116,6 +123,7 @@ class RawProject(YAMLSerializable, IProjectAccessControl, IMetadata):
     principal_investigator: str = "abcd123"
     data_classification: DataClassification = DataClassification.SENSITIVE
     identifiers: List[str] = field(default_factory=list)
+
 
 @dataclass
 class RawExperiment(YAMLSerializable, IDerivedAccessControl, IMetadata):
@@ -129,6 +137,7 @@ class RawExperiment(YAMLSerializable, IDerivedAccessControl, IMetadata):
         identifiers (List[str]): A list of identifiers for the experiment.
         projects (List[str]): A list of project names associated with this experiment.
     """
+
     yaml_tag = "!Experiment"
     yaml_loader = yaml.SafeLoader
     title: str = ""
@@ -150,13 +159,14 @@ class RawDataset(YAMLSerializable, IDerivedAccessControl, IMetadata):
         experiments (List[str]): A list of experiment names associated with this dataset.
         instrument (str): The name of the instrument used to generate the data.
     """
+
     yaml_tag = "!Dataset"
     yaml_loader = yaml.SafeLoader
     description: str = ""
     data_classification: Optional[DataClassification] = None
     identifiers: List[str] = field(default_factory=list)
     experiments: List[str] = field(default_factory=list)
-    instrument: str = "" 
+    instrument: str = ""
 
 
 ### create new Datafile class to match fields in ingestion script
@@ -173,6 +183,7 @@ class RawDatafile(YAMLSerializable, IDerivedAccessControl, IMetadata):
         size (str): The size of the datafile.
         dataset (str): The dataset to which the datafile belongs.
     """
+
     yaml_tag = "!Datafile"
     yaml_loader = yaml.SafeLoader
     filename: str = ""
@@ -194,6 +205,7 @@ class IngestionMetadata:
         datasets (List[RawDataset]): A list of RawDataset objects.
         datafiles (List[RawDatafile]): A list of RawDatafile objects.
     """
+
     projects: List[RawProject] = field(default_factory=list)
     experiments: List[RawExperiment] = field(default_factory=list)
     datasets: List[RawDataset] = field(default_factory=list)
@@ -291,7 +303,7 @@ class IngestionMetadata:
 
         Returns:
             IngestionMetadata: An IngestionMetadata object containing the metadata from the input YAML string.
-        """ 
+        """
         metadata = IngestionMetadata()
         objects = yaml.safe_load_all(yaml_rep)
         for obj in objects:
@@ -310,6 +322,7 @@ class IngestionMetadata:
                     obj,
                 )
         return metadata
+
 
 """
 Usage:

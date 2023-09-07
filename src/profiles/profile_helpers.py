@@ -1,4 +1,4 @@
-"""Helpers used throughout a profile in the Extraction Plant 
+"""Helpers used throughout a profile in the Extraction Plant
 """
 from typing import Any, Dict, List
 

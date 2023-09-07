@@ -14,7 +14,6 @@ from src.extraction_output_manager.output_manager import OutputManager
 from src.miners.miner import Miner
 from src.prospectors.prospector import Prospector
 
-
 # ---Constants
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

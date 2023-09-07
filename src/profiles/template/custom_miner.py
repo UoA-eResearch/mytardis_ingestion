@@ -7,7 +7,6 @@ format on a path.
 import copy
 import logging
 import os
-
 from pathlib import Path
 from typing import Any, Optional
 

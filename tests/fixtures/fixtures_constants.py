@@ -10,6 +10,7 @@ from pytz import BaseTzInfo
 
 from src.blueprints.common_models import GroupACL, Parameter, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime, Username
+from src.config.config import StorageTypesEnum
 from src.helpers.enumerators import DataClassification
 
 
@@ -607,13 +608,13 @@ def datafile_delete_date() -> ISODateTime:
 
 
 @fixture
-def archive_class() -> str:
-    return "storages.backends.s3boto3.S3Boto3Storage"
+def archive_class() -> StorageTypesEnum:
+    return StorageTypesEnum.S3
 
 
 @fixture
-def storage_class() -> str:
-    return "django.core.files.storage.FileSystemStorage"
+def storage_class() -> StorageTypesEnum:
+    return StorageTypesEnum.FILE_SYSTEM
 
 
 @fixture
@@ -682,16 +683,6 @@ def autoarchive_offset() -> int:
 @fixture
 def delete_offset() -> int:
     return 5470
-
-
-@fixture
-def raw_active_store() -> List[str]:
-    return ["Test_storage_box"]
-
-
-@fixture
-def raw_archives() -> List[str]:
-    return ["Test archive box"]
 
 
 @fixture

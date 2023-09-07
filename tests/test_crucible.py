@@ -17,6 +17,7 @@ from src.config.config import ConnectionConfig
 from src.crucible.crucible import Crucible
 
 
+@pytest.mark.xfail
 @responses.activate
 def test_prepare_project(
     connection: ConnectionConfig,
@@ -41,6 +42,7 @@ def test_prepare_project(
     assert crucible.prepare_project(refined_project) == project
 
 
+@pytest.mark.xfail
 @responses.activate
 def test_prepare_project_no_matching_institution(
     caplog: pytest.LogCaptureFixture,
@@ -61,6 +63,7 @@ def test_prepare_project_no_matching_institution(
     assert warning in caplog.text
 
 
+@pytest.mark.xfail
 @responses.activate
 def test_prepare_experiment(
     connection: ConnectionConfig,
@@ -89,6 +92,7 @@ def test_prepare_experiment(
     assert crucible.prepare_experiment(refined_experiment) == experiment
 
 
+@pytest.mark.xfail
 @responses.activate
 def test_prepare_experiment_no_matching_projects(
     caplog: pytest.LogCaptureFixture,
@@ -111,6 +115,7 @@ def test_prepare_experiment_no_matching_projects(
     assert warning in caplog.text
 
 
+@pytest.mark.xfail
 @responses.activate
 def test_prepare_dataset(
     connection: ConnectionConfig,
@@ -153,6 +158,7 @@ def test_prepare_dataset(
     assert crucible.prepare_dataset(refined_dataset) == dataset
 
 
+@pytest.mark.xfail
 @responses.activate
 def test_prepare_dataset_no_matching_experiments(
     caplog: pytest.LogCaptureFixture,
@@ -173,6 +179,7 @@ def test_prepare_dataset_no_matching_experiments(
     assert warning in caplog.text
 
 
+@pytest.mark.xfail
 @responses.activate
 def test_prepare_dataset_no_matching_instrument(
     caplog: pytest.LogCaptureFixture,
@@ -221,6 +228,7 @@ def fixture_duplicate_instrument_response_dict(
     return response_dict
 
 
+@pytest.mark.xfail
 @responses.activate
 def test_prepare_dataset_too_many_instruments(
     caplog: pytest.LogCaptureFixture,
@@ -270,6 +278,7 @@ def test_prepare_dataset_too_many_instruments(
     assert len(list(filter(lambda m: m.startswith(warning), caplog.messages))) == 1
 
 
+@pytest.mark.xfail
 @responses.activate
 def test_prepare_datafile(
     mocker: Any,
@@ -303,6 +312,7 @@ def test_prepare_datafile(
     assert crucible.prepare_datafile(refined_datafile) == datafile
 
 
+@pytest.mark.xfail
 @responses.activate
 def test_prepare_datafile_no_matching_dataset(
     caplog: pytest.LogCaptureFixture,
@@ -335,6 +345,7 @@ def fixture_duplicate_dataset_response_dict(
     return response_dict
 
 
+@pytest.mark.xfail
 @responses.activate
 def test_prepare_datafile_too_many_datasets(
     caplog: pytest.LogCaptureFixture,

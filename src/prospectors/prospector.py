@@ -1,18 +1,19 @@
 """Performs the prospecting process
 
 Prospecting checks files and metadata files for any potential issues.
+
+Specific prospector classes need to be subclassed from the abstract Prospector class
 """
 
-# ---Imports
-import copy
 import logging
-from pathlib import Path
-from typing import Optional, Union
 
-from src.config.singleton import Singleton
-from src.extraction_output_manager import output_manager as om
-from src.prospectors.abstract_custom_prospector import AbstractCustomProspector
-from src.prospectors.common_file_checks import CommonDirectoryTreeChecks
+# ---Imports
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import List, Tuple
+
+from src.extraction_output_manager.output_manager import OutputManager
+from src.prospectors.common_file_checks import perform_common_file_checks
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -20,56 +21,28 @@ logger.setLevel(logging.DEBUG)
 
 
 # ---Code
-class Prospector(metaclass=Singleton):
-    """This class Prospector is used to prospect a given directory for files.
+class AbstractProspector(ABC):
+    """Abstract base class for the Prospector is used to prospect a given directory for files.
 
     Attributes:
         profile_sel (profile_selector.ProfileSelector): selected profile module
     """
 
-    def __init__(
-        self,
-        custom_prospector: Union[AbstractCustomProspector, None],
-    ) -> None:
-        self.custom_prospector = custom_prospector
-
-    def prospect_directory(
+    @abstractmethod
+    def prospect(
         self,
         path: Path,
-        recursive: bool = True,
-        out_man: Optional[om.OutputManager] = None,
-    ) -> om.OutputManager:
-        """
-        This method prospect_directory is used to prospect a given directory for files.
+        recursive: bool,
+        out_man: OutputManager,
+    ) -> None:
+        """Prospects metadata in a path
 
-        Parameters:
-            path (Path): Path to directory.
-            recursive (bool): Whether to recursively search for files.
-            out_man (om.OutputManager): Output manager instance.
+        Args:
+            path (Path): the path to inspect for metadata
+            recursive (bool): True to inspect all subdirectories in path, False to inspect path only
+            out_man (om.OutputManager): class which stores info of outputs of the pre-ingestion processes
 
         Returns:
-            om.OutputManager: Output manager instance.
+            OutputManager: output manager instance containing the outputs of the process
         """
-
-        if not out_man:
-            out_man = om.OutputManager()
-
-        cmn_dir_tree_c = CommonDirectoryTreeChecks()
-
-        out = cmn_dir_tree_c.perform_common_file_checks(path, recursive)
-        rej_list = out[0]
-        out_man.add_files_to_ignore(rej_list)
-
-        if self.custom_prospector:
-            out_man_fnl = self.custom_prospector.prospect(path, recursive, out_man)
-        else:
-            out_man_fnl = out_man
-            logger.info("No custom prospector set, thus will not be used")
-
-        logger.info("prospecting complete")
-        logger.info(f"ignored dirs = {out_man_fnl.dirs_to_ignore}")
-        logger.info(f"ignored files = {out_man_fnl.files_to_ignore}")
-        logger.info(f"files to ingest = {out_man_fnl.metadata_files_to_ingest_dict}")
-        logger.info(f"output dict = {out_man_fnl.output_dict}")
-
-        return out_man_fnl
+        return None

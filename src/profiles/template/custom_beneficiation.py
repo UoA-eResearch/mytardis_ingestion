@@ -1,6 +1,6 @@
-"""Metadata file parser module. 
+"""Metadata file parser module.
 
-Main objective of this module is to map the metadata files to 
+Main objective of this module is to map the metadata files to
 a format accepted by the mytardis_ingestion
 """
 
@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
-from src.profiles import profile_consts as pc
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
+from src.profiles import profile_consts as pc
 
 # ---Constants
 logger = logging.getLogger(__name__)

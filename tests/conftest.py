@@ -120,8 +120,6 @@ archive_options = const.archive_options
 archive_attributes = const.archive_attributes
 autoarchive_offset = const.autoarchive_offset
 delete_offset = const.delete_offset
-raw_active_store = const.raw_active_store
-raw_archives = const.raw_archives
 archive_box_name = const.archive_box_name
 archive_box_uri = const.archive_box_uri
 archive_box_description = const.archive_box_description
@@ -162,9 +160,7 @@ def datadir(tmpdir: str, request: FixtureRequest) -> Path:
 # ==============================
 
 storage_box = dcls.storage_box
-raw_storage_box = dcls.raw_storage_box
-archive_box = dcls.archive_box
-raw_archive_box = dcls.raw_archive_box
+# archive_box = dcls.archive_box
 datafile_replica = dcls.datafile_replica
 archive_replica = dcls.archive_replica
 raw_project_parameterset = dcls.raw_project_parameterset

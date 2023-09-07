@@ -69,7 +69,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
         """
 
         self.auth = auth
-        self.proxies = connection.proxy.dict() if connection.proxy else None
+        self.proxies = connection.proxy.model_dump() if connection.proxy else None
         self.hostname = connection.hostname
         self.verify_certificate = connection.verify_certificate
         self.api_template = urljoin(connection.hostname, "/api/v1/")
