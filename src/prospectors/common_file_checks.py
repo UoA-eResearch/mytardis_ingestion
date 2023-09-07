@@ -78,7 +78,8 @@ def iterate_dir(
             or METADATA_FILE_SUFFIX in item.stem
         )
     ]
-    ingestion_list = [item for item in dir_list if item not in rejection_list]
+    rejection_set = set(rejection_list)
+    ingestion_list = [item for item in dir_list if item not in rejection_set]
 
     return (rejection_list, ingestion_list)
 
