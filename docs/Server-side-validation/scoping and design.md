@@ -10,7 +10,7 @@ An overview of the ingestion pipeline is illustrated.
 
 ```mermaid
 flowchart LR
-    instrument["`Data generated 
+    instrument["`Data generated
     from an instrument`"]
     instrument -- metadata flow ---> Extraction
     subgraph Extraction[Extraction Plant]
@@ -20,11 +20,11 @@ flowchart LR
         miner["`Miner - scripts
         to extract metadata`"]
         beneficiation["`Beneficiation - data
-        wrangling into input 
+        wrangling into input
         dataclasses`"]
         prospector --> miner --> beneficiation
     end
-    Extraction -- "`metadata in standardised 
+    Extraction -- "`metadata in standardised
     dataclass - RawObject class`" --> Ingestion
     subgraph Ingestion[Ingestion Factory]
         smelter["`Smelter - separate
@@ -38,7 +38,7 @@ flowchart LR
         to existing metadata`"]
         crucible --> reject
         forge["`Forge - call the
-        MyTardis API to create 
+        MyTardis API to create
         objects`"]
         smelter --> crucible --> forge
     end
