@@ -234,7 +234,7 @@ class Forge:
         """
         uri = self.forge_object(refined_object)
         parameter_uri = None
-        if isinstance(uri, URI) and project_parameters:
+        if uri is not None and project_parameters:
             refined_parameters = ProjectParameterSet(
                 schema=project_parameters.parameter_schema,
                 parameters=project_parameters.parameters,
@@ -262,7 +262,7 @@ class Forge:
         """
         uri = self.forge_object(refined_object)
         parameter_uri = None
-        if isinstance(uri, URI) and experiment_parameters:
+        if uri is not None and experiment_parameters:
             refined_parameters = ExperimentParameterSet(
                 schema=experiment_parameters.parameter_schema,
                 parameters=experiment_parameters.parameters,
@@ -290,7 +290,7 @@ class Forge:
         """
         uri = self.forge_object(refined_object)
         parameter_uri = None
-        if isinstance(uri, URI) and dataset_parameters:
+        if uri is not None and dataset_parameters:
             refined_parameters = DatasetParameterSet(
                 schema=dataset_parameters.parameter_schema,
                 parameters=dataset_parameters.parameters,
