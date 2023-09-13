@@ -79,7 +79,7 @@ The modified ingestion process is shown:
 
 ```mermaid
 flowchart LR
-    instrument["`Data generated 
+    instrument["`Data generated
     from an instrument`"]
     instrument -- metadata flow ---> Extraction
     subgraph Extraction[Extraction Plant]
@@ -89,15 +89,15 @@ flowchart LR
         miner["`Miner - scripts
         to extract metadata`"]
         beneficiation["`Beneficiation - data
-        wrangling into input 
+        wrangling into input
         dataclasses`"]
         prospector --> miner --> beneficiation
     end
-    Extraction -- "`metadata in standardised 
+    Extraction -- "`metadata in standardised
     dataclass - RawObject class`" --> Ingestion
     subgraph Ingestion[Ingestion Factory]
         forge["`Forge - call the
-        MyTardis API to create 
+        MyTardis API to create
         objects`"]
     end
     storage["`Data storage`"]
@@ -116,7 +116,7 @@ This process is represented diagramatically as:
 
 ```mermaid
 flowchart LR
-    instrument["`Data generated 
+    instrument["`Data generated
     from an instrument`"]
     subgraph api["`New API calls`"]
         direction TB
