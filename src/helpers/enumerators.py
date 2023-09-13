@@ -59,7 +59,7 @@ class ObjectPostEnum(Enum):
     }
     DATAFILE: ObjectPostDict = {
         "url_substring": URLSubstring.DATAFILE,
-        "expect_json": True,
+        "expect_json": False,
     }
     PROJECT_PARAMETERS: ObjectPostDict = {
         "url_substring": URLSubstring.PROJECT_PARAMETERS,
