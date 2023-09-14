@@ -1,4 +1,6 @@
 # pylint: disable=missing-function-docstring,missing-module-docstring
+# nosec assert_used
+# flake8: noqa S101
 
 import logging
 
