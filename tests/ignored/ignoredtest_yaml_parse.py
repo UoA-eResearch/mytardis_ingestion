@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 def test_yaml_parse():
     yp = YamlParser()
     data_load = yp.parse_yaml_file("tests/fixtures/fixtures_example.yaml")
-    assert data_load[0].name == "BIRU_MultipleLungCancer"
-    assert data_load[2].title == "BIRU lungcancer1_NoTreatment"
+    assert data_load[0].name == "BIRU_MultipleLungCancer"  # nosec
+    assert data_load[2].title == "BIRU lungcancer1_NoTreatment"  # nosec
 
 
 ### Could create these tests after the ingestion path is created - especially the .env file
