@@ -45,6 +45,8 @@ repos:
       args:
        - configfile
        - pyproject.toml
+      additional_dependencies:
+        - "toml"
 -   repo: local
     hooks:
     - id: pytest
