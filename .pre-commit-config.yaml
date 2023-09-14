@@ -46,7 +46,7 @@ repos:
        - configfile
        - pyproject.toml
       additional_dependencies:
-        - "toml"
+        - "bandit[toml]"
 -   repo: local
     hooks:
     - id: pytest
