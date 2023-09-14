@@ -41,10 +41,6 @@ repos:
     rev: 1.7.5
     hooks:
     - id: bandit
-      args:
-        - -c
-        - pyproject.toml
-        - -r
       stages: [pre-push]
 -   repo: local
     hooks:
