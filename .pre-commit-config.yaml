@@ -43,7 +43,7 @@ repos:
     - id: bandit
       stages: [pre-push]
       args:
-       - configfile
+       - --configfile
        - pyproject.toml
       additional_dependencies:
         - "bandit[toml]"
