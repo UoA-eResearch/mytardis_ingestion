@@ -112,6 +112,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
         """
         if method == "POST" and url[:-1] != "/":
             url = f"{url}/"
+
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
