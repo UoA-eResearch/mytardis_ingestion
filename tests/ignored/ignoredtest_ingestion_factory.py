@@ -1,6 +1,6 @@
 # pylint: disable-all
 # noqa
-# nosec
+# nosec assert_used
 # type: ignore
 
 """Tests of the ingestion factory as a whole"""

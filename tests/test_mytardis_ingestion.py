@@ -1,4 +1,5 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
+# nosec assert_used
 
 from src import __version__
 
