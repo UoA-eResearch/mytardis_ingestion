@@ -320,7 +320,7 @@ class IngestionFactory(metaclass=Singleton):
 
             self.forge.forge_datafile(prepared_datafile)
             result.success.append((name, None))
-            
+
         logger.info(
             "Successfully ingested %d datafiles: %s",
             len(result.success),
