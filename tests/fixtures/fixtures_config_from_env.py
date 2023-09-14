@@ -1,4 +1,5 @@
-# pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
+# pylint: disable=missing-function-docstring,redefined-outer-name
+# pylint: disable=missing-module-docstring
 
 from pathlib import Path
 from typing import Any, Dict, List
@@ -86,7 +87,7 @@ def archive(
     archive_class: StorageTypesEnum,
     archive_options: Dict[str, Any],
     archive_attributes: Dict[str, Any],
-) -> StorageConfig:
+) -> StorageBoxConfig:
     return StorageBoxConfig(
         storage_name="Test Archive",
         storage_class=archive_class,
@@ -135,7 +136,6 @@ def mytardis_settings(
     auth: AuthConfig,
     connection: ConnectionConfig,
     active_store: StorageConfig,
-    archive: StorageConfig,
     default_schema: SchemaConfig,
 ) -> ConfigFromEnv:
     return ConfigFromEnv(
@@ -143,6 +143,5 @@ def mytardis_settings(
         auth=auth,
         connection=connection,
         storage=active_store,
-        archive=archive,
         default_schema=default_schema,
     )

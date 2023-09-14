@@ -1,4 +1,5 @@
-# pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
+# pylint: disable=missing-function-docstring,redefined-outer-name
+# pylint: disable=missing-module-docstring
 
 from datetime import datetime
 from enum import Enum
@@ -121,8 +122,8 @@ def raw_project(  # pylint: disable=too-many-locals,too-many-arguments
         identifiers=project_ids,
         metadata=project_metadata,
         data_classification=project_data_classification,
-        autoarchive_offset=autoarchive_offset,
-        delete_offset=delete_offset,
+        archive_in_days=autoarchive_offset,
+        delete_in_days=delete_offset,
     )
 
 
@@ -375,6 +376,8 @@ def refined_datafile(
 def project(
     refined_project: RefinedProject,
     institution_uri: URI,
+    archive_box: StorageBox,
+    storage_box: StorageBox,
 ) -> Project:
     return Project(
         name=refined_project.name,
@@ -402,6 +405,8 @@ def project(
             else None
         ),
         identifiers=refined_project.identifiers,
+        archives=[archive_box],
+        active_stores=[storage_box],
     )
 
 

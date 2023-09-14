@@ -1,4 +1,7 @@
-# pylint: disable=missing-function-docstring,W0621
+# pylint: disable=missing-function-docstring,redefined-outer-name
+# nosec assert_used
+# flake8: noqa S101
+
 """Tests to validate the common_file_checks functions"""
 
 from pathlib import Path
