@@ -86,6 +86,10 @@ strict = true
 max-line-length = 88
 extend-ignore = "E203"
 
+[tool.bandit.assert_used]
+skips = ["tests/*", "test_*.py"]
+
+
 [tool.coverage.run]
 omit = [
      "tests/*",

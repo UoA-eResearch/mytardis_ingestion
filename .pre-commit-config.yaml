@@ -42,6 +42,9 @@ repos:
     hooks:
     - id: bandit
       stages: [pre-push]
+      args:
+       - configfile
+       - pyproject.toml
 -   repo: local
     hooks:
     - id: pytest
