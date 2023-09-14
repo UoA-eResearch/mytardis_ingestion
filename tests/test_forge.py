@@ -1,5 +1,8 @@
 # Old style - at some point in the future could be refactored to use the fixtures
 # pylint: disable=missing-function-docstring,missing-module-docstring
+# nosec assert_used
+# flake8: noqa S101
+
 import logging
 from typing import Any, Dict
 from urllib.parse import urljoin

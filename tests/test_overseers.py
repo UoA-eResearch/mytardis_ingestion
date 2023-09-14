@@ -1,4 +1,6 @@
 # pylint: disable=missing-function-docstring
+# nosec assert_used
+# flake8: noqa S101
 
 """Tests of the Overseer class and its functions"""
 import logging

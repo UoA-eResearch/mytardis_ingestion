@@ -1,4 +1,6 @@
 # pylint: disable=missing-function-docstring
+# nosec assert_used
+# flake8: noqa S101
 """Tests to validate the helper functions"""
 
 
