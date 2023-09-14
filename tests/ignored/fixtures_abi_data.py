@@ -1,4 +1,8 @@
-# pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
+# pylint: disable-all
+# noqa
+# nosec
+# type: ignore
+
 import copy
 import json
 import logging
