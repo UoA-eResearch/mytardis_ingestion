@@ -1,4 +1,8 @@
-# pylint: disable=missing-function-docstring,missing-module-docstring,missing-class-docstring
+# pylint: disable=missing-function-docstring,missing-module-docstring
+# pylint: disable=missing-class-docstring
+# nosec assert_used
+# flake8: noqa S101
+
 from datetime import datetime
 from typing import List
 
