@@ -13,6 +13,11 @@ The workflow for these scripts are as follows:
  -- Beneficiating the metadata: involves parsing the mined or IME-produced 
     metadata into raw dataclasses.
 
+-Conveyor
+   Taking datafile metadata from the extraction plant, we generate a list of
+   of files to transfer into MyTardis, then move them using a configured
+   Transport. This happens in a parallel process to the ingestion factory.
+
 -Ingestion Factory
  -- Smelting: Refines the raw dataclasses into refined dataclasses which closely
     follows the MyTardis's data formats.
