@@ -140,7 +140,7 @@ class Forge:
         Raises:
             HTTPError: The POST was not handled successfully
         """
-        object_json = refined_object.json(exclude_none=True)
+        object_json = refined_object.model_dump_json(by_alias=True, exclude_none=True)
         if not object_json:
             logger.warning(
                 (
