@@ -6,6 +6,16 @@ from tempfile import NamedTemporaryFile
 from src.conveyors.transports.common import AbstractTransport, FailedTransferException
 
 
+def is_rsync_on_path() -> bool:
+    """Tests whether rsync is available on the PATH.
+
+    Returns:
+        bool: True if rsync is found, false if not.
+    """
+    state = subprocess.run(["rsync", "-h"], capture_output=True, check=False)  # nosec
+    return state.returncode == 0
+
+
 class RsyncTransport(AbstractTransport):
     """
     A transport implementation using rsync to move files between locally-mounted
@@ -15,19 +25,8 @@ class RsyncTransport(AbstractTransport):
     def __init__(self, destination: Path) -> None:
         super().__init__()
         self.destination = destination
-        if not self._is_rsync_execable():
+        if not is_rsync_on_path():
             raise FailedTransferException("rsync is not installed on the system.")
-
-    def _is_rsync_execable(self) -> bool:
-        """Tests whether rsync is available on the PATH.
-
-        Returns:
-            bool: True if rsync is found, false if not.
-        """
-        state = subprocess.run(
-            ["rsync", "-h"], capture_output=True, check=False
-        )  # nosec
-        return state.returncode == 0
 
     def transfer(self, src: Path, files: list[Path]) -> None:
         """Concrete transfer implementation that uses rsync to move files.

@@ -3,17 +3,17 @@ import os
 import random
 from pathlib import Path
 
-from pytest import fixture
+import pytest
 
 from src.blueprints.datafile import BaseDatafile, RawDatafile
 from src.conveyors.conveyor import Conveyor
-from src.conveyors.transports.rsync import RsyncTransport
+from src.conveyors.transports.rsync import RsyncTransport, is_rsync_on_path
 from src.miners.utils.datafile_metadata_helpers import calculate_md5sum
 
 DatafileFixture = tuple[Path, list[BaseDatafile], Path]
 
 
-@fixture(name="datafile_list")
+@pytest.fixture(name="datafile_list")
 def fixtures_datafile_list(tmp_path: Path) -> DatafileFixture:
     """Generates a temporary directory with random data files,
     and source and destination folders.
@@ -55,6 +55,7 @@ def fixtures_datafile_list(tmp_path: Path) -> DatafileFixture:
     return (src_dir, datafiles, dest_dir)
 
 
+@pytest.mark.skipif(not is_rsync_on_path(), reason="requires rsync installed")
 def test_rsync_transfer_ok(datafile_list: DatafileFixture) -> None:
     """Test for an rsync transfer - the process should exit without error
     and the files should be replicated.
