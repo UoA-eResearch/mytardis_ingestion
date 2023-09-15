@@ -31,7 +31,7 @@ class URLSubstring(str, Enum):
     STORAGE_BOX = "storagebox"
     PROJECT_PARAMETERS = "projectparameterset"
     EXPERIMENT_PARAMETERS = "experimentparameterset"
-    DATASET_PARAMETERS = "datsetparameterset"
+    DATASET_PARAMETERS = "datasetparameterset"
 
 
 class ObjectPostDict(TypedDict):
