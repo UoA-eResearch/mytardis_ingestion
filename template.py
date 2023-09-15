@@ -1,22 +1,22 @@
 """
-This template script is an example script that is used to show how to structure the code. 
+This template script is an example script that is used to show how to structure the code.
 
 This script can be copied and pasted to create scripts. If done this way, please remove
 lines starting with #####, and replace this docstring with the appropriate content.
 
-This docstring is used to describe what the module is about, and should be a concise 
-summary as opposed to a long essay. For the purpose of Sphinx docs, please make sure 
-to add "Args:", "Returns:", and "Examples:" sections where appropriate. 
-Sphinx will automatically pick these up and generate documentation for you. 
+This docstring is used to describe what the module is about, and should be a concise
+summary as opposed to a long essay. For the purpose of Sphinx docs, please make sure
+to add "Args:", "Returns:", and "Examples:" sections where appropriate.
+Sphinx will automatically pick these up and generate documentation for you.
 
-To auto-generate docstrings for functions and classes, any auto-docstring generating tool 
+To auto-generate docstrings for functions and classes, any auto-docstring generating tool
 can be used, as long as it generates it in google format. The google format can also be
 picked up by Sphinx. The autogenerator will not generate the Examples section, and this
-section is optional, but recommended for complex functions or basic use-cases for 
+section is optional, but recommended for complex functions or basic use-cases for
 entry-point functions.
 
-For some general rules, please use two spaces between major sections of code such as 
-between the "Imports and Constants" and "Code" section, or between two classes. 
+For some general rules, please use two spaces between major sections of code such as
+between the "Imports and Constants" and "Code" section, or between two classes.
 
 For TODO statements, place them where appropriate, but have the format of the statement
 as the following:
@@ -26,17 +26,17 @@ belongs to.
 
 As a general rule, use logging over printing for displaying of values.
 
-You may add comments in code, but keep commenting to a minimum. 
+You may add comments in code, but keep commenting to a minimum.
 """
 
 
 #####Place all the imports under the "Imports" section, then use isort to sort
 #####imports automatically
 
-#---Imports
+# ---Imports
 import logging
 
-#---Constants
+# ---Constants
 #####These are globals or constants that are used throughout the module
 #####and is specific to the module. If there are multiple modules using
 #####the same constants, please create a separate module for them.
@@ -44,7 +44,7 @@ logger = logging.getLogger("simple_example")
 logger.setLevel(logging.DEBUG)  # set the level for which this logger will be printed.
 
 
-#---Code
+# ---Code
 class ExampleClass:
     """The ExampleClass that shows how the code should be layed out.
 
@@ -86,7 +86,7 @@ class ExampleClass:
             var4 (str): [write description]. Defaults to "".
             opt_list_var (list): a list that [write description]. Defaults to None.
             opt_dict_var (dict): a dict that [write description]. Defaults to None.
-        
+
         Returns:
             None
         """
@@ -103,11 +103,11 @@ class ExampleClass:
 
         Args:
             some_var (int): [write description].
-        
+
         Returns:
             None
         """
-        logger.debug("public_method1") #####this is just to fill a statement
+        logger.debug("public_method1")  #####this is just to fill a statement
 
     def public_method2(
         self,
@@ -121,7 +121,7 @@ class ExampleClass:
         Returns:
             [describe what the return value is]
         """
-        logger.debug("public_method2") #####this is just to fill a statement
+        logger.debug("public_method2")  #####this is just to fill a statement
 
     def _private_method1(
         self,
@@ -133,11 +133,11 @@ class ExampleClass:
         Args:
             input_dict (dict): [write description].
             my_bool (bool): [write description].
-                
+
         Returns:
             None
         """
-        logger.debug("_private_method1") #####this is just to fill a statement
+        logger.debug("_private_method1")  #####this is just to fill a statement
 
 
 def example_function(
@@ -154,11 +154,11 @@ def example_function(
         foo (int): [write description].
         opt_list_var (list): [write description]. Defaults to None.
         opt_dict_var (dict): [write description]. Defaults to None.
-            
+
     Returns:
         None
     """
-    logger.debug("example_function") #####this is just to fill a statement
+    logger.debug("example_function")  #####this is just to fill a statement
 
 
 ##### The following two functions show how to and how not to return variables that mutated from a parameter
@@ -167,10 +167,10 @@ def example_of_how_to_return_immutable_copies_of_mutable_types(
 ) -> list:
     """[Write method description]. Please note this function is self-evident on what it does,
     therefore does not actually need a docstring.
-    
+
     Args:
         input_list (list): [write description].
-    
+
     Returns:
         an immutable list with elements modified
     """
@@ -184,10 +184,10 @@ def example_of_how_not_to_return_immutable_copies_of_mutable_types(
 ) -> list:
     """[Write method description]. Please note this function is self-evident on what it does,
     therefore does not actually need a docstring.
-    
+
     Args:
         input_list (list): [write description].
-    
+
     Returns:
         a mutable list with elements modified - NOT RECOMMENDED
     """
@@ -208,7 +208,7 @@ def function_with_many_parameters(
     p8: dict = None,
 ) -> int:
     """[Write method description]
-    
+
     Args:
             p1 (int): [write description].
             p2 (int): [write description].
@@ -218,7 +218,7 @@ def function_with_many_parameters(
             p6 (str): [write description].
             p7 (str): [write description]. Defaults to "".
             p8 (dict): a dict that [write description]. Defaults to None.
-        
+
     Returns:
         None
 

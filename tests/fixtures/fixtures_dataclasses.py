@@ -18,37 +18,7 @@ from src.blueprints.datafile import (
 from src.blueprints.dataset import Dataset, RawDataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RawExperiment, RefinedExperiment
 from src.blueprints.project import Project, RawProject, RefinedProject
-from src.blueprints.storage_boxes import RawStorageBox, StorageBox
-
-
-@fixture
-def raw_archive_box(
-    archive_box_name: str,
-    archive_class: str,
-    archive_options: Dict[str, str],
-    archive_attributes: Dict[str, str],
-) -> RawStorageBox:
-    return RawStorageBox(
-        name=archive_box_name,
-        storage_class=archive_class,
-        options=archive_options,
-        attributes=archive_attributes,
-    )
-
-
-@fixture
-def raw_storage_box(
-    storage_box_name: str,
-    storage_class: str,
-    storage_options: Dict[str, str],
-    storage_attributes: Dict[str, str],
-) -> RawStorageBox:
-    return RawStorageBox(
-        name=storage_box_name,
-        storage_class=storage_class,
-        options=storage_options,
-        attributes=storage_attributes,
-    )
+from src.blueprints.storage_boxes import StorageBox
 
 
 @fixture
@@ -135,8 +105,6 @@ def raw_project(  # pylint: disable=too-many-locals,too-many-arguments
     project_data_classification: Enum,
     autoarchive_offset: int,
     delete_offset: int,
-    raw_active_store: List[str],
-    raw_archives: List[str],
 ) -> RawProject:
     return RawProject(
         name=project_name,
@@ -155,8 +123,6 @@ def raw_project(  # pylint: disable=too-many-locals,too-many-arguments
         data_classification=project_data_classification,
         autoarchive_offset=autoarchive_offset,
         delete_offset=delete_offset,
-        active_stores=raw_active_store,
-        archives=raw_archives,
     )
 
 
@@ -296,8 +262,6 @@ def refined_project(  # pylint:disable=too-many-arguments
     embargo_time_datetime: datetime,
     project_url: str,
     project_data_classification: Enum,
-    raw_active_store: List[str],
-    raw_archives: List[str],
 ) -> RefinedProject:
     return RefinedProject(
         name=project_name,
@@ -313,8 +277,6 @@ def refined_project(  # pylint:disable=too-many-arguments
         end_time=end_time_datetime,
         embargo_until=embargo_time_datetime,
         identifiers=project_ids,
-        active_stores=raw_active_store,
-        archives=raw_archives,
     )
 
 
@@ -413,8 +375,6 @@ def refined_datafile(
 def project(
     refined_project: RefinedProject,
     institution_uri: URI,
-    raw_storage_box: RawStorageBox,
-    raw_archive_box: RawStorageBox,
 ) -> Project:
     return Project(
         name=refined_project.name,
@@ -442,8 +402,6 @@ def project(
             else None
         ),
         identifiers=refined_project.identifiers,
-        active_stores=[raw_storage_box],
-        archives=[raw_archive_box],
     )
 
 

@@ -36,7 +36,7 @@ class ExampleClass:
             var2 (str): [write description].
             var3 (int|float): [write description].
             var4 (str): [write description]. Defaults to "".
-        
+
         Returns:
             None
         """
@@ -51,7 +51,7 @@ class ExampleClass:
     ) -> None:
         #####Remove these comment lines and replace with """ to start the auto-gen of docstring
         #####Remember to do this after implementing the function
-        logger.debug("public_method1") #####this is just to fill a statement
+        logger.debug("public_method1")  #####this is just to fill a statement
 
     def _private_method1(
         self,
@@ -60,7 +60,7 @@ class ExampleClass:
     ) -> None:
         #####Remove these comment lines and replace with """ to start the auto-gen of docstring
         #####Remember to do this after implementing the function
-        logger.debug("_private_method1") #####this is just to fill a statement
+        logger.debug("_private_method1")  #####this is just to fill a statement
 
 
 def example_function(
@@ -70,4 +70,4 @@ def example_function(
 ) -> None:
     #####Remove these comment lines and replace with """ to start the auto-gen of docstring
     #####Remember to do this after implementing the function
-    logger.debug("example_function") #####this is just to fill a statement
+    logger.debug("example_function")  #####this is just to fill a statement

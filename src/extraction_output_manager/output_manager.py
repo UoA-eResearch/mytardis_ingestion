@@ -1,15 +1,13 @@
 """Used to store and track the progress and history of the processes in the
-extraction plant. 
+extraction plant.
 """
 
 # ---Imports
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Dict, List, Union
 
-from src.profiles import profile_consts as pc
-from src.profiles import profile_helpers as ph
-
+from src.config.singleton import Singleton
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -17,16 +15,17 @@ logger.setLevel(logging.DEBUG)  # set the level for which this logger will be pr
 
 
 # ---Code
-class OutputManager:
+class OutputManager(metaclass=Singleton):
     """Manage output results, directories to ignore, files to ignore, and metadata files to ingest.
 
     In the output_dict, there are three keys - success, ignored, and issues. The key in the dict
     has a corresponding list of entries expressed in a dict where each entry has a file or folder
-    as the value for the 'value' subkey, a process (prospecting/mining/beneficiating) where the entry
-    was made for the 'process' subkey, and notes pertaining to the value in the 'notes' subkey.
+    as the value for the 'value' subkey, a process (prospecting/mining/beneficiating) where the
+    entry was made for the 'process' subkey, and notes pertaining to the value in the 'notes'
+    subkey.
 
-    The dirs_to_ignore and files_to_ignore are used in mining and/or beneficiating where the files/folders
-    have been tagged from the prospector.
+    The dirs_to_ignore and files_to_ignore are used in mining and/or beneficiating where the
+    files/folders have been tagged from the prospector.
 
     Attributes:
         output_dict (Dict): Stores the output results.
@@ -38,102 +37,96 @@ class OutputManager:
     def __init__(
         self,
     ) -> None:
-        self.output_dict = self._create_output_dict()
+        self.output_dict: Dict[str, List[Dict[str, str]]] = {
+            "success": [],
+            "ignored": [],
+            "issues": [],
+        }
         self.dirs_to_ignore: List[Path] = []
         self.files_to_ignore: List[Path] = []
-        self.metadata_files_to_ingest_dict = self._create_ingestion_dict()
+        self.metadata_files_to_ingest_dict: Dict[str, List[Path]] = {
+            "project": [],
+            "experiment": [],
+            "dataset": [],
+            "datafile": [],
+        }
 
-    def add_success_entry_to_dict(
+    def add_success_entry_to_dict(  # pylint: disable=missing-function-docstring
         self,
         value: Union[str, Path],
         process: str,
         note: str,
     ) -> None:
-        if type(value) == Path:
-            value = str(value)
-        entry_subdict = self._create_output_subdict()
-        entry_subdict[pc.OUTPUT_VALUE_SUBKEY] = value
-        entry_subdict[pc.OUTPUT_PROCESS_SUBKEY] = process
-        entry_subdict[pc.OUTPUT_NOTES_SUBKEY] = note
-        self.output_dict[pc.OUTPUT_SUCCESS_KEY].append(entry_subdict)
+        if isinstance(value, Path):
+            value = value.as_posix()
+        self.output_dict["success"].append(
+            {
+                "value": value,
+                "process": process,
+                "notes": note,
+            }
+        )
 
-    def add_ignored_entry_to_dict(
+    def add_ignored_entry_to_dict(  # pylint: disable=missing-function-docstring
         self,
         value: Union[str, Path],
         process: str,
         note: str,
     ) -> None:
-        if type(value) == Path:
-            value = str(value)
-        entry_subdict = self._create_output_subdict()
-        entry_subdict[pc.OUTPUT_VALUE_SUBKEY] = value
-        entry_subdict[pc.OUTPUT_PROCESS_SUBKEY] = process
-        entry_subdict[pc.OUTPUT_NOTES_SUBKEY] = note
-        self.output_dict[pc.OUTPUT_IGNORED_KEY].append(entry_subdict)
+        if isinstance(value, Path):
+            value = value.as_posix()
+        self.output_dict["ignored"].append(
+            {
+                "value": value,
+                "process": process,
+                "notes": note,
+            }
+        )
 
-    def add_issues_entry_to_dict(
+    def add_issues_entry_to_dict(  # pylint: disable=missing-function-docstring
         self,
         value: Union[str, Path],
         process: str,
         note: str,
     ) -> None:
-        if type(value) == Path:
-            value = str(value)
-        entry_subdict = self._create_output_subdict()
-        entry_subdict[pc.OUTPUT_VALUE_SUBKEY] = value
-        entry_subdict[pc.OUTPUT_PROCESS_SUBKEY] = process
-        entry_subdict[pc.OUTPUT_NOTES_SUBKEY] = note
-        self.output_dict[pc.OUTPUT_ISSUES_KEY].append(entry_subdict)
+        if isinstance(value, Path):
+            value = value.as_posix()
+        self.output_dict["issues"].append(
+            {
+                "value": value,
+                "process": process,
+                "notes": note,
+            }
+        )
 
-    def add_dir_to_ignore(
+    def add_dir_to_ignore(  # pylint: disable=missing-function-docstring
         self,
-        dir: Path,
+        directory: Path,
     ) -> None:
-        self.dirs_to_ignore.append(dir)
+        self.dirs_to_ignore.append(directory)
 
-    def add_file_to_ignore(
+    def add_file_to_ignore(  # pylint: disable=missing-function-docstring
         self,
-        fp: Path,
+        file_path: Path,
     ) -> None:
-        self.files_to_ignore.append(fp)
+        self.files_to_ignore.append(file_path)
 
-    def add_files_to_ignore(
+    def add_files_to_ignore(  # pylint: disable=missing-function-docstring
         self,
         files: List[Path],
     ) -> None:
         self.files_to_ignore.extend(files)
 
-    def add_metadata_file_to_ingest(
+    def add_metadata_file_to_ingest(  # pylint: disable=missing-function-docstring
         self,
-        file: Path,
+        file_path: Path,
         dataclass: str,
     ) -> None:
-        self.metadata_files_to_ingest_dict[dataclass].append(file)
+        self.metadata_files_to_ingest_dict[dataclass].append(file_path)
 
-    def add_metadata_files_to_ingest(
+    def add_metadata_files_to_ingest(  # pylint: disable=missing-function-docstring
         self,
         files: List[Path],
         dataclass: str,
     ) -> None:
         self.metadata_files_to_ingest_dict[dataclass].extend(files)
-
-    def _create_output_dict(
-        self,
-    ) -> Dict[str, List[Dict[str, str]]]:
-        out_dict = ph.create_output_dict()
-        for key in out_dict.keys():
-            out_dict[key] = []
-        return out_dict
-
-    def _create_output_subdict(
-        self,
-    ) -> Dict[str, Any]:
-        return ph.create_output_subdict()
-
-    def _create_ingestion_dict(
-        self,
-    ) -> Dict[str, List[Any]]:
-        ingestion_dict = ph.create_ingestion_dict()
-        for key in ingestion_dict.keys():
-            ingestion_dict[key] = []
-        return ingestion_dict

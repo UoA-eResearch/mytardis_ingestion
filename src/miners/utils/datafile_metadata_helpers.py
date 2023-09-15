@@ -5,20 +5,20 @@ import mimetypes
 from pathlib import Path
 
 
-def calculate_md5sum(
-    fp: Path,
+def calculate_md5sum(  # pylint: disable=missing-function-docstring
+    filepath: Path,
 ) -> str:
-    with fp.open(mode="rb") as f:
-        d = hashlib.md5()
-        for buf in iter(lambda: f.read(128 * 1024), b""):
-            d.update(buf)
-    return d.hexdigest()
+    with filepath.open(mode="rb") as input_file:
+        chunk = hashlib.new("md5", usedforsecurity=False)
+        for buffer in iter(lambda: input_file.read(128 * 1024), b""):
+            chunk.update(buffer)
+    return chunk.hexdigest()
 
 
-def determine_mimetype(
-    fn: str,
+def determine_mimetype(  # pylint: disable=missing-function-docstring
+    filename: str,
 ) -> str:
-    mimetype, encoding = mimetypes.guess_type(fn)
+    mimetype, _ = mimetypes.guess_type(filename)
     if not mimetype:
-        mimetype = fn.split(".")[-1]
+        mimetype = filename.split(".")[-1]
     return mimetype
