@@ -47,8 +47,9 @@ class Conveyor(metaclass=Singleton):
 
     def initiate_transfer(self, src: Path, dfs: Sequence[BaseDatafile]) -> SpawnProcess:
         """Spawns a separate Process to transfer via specified transport and
-        returns the Process. Call process.join() at the end of metadata ingestion
-        pipeline to wait for transfer to complete.
+        returns the Process. Client code should store this reference, 
+        perform the rest of the metadata ingestion operations, 
+        then call `.join()` to wait for the file transfer to finish.
 
         Args:
             src (Path): Path of the source directory.
