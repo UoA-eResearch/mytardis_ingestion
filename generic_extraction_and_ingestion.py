@@ -78,7 +78,7 @@ def main():
 
     # Start conveyor to transfer datafiles.
     datafiles = ingestible_dataclasses.get_datafiles()
-    rsync_transport = RsyncTransport(Path("/replace/with/your/transfer/path"))
+    rsync_transport = RsyncTransport(Path("/replace/with/your/transfer/destination"))
     conveyor = Conveyor(rsync_transport)
     conveyor_process = conveyor.initiate_transfer(pth, datafiles)
 
