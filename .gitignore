@@ -30,3 +30,5 @@ docs/build/
 
 settings.json
 testenv
+
+*.log
