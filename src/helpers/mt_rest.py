@@ -110,7 +110,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
             HTTPError: An error raised when the request fails for other reasons via the
                 requests.Response.raise_for_status function.
         """
-        if method == "POST" and url[-1] != "/":
+        if method == "POST" and url[:-1] != "/":
             url = f"{url}/"
 
         headers = {
