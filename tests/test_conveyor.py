@@ -74,4 +74,4 @@ def test_rsync_transfer_ok(datafile_list: DatafileFixture) -> None:
     src_files = os.listdir(src)
     dest_files = os.listdir(dest)
     # There should be the same number of files at destination.
-    assert len(dest_files) == len(src_files)
+    assert sorted(dest_files) == sorted(src_files)
