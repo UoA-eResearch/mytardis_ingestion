@@ -1,3 +1,5 @@
+# pylint: disable=fixme
+
 """Functions to generate project specific storage boxes depending on type
 """
 

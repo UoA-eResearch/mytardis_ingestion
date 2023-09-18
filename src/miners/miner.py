@@ -1,3 +1,4 @@
+# pylint: disable=logging-fstring-interpolation
 """Performs the mining process
 
 The mining process involves generating metadata files for MyTardis ingestion.

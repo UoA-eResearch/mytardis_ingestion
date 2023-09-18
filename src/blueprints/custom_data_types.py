@@ -70,7 +70,7 @@ def validate_uri(value: Any) -> str:
 URI = Annotated[
     str,
     AfterValidator(validate_uri),
-    PlainSerializer(lambda x: str(x), return_type=str),
+    PlainSerializer(str, return_type=str),
     WithJsonSchema({"type": "string"}, mode="serialization"),
 ]
 
@@ -92,7 +92,7 @@ def validate_username(value: Any) -> str:
 Username = Annotated[
     str,
     AfterValidator(validate_username),
-    PlainSerializer(lambda x: str(x), return_type=str),
+    PlainSerializer(str, return_type=str),
     WithJsonSchema({"type": "string"}, mode="serialization"),
 ]
 
@@ -114,7 +114,7 @@ def validate_isodatetime(value: Any) -> str:
 ISODateTime = Annotated[
     str,
     AfterValidator(validate_isodatetime),
-    PlainSerializer(lambda x: str(x), return_type=str),
+    PlainSerializer(str, return_type=str),
     WithJsonSchema({"type": "string"}, mode="serialization"),
 ]
 
@@ -132,7 +132,7 @@ def validate_url(value: Any) -> str:
 MTUrl = Annotated[
     str,
     AfterValidator(validate_url),
-    PlainSerializer(lambda x: str(x), return_type=str),
+    PlainSerializer(str, return_type=str),
     WithJsonSchema({"type": "string"}, mode="serialization"),
 ]
 

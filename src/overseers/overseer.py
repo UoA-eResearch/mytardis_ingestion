@@ -3,7 +3,6 @@
 for the Forge class."""
 
 import logging
-import os
 from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin, urlparse
 
@@ -173,7 +172,7 @@ class Overseer(metaclass=Singleton):
         """
         return_list = []
         response_dict = None
-        if (
+        if (  # pylint: disable=unsupported-membership-test
             self.mytardis_setup.objects_with_ids
             and object_type["type"] in self.mytardis_setup.objects_with_ids
         ):

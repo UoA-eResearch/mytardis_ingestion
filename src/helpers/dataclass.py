@@ -21,7 +21,7 @@ from src.helpers.enumerators import (
 
 def get_object_name(
     object_class: BaseDatafile | BaseDataset | BaseExperiment | BaseProject,
-) -> str:
+) -> str:  # sourcery skip: assign-if-exp, reintroduce-else
     """Generic helper function to get the name from a MyTardis  dataclass object"""
     if isinstance(object_class, BaseDatafile):
         return object_class.filename
@@ -31,11 +31,12 @@ def get_object_name(
         return object_class.title
     if isinstance(object_class, BaseProject):
         return object_class.name
+    return ""
 
 
 def get_object_type(
     object_class: BaseDatafile | BaseDataset | BaseExperiment | BaseProject,
-) -> ObjectDict:
+) -> ObjectDict | None:
     """Generic helper function to get the name from a MyTardis  dataclass object"""
     if isinstance(object_class, BaseDatafile):
         return ObjectEnum.DATAFILE.value
@@ -45,6 +46,7 @@ def get_object_type(
         return ObjectEnum.EXPERIMENT.value
     if isinstance(object_class, BaseProject):
         return ObjectEnum.PROJECT.value
+    return None
 
 
 def get_object_parents(
@@ -56,7 +58,7 @@ def get_object_parents(
     | RefinedExperiment
     | RawProject
     | RefinedProject,
-) -> List[str] | None:
+) -> List[str] | None:  # sourcery skip: assign-if-exp, reintroduce-else
     """Function to get the parent objects from teh RawObject classes."""
     if isinstance(object_class, BaseDatafile):
         return [object_class.dataset]
@@ -66,6 +68,7 @@ def get_object_parents(
         return object_class.projects
     if isinstance(object_class, BaseProject):
         return None
+    return []
 
 
 def get_object_post_type(  # pylint: disable=too-many-return-statements
@@ -76,7 +79,7 @@ def get_object_post_type(  # pylint: disable=too-many-return-statements
     | ProjectParameterSet
     | ExperimentParameterSet
     | DatasetParameterSet,
-) -> ObjectPostDict:
+) -> ObjectPostDict | None:
     """Generic helper function to return the parameeters needed to correctly
     POST or PUT/PATCH a MyTardis object."""
 
@@ -94,3 +97,4 @@ def get_object_post_type(  # pylint: disable=too-many-return-statements
         return ObjectPostEnum.EXPERIMENT_PARAMETERS.value
     if isinstance(object_class, DatasetParameterSet):
         return ObjectPostEnum.DATASET_PARAMETERS.value
+    return None

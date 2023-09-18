@@ -26,6 +26,9 @@ repos:
         - backoff
         - requests
         - pydantic
+        - python-slugify
+        - validators
+        - pydantic-settings
 -   repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.5.1
     hooks:

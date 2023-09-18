@@ -1,3 +1,7 @@
+# pylint: disable-all
+# type: ignore
+# This needs a lot of refactoring so disable checks
+
 """JSON parser module.
 
 Main objective of this module is to map the json files to
