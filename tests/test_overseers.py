@@ -476,7 +476,7 @@ def test_get_storagebox_too_many_returns(
         match=[
             matchers.query_param_matcher(
                 {
-                    "identifers": storage_box_name,
+                    "identifier": storage_box_name,
                 },
             ),
         ],
