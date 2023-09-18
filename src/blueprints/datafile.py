@@ -75,5 +75,5 @@ class Datafile(BaseDatafile):
     """Concrete class for the data as ready to ingest into MyTardis"""
 
     replicas: List[DatafileReplica]
-    parameter_sets: Optional[ParameterSet] = None
+    parameter_sets: Optional[List[ParameterSet]] = None
     dataset: URI

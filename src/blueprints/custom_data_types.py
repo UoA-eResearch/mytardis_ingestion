@@ -37,7 +37,7 @@ KNOWN_MYTARDIS_OBJECTS = [
 user_regex = re.compile(
     r"^[a-z]{2,4}[0-9]{3}$"  # Define as a constant incase of future change
 )
-uri_regex = re.compile(r"^/api/v1/([a-z]{1,}|dataset_file)/[0-9]{1,}/$")
+uri_regex = re.compile(r"^api/v1/([a-z]{1,}|dataset_file)/[0-9]{1,}/$")
 iso_time_regex = re.compile(
     r"^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(\.[0-9]+)?(Z|[+-](?:2[0-3]|[01][0-9]):[0-5][0-9])?$"  # pylint: disable=line-too-long
 )
