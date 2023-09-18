@@ -3,6 +3,7 @@ name = "mytardis_ingestion"
 version = "0.2.0"
 description = ""
 authors = ["Chris Seal <c.seal@auckland.ac.nz>"]
+packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
