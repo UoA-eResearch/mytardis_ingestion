@@ -58,12 +58,12 @@ def validate_uri(value: Any) -> str:
         raise TypeError(f'Unexpected type for URI: "{type(value)}"')
     object_type = uri_regex.search(value.lower())
     if not object_type:
-        raise ValueError(
+        raise ValidationError(
             f'Passed string value "{value}" is not a well formatted MyTardis URI'
         )
     object_type_str = object_type.group(1)
     if object_type_str.lower() not in KNOWN_MYTARDIS_OBJECTS:
-        raise ValueError(f'Unknown object type: "{object_type_str}"')
+        raise ValidationError(f'Unknown object type: "{object_type_str}"')
     return value
 
 
@@ -86,7 +86,9 @@ def validate_username(value: Any) -> str:
         raise TypeError(f'Unexpected type for Username: "{type(value)}"')
     if match := user_regex.fullmatch(value.lower()):
         return f"{match.group(0)}"
-    raise ValueError(f'Passed string value "{value}" is not a well formatted Username')
+    raise ValidationError(
+        f'Passed string value "{value}" is not a well formatted Username'
+    )
 
 
 Username = Annotated[

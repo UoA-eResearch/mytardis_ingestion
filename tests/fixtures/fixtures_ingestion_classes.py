@@ -55,10 +55,9 @@ def smelter(
     overseer: Overseer,
     general: GeneralConfig,
     default_schema: SchemaConfig,
-    active_store: StorageConfig,
-    archive: StorageConfig,
+    storage: StorageConfig,
 ) -> Smelter:
-    return Smelter(overseer, general, default_schema, active_store, archive)
+    return Smelter(overseer, general, default_schema, storage)
 
 
 @fixture

@@ -118,7 +118,7 @@ storage_attributes = const.storage_attributes
 archive_class = const.archive_class
 archive_options = const.archive_options
 archive_attributes = const.archive_attributes
-autoarchive_offset = const.autoarchive_offset
+# autoarchive_offset = const.autoarchive_offset
 delete_offset = const.delete_offset
 archive_box_name = const.archive_box_name
 archive_box_uri = const.archive_box_uri
@@ -179,6 +179,9 @@ project = dcls.project
 experiment = dcls.experiment
 dataset = dcls.dataset
 datafile = dcls.datafile
+storage = dcls.storage
+active_store = dcls.active_store
+archive_store = dcls.archive_store
 
 # =========================================
 #

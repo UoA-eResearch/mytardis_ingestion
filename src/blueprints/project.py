@@ -74,8 +74,8 @@ class RawProject(BaseProject):
     embargo_until: Optional[datetime | str] = None
     active_stores: Optional[List[ProjectStorageBox]] = None
     archives: Optional[List[ProjectStorageBox]] = None
-    delete_in_days: Optional[int]
-    archive_in_days: Optional[int]
+    delete_in_days: int = -1
+    archive_in_days: int = 365
 
 
 class RefinedProject(BaseProject):

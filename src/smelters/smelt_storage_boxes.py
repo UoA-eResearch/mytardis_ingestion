@@ -73,6 +73,8 @@ def _create_file_system_storage_box(
     Returns:
         ProjectFileSystemStorageBox: a project specific file system storage box
     """
+    if not storage_config.options:
+        raise ValueError("Poorly defined config for a file system storage box")
     try:
         target_root_directory = storage_config.options.pop("target_root_directory")
     except KeyError as err:
@@ -110,6 +112,8 @@ def _create_s3_storage_box(
     Returns:
         ProjectS3StorageBox: a project specific s3 storage box
     """
+    if not storage_config.options:
+        raise ValueError("Poorly defined config for a S3 storage box")
     try:
         bucket = storage_config.options.pop("s3_bucket")
     except KeyError as err:

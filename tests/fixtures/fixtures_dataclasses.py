@@ -20,6 +20,7 @@ from src.blueprints.dataset import Dataset, RawDataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RawExperiment, RefinedExperiment
 from src.blueprints.project import Project, RawProject, RefinedProject
 from src.blueprints.storage_boxes import StorageBox
+from src.config.config import StorageBoxConfig, StorageConfig, StorageTypesEnum
 
 
 @fixture
@@ -49,6 +50,35 @@ def storage_box(
         location=Path(storage_box_dir),
         uri=URI(storage_box_uri),
         description=storage_box_description,
+    )
+
+
+@fixture
+def active_store() -> StorageBoxConfig:
+    return StorageBoxConfig(
+        storage_name="Test file storage box",
+        storage_class=StorageTypesEnum.FILE_SYSTEM,
+        options={"target_root_directory": "/srv/mytardis/mytest"},
+    )
+
+
+@fixture
+def archive_store() -> StorageBoxConfig:
+    return StorageBoxConfig(
+        storage_name="Test s3 storage box",
+        storage_class=StorageTypesEnum.S3,
+        options={"bucket": "mytest_bucket"},
+    )
+
+
+@fixture
+def storage(
+    active_store: StorageBoxConfig,
+    archive_store: StorageBoxConfig,
+) -> StorageConfig:
+    return StorageConfig(
+        active_stores=[active_store],
+        archives=[archive_store],
     )
 
 

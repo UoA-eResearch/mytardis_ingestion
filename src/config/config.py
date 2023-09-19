@@ -239,7 +239,7 @@ class ConfigFromEnv(BaseSettings):
     ## Usage
     Requires a .env file in the current working direction:
     ```
-    # Genral
+    # General
     GENERAL__DEFAULT_INSTITUTION=University of Auckland
     GENERAL__SOURCE_DIRECTORY=~/api_data
     #Auth, prefix with AUTH__
