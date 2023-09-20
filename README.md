@@ -141,7 +141,7 @@ The setup is designed for an Ubuntu/Linux (recommended) or Manjaro/Linux setup w
  ### Repo - Generalised Instructions
 
 These instructions are written for non Ubuntu OS environments
-1.	Install git, Python 3, and curl that can be run on a terminal.
+1.	Install git, Python 3, and curl that can be run on a terminal. rsync are optionally required to run some tests.
 2.	Create an SSH key for the device to link it to the dev’s GitHub account.
 3.	Clone the mytardis_ingestion repo in the desired directory. This can be achieved on the terminal by first changing into the desired directory, then running the command “git clone git@github.com:UoA-eResearch/mytardis_ingestion.git”
 4.	On the terminal, run the following command “curl -sSL https://install.python-poetry.org | python3 –“. This will install Poetry in the OS.
