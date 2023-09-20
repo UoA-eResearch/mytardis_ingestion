@@ -2,9 +2,9 @@
 
 ## Purpose
 
-The reason for moving to server-side validation of ingested data is to build robustness into the ingestion pipeline. Server-side validation allows for incomplete models to be ingested and flagged for review by appropriate users. This will ensure that the ingestion pipeline is not stopped due to metadata incompleteness, which is a potential outcome of the current client-side validation model.
+The reason for moving to server-side validation of ingested data is to build robustness into the ingestion pipeline. Server-side validation allows for incomplete models to be ingested and flagged for review by appropriate users. This will ensure that the ingestion pipeline is not stopped due to metadata incompleteness, which is a potential outcome of the current staging-side validation model.
 
-## Current state - client-side validation
+## Current state - staging-side validation
 
 An overview of the ingestion pipeline is illustrated.
 
@@ -43,10 +43,10 @@ flowchart LR
         smelter --> crucible --> forge
     end
     storage["`Data storage`"]
-    staging["`Staging server`"]
-    instrument -- data flow ---> staging
-    staging -- "`Standard file moving
-    tools e.g. RSync`" --> storage
+    conveyor["`Conveyor - scripts for transferring files`"]
+    instrument -- data flow ---> conveyor
+    conveyor -- "`File moving
+    tools e.g. RSync, S3`" --> storage
     mytardis["`MyTardis repository`"]
     Ingestion -- "`API call`" ---> mytardis
     storage -- "`File reference`" ---> mytardis
@@ -61,11 +61,11 @@ If there is no match, then the Crucible class assumes that there is no extant ob
 1. Overwrite extant data/metadata or
 2. Misassign access to the data generated.
 
-This represents a significant point of potential failure, where the client-side ingestion scripts need to catch and appropriately handle data errors and process errors, overly complicating the error handling routines in the ingestion scripts and introducing a point of weakness into the ingestion pipeline.
+This represents a significant point of potential failure, where the staging-side ingestion scripts need to catch and appropriately handle data errors and process errors, overly complicating the error handling routines in the ingestion scripts and introducing a point of weakness into the ingestion pipeline.
 
 ## Desired state - server-side validation
 
-In contrast, moving the validation server-side can and will create an object in MyTardis. Where there is a partial match, this can be flagged for user intervention without halting the ingestion process. Furthermore, by moving the validation server-side, error handling client-side is simplified and can focus on catching breaking exceptions, indicating more severe problems with the ingestion scripts.
+In contrast, moving the validation server-side can and will create an object in MyTardis. Where there is a partial match, this can be flagged for user intervention without halting the ingestion process. Furthermore, by moving the validation server-side, error handling staging-side is simplified and can focus on catching breaking exceptions, indicating more severe problems with the ingestion scripts.
 
 Moving to this model requires building additional capability into MyTardis, such that there are temporary models available to hold the unvalidated metadata until it has been validated (and corrected if necessary).
 
@@ -95,16 +95,21 @@ flowchart LR
     end
     Extraction -- "`metadata in standardised
     dataclass - RawObject class`" --> Ingestion
+    Extraction -- "`metadata in standardised
+    dataclass - RawDatafile class`" --> conveyor
     subgraph Ingestion[Ingestion Factory]
         forge["`Forge - call the
         MyTardis API to create
         objects`"]
     end
     storage["`Data storage`"]
-    staging["`Staging server`"]
-    instrument -- data flow ---> staging
-    staging -- "`Standard file moving
-    tools e.g. RSync`" --> storage
+    conveyor["`Conveyor -
+    scripts for
+    transferring files`"]
+    instrument -- data flow ---> conveyor
+    conveyor -- "`Wrappers around
+    standard file moving
+    tools e.g. RSync, S3`" --> storage
     mytardis["`MyTardis repository`"]
     Ingestion -- "`API call`" ---> mytardis
     storage -- "`File reference`" ---> mytardis
@@ -191,7 +196,7 @@ This needs to leverage the authentication/authorisation framework that has been 
 
 Staging models that are directly analagous to the existing models in MyTardis will need to be created. These will not have any restrictions on them and should all be allowed to be blank/null with the exception of the miminimum required to identify and ingested datafile. Specifically this will need a filepath, a user (which may be inferred from the instrument via the facility management) and a storagebox (which may be a staging environment).
 
-Between the API ca the staging models, new objects, including incomplete objects, will be able to be generated.
+A new set of associated APIs for staging models need to be created. This will enable new objects, including incomplete objects to be generated.
 
 ### Validator
 
@@ -208,4 +213,6 @@ Once an object has been validated, the task should create new object in MyTardis
 
 ### Web forms/views
 
-New or modified web forms will be needed to allow user intervention where there are invalid objects in the staging area. This should include an option for facility managers to assign datafiles to users for them to intervene. An indication of fields that are in conflict should be made and the option to connect to existing objects, within the user's/group's access, should be available to lower the barrier for researchers needing to assign objects appropriately.
+New or modified web forms will be needed to allow user intervention where there are invalid objects in the staging area. The invalid objects may come from errors in ingestion configuration, or instrument workflows that require manual entry of project structure and schema metadata.
+
+This should include an option for facility managers to assign datafiles to users for them to intervene. An indication of fields that are in conflict should be made and the option to connect to existing objects, within the user's/group's access, should be available to lower the barrier for researchers needing to assign objects appropriately.
