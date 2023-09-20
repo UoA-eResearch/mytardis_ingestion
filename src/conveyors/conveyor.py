@@ -1,14 +1,15 @@
+"conveyor.py - Script for file transferring."
+
 import multiprocessing as mp
 from multiprocessing.context import SpawnProcess
 from pathlib import Path
 from typing import Sequence
 
 from src.blueprints.datafile import BaseDatafile
-from src.config.singleton import Singleton
 from src.conveyors.transports.common import AbstractTransport
 
 
-class Conveyor(metaclass=Singleton):
+class Conveyor:
     """Class for transferring datafiles as part of ingestion pipeline."""
 
     def __init__(self, transport: AbstractTransport) -> None:
@@ -19,15 +20,7 @@ class Conveyor(metaclass=Singleton):
         """
         self.transport = transport
 
-    def _generate_file_list(self, dfs: list[BaseDatafile]) -> list[Path]:
-        """Generates a list of paths relative to a source directory for datafiles.
-
-        Returns:
-            list[Path]: List of relative paths for files.
-        """
-        return [file.directory / file.filename for file in dfs]
-
-    def initiate_transfer_blocking(self, src: Path, dfs: list[BaseDatafile]) -> None:
+    def transfer_blocking(self, src: Path, dfs: list[BaseDatafile]) -> None:
         """Initiates a transfer via specified transport and
         blocks until it returns.
 
@@ -42,13 +35,13 @@ class Conveyor(metaclass=Singleton):
         Returns:
             None.
         """
-        files = self._generate_file_list(dfs)
+        files = [file.directory / file.filename for file in dfs]
         self.transport.transfer(src, files)
 
     def initiate_transfer(self, src: Path, dfs: Sequence[BaseDatafile]) -> SpawnProcess:
         """Spawns a separate Process to transfer via specified transport and
-        returns the Process. Client code should store this reference, 
-        perform the rest of the metadata ingestion operations, 
+        returns the Process. Client code should store this reference,
+        perform the rest of the metadata ingestion operations,
         then call `.join()` to wait for the file transfer to finish.
 
         Args:
@@ -61,7 +54,7 @@ class Conveyor(metaclass=Singleton):
         """
         ctx = mp.get_context("spawn")
         process = ctx.Process(
-            target=self.initiate_transfer_blocking, kwargs={"src": src, "dfs": dfs}
+            target=self.transfer_blocking, kwargs={"src": src, "dfs": dfs}
         )
         process.start()
         return process

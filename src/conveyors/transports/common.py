@@ -14,7 +14,7 @@ class AbstractTransport(ABC):
 
     def transfer(self, src: Path, files: list[Path]) -> None:
         """Abstract method that does the file transfer.
-        Given a list of absolute path files, transfers to
+        Given a list of files paths, transfers to
         a configured destination.
 
         Raises:
