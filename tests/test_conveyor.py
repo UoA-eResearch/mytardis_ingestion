@@ -6,8 +6,8 @@ from pathlib import Path
 import pytest
 
 from src.blueprints.datafile import BaseDatafile, RawDatafile
-from src.conveyors.conveyor import Conveyor
-from src.conveyors.transports.rsync import RsyncTransport, is_rsync_on_path
+from src.conveyor.conveyor import Conveyor
+from src.conveyor.transports.rsync import RsyncTransport, is_rsync_on_path
 from src.miners.utils.datafile_metadata_helpers import calculate_md5sum
 
 DatafileFixture = tuple[Path, list[BaseDatafile], Path]

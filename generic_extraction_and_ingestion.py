@@ -39,8 +39,8 @@ from src import profiles
 from src.beneficiations.beneficiation import Beneficiation
 from src.beneficiations.parsers.json_parser import JsonParser
 from src.config.config import ConfigFromEnv
-from src.conveyors.conveyor import Conveyor
-from src.conveyors.transports.rsync import RsyncTransport
+from src.conveyor.conveyor import Conveyor
+from src.conveyor.transports.rsync import RsyncTransport
 from src.crucible import crucible
 from src.extraction_plant.extraction_plant import ExtractionPlant
 from src.forges import forge

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Sequence
 
 from src.blueprints.datafile import BaseDatafile
-from src.conveyors.transports.common import AbstractTransport
+from src.conveyor.transports.common import AbstractTransport
 
 
 class Conveyor:

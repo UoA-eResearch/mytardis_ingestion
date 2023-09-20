@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-from src.conveyors.transports.common import AbstractTransport, FailedTransferException
+from src.conveyor.transports.common import AbstractTransport, FailedTransferException
 
 
 def is_rsync_on_path() -> bool:
