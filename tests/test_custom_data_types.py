@@ -8,7 +8,6 @@ from typing import List
 
 import pytest
 from dateutil import tz
-from devtools import debug
 from pydantic import BaseModel, ValidationError
 
 from src.blueprints.custom_data_types import (
@@ -45,10 +44,8 @@ def test_UPI_is_good(upis: Username) -> None:  # pylint: disable=invalid-name
 
 def test_UPI_wrong_type() -> None:  # pylint: disable=invalid-name
     bad_upi = True
-    with pytest.raises(ValidationError) as e_info:
-        test_class = DummyUsernames(user=bad_upi)
-        debug(test_class)
-    debug(e_info.value)
+    with pytest.raises(ValueError) as e_info:
+        _ = DummyUsernames(user=bad_upi)
     assert (
         "1 validation error for DummyUsernames\nuser\n  Input should be a valid string "
         "[type=string_type, input_value=True, input_type=bool]\n    "
@@ -59,9 +56,8 @@ def test_UPI_wrong_type() -> None:  # pylint: disable=invalid-name
     "upis", ["totally_wrong", "t001", "tests001", "test01", "test0001"]
 )
 def test_malformed_UPI(upis: Username) -> None:  # pylint: disable=invalid-name
-    with pytest.raises(ValidationError) as e_info:
+    with pytest.raises(ValueError) as e_info:
         test_class = DummyUsernames(user=upis)
-        debug(test_class)
     assert (
         (
             "1 validation error for DummyUsernames\nuser\n  "
@@ -80,7 +76,7 @@ def test_good_uris(uris: str) -> None:
 
 def test_URI_wrong_type() -> None:  # pylint: disable=invalid-name
     bad_uri = 1.23
-    with pytest.raises(ValidationError) as e_info:
+    with pytest.raises(ValueError) as e_info:
         _ = DummyURI(uri=bad_uri)
     assert (
         "1 validation error for DummyURI\nuri\n  Input should be a valid string "
@@ -131,7 +127,7 @@ def test_malformed_URIs(  # pylint: disable=invalid-name
     uris: str,
     expected_error: str,
 ) -> None:
-    with pytest.raises(ValidationError) as e_info:
+    with pytest.raises(ValueError) as e_info:
         _ = DummyURI(uri=uris)
     assert expected_error in str(e_info.value)
 

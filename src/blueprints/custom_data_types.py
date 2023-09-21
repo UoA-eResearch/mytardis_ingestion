@@ -7,7 +7,7 @@ handling.
 import re
 from typing import Annotated, Any
 
-from pydantic import AfterValidator, PlainSerializer, ValidationError, WithJsonSchema
+from pydantic import AfterValidator, PlainSerializer, WithJsonSchema
 from validators import url
 
 KNOWN_MYTARDIS_OBJECTS = [
@@ -58,12 +58,12 @@ def validate_uri(value: Any) -> str:
         raise TypeError(f'Unexpected type for URI: "{type(value)}"')
     object_type = uri_regex.search(value.lower())
     if not object_type:
-        raise ValidationError(
+        raise ValueError(
             f'Passed string value "{value}" is not a well formatted MyTardis URI'
         )
     object_type_str = object_type.group(1)
     if object_type_str.lower() not in KNOWN_MYTARDIS_OBJECTS:
-        raise ValidationError(f'Unknown object type: "{object_type_str}"')
+        raise ValueError(f'Unknown object type: "{object_type_str}"')
     return value
 
 
@@ -86,9 +86,7 @@ def validate_username(value: Any) -> str:
         raise TypeError(f'Unexpected type for Username: "{type(value)}"')
     if match := user_regex.fullmatch(value.lower()):
         return f"{match.group(0)}"
-    raise ValidationError(
-        f'Passed string value "{value}" is not a well formatted Username'
-    )
+    raise ValueError(f'Passed string value "{value}" is not a well formatted Username')
 
 
 Username = Annotated[
@@ -128,7 +126,7 @@ def validate_url(value: Any) -> str:
         raise TypeError(f'Unexpected type for URL: "{type(value)}"')
     if url(value):
         return value
-    raise ValidationError(f'Passed string value"{value}" is not a valid URL')
+    raise ValueError(f'Passed string value"{value}" is not a valid URL')
 
 
 MTUrl = Annotated[
