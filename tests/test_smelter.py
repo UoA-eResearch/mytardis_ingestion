@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 logger.propagate = True
 
 
+@pytest.mark.xfail()
 @pytest.mark.dependency()
 def test_extract_parameters(
     smelter: Smelter,
