@@ -2,6 +2,7 @@
 
 """Pydantic dataclasses that are used in multiple places."""
 
+import re
 from typing import Annotated, Any, List, Optional, Union
 
 from pydantic import (
@@ -12,8 +13,14 @@ from pydantic import (
     ValidationError,
     WithJsonSchema,
 )
+from validators import url
 
-from src.blueprints.custom_data_types import Username, validate_uri, validate_url
+from src.blueprints.custom_data_types import (
+    KNOWN_MYTARDIS_OBJECTS,
+    Username,
+    validate_uri,
+    validate_url,
+)
 
 
 class UserACL(BaseModel):
@@ -98,7 +105,6 @@ class Parameter(BaseModel):
 
 
 def validate_schema(value: Any) -> str:
-    # sourcery skip: raise-from-previous-error
     """Validator for schema, acts as a wrapper around the schemas for both URI and MTUrl
 
     Args:
@@ -107,16 +113,18 @@ def validate_schema(value: Any) -> str:
     Returns:
         str: validated string
     """
-    try:
-        return validate_url(value)
-    except ValidationError:
-        try:
-            return validate_uri(value)
-        except ValidationError:
-            raise ValidationError(  # pylint: disable=raise-missing-from
-                f'Passed string value "{value}" is not either a URL or '
-                "a well formed MyTardis URI"
-            )
+    if not isinstance(value, str):
+        raise TypeError(f'Unexpected type for schema field: "{type(value)}"')
+    uri_regex = re.compile(r"^/api/v1/([a-z]{1,}|dataset_file)/[0-9]{1,}/$")
+    valid_flag = False
+    object_type = uri_regex.search(value.lower())
+    if object_type and object_type[1].lower() in KNOWN_MYTARDIS_OBJECTS:
+        valid_flag = True
+    if url(value):
+        valid_flag = True
+    if not valid_flag:
+        raise ValidationError(f'Passed string "{value}" is not a valid URI or URL')
+    return value
 
 
 class ParameterSet(BaseModel):

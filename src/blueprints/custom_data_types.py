@@ -7,8 +7,8 @@ handling.
 import re
 from typing import Annotated, Any
 
-import validators
 from pydantic import AfterValidator, PlainSerializer, ValidationError, WithJsonSchema
+from validators import url
 
 KNOWN_MYTARDIS_OBJECTS = [
     "datafileparameterset",
@@ -126,7 +126,7 @@ def validate_url(value: Any) -> str:
     with urllib"""
     if not isinstance(value, str):
         raise TypeError(f'Unexpected type for URL: "{type(value)}"')
-    if validators.url(value):
+    if url(value):
         return value
     raise ValidationError(f'Passed string value"{value}" is not a valid URL')
 

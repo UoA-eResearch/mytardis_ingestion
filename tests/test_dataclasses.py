@@ -15,7 +15,7 @@ def schema_namespace() -> MTUrl:
 
 @fixture
 def schema_uri() -> URI:
-    return URI("/api/v1/testURI/")
+    return URI("/api/v1/project/1/")
 
 
 @fixture
