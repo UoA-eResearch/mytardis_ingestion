@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 logger.propagate = True
 
 
-@pytest.mark.xfail()
 @pytest.mark.dependency()
 def test_extract_parameters(
     smelter: Smelter,
@@ -35,7 +34,6 @@ def test_extract_parameters(
     )
 
 
-@pytest.mark.xfail()
 def test_extract_parameters_metadata_none(
     smelter: Smelter,
     raw_project: RawProject,
@@ -46,7 +44,6 @@ def test_extract_parameters_metadata_none(
     assert smelter.extract_parameters(project_schema, raw_project) is None
 
 
-@pytest.mark.xfail()
 def test_extract_parameters_object_schema_none(
     smelter: Smelter,
     raw_project: RawProject,
@@ -60,7 +57,6 @@ def test_extract_parameters_object_schema_none(
     )
 
 
-@pytest.mark.xfail()
 def test_smelt_project(
     smelter: Smelter,
     raw_project: RawProject,

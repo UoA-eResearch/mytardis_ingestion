@@ -2,7 +2,6 @@
 # pylint: disable=missing-module-docstring
 
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -20,7 +19,7 @@ from src.blueprints.dataset import Dataset, RawDataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RawExperiment, RefinedExperiment
 from src.blueprints.project import Project, RawProject, RefinedProject
 from src.blueprints.storage_boxes import StorageBox
-from src.config.config import StorageBoxConfig, StorageConfig, StorageTypesEnum
+from src.helpers.enumerators import DataClassification
 
 
 @fixture
@@ -50,35 +49,6 @@ def storage_box(
         location=Path(storage_box_dir),
         uri=URI(storage_box_uri),
         description=storage_box_description,
-    )
-
-
-@fixture
-def active_store() -> StorageBoxConfig:
-    return StorageBoxConfig(
-        storage_name="Test file storage box",
-        storage_class=StorageTypesEnum.FILE_SYSTEM,
-        options={"target_root_directory": "/srv/mytardis/mytest"},
-    )
-
-
-@fixture
-def archive_store() -> StorageBoxConfig:
-    return StorageBoxConfig(
-        storage_name="Test s3 storage box",
-        storage_class=StorageTypesEnum.S3,
-        options={"bucket": "mytest_bucket"},
-    )
-
-
-@fixture
-def storage(
-    active_store: StorageBoxConfig,
-    archive_store: StorageBoxConfig,
-) -> StorageConfig:
-    return StorageConfig(
-        active_stores=[active_store],
-        archives=[archive_store],
     )
 
 
@@ -133,9 +103,9 @@ def raw_project(  # pylint: disable=too-many-locals,too-many-arguments
     embargo_time_datetime: datetime,
     project_metadata: Dict[str, Any],
     project_url: str,
-    project_data_classification: Enum,
-    autoarchive_offset: int,
-    delete_offset: int,
+    project_data_classification: DataClassification,
+    archive_in_days: int,
+    delete_in_days: int,
 ) -> RawProject:
     return RawProject(
         name=project_name,
@@ -152,8 +122,8 @@ def raw_project(  # pylint: disable=too-many-locals,too-many-arguments
         identifiers=project_ids,
         metadata=project_metadata,
         data_classification=project_data_classification,
-        archive_in_days=autoarchive_offset,
-        delete_in_days=delete_offset,
+        archive_in_days=archive_in_days,
+        delete_in_days=delete_in_days,
     )
 
 
@@ -184,7 +154,7 @@ def raw_experiment(  # pylint: disable=too-many-locals,too-many-arguments
     modified_time_datetime: datetime,
     embargo_time_datetime: datetime,
     experiment_metadata: Dict[str, Any],
-    experiment_data_classification: Enum,
+    experiment_data_classification: DataClassification,
 ) -> RawExperiment:
     return RawExperiment(
         title=experiment_name,
@@ -227,7 +197,7 @@ def raw_dataset(  # pylint:disable=too-many-arguments
     created_time_datetime: datetime,
     modified_time_datetime: datetime,
     dataset_metadata: Dict[str, Any],
-    dataset_data_classification: Enum,
+    dataset_data_classification: DataClassification,
 ) -> RawDataset:
     return RawDataset(
         description=dataset_name,
@@ -292,13 +262,14 @@ def refined_project(  # pylint:disable=too-many-arguments
     end_time_datetime: datetime,
     embargo_time_datetime: datetime,
     project_url: str,
-    project_data_classification: Enum,
+    project_data_classification: DataClassification,
 ) -> RefinedProject:
     return RefinedProject(
         name=project_name,
         description=project_description,
         data_classification=project_data_classification,
         principal_investigator=Username(project_principal_investigator),
+        dataclassification=project_data_classification,
         url=project_url,
         users=split_and_parse_users,
         groups=split_and_parse_groups,
