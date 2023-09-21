@@ -64,7 +64,7 @@ def test_get_objects(
         json=(project_response_dict),
         match=[
             matchers.query_param_matcher(
-                {"identifiers": search_string},
+                {"identifier": search_string},
             ),
         ],
         status=200,
@@ -102,7 +102,7 @@ def test_get_objects_http_error(
         urljoin(connection.api_template, object_type["type"]),
         match=[
             matchers.query_param_matcher(
-                {"identifiers": search_string},
+                {"identifier": search_string},
             ),
         ],
         status=504,
@@ -172,7 +172,7 @@ def test_get_objects_no_objects(
         json=(response_dict_not_found),
         match=[
             matchers.query_param_matcher(
-                {"identifiers": search_string},
+                {"identifier": search_string},
             ),
         ],
         status=200,
@@ -214,7 +214,7 @@ def test_get_uris(
         json=(project_response_dict),
         match=[
             matchers.query_param_matcher(
-                {"identifiers": search_string},
+                {"identifier": search_string},
             ),
         ],
         status=200,
@@ -251,7 +251,7 @@ def test_get_uris_no_objects(
         json=(response_dict_not_found),
         match=[
             matchers.query_param_matcher(
-                {"identifiers": search_string},
+                {"identifier": search_string},
             ),
         ],
         status=200,
@@ -296,7 +296,7 @@ def test_get_uris_malformed_return_dict(
         json=(test_dict),
         match=[
             matchers.query_param_matcher(
-                {"identifiers": search_string},
+                {"identifier": search_string},
             ),
         ],
         status=200,
@@ -338,7 +338,7 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
         urljoin(connection.api_template, object_type["type"]),
         match=[
             matchers.query_param_matcher(
-                {"identifiers": search_string},
+                {"identifier": search_string},
             ),
         ],
         status=504,
@@ -429,7 +429,7 @@ def test_get_storagebox_no_storage_box_found(
         match=[
             matchers.query_param_matcher(
                 {
-                    "identifiers": storage_box_name,
+                    "identifier": storage_box_name,
                 },
             ),
         ],
@@ -520,7 +520,7 @@ def test_get_storagebox_no_name(
         match=[
             matchers.query_param_matcher(
                 {
-                    "identifiers": storage_box_name,
+                    "identifier": storage_box_name,
                 },
             ),
         ],
@@ -564,7 +564,7 @@ def test_get_storagebox_no_location(
         match=[
             matchers.query_param_matcher(
                 {
-                    "identifiers": storage_box_name,
+                    "identifier": storage_box_name,
                 },
             ),
         ],
@@ -607,7 +607,7 @@ def test_get_storagebox_no_description(
         match=[
             matchers.query_param_matcher(
                 {
-                    "identifiers": storage_box_name,
+                    "identifier": storage_box_name,
                 },
             ),
         ],
