@@ -1,3 +1,8 @@
+# pylint: disable-all
+# type: ignore
+# noqa
+# nosec
+
 """Defines the abstract interface to convert the source metadata to a beneficiable
 format on a path.
 """

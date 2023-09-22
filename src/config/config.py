@@ -162,7 +162,7 @@ class StorageBoxConfig(BaseModel, ABC):
 
     storage_name: str
     storage_class: StorageTypesEnum
-    options: Optional[Dict[str, str]] = None
+    options: Optional[Dict[str, str | Path]] = None
     attributes: Optional[Dict[str, str]] = None
 
 

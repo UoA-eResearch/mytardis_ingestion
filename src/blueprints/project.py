@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime, MTUrl, Username
+from src.config.config import StorageTypesEnum
 from src.helpers.enumerators import DataClassification
 
 
@@ -27,8 +28,9 @@ class ProjectStorageBox(BaseModel, ABC):
     """
 
     name: Optional[str] = None
-    storage_class: str
-    options: Optional[Dict[str, str]] = None
+    storage_class: StorageTypesEnum
+    options: Optional[Dict[str, str | Path]] = None
+    attributes: Optional[Dict[str, str]] = None
     delete_in_days: int
     archive_in_days: int
 

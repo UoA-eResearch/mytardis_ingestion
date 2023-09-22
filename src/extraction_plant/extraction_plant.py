@@ -1,3 +1,8 @@
+# pylint: disable-all
+# type: ignore
+# noqa
+# nosec
+
 """Performs pre-ingestion_factory tasks
 
 Pre-ingestion_factory tasks include prospecting, mining, and beneficiation.

@@ -15,12 +15,7 @@ from pydantic import (
 )
 from validators import url
 
-from src.blueprints.custom_data_types import (
-    KNOWN_MYTARDIS_OBJECTS,
-    Username,
-    validate_uri,
-    validate_url,
-)
+from src.blueprints.custom_data_types import KNOWN_MYTARDIS_OBJECTS, Username
 
 
 class UserACL(BaseModel):

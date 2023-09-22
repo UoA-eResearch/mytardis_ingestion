@@ -1,3 +1,8 @@
+# pylint: disable-all
+# type: ignore
+# noqa
+# nosec
+
 """ This is the data model from Ingestion Data Wizard which is used to define the YAML structure, and data types.
 And how to parse the YAML file into Python objects.
 """

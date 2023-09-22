@@ -7,9 +7,10 @@ where appropriate"""
 import logging
 from typing import Optional, Tuple
 
-from pydantic import AnyUrl, ValidationError
+from pydantic import ValidationError
 
 from src.blueprints.common_models import Parameter, ParameterSet
+from src.blueprints.custom_data_types import URI, MTUrl
 from src.blueprints.datafile import RawDatafile, RefinedDatafile
 from src.blueprints.dataset import RawDataset, RefinedDataset
 from src.blueprints.experiment import RawExperiment, RefinedExperiment
@@ -65,7 +66,7 @@ class Smelter:
 
     def extract_parameters(
         self,
-        schema: AnyUrl,
+        schema: MTUrl | URI,
         raw_object: RawProject | RawExperiment | RawDataset | RawDatafile,
     ) -> Optional[ParameterSet]:
         """Extract the metadata field and the schema field from a RawObject dataclass
@@ -108,7 +109,12 @@ class Smelter:
                 "Unable to find default project schema and no schema provided"
             )
             return None
-        institution = raw_project.institution or [self.default_institution] or None
+        if raw_project.institution:
+            institution = raw_project.institution
+        elif self.default_institution:
+            institution = [self.default_institution]
+        else:
+            institution = None
         if not institution:
             logger.warning(
                 "Unable to find default institution and no institution provided"
@@ -159,7 +165,7 @@ class Smelter:
                 exc_info=True,
             )
             return None
-        parameters = self.extract_parameters(schema, raw_project)
+        parameters = self.extract_parameters(MTUrl(schema), raw_project)
         return (refined_project, parameters)
 
     def smelt_experiment(
@@ -282,10 +288,6 @@ class Smelter:
                 groups=raw_datafile.groups,
                 dataset=raw_datafile.dataset,
                 parameter_sets=parameters,
-                archive_date=raw_datafile.archive_date,
-                delete_date=raw_datafile.delete_date,
-                archive_offset=raw_datafile.archive_offset,
-                delete_offset=raw_datafile.delete_offset,
             )
         except ValidationError:
             logger.warning(

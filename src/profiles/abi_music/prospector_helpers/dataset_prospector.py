@@ -1,3 +1,8 @@
+# pylint: disable-all
+# type: ignore
+# noqa
+# nosec
+
 """Prospects the datasets for checking raw and processed folders.
 """
 

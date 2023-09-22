@@ -17,7 +17,13 @@ from src.blueprints.datafile import (
 )
 from src.blueprints.dataset import Dataset, RawDataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RawExperiment, RefinedExperiment
-from src.blueprints.project import Project, RawProject, RefinedProject
+from src.blueprints.project import (
+    Project,
+    ProjectFileSystemStorageBox,
+    ProjectS3StorageBox,
+    RawProject,
+    RefinedProject,
+)
 from src.blueprints.storage_boxes import StorageBox
 from src.helpers.enumerators import DataClassification
 
@@ -263,6 +269,8 @@ def refined_project(  # pylint:disable=too-many-arguments
     embargo_time_datetime: datetime,
     project_url: str,
     project_data_classification: DataClassification,
+    project_active_store: ProjectFileSystemStorageBox,
+    project_archive_store: ProjectS3StorageBox,
 ) -> RefinedProject:
     return RefinedProject(
         name=project_name,
@@ -279,6 +287,8 @@ def refined_project(  # pylint:disable=too-many-arguments
         end_time=end_time_datetime,
         embargo_until=embargo_time_datetime,
         identifiers=project_ids,
+        active_stores=[project_active_store],
+        archives=[project_archive_store],
     )
 
 
@@ -298,7 +308,7 @@ def refined_experiment(  # pylint: disable=too-many-arguments
     created_time_datetime: datetime,
     modified_time_datetime: datetime,
     embargo_time_datetime: datetime,
-    experiment_data_classification: Enum,
+    experiment_data_classification: DataClassification,
 ) -> RefinedExperiment:
     return RefinedExperiment(
         title=experiment_name,
@@ -331,7 +341,7 @@ def refined_dataset(
     split_and_parse_groups: List[GroupACL],
     created_time_datetime: datetime,
     modified_time_datetime: datetime,
-    dataset_data_classification: Enum,
+    dataset_data_classification: DataClassification,
 ) -> RefinedDataset:
     return RefinedDataset(
         description=dataset_name,

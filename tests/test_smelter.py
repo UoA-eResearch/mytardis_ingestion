@@ -69,7 +69,6 @@ def test_smelt_project(
     )
 
 
-@pytest.mark.xfail()
 def test_smelt_project_projects_disabled(
     caplog: pytest.LogCaptureFixture,
     smelter: Smelter,
@@ -85,7 +84,6 @@ def test_smelt_project_projects_disabled(
     assert error_str in caplog.text
 
 
-@pytest.mark.xfail()
 def test_smelt_project_object_use_default_schema(
     smelter: Smelter,
     raw_project: RawProject,
@@ -103,7 +101,6 @@ def test_smelt_project_object_use_default_schema(
     assert result == (refined_project, raw_project_parameterset)
 
 
-@pytest.mark.xfail()
 def test_smelt_project_use_default_institution(
     smelter: Smelter,
     raw_project: RawProject,
@@ -123,7 +120,6 @@ def test_smelt_project_use_default_institution(
     )
 
 
-@pytest.mark.xfail()
 def test_smelt_project_no_institution(
     caplog: Any,
     smelter: Smelter,
@@ -138,7 +134,6 @@ def test_smelt_project_no_institution(
     assert error_str in caplog.text
 
 
-@pytest.mark.xfail()
 def test_smelt_project_no_schema(
     caplog: Any,
     smelter: Smelter,
@@ -153,7 +148,6 @@ def test_smelt_project_no_schema(
     assert error_str in caplog.text
 
 
-@pytest.mark.xfail()
 def test_smelt_experiment(
     smelter: Smelter,
     raw_experiment: RawExperiment,
@@ -166,7 +160,6 @@ def test_smelt_experiment(
     )
 
 
-@pytest.mark.xfail()
 def test_smelt_experiment_projects_enabled(
     caplog: pytest.LogCaptureFixture,
     smelter: Smelter,
@@ -182,7 +175,6 @@ def test_smelt_experiment_projects_enabled(
     assert error_str in caplog.text
 
 
-@pytest.mark.xfail()
 def test_smelt_experiment_object_use_default_schema(
     smelter: Smelter,
     raw_experiment: RawExperiment,
@@ -200,7 +192,6 @@ def test_smelt_experiment_object_use_default_schema(
     assert result == (refined_experiment, raw_experiment_parameterset)
 
 
-@pytest.mark.xfail()
 def test_smelt_experiment_no_schema(
     caplog: pytest.LogCaptureFixture,
     smelter: Smelter,
@@ -215,7 +206,6 @@ def test_smelt_experiment_no_schema(
     assert error_str in caplog.text
 
 
-@pytest.mark.xfail()
 def test_smelt_experiment_use_default_institution(
     smelter: Smelter,
     raw_experiment: RawExperiment,
@@ -232,7 +222,6 @@ def test_smelt_experiment_use_default_institution(
     assert result == (refined_experiment, raw_experiment_parameterset)
 
 
-@pytest.mark.xfail()
 def test_smelt_experiment_no_institution(
     caplog: Any,
     smelter: Smelter,
@@ -247,7 +236,6 @@ def test_smelt_experiment_no_institution(
     assert error_str in caplog.text
 
 
-@pytest.mark.xfail()
 def test_smelt_dataset(
     smelter: Smelter,
     raw_dataset: RawDataset,
@@ -260,7 +248,6 @@ def test_smelt_dataset(
     )
 
 
-@pytest.mark.xfail()
 def test_smelt_dataset_use_default_schema(
     smelter: Smelter,
     raw_dataset: RawDataset,
@@ -278,7 +265,6 @@ def test_smelt_dataset_use_default_schema(
     assert result == (refined_dataset, raw_dataset_parameterset)
 
 
-@pytest.mark.xfail()
 def test_smelt_dataset_no_schema(
     caplog: pytest.LogCaptureFixture,
     smelter: Smelter,
@@ -293,7 +279,6 @@ def test_smelt_dataset_no_schema(
     assert error_str in caplog.text
 
 
-@pytest.mark.xfail()
 def test_smelt_datafile(
     smelter: Smelter,
     raw_datafile: RawDatafile,
@@ -302,7 +287,6 @@ def test_smelt_datafile(
     assert smelter.smelt_datafile(raw_datafile) == refined_datafile
 
 
-@pytest.mark.xfail()
 def test_smelt_datafile_use_default_schema(
     smelter: Smelter,
     raw_datafile: RawDatafile,
@@ -318,7 +302,6 @@ def test_smelt_datafile_use_default_schema(
     assert result == refined_datafile
 
 
-@pytest.mark.xfail()
 def test_smelt_datafile_no_schema(
     caplog: pytest.LogCaptureFixture,
     smelter: Smelter,

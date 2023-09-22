@@ -557,11 +557,9 @@ mytardis_setup = cfg.mytardis_setup
 mytardis_settings = cfg.mytardis_settings
 storage_box_name = cfg.storage_box_name
 storage_attributes = cfg.storage_attributes
-storage_options = cfg.storage_options
 storage_class = cfg.storage_class
 archive_box_name = cfg.archive_box_name
 archive_attributes = cfg.archive_attributes
-archive_options = cfg.archive_options
 archive_class = cfg.archive_class
 
 # =========================================
@@ -589,6 +587,17 @@ factory = ingestion_classes.factory
 
 archive_in_days = arch.archive_in_days
 delete_in_days = arch.delete_in_days
+storage_options = arch.storage_options
+storage_options_reduced = arch.storage_options_reduced
+archive_options = arch.archive_options
+archive_options_reduced = arch.archive_options_reduced
+s3_bucket = arch.s3_bucket
+project_active_store = arch.project_active_store
+project_archive_store = arch.project_archive_store
+target_key = arch.target_key
+project_archive_box_name = arch.project_archive_box_name
+project_storage_box_name = arch.project_storage_box_name
+
 
 # ========================================
 #

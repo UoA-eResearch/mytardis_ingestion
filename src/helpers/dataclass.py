@@ -2,15 +2,25 @@
 
 from typing import List
 
-from src.blueprints import BaseDatafile, BaseDataset, BaseExperiment, BaseProject
-from src.blueprints.datafile import RawDatafile, RefinedDatafile
-from src.blueprints.dataset import DatasetParameterSet, RawDataset, RefinedDataset
+from src.blueprints.datafile import BaseDatafile, RawDatafile, RefinedDatafile
+from src.blueprints.dataset import (
+    BaseDataset,
+    DatasetParameterSet,
+    RawDataset,
+    RefinedDataset,
+)
 from src.blueprints.experiment import (
+    BaseExperiment,
     ExperimentParameterSet,
     RawExperiment,
     RefinedExperiment,
 )
-from src.blueprints.project import ProjectParameterSet, RawProject, RefinedProject
+from src.blueprints.project import (
+    BaseProject,
+    ProjectParameterSet,
+    RawProject,
+    RefinedProject,
+)
 from src.helpers.enumerators import (
     ObjectDict,
     ObjectEnum,

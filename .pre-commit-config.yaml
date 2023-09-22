@@ -1,13 +1,12 @@
 ---
 repos:
--   repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
+-   repo: https://github.com/rcmdnk/pyproject-pre-commit
+    rev: v0.0.26
     hooks:
-    -   id: isort
--   repo: https://github.com/psf/black
-    rev: 23.7.0
-    hooks:
-    -   id: black
+    - id: black
+    - id: isort
+    - id: bandit
+    - id: mypy
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
@@ -29,27 +28,6 @@ repos:
         - python-slugify
         - validators
         - pydantic-settings
--   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.5.1
-    hooks:
-    - id: mypy
-      stages: [commit]
-      additional_dependencies:
-        - types-requests
-        - types-PyYAML
-        - types-mock
-        - pydantic
-      exclude: tests, docs
--   repo: https://github.com/PyCQA/bandit
-    rev: 1.7.5
-    hooks:
-    - id: bandit
-      stages: [pre-push]
-      args:
-       - --configfile
-       - pyproject.toml
-      additional_dependencies:
-        - "bandit[toml]"
 -   repo: local
     hooks:
     - id: pytest
