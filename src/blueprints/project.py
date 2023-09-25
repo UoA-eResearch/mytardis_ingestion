@@ -22,6 +22,8 @@ class ProjectStorageBox(BaseModel, ABC):
         name (str): the storage box name
         storage_class (str): The Django storage class
         options (dict): A dictionary of options for the storage type that are project specific
+        attrbutes (dict): A dictionary of attributes that the storage type has, most notably
+            whether the storage is disk or tape for optimal selection of multiple data sources
         delete_in_days (int): duration after which time the data can be flagged for deletion
         archive_in_days (int): duration after which the data can be removed from active
             stores

@@ -136,6 +136,29 @@ MTUrl = Annotated[
     WithJsonSchema({"type": "string"}, mode="serialization"),
 ]
 
+
+def validate_schema(value: Any) -> str:
+    """Validator for schema, acts as a wrapper around the schemas for both URI and MTUrl
+
+    Args:
+        value (any): object to be tested
+
+    Returns:
+        str: validated string
+    """
+    if not isinstance(value, str):
+        raise TypeError(f'Unexpected type for schema field: "{type(value)}"')
+    valid_flag = False
+    object_type = uri_regex.match(value.lower())
+    if object_type and object_type[1].lower() in KNOWN_MYTARDIS_OBJECTS:
+        valid_flag = True
+    elif url(value):
+        valid_flag = True
+    if not valid_flag:
+        raise ValueError(f'Passed string "{value}" is not a valid URI or URL')
+    return value
+
+
 '''class BaseObjectType(str):
     """Class method that defines a validated string which includes the four object types
     found in MyTardis when projects are activated.This Type class is intended to be
