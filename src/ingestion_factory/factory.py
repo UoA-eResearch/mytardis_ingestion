@@ -318,11 +318,8 @@ class IngestionFactory(metaclass=Singleton):
                 result.error.append(name)
                 continue
 
-            forged_datafile = self.forge.forge_datafile(prepared_datafile)
-            if isinstance(forged_datafile, URI):
-                result.success.append((name, forged_datafile))
-            else:
-                result.success.append((name, None))
+            self.forge.forge_datafile(prepared_datafile)
+            result.success.append((name, None))
 
         logger.info(
             "Successfully ingested %d datafiles: %s",

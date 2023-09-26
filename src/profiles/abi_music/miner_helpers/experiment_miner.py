@@ -27,18 +27,18 @@ class ExperimentMiner:
 
     def mine_experiment_metadata(
         self,
-        path: Path,
-        dclass_struct: Dict[str, Any],
-        mappings: Dict[str, Dict[str, int | str | bool | float]],
+        path: str,
+        dclass_struct: dict[str, Any],
+        mappings: dict[str, dict[str, int | str | bool | float]],
         out_man: om.OutputManager,
     ) -> om.OutputManager:
         """
         Mine experiment metadata from a given dictionary of experiment keys and mappings.
 
         Args:
-            path (Path): Path of the experiment.
-            dclass_struct (Dict[str, Any]): Dictionary of experiment keys.
-            mappings (Dict[str, Dict[str, int|str|bool|float]]): Mappings of experiment keys.
+            path (str): Path of the experiment.
+            dclass_struct (dict[str, Any]): Dictionary of experiment keys.
+            mappings (dict[str, dict[str, int|str|bool|float]]): Mappings of experiment keys.
             out_man (om.OutputManager): OutputManager object.
 
         Returns:
@@ -66,18 +66,18 @@ class ExperimentMiner:
         self,
         proj_key: str,
         expt_key: str,
-        mappings: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        mappings: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Generate experiment metadata from a given project key, experiment key and mappings.
 
         Args:
             proj_key (str): Project key.
             expt_key (str): Experiment key.
-            mappings (Dict[str, Any]): Mappings of experiment keys.
+            mappings (dict[str, Any]): Mappings of experiment keys.
 
         Returns:
-            Dict[str, Any]: Dictionary of experiment metadata.
+            dict[str, Any]: Dictionary of experiment metadata.
         """
         metadata = {}
         req_keys = [key for key in mappings.keys() if mappings[key][pc.REQUIRED_KEY]]

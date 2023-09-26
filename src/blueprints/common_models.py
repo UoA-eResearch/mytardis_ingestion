@@ -6,7 +6,7 @@ from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from src.blueprints.custom_data_types import MTUrl, Username
+from src.blueprints.custom_data_types import URI, Username
 
 
 class UserACL(BaseModel):
@@ -93,5 +93,5 @@ class Parameter(BaseModel):
 class ParameterSet(BaseModel):
     """Pydantic class to hold a parameter set ready for ingestion into MyTardis."""
 
-    parameter_schema: MTUrl = Field(alias="schema")
+    parameter_schema: URI = Field(alias="schema")
     parameters: Optional[List[Parameter]] = None

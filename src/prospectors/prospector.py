@@ -35,7 +35,7 @@ class Prospector(metaclass=Singleton):
 
     def prospect_directory(
         self,
-        path: Path,
+        path: str,
         recursive: bool = True,
         out_man: Optional[om.OutputManager] = None,
     ) -> om.OutputManager:
@@ -43,7 +43,7 @@ class Prospector(metaclass=Singleton):
         This method prospect_directory is used to prospect a given directory for files.
 
         Parameters:
-            path (Path): Path to directory.
+            path (str): Path to directory.
             recursive (bool): Whether to recursively search for files.
             out_man (om.OutputManager): Output manager instance.
 

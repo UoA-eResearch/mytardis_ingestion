@@ -62,25 +62,25 @@ class DirectoryProspector:
 
     def check_json_folder_path_mismatch(
         self,
-        path: Path,
+        path: str,
         out_man: om.OutputManager,
-    ) -> tuple[om.OutputManager, list[Path]]:
+    ) -> tuple[om.OutputManager, list[str]]:
         """
         Checks if a folder path corresponds to a json file with the same name.
 
         Args:
-            path (Path): The path to the folder.
+            path (str): The path to the folder.
             out_man (om.OutputManager): The OutputManager associated with the folder path.
 
         Returns:
-            tuple[om.OutputManager, list[Path]]: A tuple containing the OutputManager and a list of metadata filepaths.
+            tuple[om.OutputManager, list[str]]: A tuple containing the OutputManager and a list of metadata filepaths.
         """
         metadata_fp_list = []
         new_out_man = copy.deepcopy(out_man)
         rej_list = new_out_man.files_to_ignore
 
         if rej_list:
-            rel_rej_list = [x.relative_to(path) for x in rej_list]
+            rel_rej_list = [os.path.relpath(x, path) for x in rej_list]
             rej_lut = dict.fromkeys(rel_rej_list)
         for root, dirs, files in os.walk(path):
             root_pth = Path(root)
@@ -88,7 +88,7 @@ class DirectoryProspector:
 
             if not root_pth.exists():
                 continue
-            elif len(rel_path.parts) != 3:
+            elif rel_path.count(os.sep) != 2:
                 continue
 
             # target_dir = os.path.normpath(rel_path).name
@@ -97,13 +97,14 @@ class DirectoryProspector:
             target_file = Path(target_dir + json_sufx)
 
             has_match = False
+            matched_filepath = ""
             for file in files:
                 if rej_list:
-                    lookup = rel_path / Path(file)
+                    lookup = os.path.join(rel_path, file)
                     if lookup in rej_lut:
                         continue
-                if json_sufx in file:
-                    if str(target_file) == file:
+                if ".json" in file:
+                    if target_file == file:
                         has_match = True
                         matched_filepath = root_pth / Path(file)
 
@@ -121,31 +122,31 @@ class DirectoryProspector:
                         pc.PROCESS_PROSPECTOR,
                         amc.OUTPUT_NOTE_JSON_MATCH_FAIL,
                     )
-                    new_out_man.add_dir_to_ignore(root_pth)
+                    new_out_man.add_dir_to_ignore(root)
             else:
                 logger.warning(
                     "no corresponding .json file found in {0}".format(rel_path)
                 )
-                new_out_man.add_dir_to_ignore(root_pth)
+                new_out_man.add_dir_to_ignore(root)
 
         return new_out_man, metadata_fp_list
 
     def _determine_json_matches_folder_path(
         self,
-        matched_fp: Path,
-        rel_path: Path,
+        matched_fp: str,
+        rel_path: str,
     ) -> bool:
         """Checks if the path contents inside the json metadata file matches
         those of the actual folder path.
 
         Args:
-            matched_fp (Path): filepath of the json metadata file
-            rel_path (Path): actual folder path of the json metadata file
+            matched_fp (str): filepath of the json metadata file
+            rel_path (str): actual folder path of the json metadata file
 
         Returns:
             bool: True if matching, False otherwise
         """
-        with matched_fp.open("r") as f:
+        with open(matched_fp, "r") as f:
             metadata = json.load(f)
 
         basename_data = {}
@@ -158,8 +159,8 @@ class DirectoryProspector:
         smp_name = basename_data[amc.SAMPLE_FIELD]
         seq_name = basename_data[amc.SEQUENCE_FIELD]
 
-        ref_path = Path(prj_name) / Path(smp_name) / Path(seq_name)
-        if not str(ref_path) in str(rel_path):
+        ref_path = os.path.join(prj_name, smp_name, seq_name)
+        if not ref_path in rel_path:
             return False
 
         dir_sufx = str(rel_path).split(str(ref_path))[1]

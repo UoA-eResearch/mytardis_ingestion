@@ -3,6 +3,7 @@ name = "mytardis_ingestion"
 version = "0.2.0"
 description = ""
 authors = ["Chris Seal <c.seal@auckland.ac.nz>"]
+packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -11,42 +12,40 @@ backoff = "^2.2.1"
 PyYAML = "^6.0"
 python-decouple = "^3.8"
 types-PyYAML = "^6.0.12"
-pydantic = "^2.1.1"
+pydantic = "^2.3.0"
 pytz = "^2023.3"
 python-dateutil = "^2.8.2"
-types-pytz = "^2023.3.0.0"
+types-pytz = "^2023.3.0.1"
 types-python-dateutil = "^2.8.19.13"
 python-slugify = "^8.0.1"
 dependency-injector = "^4.41.0"
-pydantic-settings = "^2.0.2"
-validators = "^0.20.0"
-
-[tool.poetry.dev-dependencies]
-pytest = "^7.4.0"
-mock = "^5.0.2"
-pytest-dependency = "^0.5.1"
-pylint = "^2.17.4"
-interrogate = "^1.5.0"
-mypy = "^1.4"
-types-requests = "^2.31.0"
-types-mock = "^5.0.0"
-PySnooper = "^1.1.0"
-responses = "^0.23.2"
-pre-commit = "^3.3.3"
-bandit = "^1.7.5"
-pytest-cov = "^4.0.0"
-genbadge = {extras = ["tests", "coverage"], version = "^1.0.6"}
-click = "8.1.6"
-coverage = {extras = ["toml"], version = "^7.2.7"}
-pyright = "^1.1.314"
-devtools = "^0.11.0"
-sphinx = "^7.1.0"
+pydantic-settings = "^2.0.3"
+validators = "^0.22.0"
 
 [tool.poetry.group.dev.dependencies]
 wily = "^1.24.0"
 pytest-xdist = "^3.2.1"
 types-python-slugify = "^8.0.0.2"
 pytest-mock = "^3.11.1"
+bandit = "^1.7.5"
+pytest = "^7.4.2"
+mock = "^5.0.2"
+pytest-dependency = "^0.5.1"
+pylint = "^2.17.5"
+interrogate = "^1.5.0"
+mypy = "^1.5"
+types-requests = "^2.31.0"
+types-mock = "^5.1.0"
+PySnooper = "^1.1.0"
+responses = "^0.23.3"
+pre-commit = "^3.4.0"
+pytest-cov = "^4.0.0"
+genbadge = {extras = ["tests", "coverage"], version = "^1.0.6"}
+click = "8.1.7"
+coverage = {extras = ["toml"], version = "^7.3.1"}
+pyright = "^1.1.326"
+devtools = "^0.12.2"
+sphinx = "^7.2.5"
 
 [tool.isort]
 profile = "black"

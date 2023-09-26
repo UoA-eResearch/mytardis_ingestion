@@ -31,7 +31,7 @@ class URLSubstring(str, Enum):
     STORAGE_BOX = "storagebox"
     PROJECT_PARAMETERS = "projectparameterset"
     EXPERIMENT_PARAMETERS = "experimentparameterset"
-    DATASET_PARAMETERS = "datsetparameterset"
+    DATASET_PARAMETERS = "datasetparameterset"
 
 
 class ObjectPostDict(TypedDict):
@@ -59,7 +59,7 @@ class ObjectPostEnum(Enum):
     }
     DATAFILE: ObjectPostDict = {
         "url_substring": URLSubstring.DATAFILE,
-        "expect_json": True,
+        "expect_json": False,
     }
     PROJECT_PARAMETERS: ObjectPostDict = {
         "url_substring": URLSubstring.PROJECT_PARAMETERS,

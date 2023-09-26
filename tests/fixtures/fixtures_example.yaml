@@ -2,19 +2,15 @@
 data_classification: 1
 data_status: null
 description: ''
-groups:
-- !GroupACL
-  can_download: true
-  group: biru-group1
-  is_owner: true
-  see_sensitive: true
+groups: []
 identifiers:
-- p1
-lead_researcher: ''
+- testp1
 metadata: {}
-name: biru-p1
-object_schema: https://130.216.218.45/ProjectSchema-BIRUbbbbb
+name: testP1
+object_schema: ''
 principal_investigator: !Username 'xli677'
+delete_in_days: 365
+archive_in_days: 90
 users:
 - !UserACL
   can_download: true
@@ -25,38 +21,16 @@ users:
 data_classification: 1
 data_status: null
 description: ''
-groups: null
+groups: []
 identifiers:
-- p2
-lead_researcher: ''
+- testp2
 metadata: {}
-name: biru-p2
+name: testP2
 object_schema: ''
 principal_investigator: !Username 'xli677'
-users: null
---- !Experiment
-data_classification: 1
-data_status: null
-description: ''
-experiment_id: ''
-groups:
-- !GroupACL
-  can_download: true
-  group: biru-group1
-  is_owner: true
-  see_sensitive: true
-identifiers:
-- exp1
-metadata: {}
-object_schema: https://130.216.218.45/ExperimentSchema-BIRU
-project_id: p1
-title: biru-exp1
-users:
-- !UserACL
-  can_download: true
-  is_owner: false
-  see_sensitive: true
-  user: !Username 'xli677'
+delete_in_days: 365
+archive_in_days: 90
+users: []
 --- !Experiment
 data_classification: 1
 data_status: null
@@ -64,11 +38,11 @@ description: ''
 experiment_id: ''
 groups: null
 identifiers:
-- exp2
+- teste1
 metadata: {}
 object_schema: ''
-project_id: p1
-title: biru-exp2
+project_id: testp1
+title: testE1
 users: null
 --- !Experiment
 data_classification: 1
@@ -77,49 +51,23 @@ description: ''
 experiment_id: ''
 groups: null
 identifiers:
-- exp3
+- teste2
 metadata: {}
 object_schema: ''
-project_id: p2
-title: biru-exp3
+project_id: testp2
+title: testE2
 users: null
 --- !Dataset
 data_classification: 1
 data_status: null
-dataset_name: biru-ds1
+dataset_name: testDS1
 description: ''
 experiment_id:
-- exp1
-experiments: []
-groups:
-- !GroupACL
-  can_download: true
-  group: biru-group1
-  is_owner: true
-  see_sensitive: true
-identifiers:
-- ds1
-instrument: ''
-instrument_id: ''
-metadata: {}
-object_schema: https://130.216.218.45/DatasetSchema-BIRU
-users:
-- !UserACL
-  can_download: true
-  is_owner: false
-  see_sensitive: true
-  user: !Username 'xli677'
---- !Dataset
-data_classification: 1
-data_status: 5
-dataset_name: biru-ds2
-description: ''
-experiment_id:
-- exp1
+- teste1
 experiments: []
 groups: null
 identifiers:
-- ds2
+- testDS1
 instrument: ''
 instrument_id: ''
 metadata: {}
@@ -128,14 +76,14 @@ users: null
 --- !Dataset
 data_classification: 25
 data_status: null
-dataset_name: biru-ds4
+dataset_name: testDS2
 description: ''
 experiment_id:
-- exp3
+- teste2
 experiments: []
 groups: null
 identifiers:
-- ds4
+- testds2
 instrument: ''
 instrument_id: ''
 metadata: {}
@@ -144,73 +92,153 @@ users: null
 --- !Datafile
 data_status: null
 dataset: ''
-dataset_id: ds1
-directory: !Path 'ime/tests/ime/tests'
-filename: test_metadata_tab.py
+dataset_id: testDS1
+directory: !Path '../czis'
+filename: 20221113_sheep_RWM_cd34_x20_0.12umpiz_01.czi
 groups: null
 md5sum: ''
-metadata: {}
+metadata:
+  Experimenter|UserName: hsuz002
+  Image|AcquisitionDate: '2022-11-13T04:57:29.218'
+  Image|Pixels|Channel|Channel:0:0|AcquisitionMode: LaserScanningConfocalMicroscopy
+  Image|Pixels|Channel|Channel:0:0|Color: '-16711425'
+  Image|Pixels|Channel|Channel:0:0|DetectorSettings|ID: Detector:GaAsP-Pmt2
+  Image|Pixels|Channel|Channel:0:0|EmissionWavelength: '618.0'
+  Image|Pixels|Channel|Channel:0:0|EmissionWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:0|ExcitationWavelength: '280.0'
+  Image|Pixels|Channel|Channel:0:0|ExcitationWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:0|Fluor: Alexa Fluor 594
+  Image|Pixels|Channel|Channel:0:0|ID: Channel:0:0
+  Image|Pixels|Channel|Channel:0:0|IlluminationType: Epifluorescence
+  Image|Pixels|Channel|Channel:0:0|LightPath: null
+  Image|Pixels|Channel|Channel:0:0|Name: AF594-T1
+  Image|Pixels|Channel|Channel:0:0|PinholeSize: '39.04'
+  Image|Pixels|Channel|Channel:0:0|PinholeSizeUnit: "\xB5m"
+  Image|Pixels|Channel|Channel:0:0|SamplesPerPixel: '1'
+  Image|Pixels|Channel|Channel:0:1|AcquisitionMode: LaserScanningConfocalMicroscopy
+  Image|Pixels|Channel|Channel:0:1|Color: '16724991'
+  Image|Pixels|Channel|Channel:0:1|DetectorSettings|ID: Detector:GaAsP-Pmt1
+  Image|Pixels|Channel|Channel:0:1|EmissionWavelength: '517.0'
+  Image|Pixels|Channel|Channel:0:1|EmissionWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:1|ExcitationWavelength: '493.0'
+  Image|Pixels|Channel|Channel:0:1|ExcitationWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:1|Fluor: Alexa Fluor 488
+  Image|Pixels|Channel|Channel:0:1|ID: Channel:0:1
+  Image|Pixels|Channel|Channel:0:1|IlluminationType: Epifluorescence
+  Image|Pixels|Channel|Channel:0:1|LightPath: null
+  Image|Pixels|Channel|Channel:0:1|Name: AF488-T2
+  Image|Pixels|Channel|Channel:0:1|PinholeSize: '32.7265'
+  Image|Pixels|Channel|Channel:0:1|PinholeSizeUnit: "\xB5m"
+  Image|Pixels|Channel|Channel:0:1|SamplesPerPixel: '1'
+  Image|Pixels|Channel|Channel:0:2|AcquisitionMode: LaserScanningConfocalMicroscopy
+  Image|Pixels|Channel|Channel:0:2|Color: '10551295'
+  Image|Pixels|Channel|Channel:0:2|DetectorSettings|ID: Detector:GaAsP-Pmt1
+  Image|Pixels|Channel|Channel:0:2|EmissionWavelength: '465.0'
+  Image|Pixels|Channel|Channel:0:2|EmissionWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:2|ExcitationWavelength: '353.0'
+  Image|Pixels|Channel|Channel:0:2|ExcitationWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:2|Fluor: DAPI
+  Image|Pixels|Channel|Channel:0:2|ID: Channel:0:2
+  Image|Pixels|Channel|Channel:0:2|IlluminationType: Epifluorescence
+  Image|Pixels|Channel|Channel:0:2|LightPath: null
+  Image|Pixels|Channel|Channel:0:2|Name: DAPI-T3
+  Image|Pixels|Channel|Channel:0:2|PinholeSize: '30.0425'
+  Image|Pixels|Channel|Channel:0:2|PinholeSizeUnit: "\xB5m"
+  Image|Pixels|Channel|Channel:0:2|SamplesPerPixel: '1'
+  Image|Pixels|DimensionOrder: XYCZT
+  Image|Pixels|SizeX: '2586'
+  Image|Pixels|SizeY: '2586'
+  Instrument|Detector|Detector:GaAsP-Pmt1|ID: Detector:GaAsP-Pmt1
+  Instrument|Detector|Detector:GaAsP-Pmt1|Model: ''
+  Instrument|Detector|Detector:GaAsP-Pmt1|Offset: '1.0'
+  Instrument|Detector|Detector:GaAsP-Pmt1|Type: Other
+  Instrument|Detector|Detector:GaAsP-Pmt1|Zoom: '1.0'
+  Instrument|Detector|Detector:GaAsP-Pmt2|ID: Detector:GaAsP-Pmt2
+  Instrument|Detector|Detector:GaAsP-Pmt2|Model: ''
+  Instrument|Detector|Detector:GaAsP-Pmt2|Offset: '2.0'
+  Instrument|Detector|Detector:GaAsP-Pmt2|Type: Other
+  Instrument|Detector|Detector:GaAsP-Pmt2|Zoom: '1.0'
+  Instrument|Detector|Detector:LSM800|ID: Detector:LSM800
+  Instrument|Detector|Detector:LSM800|Model: ''
+  Instrument|Objective|ID: Objective:1
+  Instrument|Objective|Immersion: Air
+  Instrument|Objective|Model: Plan-Apochromat 20x/0.8 M27
+  Instrument|Objective|NominalMagnification: '20.0'
+  Instrument|Objective|WorkingDistance: '610.0'
+  Instrument|Objective|WorkingDistanceUnit: "\xB5m"
 mimetype: ''
 object_schema: ''
-size: 3452
+size: 20523232
 users: null
 --- !Datafile
 data_status: null
 dataset: ''
-dataset_id: ds2
-directory: !Path 'ime/tests'
-filename: test_access_control_tab.py
+dataset_id: testDS1
+directory: !Path '../czis'
+filename: 20221113_slide3-1_humanRWM_cd34_x5_0.62umpix_01.czi
 groups: null
 md5sum: ''
-metadata: {}
+metadata:
+  Experimenter|UserName: hsuz002
+  Image|AcquisitionDate: '2022-11-13T03:38:28.441'
+  Image|Pixels|Channel|Channel:0:0|AcquisitionMode: LaserScanningConfocalMicroscopy
+  Image|Pixels|Channel|Channel:0:0|Color: '-16711425'
+  Image|Pixels|Channel|Channel:0:0|DetectorSettings|ID: Detector:GaAsP-Pmt2
+  Image|Pixels|Channel|Channel:0:0|EmissionWavelength: '618.0'
+  Image|Pixels|Channel|Channel:0:0|EmissionWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:0|ExcitationWavelength: '280.0'
+  Image|Pixels|Channel|Channel:0:0|ExcitationWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:0|Fluor: Alexa Fluor 594
+  Image|Pixels|Channel|Channel:0:0|ID: Channel:0:0
+  Image|Pixels|Channel|Channel:0:0|IlluminationType: Epifluorescence
+  Image|Pixels|Channel|Channel:0:0|LightPath: null
+  Image|Pixels|Channel|Channel:0:0|Name: AF594-T1
+  Image|Pixels|Channel|Channel:0:0|PinholeSize: '53.498742857142865'
+  Image|Pixels|Channel|Channel:0:0|PinholeSizeUnit: "\xB5m"
+  Image|Pixels|Channel|Channel:0:0|SamplesPerPixel: '1'
+  Image|Pixels|Channel|Channel:0:1|AcquisitionMode: LaserScanningConfocalMicroscopy
+  Image|Pixels|Channel|Channel:0:1|Color: '10551295'
+  Image|Pixels|Channel|Channel:0:1|DetectorSettings|ID: Detector:GaAsP-Pmt1
+  Image|Pixels|Channel|Channel:0:1|EmissionWavelength: '465.0'
+  Image|Pixels|Channel|Channel:0:1|EmissionWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:1|ExcitationWavelength: '353.0'
+  Image|Pixels|Channel|Channel:0:1|ExcitationWavelengthUnit: nm
+  Image|Pixels|Channel|Channel:0:1|Fluor: DAPI
+  Image|Pixels|Channel|Channel:0:1|ID: Channel:0:1
+  Image|Pixels|Channel|Channel:0:1|IlluminationType: Epifluorescence
+  Image|Pixels|Channel|Channel:0:1|LightPath: null
+  Image|Pixels|Channel|Channel:0:1|Name: DAPI-T3
+  Image|Pixels|Channel|Channel:0:1|PinholeSize: '41.24297142857143'
+  Image|Pixels|Channel|Channel:0:1|PinholeSizeUnit: "\xB5m"
+  Image|Pixels|Channel|Channel:0:1|SamplesPerPixel: '1'
+  Image|Pixels|DimensionOrder: XYCZT
+  Image|Pixels|SizeX: '2069'
+  Image|Pixels|SizeY: '2069'
+  Instrument|Detector|Detector:GaAsP-Pmt1|ID: Detector:GaAsP-Pmt1
+  Instrument|Detector|Detector:GaAsP-Pmt1|Model: ''
+  Instrument|Detector|Detector:GaAsP-Pmt1|Offset: '4.0'
+  Instrument|Detector|Detector:GaAsP-Pmt1|Type: Other
+  Instrument|Detector|Detector:GaAsP-Pmt1|Zoom: '1.0'
+  Instrument|Detector|Detector:GaAsP-Pmt2|ID: Detector:GaAsP-Pmt2
+  Instrument|Detector|Detector:GaAsP-Pmt2|Model: ''
+  Instrument|Detector|Detector:GaAsP-Pmt2|Offset: '2.0'
+  Instrument|Detector|Detector:GaAsP-Pmt2|Type: Other
+  Instrument|Detector|Detector:GaAsP-Pmt2|Zoom: '1.0'
+  Instrument|Objective|ID: Objective:1
+  Instrument|Objective|Immersion: Air
+  Instrument|Objective|Model: Plan-Apochromat 5x/0.16
+  Instrument|Objective|NominalMagnification: '5.0'
+  Instrument|Objective|WorkingDistance: '12200.0'
+  Instrument|Objective|WorkingDistanceUnit: "\xB5m"
 mimetype: ''
 object_schema: ''
-size: 5544
+size: 9020512
 users: null
 --- !Datafile
 data_status: null
 dataset: ''
-dataset_id: ds2
-directory: !Path 'ime/tests'
-filename: fixtures.yaml
-groups: null
-md5sum: ''
-metadata: {}
-mimetype: ''
-object_schema: ''
-size: 3813
-users: null
---- !Datafile
-data_status: null
-dataset: ''
-dataset_id: ds3
-directory: !Path 'ime/tests'
-filename: conftest.py
-groups: null
-md5sum: ''
-metadata: {}
-mimetype: ''
-object_schema: ''
-size: 373
-users: null
---- !Datafile
-data_status: 5
-dataset: ''
-dataset_id: ds4
-directory: !Path 'ime/tests'
-filename: test_qt_models.py
-groups: null
-md5sum: ''
-metadata: {}
-mimetype: ''
-object_schema: ''
-size: 2300
-users: null
---- !Datafile
-data_status: null
-dataset: ''
-dataset_id: ds2
-directory: !Path 'ime/tests'
+dataset_id: testds2
+directory: !Path '../oibs'
 filename: 20190812 HF 01 stack.oib
 groups: null
 md5sum: ''
@@ -269,8 +297,8 @@ users: null
 --- !Datafile
 data_status: null
 dataset: ''
-dataset_id: ds2
-directory: !Path 'ime/tests'
+dataset_id: testds2
+directory: !Path '../oibs'
 filename: 20190812 NT 100x 01 slice.oib
 groups: null
 md5sum: ''

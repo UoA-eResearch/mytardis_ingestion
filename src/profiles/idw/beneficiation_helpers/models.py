@@ -800,3 +800,8 @@ class IngestionMetadata:
 # Initialise the representers and constructors required for
 # loading YAML elements.
 initialise_yaml_helpers()
+
+yaml.SafeLoader.add_constructor(None, strip_unknown_tag_and_construct)
+with open('test/test.yaml') as f:
+    a = list(yaml.safe_load_all(f))
+"""

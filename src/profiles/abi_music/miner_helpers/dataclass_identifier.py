@@ -30,22 +30,20 @@ class DataclassIdentifier:
     # Write rest of implementation here, use leading underscores for each method
     def identify_data_classes(
         self,
-        path: Path,
+        path: str,
         out_man: om.OutputManager,
-    ) -> Dict[str, Any]:
-        """Identify data class structure of a dataset at the given path. With the ABI format
-        the first level is the project, second is the experiment, third is the dataset. Levels
-        higher than these are considered to be datafile directories.
+    ) -> dict[str, Any]:
+        """Identify data class structure of a dataset at the given path.
 
         Args:
             self (object): The object instance.
-            path (Path): The path to the dataset.
+            path (str): The path to the dataset.
             out_man (om.OutputManager): Output manager.
 
         Returns:
-            Dict[str, Any]: Dictionary containing identified data class structure.
+            dict[str, Any]: Dictionary containing identified data class structure.
         """
-        dclass_struct: Dict[str, Any] = {}
+        dclass_struct: dict[str, Any] = {}
         new_out_man = copy.deepcopy(out_man)
 
         dir_rej_list = new_out_man.dirs_to_ignore

@@ -13,7 +13,7 @@ repos:
     hooks:
     -   id: trailing-whitespace
 -   repo: https://github.com/PyCQA/pylint
-    rev: v3.0.0a7
+    rev: v2.17.5
     hooks:
     - id: pylint
       stages: [commit]
@@ -41,7 +41,10 @@ repos:
     rev: 1.7.5
     hooks:
     - id: bandit
-      args: ["-r", "src/"]
+      args:
+        - -c
+        - pyproject.toml
+        - -r
       stages: [pre-push]
 -   repo: local
     hooks:
@@ -57,7 +60,12 @@ repos:
         - PyYAML
         - pydantic
         - devtools
-      entry: pytest -v src
+        - pydantic-settings
+        - validators
+        - pytz
+        - python-slugify
+        - python-dateutil
+      entry: pytest -v tests
       types: [python]
       pass_filenames: false
 -   repo: https://github.com/Lucas-C/pre-commit-hooks-safety

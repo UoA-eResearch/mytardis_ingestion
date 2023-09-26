@@ -8,12 +8,12 @@ import logging
 # Standard library imports
 from copy import deepcopy
 from pathlib import Path
+from typing import Any, List, Union
 
 # Third-party imports
 import yaml
 from yaml.loader import Loader
 from yaml.nodes import MappingNode, Node
-from typing import Any, Union, List
 
 # User-defined imports
 # from src.profiles.idw.beneficiation_helpers.models import IngestionMetadata
@@ -43,6 +43,7 @@ tags = [
     username_tag,
     path_tag,
 ]
+
 
 class CustomBeneficiation(AbstractCustomBeneficiation):
     """

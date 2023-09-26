@@ -13,7 +13,9 @@ from src.config.config import (
     IntrospectionConfig,
     ProxyConfig,
     SchemaConfig,
+    StorageBoxConfig,
     StorageConfig,
+    StorageTypesEnum,
 )
 
 
@@ -66,12 +68,13 @@ def connection(
 
 
 @fixture
-def storage(
-    storage_class: str,
-    storage_options: Dict[str, Any],
-    storage_attributes: Dict[str, Any],
-) -> StorageConfig:
-    return StorageConfig(
+def active_stores(
+    storage_class: StorageTypesEnum,
+    storage_options: Dict[str, str],
+    storage_attributes: Dict[str, str],
+) -> StorageBoxConfig:
+    return StorageBoxConfig(
+        storage_name="Test Active",
         storage_class=storage_class,
         options=storage_options,
         attributes=storage_attributes,
@@ -80,15 +83,24 @@ def storage(
 
 @fixture
 def archive(
-    archive_class: str,
+    archive_class: StorageTypesEnum,
     archive_options: Dict[str, Any],
     archive_attributes: Dict[str, Any],
 ) -> StorageConfig:
-    return StorageConfig(
+    return StorageBoxConfig(
+        storage_name="Test Archive",
         storage_class=archive_class,
         options=archive_options,
         attributes=archive_attributes,
     )
+
+
+@fixture
+def storage(
+    active_stores: StorageBoxConfig,
+    archive: StorageBoxConfig,
+) -> StorageConfig:
+    return StorageConfig(active_stores=[active_stores], archives=[archive])
 
 
 @fixture

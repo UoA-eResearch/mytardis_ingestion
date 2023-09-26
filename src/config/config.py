@@ -199,10 +199,6 @@ class IntrospectionConfig(BaseModel):
     objects_with_profiles: Optional[list[MyTardisObject]] = None
     model_config = ConfigDict(use_enum_values=True)
 
-
-class ProfileConfig(BaseModel):
-    """Profile data for extraction plant.
-
 class ProfileConfig(BaseModel):
     """Profile data for extraction plant.
 
@@ -241,7 +237,7 @@ class ConfigFromEnv(BaseSettings):
 
     ## Usage
     Requires a .env file in the current working direction:
-    ```
+    '''
     # Genral
     GENERAL__DEFAULT_INSTITUTION=University of Auckland
     GENERAL__SOURCE_DIRECTORY=~/api_data
@@ -263,12 +259,12 @@ class ConfigFromEnv(BaseSettings):
     # DEFAULT_SCHEMA__DATAFILE=
     # Archive, prefix with ARCHIVE__
 
-    ```
+    '''
     ## Example
-    ```python
+    '''python
     settings = ConfigFromEnv()
     setup = settings.mytardis_setup # <- only has value after first call
-    ```
+    '''
     """
 
     general: GeneralConfig
@@ -276,7 +272,7 @@ class ConfigFromEnv(BaseSettings):
     connection: ConnectionConfig
     storage: StorageConfig
     default_schema: SchemaConfig
-    archive: StorageConfig
+    #archive: StorageConfig
     #profile: ProfileConfig
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", env_nested_delimiter="__"

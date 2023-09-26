@@ -123,7 +123,7 @@ MyTardis is present in the input dictionaries. We have also included
 functionality to mint and update RAiDs as identifiers for the different
 objects within MyTardis.
 
-Storage in the IDS is based on the Facility and Instrument with datafiles 
+Storage in the IDS is based on the Facility and Instrument with datafiles
 stored in a filepath based on:
 
 /root_dir/facility/instrument/dataset/datafiles + dir structure as needed.

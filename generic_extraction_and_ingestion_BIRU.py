@@ -38,7 +38,10 @@ ingestible_dataclasses = ext_plant.run_extraction(pth)
 mt_rest = MyTardisRESTFactory(config.auth, config.connection)
 overseer = Overseer(mt_rest)
 
-crucible = Crucible(overseer)
+crucible = Crucible(
+    overseer = overseer,
+    storage = config.storage,
+)
 
 smelter = Smelter(
     general = config.general,
@@ -52,10 +55,17 @@ factory = IngestionFactory(
     mt_rest = mt_rest,
     overseer = overseer,
     smelter = smelter,
+    crucible= crucible,
 )
 
 rawprojects = ingestible_dataclasses.projects
 rawexperiments = ingestible_dataclasses.experiments
 rawdatasets = ingestible_dataclasses.datasets
 datafiles = ingestible_dataclasses.datafiles
+print(rawprojects)
+
 factory.ingest_projects(ingestible_dataclasses.projects)
+
+factory.ingest_experiments(ingestible_dataclasses.experiments)
+factory.ingest_datasets(ingestible_dataclasses.datasets)
+factory.ingest_datafiles(ingestible_dataclasses.datafiles)

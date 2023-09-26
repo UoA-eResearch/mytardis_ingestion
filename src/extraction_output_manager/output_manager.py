@@ -1,5 +1,5 @@
 """Used to store and track the progress and history of the processes in the
-extraction plant. 
+extraction plant.
 """
 
 # ---Imports
@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Union
 
 from src.profiles import profile_consts as pc
 from src.profiles import profile_helpers as ph
-
 
 # ---Constants
 logger = logging.getLogger(__name__)

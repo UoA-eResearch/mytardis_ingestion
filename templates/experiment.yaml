@@ -7,7 +7,7 @@ project_id: # Multiple projects can be associated with a sample. If this is the 
   - # If a rigorous directory structure is used then this can be inferred from the directory and only needs explicit definition if multiple projects are used for the sample
   - <one of the identifiers associated with the project that this experiment/sample is part of>
   - <one of the identifiers associated with the project that this experiment/sample is part of>
-experiment_ids: 
+experiment_ids:
   - <a list of identifiers that are used for this object>
   - <a list of identifiers that are used for this object>
 description: <value>
