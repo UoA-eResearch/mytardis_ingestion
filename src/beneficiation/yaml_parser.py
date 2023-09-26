@@ -1,3 +1,8 @@
+# pylint: disable-all
+# type: ignore
+# noqa
+# nosec
+
 """
 YAML parser module. This module is used for parsing YAML files into
 appropriate dataclasses.

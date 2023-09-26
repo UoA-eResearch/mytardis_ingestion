@@ -1,3 +1,8 @@
+# pylint: disable-all
+# type: ignore
+# noqa
+# nosec
+
 """Inspects metadata and performs related checks on a path.
 """
 

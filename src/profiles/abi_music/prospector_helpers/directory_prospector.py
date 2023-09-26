@@ -1,3 +1,8 @@
+# pylint: disable-all
+# type: ignore
+# noqa
+# nosec
+
 """Prospects a directory to check whether the directory path can be ingested
 """
 

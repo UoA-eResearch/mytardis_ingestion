@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime, MTUrl, Username
+from src.config.config import StorageTypesEnum
 from src.helpers.enumerators import DataClassification
 
 
@@ -21,14 +22,17 @@ class ProjectStorageBox(BaseModel, ABC):
         name (str): the storage box name
         storage_class (str): The Django storage class
         options (dict): A dictionary of options for the storage type that are project specific
+        attrbutes (dict): A dictionary of attributes that the storage type has, most notably
+            whether the storage is disk or tape for optimal selection of multiple data sources
         delete_in_days (int): duration after which time the data can be flagged for deletion
         archive_in_days (int): duration after which the data can be removed from active
             stores
     """
 
     name: Optional[str] = None
-    storage_class: str
-    options: Optional[Dict[str, str]] = None
+    storage_class: StorageTypesEnum
+    options: Optional[Dict[str, str | Path]] = None
+    attributes: Optional[Dict[str, str]] = None
     delete_in_days: int
     archive_in_days: int
 
@@ -74,8 +78,8 @@ class RawProject(BaseProject):
     embargo_until: Optional[datetime | str] = None
     active_stores: Optional[List[ProjectStorageBox]] = None
     archives: Optional[List[ProjectStorageBox]] = None
-    delete_in_days: Optional[int]
-    archive_in_days: Optional[int]
+    delete_in_days: int = -1
+    archive_in_days: int = 365
 
 
 class RefinedProject(BaseProject):

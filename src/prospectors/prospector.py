@@ -10,10 +10,8 @@ import logging
 # ---Imports
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Tuple
 
 from src.extraction_output_manager.output_manager import OutputManager
-from src.prospectors.common_file_checks import perform_common_file_checks
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -40,7 +38,8 @@ class AbstractProspector(ABC):
         Args:
             path (Path): the path to inspect for metadata
             recursive (bool): True to inspect all subdirectories in path, False to inspect path only
-            out_man (om.OutputManager): class which stores info of outputs of the pre-ingestion processes
+            out_man (om.OutputManager): class which stores info of outputs of the pre-ingestion
+                processes
 
         Returns:
             OutputManager: output manager instance containing the outputs of the process

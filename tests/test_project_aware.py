@@ -1,6 +1,10 @@
-# Pylint: disable=missing-function-docstring
+# pylint: disable=missing-function-docstring,missing-module-docstring
+# nosec assert_used
+# flake8: noqa S101
 
 import logging
+
+from pytest import LogCaptureFixture
 
 from src.helpers.project_aware import log_if_projects_disabled
 
@@ -17,14 +21,14 @@ class ProjectAwareClass:
         return projects_enabled
 
 
-def test_project_aware_with_projects_enabled():
+def test_project_aware_with_projects_enabled() -> None:
     test_class = ProjectAwareClass(projects_enabled=True)
     assert test_class.test_function() is True
 
 
 def test_project_aware_with_projects_disabled(
-    caplog,
-):
+    caplog: LogCaptureFixture,
+) -> None:
     test_class = ProjectAwareClass(projects_enabled=False)
     caplog.set_level(logging.WARNING)
     warning_str = (

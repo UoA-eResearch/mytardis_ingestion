@@ -28,7 +28,7 @@ docs/build/
 
 .DS_Store
 
-settings.json
+.vscode/*
 testenv
 
 *.log

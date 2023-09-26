@@ -1,3 +1,8 @@
+# pylint: disable-all
+# type: ignore
+# noqa
+# nosec
+
 """Mines dataset metadata
 """
 

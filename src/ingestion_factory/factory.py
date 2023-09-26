@@ -26,16 +26,16 @@ from src.smelters.smelter import Smelter
 logger = logging.getLogger(__name__)
 
 
-class IngestionResult:
+class IngestionResult:  # pylint: disable=missing-class-docstring
     def __init__(
         self,
         success: Optional[list[tuple[str, Optional[URI]]]] = None,
         error: Optional[list[str]] = None,
     ) -> None:
-        self.success = success if success else []
-        self.error = error if error else []
+        self.success = success or []
+        self.error = error or []
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other) -> bool:  # type: ignore
         if isinstance(other, IngestionResult):
             return self.success == other.success and self.error == other.error
         return NotImplemented
@@ -103,28 +103,25 @@ class IngestionFactory(metaclass=Singleton):
                 )
                 sys.exit()
 
-        mt_rest = (
-            mt_rest if mt_rest else MyTardisRESTFactory(config.auth, config.connection)
-        )
-        overseer = overseer if overseer else Overseer(mt_rest)
+        mt_rest = mt_rest or MyTardisRESTFactory(config.auth, config.connection)
+        overseer = overseer or Overseer(mt_rest)
 
-        self.forge = forge if forge else Forge(mt_rest)
-        self.smelter = (
-            smelter
-            if smelter
-            else Smelter(
-                overseer=overseer,
-                general=config.general,
-                default_schema=config.default_schema,
-                active_store=config.storage,
-            )
+        self.forge = forge or Forge(mt_rest)
+        self.smelter = smelter or Smelter(
+            overseer=overseer,
+            general=config.general,
+            default_schema=config.default_schema,
+            storage=config.storage,
         )
-        self.crucible = crucible if crucible else Crucible(overseer)
+        self.crucible = crucible or Crucible(
+            overseer,
+            storage=config.storage,
+        )
 
     def ingest_projects(
         self,
         projects: list[RawProject] | None,
-    ) -> IngestionResult | None:
+    ) -> IngestionResult | None:  # sourcery skip: class-extract-method
         """Wrapper function to create the projects from input files"""
         if not projects:
             return None
@@ -191,7 +188,8 @@ class IngestionFactory(metaclass=Singleton):
             if not name:
                 logger.warning(
                     (
-                        "Unable to find the name of the experiment, skipping experiment defined by %s",
+                        "Unable to find the name of the experiment, skipping experiment "
+                        "defined by %s",
                         experiment,
                     )
                 )
@@ -320,7 +318,7 @@ class IngestionFactory(metaclass=Singleton):
 
             self.forge.forge_datafile(prepared_datafile)
             result.success.append((name, None))
-            
+
         logger.info(
             "Successfully ingested %d datafiles: %s",
             len(result.success),
@@ -334,13 +332,13 @@ class IngestionFactory(metaclass=Singleton):
             )
         return result
 
-    def dump_ingestion_result_json(
+    def dump_ingestion_result_json(  # pylint:disable=missing-function-docstring
         self,
         projects_result: IngestionResult | None,
         experiments_result: IngestionResult | None,
         datasets_result: IngestionResult | None,
         datafiles_result: IngestionResult | None,
-    ):
+    ) -> None:
         with open("ingestion_result.json", "w", encoding="utf-8") as file:
             json.dump(
                 {
@@ -354,13 +352,13 @@ class IngestionFactory(metaclass=Singleton):
                 indent=4,
             )
 
-    def ingest(
+    def ingest(  # pylint: disable=missing-function-docstring
         self,
         projects: list[RawProject] | None = None,
         experiments: list[RawExperiment] | None = None,
         datasets: list[RawDataset] | None = None,
         datafiles: list[RawDatafile] | None = None,
-    ):
+    ) -> None:
         ingested_projects = self.ingest_projects(projects)
         if not ingested_projects:
             logger.error("Fatal error while ingesting projects. Check logs.")

@@ -3,7 +3,6 @@
 for the Forge class."""
 
 import logging
-import os
 from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin, urlparse
 
@@ -25,7 +24,7 @@ class Overseer(metaclass=Singleton):
 
     Overseer classes inspect the MyTardis database to ensure
     that the Forge is not creating existing objects and validates
-    that the heirarchical structures needed are in place before
+    that the hierarchical structures needed are in place before
     a new object is created.
 
     Where there are differences in the stored objects in MyTardis the behaviour
@@ -147,7 +146,7 @@ class Overseer(metaclass=Singleton):
     # TODO pylint:disable=fixme
     # we might want to add a get_objects function that let's you search for
     # specific query param combinations. Right now it checks if the search
-    # string is in any of the object_type["target"] and "identifers" fields but often
+    # string is in any of the object_type["target"] and "identifier" fields but often
     # we know where those should be found, i.e. when we pass in a search_string
     # we know it's either a pid, alternative_id or name
     def get_objects(
@@ -173,7 +172,7 @@ class Overseer(metaclass=Singleton):
         """
         return_list = []
         response_dict = None
-        if (
+        if (  # pylint: disable=unsupported-membership-test
             self.mytardis_setup.objects_with_ids
             and object_type["type"] in self.mytardis_setup.objects_with_ids
         ):

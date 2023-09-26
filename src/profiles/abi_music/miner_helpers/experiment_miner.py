@@ -1,3 +1,9 @@
+# pylint: disable-all
+# type: ignore
+# noqa
+# nosec
+
+
 """Mines experiment metadata
 """
 

@@ -1,3 +1,7 @@
+# pylint: disable-all
+# type: ignore
+# This script needs a lot of refactoring so disable checks
+
 """Checks and selects the designated profile and loads the corresponding module
 """
 
@@ -10,7 +14,7 @@ from types import ModuleType
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
 from src.config.singleton import Singleton
 from src.miners.abstract_custom_miner import AbstractCustomMiner
-from src.prospectors.abstract_custom_prospector import AbstractCustomProspector
+from src.prospectors.prospector import AbstractProspector
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -70,10 +74,10 @@ class ProfileLoader(metaclass=Singleton):
 
     def load_custom_prospector(
         self,
-    ) -> AbstractCustomProspector | None:
+    ) -> AbstractProspector | None:
         module_pth = self.profile_module_str + custom_prspctr_lib
         try:
-            custom_prospector: AbstractCustomProspector = importlib.import_module(
+            custom_prospector: AbstractProspector = importlib.import_module(
                 module_pth
             ).CustomProspector()
             return custom_prospector

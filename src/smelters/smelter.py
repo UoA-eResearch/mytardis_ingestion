@@ -7,9 +7,10 @@ where appropriate"""
 import logging
 from typing import Optional, Tuple
 
-from pydantic import AnyUrl, ValidationError
+from pydantic import ValidationError
 
 from src.blueprints.common_models import Parameter, ParameterSet
+from src.blueprints.custom_data_types import URI, MTUrl
 from src.blueprints.datafile import RawDatafile, RefinedDatafile
 from src.blueprints.dataset import RawDataset, RefinedDataset
 from src.blueprints.experiment import RawExperiment, RefinedExperiment
@@ -23,11 +24,18 @@ logger = logging.getLogger(__name__)
 
 
 class Smelter:
-    """The Smelter base class to be subclassed into individual concrete classes for different
-    ingestion approaches.
-    Smelter classes share a number of similar processing routines, especially around dictionary
-    modification and date handling.
+    """The Smelter class takes a RawObject and splits out the Parameters from the
+    data bundle. It also creates Project Storage Boxes for use by the automatic archive
+    functionality.
     Attributes:
+        overseer (Overseer): an instance of the Overseer class that provides access to MyTardis
+            and is used to query the introspection API - will be deprecated by SSV
+        general (GeneralConfig): an instance of a GeneralConfig class that provides basic
+            information for the ingestion
+        default_schema (SchemaConfig): default metadata schema to use in cases where no schema
+            is provided - will be deprecated by SSV
+        storage (StorageConfig): ingestion specific storage box information for active and archive
+            stores.
     """
 
     def __init__(
@@ -48,19 +56,17 @@ class Smelter:
                 belong elsewhere
             default_schema (SchemaConfig): The default schema to use as a fallback if one is not
                 provided.
-            active_stores (list(StorageBoxConfig)): The active storage for use by MyTardis
-            archives (list(StorageBoxConfig)): Archive storage for use by MyTardis.
+            storage (StorageConfig):
         """
 
         self.overseer = overseer
         self.default_schema = default_schema
         self.default_institution = general.default_institution
-        self.active_stores = storage.active_stores
-        self.archives = storage.archives
+        self.storage = storage
 
     def extract_parameters(
         self,
-        schema: AnyUrl,
+        schema: MTUrl | URI,
         raw_object: RawProject | RawExperiment | RawDataset | RawDatafile,
     ) -> Optional[ParameterSet]:
         """Extract the metadata field and the schema field from a RawObject dataclass
@@ -103,11 +109,12 @@ class Smelter:
                 "Unable to find default project schema and no schema provided"
             )
             return None
-        institution = (
-            raw_project.institution or [self.default_institution]
-            if self.default_institution is not None
-            else None
-        )
+        if raw_project.institution:
+            institution = raw_project.institution
+        elif self.default_institution:
+            institution = [self.default_institution]
+        else:
+            institution = None
         if not institution:
             logger.warning(
                 "Unable to find default institution and no institution provided"
@@ -120,7 +127,7 @@ class Smelter:
                 raw_project.delete_in_days,
                 raw_project.archive_in_days,
             )
-            for config in self.active_stores
+            for config in self.storage.active_stores
         ]
         archives = [
             create_storage_box(
@@ -129,7 +136,7 @@ class Smelter:
                 raw_project.delete_in_days,
                 raw_project.archive_in_days,
             )
-            for config in self.archives
+            for config in self.storage.archives
         ]
         try:
             refined_project = RefinedProject(
@@ -158,7 +165,7 @@ class Smelter:
                 exc_info=True,
             )
             return None
-        parameters = self.extract_parameters(schema, raw_project)
+        parameters = self.extract_parameters(MTUrl(schema), raw_project)
         return (refined_project, parameters)
 
     def smelt_experiment(
@@ -281,10 +288,6 @@ class Smelter:
                 groups=raw_datafile.groups,
                 dataset=raw_datafile.dataset,
                 parameter_sets=parameters,
-                archive_date=raw_datafile.archive_date,
-                delete_date=raw_datafile.delete_date,
-                archive_offset=raw_datafile.archive_offset,
-                delete_offset=raw_datafile.delete_offset,
             )
         except ValidationError:
             logger.warning(

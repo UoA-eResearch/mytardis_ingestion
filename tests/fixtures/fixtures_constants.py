@@ -10,7 +10,6 @@ from pytz import BaseTzInfo
 
 from src.blueprints.common_models import GroupACL, Parameter, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime, Username
-from src.config.config import StorageTypesEnum
 from src.helpers.enumerators import DataClassification
 
 
@@ -583,21 +582,6 @@ def institution_name() -> str:
 
 
 @fixture
-def project_data_classification() -> Enum:
-    return DataClassification.SENSITIVE
-
-
-@fixture
-def experiment_data_classification() -> Enum:
-    return DataClassification.SENSITIVE
-
-
-@fixture
-def dataset_data_classification() -> Enum:
-    return DataClassification.SENSITIVE
-
-
-@fixture
 def datafile_archive_date() -> ISODateTime:
     return ISODateTime("2023-12-31T12:00:00+13:00")
 
@@ -608,81 +592,8 @@ def datafile_delete_date() -> ISODateTime:
 
 
 @fixture
-def archive_class() -> StorageTypesEnum:
-    return StorageTypesEnum.S3
-
-
-@fixture
-def storage_class() -> StorageTypesEnum:
-    return StorageTypesEnum.FILE_SYSTEM
-
-
-@fixture
-def archive_box_name() -> str:
-    return "Test archive box"
-
-
-@fixture
-def storage_box_name() -> str:
-    return "Test_storage_box"
-
-
-@fixture
-def archive_box_uri() -> str:
-    return "/api/v1/storagebox/2/"
-
-
-@fixture
-def storage_box_uri() -> str:
-    return "/api/v1/storagebox/1/"
-
-
-@fixture
-def archive_box_description() -> str:
-    return "A test archive box"
-
-
-@fixture
-def storage_box_description() -> str:
-    return "A test storage box"
-
-
-@fixture
-def archive_options() -> Dict[str, str]:
-    return {
-        "S3_Key": "mykey",
-        "S3_password": "mypassword",
-    }
-
-
-@fixture
-def storage_options() -> Dict[str, str]:
-    return {"Location": "/srv/test"}
-
-
-@fixture
-def archive_attributes() -> Dict[str, str]:
-    return {"type": "tape"}
-
-
-@fixture
-def storage_attributes() -> Dict[str, str]:
-    return {"type": "disk"}
-
-
-@fixture
 def datetime_now(timezone: BaseTzInfo) -> datetime:
     return datetime(2001, 1, 1, 12, 0, 0, tzinfo=timezone)
-
-
-@fixture
-def autoarchive_offset() -> int:
-    return 547
-
-
-@fixture
-def delete_offset() -> int:
-    return 5470
 
 
 @fixture

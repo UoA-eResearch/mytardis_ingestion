@@ -1,12 +1,15 @@
-# pylint: disable=too-few-public-methods,no-name-in-module
+# pylint: disable=too-few-public-methods,no-name-in-module,unnecessary-lambda
 
 """Pydantic dataclasses that are used in multiple places."""
 
-from typing import List, Optional, Union
 
-from pydantic import BaseModel, Field
+from typing import Annotated, List, Optional, Union
 
-from src.blueprints.custom_data_types import URI, Username
+from pydantic import AfterValidator, BaseModel, Field, PlainSerializer, WithJsonSchema
+
+# Note the validate_schema function is a fusion of validating a MTUrl and a URI
+# It is kept with the regex definitions of both
+from src.blueprints.custom_data_types import Username, validate_schema
 
 
 class UserACL(BaseModel):
@@ -93,5 +96,10 @@ class Parameter(BaseModel):
 class ParameterSet(BaseModel):
     """Pydantic class to hold a parameter set ready for ingestion into MyTardis."""
 
-    parameter_schema: URI = Field(alias="schema")
+    parameter_schema: Annotated[
+        str,
+        AfterValidator(validate_schema),
+        PlainSerializer(lambda x: str(x), return_type=str),
+        WithJsonSchema({"type": "string"}, mode="serialization"),
+    ] = Field(alias="schema")
     parameters: Optional[List[Parameter]] = None

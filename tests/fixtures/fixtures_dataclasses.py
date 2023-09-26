@@ -1,7 +1,7 @@
-# pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
+# pylint: disable=missing-function-docstring,redefined-outer-name
+# pylint: disable=missing-module-docstring
 
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -17,8 +17,15 @@ from src.blueprints.datafile import (
 )
 from src.blueprints.dataset import Dataset, RawDataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RawExperiment, RefinedExperiment
-from src.blueprints.project import Project, RawProject, RefinedProject
+from src.blueprints.project import (
+    Project,
+    ProjectFileSystemStorageBox,
+    ProjectS3StorageBox,
+    RawProject,
+    RefinedProject,
+)
 from src.blueprints.storage_boxes import StorageBox
+from src.helpers.enumerators import DataClassification
 
 
 @fixture
@@ -102,9 +109,9 @@ def raw_project(  # pylint: disable=too-many-locals,too-many-arguments
     embargo_time_datetime: datetime,
     project_metadata: Dict[str, Any],
     project_url: str,
-    project_data_classification: Enum,
-    autoarchive_offset: int,
-    delete_offset: int,
+    project_data_classification: DataClassification,
+    archive_in_days: int,
+    delete_in_days: int,
 ) -> RawProject:
     return RawProject(
         name=project_name,
@@ -121,8 +128,8 @@ def raw_project(  # pylint: disable=too-many-locals,too-many-arguments
         identifiers=project_ids,
         metadata=project_metadata,
         data_classification=project_data_classification,
-        autoarchive_offset=autoarchive_offset,
-        delete_offset=delete_offset,
+        archive_in_days=archive_in_days,
+        delete_in_days=delete_in_days,
     )
 
 
@@ -153,7 +160,7 @@ def raw_experiment(  # pylint: disable=too-many-locals,too-many-arguments
     modified_time_datetime: datetime,
     embargo_time_datetime: datetime,
     experiment_metadata: Dict[str, Any],
-    experiment_data_classification: Enum,
+    experiment_data_classification: DataClassification,
 ) -> RawExperiment:
     return RawExperiment(
         title=experiment_name,
@@ -196,7 +203,7 @@ def raw_dataset(  # pylint:disable=too-many-arguments
     created_time_datetime: datetime,
     modified_time_datetime: datetime,
     dataset_metadata: Dict[str, Any],
-    dataset_data_classification: Enum,
+    dataset_data_classification: DataClassification,
 ) -> RawDataset:
     return RawDataset(
         description=dataset_name,
@@ -261,13 +268,16 @@ def refined_project(  # pylint:disable=too-many-arguments
     end_time_datetime: datetime,
     embargo_time_datetime: datetime,
     project_url: str,
-    project_data_classification: Enum,
+    project_data_classification: DataClassification,
+    project_active_store: ProjectFileSystemStorageBox,
+    project_archive_store: ProjectS3StorageBox,
 ) -> RefinedProject:
     return RefinedProject(
         name=project_name,
         description=project_description,
         data_classification=project_data_classification,
         principal_investigator=Username(project_principal_investigator),
+        dataclassification=project_data_classification,
         url=project_url,
         users=split_and_parse_users,
         groups=split_and_parse_groups,
@@ -277,6 +287,8 @@ def refined_project(  # pylint:disable=too-many-arguments
         end_time=end_time_datetime,
         embargo_until=embargo_time_datetime,
         identifiers=project_ids,
+        active_stores=[project_active_store],
+        archives=[project_archive_store],
     )
 
 
@@ -296,7 +308,7 @@ def refined_experiment(  # pylint: disable=too-many-arguments
     created_time_datetime: datetime,
     modified_time_datetime: datetime,
     embargo_time_datetime: datetime,
-    experiment_data_classification: Enum,
+    experiment_data_classification: DataClassification,
 ) -> RefinedExperiment:
     return RefinedExperiment(
         title=experiment_name,
@@ -329,7 +341,7 @@ def refined_dataset(
     split_and_parse_groups: List[GroupACL],
     created_time_datetime: datetime,
     modified_time_datetime: datetime,
-    dataset_data_classification: Enum,
+    dataset_data_classification: DataClassification,
 ) -> RefinedDataset:
     return RefinedDataset(
         description=dataset_name,
@@ -375,6 +387,8 @@ def refined_datafile(
 def project(
     refined_project: RefinedProject,
     institution_uri: URI,
+    archive_box: StorageBox,
+    storage_box: StorageBox,
 ) -> Project:
     return Project(
         name=refined_project.name,
@@ -402,6 +416,8 @@ def project(
             else None
         ),
         identifiers=refined_project.identifiers,
+        archives=[archive_box],
+        active_stores=[storage_box],
     )
 
 

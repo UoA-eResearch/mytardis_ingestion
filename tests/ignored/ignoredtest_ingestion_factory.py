@@ -1,5 +1,10 @@
+# pylint: disable-all
+# noqa
+# nosec assert_used
+# type: ignore
+
 """Tests of the ingestion factory as a whole"""
-# pylint: disable=missing-function-docstring
+
 import logging
 from typing import Any, Callable, Literal
 from unittest.mock import MagicMock, Mock

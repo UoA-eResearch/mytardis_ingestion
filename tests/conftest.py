@@ -6,8 +6,10 @@ from typing import Any, Dict, List
 
 from pytest import FixtureRequest, fixture
 
+import tests.fixtures.fixtures_archive_app as arch
 import tests.fixtures.fixtures_config_from_env as cfg
 import tests.fixtures.fixtures_constants as const
+import tests.fixtures.fixtures_data_classification_app as dclass
 import tests.fixtures.fixtures_dataclasses as dcls
 import tests.fixtures.fixtures_ingestion_classes as ingestion_classes
 import tests.fixtures.fixtures_responses as rsps
@@ -80,9 +82,6 @@ instrument_ids = const.instrument_ids
 instrument_name = const.instrument_name
 split_and_parse_groups = const.split_and_parse_groups
 split_and_parse_users = const.split_and_parse_users
-storage_box_name = const.storage_box_name
-storage_box_uri = const.storage_box_uri
-storage_box_description = const.storage_box_description
 storage_box_dir = const.storage_box_dir
 start_time_datetime = const.start_time_datetime
 start_time_str = const.start_time_str
@@ -107,22 +106,8 @@ institution_address = const.institution_address
 institution_ids = const.institution_ids
 institution_country = const.institution_country
 institution_name = const.institution_name
-project_data_classification = const.project_data_classification
-experiment_data_classification = const.experiment_data_classification
-dataset_data_classification = const.dataset_data_classification
 datafile_archive_date = const.datafile_archive_date
 datafile_delete_date = const.datafile_delete_date
-storage_class = const.storage_class
-storage_options = const.storage_options
-storage_attributes = const.storage_attributes
-archive_class = const.archive_class
-archive_options = const.archive_options
-archive_attributes = const.archive_attributes
-autoarchive_offset = const.autoarchive_offset
-delete_offset = const.delete_offset
-archive_box_name = const.archive_box_name
-archive_box_uri = const.archive_box_uri
-archive_box_description = const.archive_box_description
 archive_box_dir = const.archive_box_dir
 archive_date = const.archive_date
 delete_date = const.delete_date
@@ -553,7 +538,7 @@ project_creation_response_dict = rsps.project_creation_response_dict
 response_by_substring = rsps.response_by_substring
 get_experiment_details = rsps.get_experiment_details
 get_project_details = rsps.get_project_details
-autoarchive_details = rsps.autoarchive_details
+# autoarchive_details = rsps.autoarchive_details
 # =========================================
 #
 # config from env classes
@@ -564,12 +549,18 @@ processed_introspection_response = cfg.processed_introspection_response
 general = cfg.general
 auth = cfg.auth
 connection = cfg.connection
-active_store = cfg.storage
-archive = cfg.archive
+active_store = cfg.active_store
+archive_store = cfg.archive_store
+storage = cfg.storage
 default_schema = cfg.default_schema
 mytardis_setup = cfg.mytardis_setup
 mytardis_settings = cfg.mytardis_settings
-
+storage_box_name = cfg.storage_box_name
+storage_attributes = cfg.storage_attributes
+storage_class = cfg.storage_class
+archive_box_name = cfg.archive_box_name
+archive_attributes = cfg.archive_attributes
+archive_class = cfg.archive_class
 
 # =========================================
 #
@@ -586,3 +577,34 @@ smelter = ingestion_classes.smelter
 forge = ingestion_classes.forge
 crucible = ingestion_classes.crucible
 factory = ingestion_classes.factory
+
+
+# ========================================
+#
+# Archive in X days app
+#
+# =========================================
+
+archive_in_days = arch.archive_in_days
+delete_in_days = arch.delete_in_days
+storage_options = arch.storage_options
+storage_options_reduced = arch.storage_options_reduced
+archive_options = arch.archive_options
+archive_options_reduced = arch.archive_options_reduced
+s3_bucket = arch.s3_bucket
+project_active_store = arch.project_active_store
+project_archive_store = arch.project_archive_store
+target_key = arch.target_key
+project_archive_box_name = arch.project_archive_box_name
+project_storage_box_name = arch.project_storage_box_name
+
+
+# ========================================
+#
+# Data Classification app
+#
+# =========================================
+
+project_data_classification = dclass.project_data_classification
+experiment_data_classification = dclass.experiment_data_classification
+dataset_data_classification = dclass.dataset_data_classification

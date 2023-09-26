@@ -1,3 +1,5 @@
+# pylint: disable=fixme
+
 """Functions to generate project specific storage boxes depending on type
 """
 
@@ -71,19 +73,25 @@ def _create_file_system_storage_box(
     Returns:
         ProjectFileSystemStorageBox: a project specific file system storage box
     """
+    if not storage_config.options:
+        raise ValueError("Poorly defined config for a file system storage box")
     try:
         target_root_directory = storage_config.options.pop("target_root_directory")
     except KeyError as err:
         # TODO: Log and continue
         raise err
+    if isinstance(target_root_directory, Path):
+        target_root_directory = target_root_directory.as_posix()
     target_dir = Path(f"{target_root_directory}/{slugify(project_name)}")
     storage_box_name = f"{slugify(project_name)}-{slugify(storage_config.storage_name)}"
     options = storage_config.options or None
+    attributes = storage_config.attributes or None
     return ProjectFileSystemStorageBox(
         name=storage_box_name,
-        storage_class="django.core.files.storage.FileSystemStorage",
+        storage_class=StorageTypesEnum.FILE_SYSTEM,
         target_directory=target_dir,
         options=options,
+        attributes=attributes,
         delete_in_days=delete_in_days,
         archive_in_days=archive_in_days,
     )
@@ -108,6 +116,8 @@ def _create_s3_storage_box(
     Returns:
         ProjectS3StorageBox: a project specific s3 storage box
     """
+    if not storage_config.options:
+        raise ValueError("Poorly defined config for a S3 storage box")
     try:
         bucket = storage_config.options.pop("s3_bucket")
     except KeyError as err:
@@ -115,12 +125,14 @@ def _create_s3_storage_box(
         raise err
     storage_box_name = f"{slugify(project_name)}-{slugify(storage_config.storage_name)}"
     options = storage_config.options or None
+    attributes = storage_config.attributes or None
     return ProjectS3StorageBox(
         name=storage_box_name,
-        storage_class="storages.backends.s3boto3.S3Boto3Storage",
+        storage_class=StorageTypesEnum.S3,
         bucket=bucket,
         target_key=f"{slugify(project_name)}",
         options=options,
+        attributes=attributes,
         delete_in_days=delete_in_days,
         archive_in_days=archive_in_days,
     )

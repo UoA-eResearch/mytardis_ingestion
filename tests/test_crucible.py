@@ -1,7 +1,10 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
+# nosec assert_used
+# flake8: noqa S101
+
 import copy
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Dict
 from urllib.parse import urljoin
 
