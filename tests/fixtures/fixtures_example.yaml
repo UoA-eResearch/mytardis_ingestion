@@ -1,7 +1,7 @@
 !Project
 data_classification: 1
 data_status: null
-description: ''
+description: 'this is the project1 description'
 groups: []
 identifiers:
 - testp1
@@ -20,7 +20,7 @@ users:
 --- !Project
 data_classification: 1
 data_status: null
-description: ''
+description: 'this is the project2 description'
 groups: []
 identifiers:
 - testp2
@@ -63,7 +63,7 @@ users: null
 data_classification: 1
 data_status: null
 dataset_name: testDS1
-description: ''
+description: testDS1
 experiment_id:
 - teste1
 experiments: []
@@ -79,7 +79,7 @@ users: null
 data_classification: 25
 data_status: null
 dataset_name: testDS2
-description: ''
+description: testDS2
 experiment_id:
 - teste2
 experiments: []
@@ -93,8 +93,7 @@ object_schema: ''
 users: null
 --- !Datafile
 data_status: null
-dataset: ''
-dataset_id: testDS1
+dataset: 'testDS1'
 directory: !Path '../czis'
 filename: 20221113_sheep_RWM_cd34_x20_0.12umpiz_01.czi
 groups: null
@@ -174,8 +173,7 @@ size: 20523232
 users: null
 --- !Datafile
 data_status: null
-dataset: ''
-dataset_id: testDS1
+dataset: 'testDS1'
 directory: !Path '../czis'
 filename: 20221113_slide3-1_humanRWM_cd34_x5_0.62umpix_01.czi
 groups: null
@@ -238,8 +236,7 @@ size: 9020512
 users: null
 --- !Datafile
 data_status: null
-dataset: ''
-dataset_id: testds2
+dataset: 'testds2'
 directory: !Path '../oibs'
 filename: 20190812 HF 01 stack.oib
 groups: null
@@ -298,8 +295,7 @@ size: 43941888
 users: null
 --- !Datafile
 data_status: null
-dataset: ''
-dataset_id: testds2
+dataset: 'testds2'
 directory: !Path '../oibs'
 filename: 20190812 NT 100x 01 slice.oib
 groups: null

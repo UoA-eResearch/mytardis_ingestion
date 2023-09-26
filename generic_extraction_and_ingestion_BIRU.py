@@ -49,32 +49,41 @@ smelter = Smelter(
     storage = config.storage,
     overseer= overseer,
 )
+
+forge = Forge(mt_rest)
 #default_schema = config.default_schema
 #schema_project = default_schema.project
 #print(schema_project)
 test_project = ingestible_dataclasses.projects[0]
 test_experiment = ingestible_dataclasses.experiments[0]
 test_dataset = ingestible_dataclasses.datasets[0]
-test_datafile = ingestible_dataclasses.datafiles[0:2]
+test_datafiles = ingestible_dataclasses.datafiles[0:2]
 
 test_experiment.projects = ['testP1']
 test_dataset.experiments = ['testE1']
-#refined_project, refined_project_parameters = smelter.smelt_project(test_project)
-#prepared_project = crucible.prepare_project(refined_project)
-#forge = Forge(mt_rest)
-#forge.forge_project(prepared_project, refined_project_parameters)
+test_dataset.instrument = "Olympus FV1000"
+
+
+'''refined_project, refined_project_parameters = smelter.smelt_project(test_project)
+prepared_project = crucible.prepare_project(refined_project)
+forge = Forge(mt_rest)
+forge.forge_project(prepared_project, refined_project_parameters)
 
 smelted_experiment = smelter.smelt_experiment(test_experiment)
 refined_experiment, refined_experiment_parameters = smelted_experiment
 prepared_experiment = crucible.prepare_experiment(refined_experiment)
-forge = Forge(mt_rest)
 forge.forge_experiment(prepared_experiment, refined_experiment_parameters)
 
 smelted_dataset = smelter.smelt_dataset(test_dataset)
 refined_dataset, refined_dataset_parameters = smelted_dataset
 prepared_dataset = crucible.prepare_dataset(refined_dataset)
-forge = Forge(mt_rest)
-forge.forge_dataset(prepared_dataset, refined_dataset_parameters)
+forge.forge_dataset(prepared_dataset, refined_dataset_parameters)'''
+
+for df in test_datafiles:
+    smelted_datafile = smelter.smelt_datafile(df)
+    refined_datafile = smelted_datafile
+    prepared_datafile = crucible.prepare_datafile(refined_datafile)
+    forge.forge_datafile(prepared_datafile)
 
 #refined_datafiles, refined_datafiles_parameters = smelter.smelt_datafile(test_datafile)
 #prepared_datafiles = crucible.prepare_datafile(refined_datafiles)

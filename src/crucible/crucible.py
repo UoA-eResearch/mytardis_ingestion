@@ -203,8 +203,8 @@ class Crucible:
         file_path: Path,
     ) -> List[DatafileReplica]:  # sourcery skip: for-append-to-extend
         """Use the dataset associated with datafile to construct replicas"""
-        if response := self.overseer.get_object_by_uri(dataset):
-            dataset_obj = response["objects"][0]
+        if dataset_obj := self.overseer.get_object_by_uri(dataset):
+            #dataset_obj = response["objects"][0]
             # Should be handled by API - create setting to prefix
             # instrument = slugify(dataset_obj["instrument"]["name"])
             # facility = slugify(dataset_obj["instrument"]["facility"]["name"])
