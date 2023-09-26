@@ -159,6 +159,7 @@ def validate_schema(value: Any) -> str:
     return value
 
 
+# pylint: disable=pointless-string-statement
 '''class BaseObjectType(str):
     """Class method that defines a validated string which includes the four object types
     found in MyTardis when projects are activated.This Type class is intended to be
