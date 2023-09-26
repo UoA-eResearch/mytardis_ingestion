@@ -41,7 +41,8 @@ identifiers:
 - teste1
 metadata: {}
 object_schema: ''
-project_id: testp1
+projects: 
+- testp1
 title: testE1
 users: null
 --- !Experiment
@@ -54,7 +55,8 @@ identifiers:
 - teste2
 metadata: {}
 object_schema: ''
-project_id: testp2
+projects: 
+- testp2
 title: testE2
 users: null
 --- !Dataset

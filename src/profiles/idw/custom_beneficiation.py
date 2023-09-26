@@ -184,7 +184,7 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         """
         return RawDataset(**loader.construct_mapping(node))
 
-    def _rawexperiment_constructor(self, loader, node: MappingNode) -> RawExperiment:
+    def _rawexperiment_constructor(self, loader: Loader, node: MappingNode) -> RawExperiment:
         """
         A method that constructs a RawExperiment object using the constructor_setup helper method.
 
