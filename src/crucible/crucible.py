@@ -219,15 +219,9 @@ class Crucible:
             stores = [x for store in (self.active_stores, self.archive) for x in store]
             uri_root = ""
             for store in stores:
-                if store.storage_class == StorageTypesEnum.FILE_SYSTEM:
-                    uri_root = store.options["target_root_directory"]
-                elif store.storage_class == StorageTypesEnum.S3:
-                    uri_root = store.options["bucket"]
-                else:
-                    raise ValueError("Icorrect storage configured")
                 replicas.append(
                     DatafileReplica(
-                        uri=f"{uri_root}/{facility}/{instrument}/{file_path.as_posix()}",
+                        uri=f"{facility}/{instrument}/{file_path.as_posix()}",
                         location=store.storage_name,
                         protocol="file",
                     )
