@@ -9,7 +9,7 @@ from types import ModuleType
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
 from src.config.singleton import Singleton
 from src.miners.abstract_custom_miner import AbstractCustomMiner
-from src.prospectors.abstract_custom_prospector import AbstractCustomProspector
+from src.prospectors.prospector import AbstractCustomProspector
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -33,17 +33,18 @@ class ProfileLoader(metaclass=Singleton):
 
     def __init__(
         self,
-        profile: str,
+        profile_name: str,
     ) -> None:
-        if not profile:
-            raise Exception("Error! Profile not set")
-        self.profile = profile
+        if not profile_name:
+            logger.error("No profile set")
+            raise ValueError("Error! Profile not set")
+        self.profile_name = profile_name
         try:
-            self.profile_module_str = prof_base_lib + profile
+            self.profile_module_str = prof_base_lib + self.profile_name
             self.profile_module = importlib.import_module(self.profile_module_str)
-        except Exception as e:
-            logger.error(e)
-            raise Exception("Error loading profile module, profile not found")
+        except Exception as err:
+            logger.error(err, exc_info=True)
+            raise ImportError("Error loading profile module") from err
 
     def load_profile_module(
         self,
@@ -52,20 +53,22 @@ class ProfileLoader(metaclass=Singleton):
 
     def load_custom_prospector(
         self,
+        custom_prospector: str = "custom_prospector"
     ) -> AbstractCustomProspector | None:
-        module_pth = self.profile_module_str + custom_prspctr_lib
+        # module_pth = self.profile_module_str + '.' + custom_prspctr_lib
         try:
             custom_prospector: AbstractCustomProspector = importlib.import_module(
-                module_pth
+                name=('.'+custom_prospector),
+                package=self.profile_module_str
             ).CustomProspector()
             return custom_prospector
         except Exception as e:
             logger.info(
-                "AbstractCustomMiner not loaded, will be set to None. Below are the details:"
+                f"No custom prospector found for profile \"{self.profile_name}\" . Below are the details:"
             )
             logger.info(e)
             return None
-
+    
     def load_custom_miner(
         self,
     ) -> AbstractCustomMiner | None:

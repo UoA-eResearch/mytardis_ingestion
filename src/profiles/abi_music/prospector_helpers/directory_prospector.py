@@ -15,7 +15,8 @@ from pathlib import Path
 from typing import Any, Optional
 
 from src.extraction_output_manager import output_manager as om
-from src.profiles import profile_consts as pc
+# from src.profiles import profile_consts as pc
+from src.helpers import constants as pc
 from src.profiles.abi_music import abi_music_consts as amc
 
 # ---Constants

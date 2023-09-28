@@ -12,7 +12,7 @@ from src.config.singleton import Singleton
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 from src.extraction_output_manager.output_manager import OutputManager
 from src.miners.miner import Miner
-from src.prospectors.prospector import Prospector
+from src.prospectors.prospector import AbstractProspector
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class ExtractionPlant(metaclass=Singleton):
 
     def __init__(
         self,
-        prospector: Union[Prospector, None],
+        prospector: Union[AbstractProspector, None],
         miner: Union[Miner, None],
         beneficiation: Beneficiation,
     ) -> None:
