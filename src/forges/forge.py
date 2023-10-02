@@ -21,6 +21,14 @@ from src.helpers.mt_rest import BadGateWayException, MyTardisRESTFactory
 logger = logging.getLogger(__name__)
 
 
+class ForgeFailureException(Exception):  # pylint: disable=missing-class-docstring
+    pass
+
+
+class ForgeStatusUnknownException(Exception):  # pylint: disable=missing-class-docstring
+    pass
+
+
 class Forge:
     """The Forge class creates MyTardis objects.
 
@@ -51,37 +59,43 @@ class Forge:
         url: str,
         action: str,
         data: str,
-    ) -> requests.Response | None:
+    ) -> requests.Response:
         """Wrapper around a generic POST request with logging in place."""
         try:
             response = self.rest_factory.mytardis_api_request(action, url, data=data)
         except (HTTPError, BadGateWayException) as error:
-            logger.warning(
-                (
-                    "Failed HTTP request from forge_object call\n"
-                    f"Url: {url}\nAction: {action}\nData: {data}"
-                )
+            message = (
+                "Failed HTTP request from forge_object call\n"
+                f"Url: {url}\nAction: {action}\nData: {data}"
             )
+            logger.warning(message)
             logger.error(error, exc_info=True)
-            return None
+            raise ForgeFailureException(
+                f"Forge error during request to {url}. Details: {message}"
+            ) from error
         except Exception as error:
-            logger.error(
-                (
-                    "Non-HTTP request from forge_object call\n"
-                    f"Url: {url}\nAction: {action}\nData: {data}"
-                )
+            message = (
+                "Non-HTTP-request-error from forge_object call\n"
+                f"Url: {url}\nAction: {action}\nData: {data}"
             )
+            logger.error(message)
             logger.error(error, exc_info=True)
-            raise error
-        if response.status_code >= 300 and response.status_code < 400:
-            logger.warning(
-                (
-                    "Object not successfully created in forge_object call\n"
-                    f"Url: {url}\nAction: {action}\nData: {data}"
-                    f"response status code: {response.status_code}"
-                )
+            raise ForgeFailureException(
+                f"Forge error during request to {url}. Details: {message}"
+            ) from error
+
+        if 300 <= response.status_code < 400:
+            # We don't expect any redirects with MyTardis, so treat it as an error.
+            message = (
+                "Object not successfully created in forge_object call\n"
+                f"Url: {url}\nAction: {action}\nData: {data}"
+                f"response status code: {response.status_code}"
             )
-            return None
+            logger.warning(message)
+            raise ForgeFailureException(
+                f"Forge failure: request to {url} received a redirect response. Details: {message}"
+            )
+
         return response
 
     def _get_uri_from_response(self, response_dict: Dict[str, Any]) -> URI | None:
@@ -142,81 +156,71 @@ class Forge:
         """
         object_json = refined_object.model_dump_json(by_alias=True, exclude_none=True)
         if not object_json:
-            logger.warning(
-                (
-                    "Unable to serialize the object into JSON "
-                    f"format. Object passed was {refined_object}."
-                )
+            raise ValueError(
+                "Failed to serialize an object into JSON. Object passed was {refined_object}."
             )
-            return None
+
         object_type = get_object_post_type(refined_object)
-        if not object_type:
-            logger.warning(
-                (
-                    "Trying to forge a non-forgable object. "
-                    f"Object handed over was {refined_object}"
-                )
-            )
-            return None
+
         # Consider refactoring this as a function to generate the URL?
         action = "POST"
         url = urljoin(self.rest_factory.api_template, object_type["url_substring"])
+
         if overwrite_objects:
             if object_id:
                 action = "PUT"
                 url = urljoin(url, str(object_id))
             else:
-                logger.warning(
-                    (
-                        f"Overwrite was requested for an object of type {object_type} "
-                        "called from Forge class. There was no object_id passed with this request"
-                    )
+                raise ValueError(
+                    f"Overwrite was requested for an object of type {object_type} "
+                    "called from Forge class, but there was no object_id passed with this request."
                 )
-                return None
+
         response = self._make_api_call(url, action, object_json)
-        if response and object_type["expect_json"]:
+
+        if object_type["expect_json"]:
             try:
                 response_dict = response.json()
-            except JSONDecodeError:
-                # Not all objects return any information when they are created
-                # In this case ignore the error - Need to think about how this is
-                # handled.
-                logger.warning(
-                    (
-                        f"Expected a JSON return from the {action} request "
-                        "but no return was found. The object may not have "
-                        "been properly created and needs investigating.\n"
-                        f"Object in question is: {refined_object}"
-                    )
+            except JSONDecodeError as error:
+                message = (
+                    f"Expected a JSON return from the {action} request "
+                    "but no return was found. The object may not have "
+                    "been properly created and needs investigating.\n"
+                    f"Object in question is: {refined_object}"
                 )
-                return None
-            uri = self._get_uri_from_response(response_dict)
+                logger.warning(message)
+                raise ForgeStatusUnknownException(message) from error
+
+            # This check may be redundant as "expect_json" is false for parameters
             if not isinstance(refined_object, ParameterSet):
-                if uri:
-                    logger.info(
-                        (
-                            f"Object: {get_object_name(refined_object)} successfully "
-                            "created in MyTardis\n"
-                            f"Url substring: {object_type['url_substring']}"
-                        )
-                    )
-                    return uri
-                logger.warning(
-                    (
+                uri = self._get_uri_from_response(response_dict)
+                if not uri:
+                    message = (
                         "No URI was able to be discerned when creating object: "
                         f"{get_object_name(refined_object)}. Object may have "
                         "been successfully created in MyTardis, but needs further "
                         "investigation."
                     )
+                    logger.warning(message)
+                    raise ForgeStatusUnknownException(message)
+
+                logger.info(
+                    (
+                        f"Object: {get_object_name(refined_object)} successfully "
+                        "created in MyTardis\n"
+                        f"Url substring: {object_type['url_substring']}"
+                    )
                 )
-                return None
+                return uri
+
+        # Succeeded, but we don't get a URI back for this object type
         return None
 
     def forge_project(
         self,
         refined_object: Project,
         project_parameters: Optional[ParameterSet],
-    ) -> Optional[URI]:
+    ) -> URI:
         """Helper function to forge a project from the object and parameter dictionaries
         generated by the smelter and crucible classes
 
@@ -228,18 +232,22 @@ class Forge:
         Returns:
             The URI of the forged project if the forging was successful, otherwise None
         """
-        uri = self.forge_object(refined_object)
+        project_uri = self.forge_object(refined_object)
+        if project_uri is None:
+            raise ForgeStatusUnknownException(
+                f"No URI returned when forging project {refined_object.name}. Check MyTardis."
+            )
 
-        if uri is not None and project_parameters:
+        if project_parameters:
             refined_parameters = ProjectParameterSet(
                 schema=project_parameters.parameter_schema,
                 parameters=project_parameters.parameters,
-                project=uri,
+                project=project_uri,
             )
             # No URI is returned for parameter sets
             _ = self.forge_object(refined_parameters)
 
-        return uri
+        return project_uri
 
     def forge_experiment(
         self,

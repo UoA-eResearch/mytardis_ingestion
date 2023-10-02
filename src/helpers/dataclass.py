@@ -89,7 +89,7 @@ def get_object_post_type(  # pylint: disable=too-many-return-statements
     | ProjectParameterSet
     | ExperimentParameterSet
     | DatasetParameterSet,
-) -> ObjectPostDict | None:
+) -> ObjectPostDict:
     """Generic helper function to return the parameeters needed to correctly
     POST or PUT/PATCH a MyTardis object."""
 
@@ -107,4 +107,5 @@ def get_object_post_type(  # pylint: disable=too-many-return-statements
         return ObjectPostEnum.EXPERIMENT_PARAMETERS.value
     if isinstance(object_class, DatasetParameterSet):
         return ObjectPostEnum.DATASET_PARAMETERS.value
-    return None
+
+    raise TypeError(f"POST type undefined for object {object_class}")
