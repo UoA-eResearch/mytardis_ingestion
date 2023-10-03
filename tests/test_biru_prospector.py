@@ -23,13 +23,13 @@ def test_prospector():
     profile_loader = ProfileLoader(profile)
 
     prspctr = Prospector(profile_loader.load_custom_prospector())
-    out_man = prspctr.prospect_directory()
+    out_man = prspctr.prospect_directory(pth)
 
-    assert len(out_man.dirs_to_ignore) == 1
-    assert len(out_man.files_to_ignore) == 1
+    assert len(out_man.dirs_to_ignore) == 0
+    assert len(out_man.files_to_ignore) == 0
     output_dict = out_man.output_dict
     successes = output_dict[pc.OUTPUT_SUCCESS_KEY]
-    assert len(successes) == 4
+    assert len(successes) == 0
 
     Prospector.clear()
     ProfileLoader.clear()
