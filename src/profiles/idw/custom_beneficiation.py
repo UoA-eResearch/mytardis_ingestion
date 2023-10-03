@@ -169,7 +169,11 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         Returns:
             RawDatafile: A RawDatafile object constructed from the YAML data.
         """
-        return RawDatafile(**loader.construct_mapping(node))
+        data = loader.construct_mapping(node, deep=True)
+        metadata = data.pop('metadata', {})
+        data['metadata'] = metadata
+        datafile = RawDatafile(**data)
+        return datafile
 
     def _rawdataset_constructor(self, loader: Loader, node: MappingNode) -> RawDataset:
         """
@@ -226,7 +230,7 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         logger.info("parsing {0}".format(fpath))
         with open(fpath) as f:
             data = yaml.safe_load_all(f)
-
+            #data = {k: (v if v != 'null' else None) for k, v in data.items()}
             for obj in data:
                 if isinstance(obj, RawProject):
                     ingestible_dclasses.add_project(obj)

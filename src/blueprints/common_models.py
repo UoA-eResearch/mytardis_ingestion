@@ -35,7 +35,7 @@ class Parameter(BaseModel):
     """
 
     name: str
-    value: Union[str, int, float, bool]
+    value: Union[str, int, float, bool, None]
 
     def __lt__(self, other: "Parameter") -> bool:
         if self.name != other.name:
@@ -93,5 +93,5 @@ class Parameter(BaseModel):
 class ParameterSet(BaseModel):
     """Pydantic class to hold a parameter set ready for ingestion into MyTardis."""
 
-    parameter_schema: URI = Field(alias="schema")
+    parameter_schema: str = Field(alias="schema")
     parameters: Optional[List[Parameter]] = None
