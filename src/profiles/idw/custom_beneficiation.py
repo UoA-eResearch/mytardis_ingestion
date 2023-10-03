@@ -3,7 +3,7 @@ YAML parser module. This module is used for parsing YAML files into
 appropriate dataclasses.
 """
 
-import logging
+import os, logging
 
 # Standard library imports
 from copy import deepcopy
@@ -22,6 +22,7 @@ from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
 from src.blueprints.common_models import GroupACL, UserACL
 from src.blueprints.custom_data_types import Username
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
+from src.miners.utils import datafile_metadata_helpers
 
 # Constants
 logger = logging.getLogger(__name__)
@@ -154,7 +155,10 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         return Username(node.value)
 
     def _path_constructor(self, loader: Loader, node: MappingNode) -> Path:
-        return Path(node.value)
+        # TO Do: change back the directory when relative path issue is solved
+        path = node.value
+        folder_name = os.path.basename(path)
+        return Path(folder_name)
 
     def _rawdatafile_constructor(
         self, loader: Loader, node: MappingNode
@@ -170,7 +174,12 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
             RawDatafile: A RawDatafile object constructed from the YAML data.
         """
         data = loader.construct_mapping(node, deep=True)
+        # TO DO: change back the directory when all things are ready
+        #md5sum = datafile_metadata_helpers.calculate_md5sum(data.pop("directory"))
+        #data["md5sum"] = md5sum
         metadata = data.pop('metadata', {})
+        # TO DO: change back when debugging from the API side
+        datafile_metadata_helpers.replace_micrometer_values(metadata, "um")
         data['metadata'] = metadata
         datafile = RawDatafile(**data)
         return datafile

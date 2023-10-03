@@ -57,7 +57,7 @@ forge = Forge(mt_rest)
 test_project = ingestible_dataclasses.projects[0]
 test_experiment = ingestible_dataclasses.experiments[0]
 test_dataset = ingestible_dataclasses.datasets[0]
-test_datafiles = ingestible_dataclasses.datafiles[0:2]
+test_datafiles = ingestible_dataclasses.datafiles[0:1]
 
 test_experiment.projects = ['testP1']
 test_dataset.experiments = ['testE1']

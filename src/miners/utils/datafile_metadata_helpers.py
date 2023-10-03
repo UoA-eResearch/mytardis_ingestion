@@ -19,3 +19,11 @@ def determine_mimetype(
 ) -> str | None:
     mimetype, encoding = mimetypes.guess_type(fn)
     return mimetype
+
+def replace_micrometer_values(data, replacement):
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if isinstance(value, str) and value.endswith('µm'):
+                data[key] = value[:-2] + replacement
+            elif isinstance(value, (dict, list)):
+                replace_micrometer_values(value, replacement)
