@@ -1,18 +1,13 @@
-import logging
-import mimetypes
+# pylint: disable=missing-module-docstring, missing-function-docstring, redefined-outer-name
 
-from src.blueprints.common_models import Parameter, ParameterSet
-from src.blueprints.custom_data_types import URI
-from src.blueprints.datafile import Datafile, DatafileReplica
-from src.blueprints.dataset import Dataset, RawDataset, RefinedDataset
-from src.blueprints.experiment import Experiment, RawExperiment, RefinedExperiment
-from src.blueprints.project import (
-    Project,
-    ProjectFileSystemStorageBox,
-    RawProject,
-    RefinedProject,
-)
-from src.config.config import ConfigFromEnv, StorageBoxConfig
+import logging
+import sys
+
+from src.blueprints.datafile import RawDatafile
+from src.blueprints.dataset import Dataset, RawDataset
+from src.blueprints.experiment import Experiment, RawExperiment
+from src.blueprints.project import Project, RawProject
+from src.config.config import ConfigFromEnv
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
 from src.helpers.enumerators import DataClassification
@@ -20,11 +15,19 @@ from src.helpers.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 
-logging.basicConfig(
-    filename="upload_example.log",
-    format="%(levelname)s:%(message)s",
-    level=logging.DEBUG,
-)
+root = logging.getLogger()
+root.setLevel(logging.DEBUG)
+
+file_handler = logging.FileHandler(filename="upload_example.log", mode="w")
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(logging.Formatter("[%(levelname)s]: %(message)s"))
+
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.DEBUG)
+console_handler.setFormatter(logging.Formatter("[%(levelname)s]: %(message)s"))
+
+root.addHandler(file_handler)
+root.addHandler(console_handler)
 
 
 #####################################################################################
@@ -40,7 +43,7 @@ def print_field_comparison(models):
 
     ordered_fields = sorted(list(fields))
 
-    model_names = [name for name in models.keys()]
+    model_names = list(models.keys())
     model_names.insert(0, "")
 
     display_limit = 40
@@ -96,9 +99,7 @@ def create_project_example(smelter: Smelter, crucible: Crucible, forge: Forge) -
     )
 
     smelt_result = smelter.smelt_project(raw_project)
-
-    if smelt_result is None:
-        raise Exception("Something went wrong during smelting")
+    assert smelt_result is not None, "Something went wrong during smelting"
 
     refined_project, parameters = smelt_result
 
@@ -108,12 +109,10 @@ def create_project_example(smelter: Smelter, crucible: Crucible, forge: Forge) -
     project: Project = crucible.prepare_project(refined_project)
     assert project is not None, "Crucible stage failed"
 
-    uri, param_uri = forge.forge_project(
-        refined_object=project, project_parameters=None
-    )
+    uri = forge.forge_project(refined_object=project, project_parameters=parameters)
     assert uri is not None, "Failed to forge project"
-    print("Forged project with URI: ", uri)
 
+    print("Forged project with URI: ", uri)
     print_field_comparison(
         {
             "RawProject": raw_project,
@@ -125,33 +124,6 @@ def create_project_example(smelter: Smelter, crucible: Crucible, forge: Forge) -
 
 #####################################################################################
 # EXPERIMENT
-
-# def forge_experiment_example(forge : Forge):
-
-#     experiment : Experiment = Experiment(
-#         title="Andrew Test Experiment 4",
-#         description="A dummy experiment for trying out the API",
-#         data_classification=DataClassification.PUBLIC,
-#         created_by='awil308',
-#         url=None,
-#         locked=False,
-#         users=None,
-#         groups=None,
-#         identifiers=None,
-#         projects=['api/v1/project/13/'],
-#         institution_name="University of Auckland",
-#         start_time=None,
-#         end_time=None,
-#         created_time=None,
-#         update_time=None,
-#         embargo_until=None
-#     )
-
-#     uri, param_uri = forge.forge_experiment(refined_object=experiment, experiment_parameters=None)
-
-#     print('Forged experiment:')
-#     print('URI: ', uri)
-#     print('Parameter URI: ', param_uri)
 
 
 def create_experiment_example(smelter: Smelter, crucible: Crucible, forge: Forge):
@@ -165,7 +137,6 @@ def create_experiment_example(smelter: Smelter, crucible: Crucible, forge: Forge
         users=None,
         groups=None,
         identifiers=[],
-        # projects=['/api/v1/project/36/'],
         projects=["Andrew W SCF Test 1"],
         institution_name="University of Auckland",
         # institution=['https://ror.org/03b94tp07'],
@@ -186,7 +157,7 @@ def create_experiment_example(smelter: Smelter, crucible: Crucible, forge: Forge
     experiment: Experiment = crucible.prepare_experiment(refined_experiment)
     assert experiment is not None, "Experiment creation failed"
 
-    uri, param_uri = forge.forge_experiment(
+    uri = forge.forge_experiment(
         refined_object=experiment, experiment_parameters=parameters
     )
     assert uri is not None, "Failed to forge experiment"
@@ -204,55 +175,20 @@ def create_experiment_example(smelter: Smelter, crucible: Crucible, forge: Forge
 #####################################################################################
 # DATASET
 
-# def forge_dataset_example(forge : Forge, with_metadata : bool = False):
-
-#     parameter_set : ParameterSet = ParameterSet(
-#         schema='/api/v1/schema/7/',
-#         # schema='http://andrew-test.com/df-param-schema/1',
-#         parameters=[
-#             Parameter(name='image_width', value=1921),
-#             Parameter(name='image_height', value=1082),
-#             Parameter(name='num_channels', value=4),
-#         ]
-#     )
-
-#     dataset : Dataset = Dataset(
-#         description="Andrew's test dataset 4 with added metadata",
-#         data_classification=DataClassification.PUBLIC,
-#         directory=None,   # TODO: what's this for?
-#         users=None,
-#         groups=None,
-#         immutable=False,
-#         identifiers=None,
-#         experiments=['/api/v1/experiment/5/'],
-#         instrument='/api/v1/instrument/1/',
-#         created_time=None,
-#         modified_time=None
-#     )
-
-#     uri, param_uri = forge.forge_dataset(
-#         refined_object=dataset,
-#         dataset_parameters=parameter_set if with_metadata else None
-#     )
-
-#     print('Forged dataset:')
-#     print('URI: ', uri)
-#     print('Parameter URI: ', param_uri)
-
 
 def create_dataset_example(smelter: Smelter, crucible: Crucible, forge: Forge):
     raw_dataset = RawDataset(
-        description="Andrew's test dataset 5 with added metadata",
+        description="Andrew's test dataset 13, now with more metadata",
         data_classification=DataClassification.PUBLIC,
         directory=None,
         users=None,
         groups=None,
         immutable=False,
         identifiers=None,
-        experiments=["/api/v1/experiment/17/"],
-        instrument="/api/v1/instrument/1/",
+        experiments=["Andrew Test Experiment 5"],
+        instrument="Dummy Microscope",
         metadata={"image_width": 1921, "image_height": 1082, "num_channels": 4},
-        schema="http://andrew-test.com/df-param-schema/1/",
+        schema="http://andrew-test.com/ds-param-schema/1",
         created_time=None,
         modified_time=None,
     )
@@ -263,13 +199,12 @@ def create_dataset_example(smelter: Smelter, crucible: Crucible, forge: Forge):
     refined_dataset, parameters = smelt_result
 
     dataset: Dataset = crucible.prepare_dataset(refined_dataset)
-    assert dataset is not None, "Dataset prepatation failed"
+    assert dataset is not None, "Dataset preparation failed"
 
-    uri, param_uri = forge.forge_dataset(
-        refined_object=dataset, dataset_parameters=parameters
-    )
+    uri = forge.forge_dataset(refined_object=dataset, dataset_parameters=parameters)
     assert uri is not None, "Failed to forge dataset"
-    print("Forged dataset with URI: ", uri, ", and parameters: ", parameters)
+    print("Forged dataset with URI: ", uri)
+    print("")
 
     print_field_comparison(
         {
@@ -279,23 +214,55 @@ def create_dataset_example(smelter: Smelter, crucible: Crucible, forge: Forge):
         }
     )
 
+    print("")
+    print("Metadata:\n", parameters.model_dump_json(indent=3))
+
 
 #####################################################################################
 # DATAFILE
 
 
-def forge_datafile_example(forge: Forge, with_metadata: bool = False):
-    parameter_set: ParameterSet = ParameterSet(
-        schema=URI("/api/v1/schema/7/"),
-        # schema='http://andrew-test.com/df-param-schema/1',
-        parameters=[
-            Parameter(name="image_width", value=1920),
-            Parameter(name="image_height", value=1080),
-            Parameter(name="num_channels", value=3),
-        ],
-    )
+# def forge_datafile_example(forge: Forge, with_metadata: bool = False):
+#     parameter_set: ParameterSet = ParameterSet(
+#         schema=URI("/api/v1/schema/7/"),
+#         # schema='http://andrew-test.com/df-param-schema/1',
+#         parameters=[
+#             Parameter(name="image_width", value=1920),
+#             Parameter(name="image_height", value=1080),
+#             Parameter(name="num_channels", value=3),
+#         ],
+#     )
 
-    datafile: Datafile = Datafile(
+#     datafile: Datafile = Datafile(
+#         filename="dummy_image_2.png",
+#         directory="a/dummy/dir/dummy_image_2.png",
+#         md5sum="a345bcf3489e8dd8e8a823b01cc834f2",
+#         mimetype="image/png",
+#         size="3474853",
+#         users=None,
+#         groups=None,
+#         replicas=[
+#             DatafileReplica(
+#                 uri="a/dummy/dir/dummy_image_2.png", location="andrew_w_test"
+#             )
+#         ],
+#         parameter_sets=[parameter_set] if with_metadata else None,
+#         dataset="/api/v1/dataset/1/",
+#     )
+
+#     _ = forge.forge_datafile(refined_object=datafile)
+
+#     print("Forged datafile")
+
+
+def create_datafile_example(smelter: Smelter, crucible: Crucible, forge: Forge):
+    metadata = {
+        "image_width": 1920,
+        "image_height": 1080,
+        "num_channels": 3,
+    }
+
+    raw_datafile = RawDatafile(
         filename="dummy_image_2.png",
         directory="a/dummy/dir/dummy_image_2.png",
         md5sum="a345bcf3489e8dd8e8a823b01cc834f2",
@@ -303,18 +270,27 @@ def forge_datafile_example(forge: Forge, with_metadata: bool = False):
         size="3474853",
         users=None,
         groups=None,
-        replicas=[
-            DatafileReplica(
-                uri="a/dummy/dir/dummy_image_2.png", location="andrew_w_test"
-            )
-        ],
-        parameter_sets=[parameter_set] if with_metadata else None,
-        dataset="/api/v1/dataset/1/",
+        dataset="TODO",
+        metadata=metadata,
+        schema="http://andrew-test.com/df-param-schema/1",
     )
 
-    _ = forge.forge_datafile(refined_object=datafile)
+    refined_datafile = smelter.smelt_datafile(raw_datafile)
+    assert refined_datafile is not None, "Invalid output from datafile smelter"
+
+    datafile = crucible.prepare_datafile(refined_datafile)
+    assert datafile is not None, "Invalid output from datafile crucible"
+
+    forge.forge_datafile(datafile)
 
     print("Forged datafile")
+    print_field_comparison(
+        {
+            "RawDatafile": raw_datafile,
+            "RefinedDatafile": refined_datafile,
+            "Datafile": datafile,
+        }
+    )
 
 
 if __name__ == "__main__":
@@ -335,12 +311,9 @@ if __name__ == "__main__":
 
     forge: Forge = Forge(rest_factory=rest_client)
 
-    # forge_experiment_example(forge)
-    # forge_dataset_example(forge, with_metadata=True)
-    # forge_datafile_example(forge, with_metadata=True)
-
     # create_project_example(smelter=smelter, crucible=crucible, forge=forge)
     # create_experiment_example(smelter, crucible, forge)
     create_dataset_example(smelter, crucible, forge)
+    # create_datafile_example(smelter, crucible, forge)
 
     print("Done")
