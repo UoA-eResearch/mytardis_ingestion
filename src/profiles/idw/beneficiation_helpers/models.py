@@ -3,7 +3,7 @@ from dataclasses import dataclass, field, fields, is_dataclass
 from enum import Enum
 from os.path import relpath
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Type
+from typing import Any, Dict, List, Optional, Type
 
 import yaml
 from yaml import Dumper, FullLoader, Loader, MappingNode, Node, ScalarNode, UnsafeLoader
@@ -802,6 +802,5 @@ class IngestionMetadata:
 initialise_yaml_helpers()
 
 yaml.SafeLoader.add_constructor(None, strip_unknown_tag_and_construct)
-with open('test/test.yaml') as f:
+with open("test/test.yaml") as f:
     a = list(yaml.safe_load_all(f))
-"""

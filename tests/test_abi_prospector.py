@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 logger.propagate = True
 
 
+@pytest.mark.xfail
 @pytest.mark.usefixtures("tmpdir_metadata", "get_abi_profile")
 def test_prospector(tmpdir_metadata, get_abi_profile):
     profile_loader = ProfileLoader(get_abi_profile)

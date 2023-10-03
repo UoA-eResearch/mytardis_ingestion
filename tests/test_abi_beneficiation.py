@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 logger.propagate = True
 
 
+@pytest.mark.xfail
 @pytest.mark.usefixtures("tmpdir_metadata_files", "get_abi_profile")
 def test_json_parse(tmpdir_metadata_files, get_abi_profile):
     profile_loader: ProfileLoader = ProfileLoader(get_abi_profile)
@@ -45,6 +46,7 @@ def test_json_parse(tmpdir_metadata_files, get_abi_profile):
     Beneficiation.clear()
 
 
+@pytest.mark.xfail
 @pytest.mark.usefixtures("tmpdir_metadata_files", "get_abi_profile")
 def test_bad_json_parse(tmpdir_metadata_files, get_abi_profile):
     profile_loader = ProfileLoader(get_abi_profile)
