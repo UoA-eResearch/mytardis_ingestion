@@ -153,6 +153,9 @@ class Crucible:
                 ObjectSearchEnum.EXPERIMENT.value, experiment
             ):
                 experiment_uris.extend(uris)
+            else:
+                logger.warning("No URI found for experiment %s.", experiment)
+
         experiment_uris = list(set(experiment_uris))
         if not experiment_uris:
             logger.warning("Unable to find experiments associated with this dataset.")
