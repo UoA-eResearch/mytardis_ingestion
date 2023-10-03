@@ -60,7 +60,7 @@ class RawDatafile(BaseDatafile):
     with a validated format as an entry point into the smelting process."""
 
     dataset: str
-    metadata: Optional[Dict[str, str | int | float | bool | None]] = None
+    metadata: Optional[Dict[str, str | int | float | bool]] = None
     object_schema: Optional[MTUrl] = Field(default=None, alias="schema")
 
 
@@ -68,12 +68,12 @@ class RefinedDatafile(BaseDatafile):
     """Concrete class for raw data as read in from the metadata file."""
 
     dataset: str
-    parameter_sets: Optional[ParameterSet] = None
+    parameter_sets: Optional[List[ParameterSet]] = None
 
 
 class Datafile(BaseDatafile):
     """Concrete class for the data as ready to ingest into MyTardis"""
 
     replicas: List[DatafileReplica]
-    parameter_sets: Optional[ParameterSet] = None
+    parameter_sets: Optional[List[ParameterSet]] = None
     dataset: URI

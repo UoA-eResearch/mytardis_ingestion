@@ -280,7 +280,7 @@ class Smelter:
                 users=raw_datafile.users,
                 groups=raw_datafile.groups,
                 dataset=raw_datafile.dataset,
-                parameter_sets=parameters,
+                parameter_sets=[parameters],
                 # archive_date=raw_datafile.archive_date,
                 # delete_date=raw_datafile.delete_date,
                 # archive_offset=raw_datafile.archive_offset,

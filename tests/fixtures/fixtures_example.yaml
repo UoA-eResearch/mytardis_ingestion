@@ -111,7 +111,7 @@ metadata:
   Image|Pixels|Channel|Channel:0:0|Fluor: Alexa Fluor 594
   Image|Pixels|Channel|Channel:0:0|ID: Channel:0:0
   Image|Pixels|Channel|Channel:0:0|IlluminationType: Epifluorescence
-  Image|Pixels|Channel|Channel:0:0|LightPath: null
+  Image|Pixels|Channel|Channel:0:0|LightPath: test
   Image|Pixels|Channel|Channel:0:0|Name: AF594-T1
   Image|Pixels|Channel|Channel:0:0|PinholeSize: '39.04'
   Image|Pixels|Channel|Channel:0:0|PinholeSizeUnit: "\xB5m"
@@ -126,7 +126,7 @@ metadata:
   Image|Pixels|Channel|Channel:0:1|Fluor: Alexa Fluor 488
   Image|Pixels|Channel|Channel:0:1|ID: Channel:0:1
   Image|Pixels|Channel|Channel:0:1|IlluminationType: Epifluorescence
-  Image|Pixels|Channel|Channel:0:1|LightPath: null
+  Image|Pixels|Channel|Channel:0:1|LightPath: test
   Image|Pixels|Channel|Channel:0:1|Name: AF488-T2
   Image|Pixels|Channel|Channel:0:1|PinholeSize: '32.7265'
   Image|Pixels|Channel|Channel:0:1|PinholeSizeUnit: "\xB5m"
@@ -141,7 +141,7 @@ metadata:
   Image|Pixels|Channel|Channel:0:2|Fluor: DAPI
   Image|Pixels|Channel|Channel:0:2|ID: Channel:0:2
   Image|Pixels|Channel|Channel:0:2|IlluminationType: Epifluorescence
-  Image|Pixels|Channel|Channel:0:2|LightPath: null
+  Image|Pixels|Channel|Channel:0:2|LightPath: test
   Image|Pixels|Channel|Channel:0:2|Name: DAPI-T3
   Image|Pixels|Channel|Channel:0:2|PinholeSize: '30.0425'
   Image|Pixels|Channel|Channel:0:2|PinholeSizeUnit: "\xB5m"
@@ -191,10 +191,10 @@ metadata:
   Image|Pixels|Channel|Channel:0:0|Fluor: Alexa Fluor 594
   Image|Pixels|Channel|Channel:0:0|ID: Channel:0:0
   Image|Pixels|Channel|Channel:0:0|IlluminationType: Epifluorescence
-  Image|Pixels|Channel|Channel:0:0|LightPath: null
+  Image|Pixels|Channel|Channel:0:0|LightPath: test
   Image|Pixels|Channel|Channel:0:0|Name: AF594-T1
   Image|Pixels|Channel|Channel:0:0|PinholeSize: '53.498742857142865'
-  Image|Pixels|Channel|Channel:0:0|PinholeSizeUnit: "\xB5m"
+  Image|Pixels|Channel|Channel:0:0|PinholeSizeUnit: "\\xB5m"
   Image|Pixels|Channel|Channel:0:0|SamplesPerPixel: '1'
   Image|Pixels|Channel|Channel:0:1|AcquisitionMode: LaserScanningConfocalMicroscopy
   Image|Pixels|Channel|Channel:0:1|Color: '10551295'
@@ -206,10 +206,10 @@ metadata:
   Image|Pixels|Channel|Channel:0:1|Fluor: DAPI
   Image|Pixels|Channel|Channel:0:1|ID: Channel:0:1
   Image|Pixels|Channel|Channel:0:1|IlluminationType: Epifluorescence
-  Image|Pixels|Channel|Channel:0:1|LightPath: null
+  Image|Pixels|Channel|Channel:0:1|LightPath: test
   Image|Pixels|Channel|Channel:0:1|Name: DAPI-T3
   Image|Pixels|Channel|Channel:0:1|PinholeSize: '41.24297142857143'
-  Image|Pixels|Channel|Channel:0:1|PinholeSizeUnit: "\xB5m"
+  Image|Pixels|Channel|Channel:0:1|PinholeSizeUnit: "\\xB5m"
   Image|Pixels|Channel|Channel:0:1|SamplesPerPixel: '1'
   Image|Pixels|DimensionOrder: XYCZT
   Image|Pixels|SizeX: '2069'
@@ -229,7 +229,7 @@ metadata:
   Instrument|Objective|Model: Plan-Apochromat 5x/0.16
   Instrument|Objective|NominalMagnification: '5.0'
   Instrument|Objective|WorkingDistance: '12200.0'
-  Instrument|Objective|WorkingDistanceUnit: "\xB5m"
+  Instrument|Objective|WorkingDistanceUnit: "\\xB5m"
 mimetype: ''
 object_schema: ''
 size: 9020512
@@ -288,7 +288,7 @@ metadata:
   Instrument|Objective|Model: UPLSAPO   60X O  NA:1.35
   Instrument|Objective|NominalMagnification: '60.0'
   Instrument|Objective|WorkingDistance: '9999.0'
-  Instrument|Objective|WorkingDistanceUnit: "\xB5m"
+  Instrument|Objective|WorkingDistanceUnit: "\\xB5m"
 mimetype: ''
 object_schema: ''
 size: 43941888
@@ -347,7 +347,7 @@ metadata:
   Instrument|Objective|Model: UPLSAPO  100X O  NA:1.40
   Instrument|Objective|NominalMagnification: '100.0'
   Instrument|Objective|WorkingDistance: '9999.0'
-  Instrument|Objective|WorkingDistanceUnit: "\xB5m"
+  Instrument|Objective|WorkingDistanceUnit: "\\xB5m"
 mimetype: ''
 object_schema: ''
 size: 10911744
