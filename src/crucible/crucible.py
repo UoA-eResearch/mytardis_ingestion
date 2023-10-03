@@ -217,7 +217,6 @@ class Crucible:
             instrument = slugify(dataset_obj["instrument"]["name"])
             facility = slugify(dataset_obj["instrument"]["facility"]["name"])
             stores = [x for store in (self.active_stores, self.archive) for x in store]
-            uri_root = ""
             for store in stores:
                 replicas.append(
                     DatafileReplica(
