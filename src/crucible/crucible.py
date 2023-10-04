@@ -14,7 +14,7 @@ from src.blueprints.datafile import Datafile, DatafileReplica, RefinedDatafile
 from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
-from src.config.config import StorageConfig, StorageTypesEnum
+from src.config.config import StorageConfig
 
 # from src.config.singleton import Singleton
 from src.helpers.enumerators import ObjectSearchEnum
