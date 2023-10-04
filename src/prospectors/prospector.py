@@ -1,10 +1,10 @@
+# pylint: disable=logging-fstring-interpolation
 """Performs the prospecting process
 
 Prospecting checks files and metadata files for any potential issues.
 """
 
 # ---Imports
-import copy
 import logging
 from pathlib import Path
 from typing import Optional, Union
@@ -58,10 +58,13 @@ class Prospector(metaclass=Singleton):
 
         out = cmn_dir_tree_c.perform_common_file_checks(path, recursive)
         rej_list = out[0]
-        out_man.add_files_to_ignore(rej_list)
+        rej_list_pth = [Path(filestring) for filestring in rej_list]
+        out_man.add_files_to_ignore(rej_list_pth)
 
         if self.custom_prospector:
-            out_man_fnl = self.custom_prospector.prospect(path, recursive, out_man)
+            out_man_fnl = self.custom_prospector.prospect(
+                Path(path), recursive, out_man
+            )
         else:
             out_man_fnl = out_man
             logger.info("No custom prospector set, thus will not be used")
@@ -73,4 +76,3 @@ class Prospector(metaclass=Singleton):
         logger.info(f"output dict = {out_man_fnl.output_dict}")
 
         return out_man_fnl
-"

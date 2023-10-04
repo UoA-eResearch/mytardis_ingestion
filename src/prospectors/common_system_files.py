@@ -12,7 +12,7 @@ logger.setLevel(logging.DEBUG)
 
 
 # ---Code
-class CommonSystemFiles:
+class CommonSystemFiles:  # pylint: disable=too-few-public-methods
     """Model class which stores common system files and
     system-generated files with prefixes that should be rejected
     """
