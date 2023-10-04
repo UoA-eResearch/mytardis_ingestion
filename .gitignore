@@ -32,3 +32,5 @@ docs/build/
 testenv
 
 *.log
+
+.mypy_cache/
