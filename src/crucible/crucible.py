@@ -269,6 +269,6 @@ class Crucible:
             users=refined_datafile.users,
             groups=refined_datafile.groups,
             dataset=dataset,
-            parameter_sets=refined_datafile.parameter_sets,
+            parameter_sets=[refined_datafile.parameter_sets],
             replicas=replicas,
         )
