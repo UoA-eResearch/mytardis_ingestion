@@ -5,41 +5,38 @@ whether the files and directory structure can be used for ingestion.
 
 
 # ---Imports
+import logging
+import os
 from pathlib import Path
-from typing import List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
-from src.helpers.constants import (
-    COMMON_MACOS_SYS_FILES,
-    COMMON_WIN_SYS_FILES,
-    MACOS_PREFIXES_TO_REJECT,
-    METADATA_FILE_SUFFIX,
-)
+from src.profiles import profile_consts as pc
+from src.prospectors.common_system_files import CommonSystemFiles
+
+# ---Constants
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
-def perform_common_file_checks(
-    path: Path,
-    recursive: bool = True,
-    reject_hidden: bool = False,
-) -> Tuple[List[Path], List[Path]]:
-    """Performs the checking procedures and determines which files
-    should be rejected based on common system file names and common
-    file prefixes.
-    Args:
-        path (Path): the path to perform the check on.
-        recursive (bool): whether to perform checks on child directories recursively.
-    Returns:
-        Tuple[[List[Path], List[Path]]]: lists of filepaths that are rejected or accepted.
+# ---Code
+class CommonDirectoryTreeChecks:
+    """Checks for common or known operating system files or file prefixes
+    that are not normally intended for ingestion into MyTardis.
     """
 
-    common_filenames = [*COMMON_MACOS_SYS_FILES, *COMMON_WIN_SYS_FILES]
-    # Can be constructed from multiple lists in future
-    reject_prefixes = MACOS_PREFIXES_TO_REJECT
+    def __init__(
+        self,
+    ) -> None:
+        """Instantiates look-up tables for common system files."""
+        csf = CommonSystemFiles()
+        self.common_fnames_lut = csf.fnames_lut
+        self.reject_prefix_lut = csf.reject_prefixes_lut
 
     def perform_common_file_checks(
         self,
         path: str,
         recursive: bool = True,
-    ) -> tuple[list[str], list[str]]:
+    ) -> Tuple[List[str], List[str]]:
         """Performs the checking procedures and determines which files
         should be rejected based on common system file names and common
         file prefixes.
@@ -60,6 +57,9 @@ def perform_common_file_checks(
                     self.reject_prefix_lut,
                 )
 
+                rejection_list = self._extend_list(rejection_list, out[0])
+                ingestion_list = self._extend_list(ingestion_list, out[1])
+
                 for dir in dirs:
                     dirlist = os.listdir(os.path.join(root, dir))
                     if len(dirlist) == 0:
@@ -73,7 +73,7 @@ def perform_common_file_checks(
             rejection_list = self._extend_list(rejection_list, rejectables)
             ingestion_list = self._extend_list(ingestion_list, ingestables)
 
-    return (rejection_list, ingestion_list)
+        return (rejection_list, ingestion_list)
 
     def _extend_list(
         self,

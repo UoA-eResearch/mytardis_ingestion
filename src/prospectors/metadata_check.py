@@ -35,6 +35,7 @@ class MetadataCheck:
         recursive: bool = True,
         out_man: Optional[om.OutputManager] = None,
     ) -> om.OutputManager:
+        """TODO: understand the use of this class"""
         if out_man:
             new_out_man = copy.deepcopy(out_man)
         else:
