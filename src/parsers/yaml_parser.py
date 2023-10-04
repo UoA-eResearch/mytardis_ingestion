@@ -3,12 +3,13 @@ YAML parser module. This module is used for parsing YAML files into
 appropriate dataclasses.
 """
 
+import logging
+import os
+
 # Standard library imports
 from copy import deepcopy
 from pathlib import Path
 from typing import Union
-import logging
-import os
 
 # Third-party imports
 import yaml
@@ -37,8 +38,6 @@ finfo_tag = "!FileInfo"
 tags = [prj_tag, expt_tag, dset_tag, dfile_tag, finfo_tag]
 
 
-
-
 class YamlParser:
     """YamlParser class to
     Attributes:
@@ -47,10 +46,12 @@ class YamlParser:
     def __init__(
         self,
     ) -> None:
-        yaml.add_constructor(prj_tag, self._rawproject_constructor) #add object constructor
+        yaml.add_constructor(
+            prj_tag, self._rawproject_constructor
+        )  # add object constructor
         yaml.constructor.SafeConstructor.add_constructor(
             prj_tag, self._rawproject_constructor
-        ) #assign YAML tag to object constructor
+        )  # assign YAML tag to object constructor
 
         yaml.add_constructor(expt_tag, self._rawexperiment_constructor)
         yaml.constructor.SafeConstructor.add_constructor(

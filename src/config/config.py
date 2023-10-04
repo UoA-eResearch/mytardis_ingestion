@@ -199,6 +199,7 @@ class IntrospectionConfig(BaseModel):
     objects_with_profiles: Optional[list[MyTardisObject]] = None
     model_config = ConfigDict(use_enum_values=True)
 
+
 class ProfileConfig(BaseModel):
     """Profile data for extraction plant.
 
@@ -272,8 +273,8 @@ class ConfigFromEnv(BaseSettings):
     connection: ConnectionConfig
     storage: StorageConfig
     default_schema: SchemaConfig
-    #archive: StorageConfig
-    #profile: ProfileConfig
+    # archive: StorageConfig
+    # profile: ProfileConfig
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", env_nested_delimiter="__"
     )

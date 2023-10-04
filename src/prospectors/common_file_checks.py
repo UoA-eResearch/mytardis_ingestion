@@ -60,7 +60,6 @@ def perform_common_file_checks(
                     self.reject_prefix_lut,
                 )
 
-
                 for dir in dirs:
                     dirlist = os.listdir(os.path.join(root, dir))
                     if len(dirlist) == 0:

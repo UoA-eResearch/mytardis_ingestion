@@ -1,4 +1,4 @@
-"""Constants used throughout a profile in the Extraction Plant 
+"""Constants used throughout a profile in the Extraction Plant
 """
 
 PROFILE_NAME_DEFAULT = "default"

@@ -10,6 +10,7 @@ import logging
 # ---Imports
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Optional
 
 from src.extraction_output_manager.output_manager import OutputManager
 
@@ -33,7 +34,7 @@ class AbstractProspector(ABC):
         recursive: bool,
         out_man: OutputManager,
     ) -> None:
-        """Prospects metadata in a path
+        """Prospects metadata in a path"""
 
     def prospect_directory(
         self,

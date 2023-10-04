@@ -5,11 +5,9 @@
 
 from typing import Annotated, List, Optional, Union
 
-from src.blueprints.custom_data_types import URI, Username
-
 # Note the validate_schema function is a fusion of validating a MTUrl and a URI
 # It is kept with the regex definitions of both
-from src.blueprints.custom_data_types import Username, validate_schema
+from src.blueprints.custom_data_types import URI, Username, validate_schema
 
 
 class UserACL(BaseModel):

@@ -7,7 +7,8 @@ YAML parser module. This module is used for parsing YAML files into
 appropriate dataclasses.
 """
 
-import os, logging
+import logging
+import os
 
 # Standard library imports
 from copy import deepcopy
@@ -18,8 +19,6 @@ from typing import Any, List, Union
 import yaml
 from yaml.loader import Loader
 from yaml.nodes import MappingNode, Node
-
-from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
 
 # User-defined imports
 # from src.profiles.idw.beneficiation_helpers.models import IngestionMetadata
@@ -181,12 +180,12 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         """
         data = loader.construct_mapping(node, deep=True)
         # TO DO: change back the directory when all things are ready
-        #md5sum = datafile_metadata_helpers.calculate_md5sum(data.pop("directory"))
-        #data["md5sum"] = md5sum
-        metadata = data.pop('metadata', {})
+        # md5sum = datafile_metadata_helpers.calculate_md5sum(data.pop("directory"))
+        # data["md5sum"] = md5sum
+        metadata = data.pop("metadata", {})
         # TO DO: change back when debugging from the API side
         datafile_metadata_helpers.replace_micrometer_values(metadata, "um")
-        data['metadata'] = metadata
+        data["metadata"] = metadata
         datafile = RawDatafile(**data)
         return datafile
 
@@ -203,7 +202,9 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         """
         return RawDataset(**loader.construct_mapping(node))
 
-    def _rawexperiment_constructor(self, loader: Loader, node: MappingNode) -> RawExperiment:
+    def _rawexperiment_constructor(
+        self, loader: Loader, node: MappingNode
+    ) -> RawExperiment:
         """
         A method that constructs a RawExperiment object using the constructor_setup helper method.
 
@@ -245,7 +246,7 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         logger.info("parsing {0}".format(fpath))
         with open(fpath) as f:
             data = yaml.safe_load_all(f)
-            #data = {k: (v if v != 'null' else None) for k, v in data.items()}
+            # data = {k: (v if v != 'null' else None) for k, v in data.items()}
             for obj in data:
                 if isinstance(obj, RawProject):
                     ingestible_dclasses.add_project(obj)

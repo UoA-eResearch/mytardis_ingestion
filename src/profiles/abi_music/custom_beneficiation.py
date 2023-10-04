@@ -2,7 +2,7 @@
 # type: ignore
 # This needs a lot of refactoring so disable checks
 
-Main objective of this module is to map the json files to
+"""Main objective of this module is to map the json files to
 a format accepted by the mytardis_ingestion
 """
 

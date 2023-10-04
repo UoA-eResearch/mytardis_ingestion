@@ -41,7 +41,7 @@ identifiers:
 - teste1
 metadata: {}
 object_schema: ''
-projects: 
+projects:
 - testp1
 title: testE1
 users: null
@@ -55,7 +55,7 @@ identifiers:
 - teste2
 metadata: {}
 object_schema: ''
-projects: 
+projects:
 - testp2
 title: testE2
 users: null
