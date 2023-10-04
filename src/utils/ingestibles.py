@@ -1,3 +1,4 @@
+# pylint: disable=missing-function-docstring
 """A model-like class that is designed to contain the raw dataclasses for
 refinery/ingestion. The raw dataclasses are stored in lists.
 """
@@ -5,12 +6,14 @@ refinery/ingestion. The raw dataclasses are stored in lists.
 
 # ---Imports
 import logging
-from typing import List
 
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
+
+# from typing import List
+
 
 # ---Constants
 logger = logging.getLogger(__name__)
