@@ -59,12 +59,15 @@ test_experiment = ingestible_dataclasses.experiments[0]
 test_dataset = ingestible_dataclasses.datasets[0]
 test_datafiles = ingestible_dataclasses.datafiles[0:1]
 
+test_project.identifiers = ["testp1"]
+test_experiment.identifiers = ["teste1"]
+test_dataset.identifiers = ["testd1"]
 test_experiment.projects = ["testP1"]
 test_dataset.experiments = ["testE1"]
 test_dataset.instrument = "Olympus FV1000"
 
 
-"""refined_project, refined_project_parameters = smelter.smelt_project(test_project)
+refined_project, refined_project_parameters = smelter.smelt_project(test_project)
 prepared_project = crucible.prepare_project(refined_project)
 forge = Forge(mt_rest)
 forge.forge_project(prepared_project, refined_project_parameters)
@@ -77,7 +80,7 @@ forge.forge_experiment(prepared_experiment, refined_experiment_parameters)
 smelted_dataset = smelter.smelt_dataset(test_dataset)
 refined_dataset, refined_dataset_parameters = smelted_dataset
 prepared_dataset = crucible.prepare_dataset(refined_dataset)
-forge.forge_dataset(prepared_dataset, refined_dataset_parameters)"""
+forge.forge_dataset(prepared_dataset, refined_dataset_parameters)
 
 for df in test_datafiles:
     smelted_datafile = smelter.smelt_datafile(df)
