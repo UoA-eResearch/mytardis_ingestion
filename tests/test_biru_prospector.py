@@ -1,3 +1,4 @@
+# pylint: disable=fixme
 import logging
 from pathlib import Path
 from typing import Literal
@@ -14,7 +15,7 @@ from src.prospectors.prospector import Prospector
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
-config = ConfigFromEnv()
+# TODO: Mock config config = ConfigFromEnv()
 
 
 def test_prospector():

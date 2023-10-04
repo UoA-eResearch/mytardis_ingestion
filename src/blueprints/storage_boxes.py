@@ -19,7 +19,8 @@ class RawStorageBox(BaseModel):
     options: Dict[str, str]
     attributes: Optional[Dict[str, str]] = None
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator`
+    # manually.
     # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @field_validator("description")
     def get_description(  # pylint: disable=E0213
