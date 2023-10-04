@@ -68,7 +68,7 @@ class RefinedDatafile(BaseDatafile):
     """Concrete class for raw data as read in from the metadata file."""
 
     dataset: str
-    parameter_sets: Optional[ParameterSet] = None
+    parameter_sets: Optional[List[ParameterSet]] = None
 
 
 class Datafile(BaseDatafile):

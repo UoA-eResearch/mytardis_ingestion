@@ -13,9 +13,9 @@ The workflow for these scripts are as follows:
     see which files are worthy/unworthy of ingestion into MyTardis. Please
     note that this is not compulsory if the IME is used.
  -- Miner: involves converting and standardising the metadata so
-    that it can be beneficiated. Please note that this is not compulsory if the 
+    that it can be beneficiated. Please note that this is not compulsory if the
     IME is used.
- -- Beneficiating the metadata: involves parsing the mined or IME-produced 
+ -- Beneficiating the metadata: involves parsing the mined or IME-produced
     metadata into raw dataclasses.
 
 -Conveyor
@@ -28,10 +28,10 @@ The workflow for these scripts are as follows:
     follows the MyTardis's data formats.
  -- Crucible: Swaps out directory paths in the metadata into URI's. Used mainly
     for locating datafiles in MyTardis's object store.
- -- Forges: Creates MyTardis objects, from the URI-converted dataclasses, 
+ -- Forges: Creates MyTardis objects, from the URI-converted dataclasses,
     in the MyTardis database.
 
-For the extraction plant processes, there are two pathways that depends on 
+For the extraction plant processes, there are two pathways that depends on
 whether the IME is used. The rest of the steps remain the same from
 beneficiation onwards.
 """

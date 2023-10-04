@@ -48,14 +48,14 @@ class CustomProspector:
 
     def prospect(
         self,
-        path: Path,
+        path: str,
         recursive: bool,
         out_man: Optional[om.OutputManager] = None,
     ) -> om.OutputManager:
         """Prospects metadata in a path
 
         Args:
-            path (Path): the path to inspect for metadata
+            path (str): the path to inspect for metadata
             recursive (bool): True to inspect all subdirectories in path, False to inspect path only
             out_man (om.OutputManager): class which stores info of outputs of the pre-ingestion processes
 

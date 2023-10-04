@@ -41,14 +41,14 @@ class Miner(metaclass=Singleton):
 
     def mine_directory(
         self,
-        path: Path,
+        path: str,
         recursive: bool = True,
         out_man: Optional[om.OutputManager] = None,
     ) -> om.OutputManager:
         """Mine a directory according to the selected profile
 
         Args:
-            path (Path): Path of the directory to mine.
+            path (str): Path of the directory to mine.
             recursive (bool): Whether to recursively mine subdirectories.
             out_man (om.OutputManager): Output Manager to store the results.
 

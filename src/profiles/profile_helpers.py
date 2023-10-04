@@ -18,20 +18,20 @@ def create_dataclass_entry_dict() -> Dict[str, Any]:
     return Dict.fromkeys(DATACLASS_ENTRY_DICT_KEYS)
 
 
-def create_output_dict() -> Dict[str, Any]:
-    return Dict.fromkeys(OUTPUT_DICT_KEYS)
+def create_output_dict() -> dict[str, Any]:
+    return dict.fromkeys(pc.OUTPUT_DICT_KEYS)
 
 
-def create_output_subdict() -> Dict[str, Any]:
-    return Dict.fromkeys(OUTPUT_SUBDICT_KEYS)
+def create_output_subdict() -> dict[str, Any]:
+    return dict.fromkeys(pc.OUTPUT_SUBDICT_KEYS)
 
 
-def create_ingestion_dict() -> Dict[str, Any]:
-    return Dict.fromkeys(DATACLASSES_LIST)
+def create_ingestion_dict() -> dict[str, Any]:
+    return dict.fromkeys(pc.DATACLASSES_LIST)
 
 
 def format_field_for_key_seq(
-    key_seq: List[str],
+    key_seq: list[str],
 ) -> str:
     frmtd_key = key_seq[0]
     for i in range(len(key_seq) - 1):

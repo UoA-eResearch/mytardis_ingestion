@@ -7,12 +7,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import List
 
+from slugify import slugify
+
 from src.blueprints.custom_data_types import URI
 from src.blueprints.datafile import Datafile, DatafileReplica, RefinedDatafile
 from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
-from src.config.config import StorageConfig
+from src.config.config import StorageConfig, StorageTypesEnum
+
+# from src.config.singleton import Singleton
 from src.helpers.enumerators import ObjectSearchEnum
 from src.overseers import Overseer
 
@@ -202,35 +206,25 @@ class Crucible:
         file_path: Path,
     ) -> List[DatafileReplica]:  # sourcery skip: for-append-to-extend
         """Use the dataset associated with datafile to construct replicas"""
-        if response := self.overseer.get_object_by_uri(dataset):
-            dataset_obj = response["objects"][0]
+        if dataset_obj := self.overseer.get_object_by_uri(dataset):
+            # dataset_obj = response["objects"][0]
             # Should be handled by API - create setting to prefix
             # instrument = slugify(dataset_obj["instrument"]["name"])
             # facility = slugify(dataset_obj["instrument"]["facility"]["name"])
             # mid_path = Path(facility) / Path(instrument)
             replicas = []
-            for experiment in dataset_obj["experiments"]:
-                for project in experiment["projects"]:
-                    for archive in project["autoarchive"]["archives"] or [
-                        {"name": "default archive"}
-                    ]:
-                        replicas.append(
-                            DatafileReplica(
-                                uri=file_path.as_posix(),
-                                location=archive["name"],
-                                protocol="file",
-                            ),
-                        )
-                    for store in project["autoarchive"]["active_stores"] or [
-                        {"name": "default active store"}
-                    ]:
-                        replicas.append(
-                            DatafileReplica(
-                                uri=file_path.as_posix(),
-                                location=store["name"],
-                                protocol="file",
-                            ),
-                        )
+            # combine the archives and active stores into one list
+            instrument = slugify(dataset_obj["instrument"]["name"])
+            facility = slugify(dataset_obj["instrument"]["facility"]["name"])
+            stores = [x for store in (self.active_stores, self.archive) for x in store]
+            for store in stores:
+                replicas.append(
+                    DatafileReplica(
+                        uri=f"{facility}/{instrument}/{file_path.as_posix()}",
+                        location=store.storage_name,
+                        protocol="file",
+                    )
+                )
 
             return replicas
         raise ValueError(f"Unable to find dataset: {dataset}")

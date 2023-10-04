@@ -4,7 +4,7 @@
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 from src.blueprints.custom_data_types import URI
 
@@ -19,9 +19,10 @@ class RawStorageBox(BaseModel):
     options: Dict[str, str]
     attributes: Optional[Dict[str, str]] = None
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator`
+    # manually.
     # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("description", always=True)
+    @field_validator("description")
     def get_description(  # pylint: disable=E0213
         cls,
         description: str,

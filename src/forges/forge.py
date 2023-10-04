@@ -316,3 +316,4 @@ class Forge:
         """
         # In the case of forging a Datafile, we don't expect any URI back
         _ = self.forge_object(refined_object)
+        return None

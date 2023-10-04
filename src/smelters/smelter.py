@@ -24,9 +24,10 @@ logger = logging.getLogger(__name__)
 
 
 class Smelter:
-    """The Smelter class takes a RawObject and splits out the Parameters from the
-    data bundle. It also creates Project Storage Boxes for use by the automatic archive
-    functionality.
+    """The Smelter base class to be subclassed into individual concrete classes for different
+    ingestion approaches.
+    Smelter classes share a number of similar processing routines, especially around dictionary
+    modification and date handling.
     Attributes:
         overseer (Overseer): an instance of the Overseer class that provides access to MyTardis
             and is used to query the introspection API - will be deprecated by SSV
@@ -287,7 +288,11 @@ class Smelter:
                 users=raw_datafile.users,
                 groups=raw_datafile.groups,
                 dataset=raw_datafile.dataset,
-                parameter_sets=parameters,
+                parameter_sets=[parameters],
+                # archive_date=raw_datafile.archive_date,
+                # delete_date=raw_datafile.delete_date,
+                # archive_offset=raw_datafile.archive_offset,
+                # delete_offset=raw_datafile.delete_offset,
             )
         except ValidationError:
             logger.warning(

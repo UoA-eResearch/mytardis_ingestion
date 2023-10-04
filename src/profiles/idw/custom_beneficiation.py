@@ -7,11 +7,12 @@ YAML parser module. This module is used for parsing YAML files into
 appropriate dataclasses.
 """
 
-import logging
+import os, logging
 
 # Standard library imports
 from copy import deepcopy
 from pathlib import Path
+from typing import Any, List, Union
 
 # Third-party imports
 import yaml
@@ -21,12 +22,13 @@ from yaml.nodes import MappingNode, Node
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
 
 # User-defined imports
-from src.profiles.idw.beneficiation_helpers.models import (
-    RawDatafile,
-    RawDataset,
-    RawExperiment,
-    RawProject,
-)
+# from src.profiles.idw.beneficiation_helpers.models import IngestionMetadata
+from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
+from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
+from src.blueprints.common_models import GroupACL, UserACL
+from src.blueprints.custom_data_types import Username
+from src.extraction_output_manager.ingestibles import IngestibleDataclasses
+from src.miners.utils import datafile_metadata_helpers
 
 # Constants
 logger = logging.getLogger(__name__)
@@ -34,7 +36,20 @@ prj_tag = "!Project"
 expt_tag = "!Experiment"
 dset_tag = "!Dataset"
 dfile_tag = "!Datafile"
-tags = [prj_tag, expt_tag, dset_tag, dfile_tag]
+groupacl_tag = "!GroupACL"
+useracl_tag = "!UserACL"
+username_tag = "!Username"
+path_tag = "!Path"
+tags = [
+    prj_tag,
+    expt_tag,
+    dset_tag,
+    dfile_tag,
+    groupacl_tag,
+    useracl_tag,
+    username_tag,
+    path_tag,
+]
 
 
 class CustomBeneficiation(AbstractCustomBeneficiation):
@@ -80,24 +95,46 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         Returns:
             None
         """
-        # yaml.add_constructor(prj_tag, self._rawproject_constructor) #add object constructor
+        yaml.add_constructor(
+            prj_tag, self._rawproject_constructor
+        )  # add object constructor
         yaml.constructor.SafeConstructor.add_constructor(
             prj_tag, self._rawproject_constructor
         )  # assign YAML tag to object constructor
 
-        # yaml.add_constructor(expt_tag, self._rawexperiment_constructor)
+        yaml.add_constructor(expt_tag, self._rawexperiment_constructor)
         yaml.constructor.SafeConstructor.add_constructor(
             expt_tag, self._rawexperiment_constructor
         )
 
-        # yaml.add_constructor(dset_tag, self._rawdataset_constructor)
+        yaml.add_constructor(dset_tag, self._rawdataset_constructor)
         yaml.constructor.SafeConstructor.add_constructor(
             dset_tag, self._rawdataset_constructor
         )
 
-        # yaml.add_constructor(dfile_tag, self._rawdatafile_constructor)
+        yaml.add_constructor(dfile_tag, self._rawdatafile_constructor)
         yaml.constructor.SafeConstructor.add_constructor(
             dfile_tag, self._rawdatafile_constructor
+        )
+
+        yaml.add_constructor(groupacl_tag, self._groupacl_constructor)
+        yaml.constructor.SafeConstructor.add_constructor(
+            groupacl_tag, self._groupacl_constructor
+        )
+
+        yaml.add_constructor(useracl_tag, self._useracl_constructor)
+        yaml.constructor.SafeConstructor.add_constructor(
+            useracl_tag, self._useracl_constructor
+        )
+
+        yaml.add_constructor(username_tag, self._username_constructor)
+        yaml.constructor.SafeConstructor.add_constructor(
+            username_tag, self._username_constructor
+        )
+
+        yaml.add_constructor(path_tag, self._path_constructor)
+        yaml.constructor.SafeConstructor.add_constructor(
+            path_tag, self._path_constructor
         )
 
     def _constructor_setup(self, loader: Loader, node: MappingNode) -> dict:
@@ -114,6 +151,21 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
 
         return dict(**loader.construct_mapping(node))
 
+    def _groupacl_constructor(self, loader: Loader, node: MappingNode) -> GroupACL:
+        return GroupACL(**loader.construct_mapping(node))
+
+    def _useracl_constructor(self, loader: Loader, node: MappingNode) -> UserACL:
+        return UserACL(**loader.construct_mapping(node))
+
+    def _username_constructor(self, loader: Loader, node: MappingNode) -> Username:
+        return Username(node.value)
+
+    def _path_constructor(self, loader: Loader, node: MappingNode) -> Path:
+        # TO Do: change back the directory when relative path issue is solved
+        path = node.value
+        folder_name = os.path.basename(path)
+        return Path(folder_name)
+
     def _rawdatafile_constructor(
         self, loader: Loader, node: MappingNode
     ) -> RawDatafile:
@@ -127,7 +179,16 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         Returns:
             RawDatafile: A RawDatafile object constructed from the YAML data.
         """
-        return RawDatafile(**loader.construct_mapping(node))
+        data = loader.construct_mapping(node, deep=True)
+        # TO DO: change back the directory when all things are ready
+        #md5sum = datafile_metadata_helpers.calculate_md5sum(data.pop("directory"))
+        #data["md5sum"] = md5sum
+        metadata = data.pop('metadata', {})
+        # TO DO: change back when debugging from the API side
+        datafile_metadata_helpers.replace_micrometer_values(metadata, "um")
+        data['metadata'] = metadata
+        datafile = RawDatafile(**data)
+        return datafile
 
     def _rawdataset_constructor(self, loader: Loader, node: MappingNode) -> RawDataset:
         """
@@ -142,7 +203,7 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         """
         return RawDataset(**loader.construct_mapping(node))
 
-    def _rawexperiment_constructor(self, loader, node) -> RawExperiment:
+    def _rawexperiment_constructor(self, loader: Loader, node: MappingNode) -> RawExperiment:
         """
         A method that constructs a RawExperiment object using the constructor_setup helper method.
 
@@ -168,9 +229,9 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         """
         return RawProject(**loader.construct_mapping(node))
 
-    # TODO Libby to convert all strings to pathlib.Path objects, and convert "loaded_data" into "ingestible_dataclasses" object.
-    # The "ingestible_dataclasses" object is simply a list for each level in PEDD. This list contains the raw dataclasses.
-    def beneficiate(self, fpath: str) -> list:
+    def beneficiate(
+        self, fpath: Any, ingestible_dclasses: IngestibleDataclasses
+    ) -> IngestibleDataclasses:
         """
         Parse a YAML file at the specified path and return a list of loaded objects.
 
@@ -180,10 +241,11 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         Returns:
             List[Union[RawDatafile, RawDataset, RawExperiment, RawProject]]: A list of loaded objects.
         """
+        ingestible_dclasses = IngestibleDataclasses()
         logger.info("parsing {0}".format(fpath))
         with open(fpath) as f:
             data = yaml.safe_load_all(f)
-
+            #data = {k: (v if v != 'null' else None) for k, v in data.items()}
             for obj in data:
                 if isinstance(obj, RawProject):
                     ingestible_dclasses.add_project(obj)

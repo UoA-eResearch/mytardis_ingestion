@@ -65,8 +65,7 @@ class ExtractionPlant(metaclass=Singleton):
 
         Args:
             pth (Path): The path of the files.
-            ingest_dict (Optional[Dict[str, list[Any]]]): A dictionary containing metadata files to
-                ingest. Used when IDW was used.
+            ingest_dict (Optional[Dict[str, list[Any]]]): A dictionary containing metadata files to ingest. Used when IDW was used. ---> Libby: used when IDW was not used?
 
         Returns:
             IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments,

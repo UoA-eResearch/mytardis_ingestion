@@ -35,11 +35,19 @@ class AbstractProspector(ABC):
     ) -> None:
         """Prospects metadata in a path
 
-        Args:
-            path (Path): the path to inspect for metadata
-            recursive (bool): True to inspect all subdirectories in path, False to inspect path only
-            out_man (om.OutputManager): class which stores info of outputs of the pre-ingestion
-                processes
+    def prospect_directory(
+        self,
+        path: str,
+        recursive: bool = True,
+        out_man: Optional[om.OutputManager] = None,
+    ) -> om.OutputManager:
+        """
+        This method prospect_directory is used to prospect a given directory for files.
+
+        Parameters:
+            path (str): Path to directory.
+            recursive (bool): Whether to recursively search for files.
+            out_man (om.OutputManager): Output manager instance.
 
         Returns:
             OutputManager: output manager instance containing the outputs of the process

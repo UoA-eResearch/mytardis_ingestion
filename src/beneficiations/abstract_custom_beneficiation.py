@@ -3,6 +3,7 @@
 # This needs a lot of refactoring so disable checks
 # noqa
 # nosec
+"""Abstract parser module.
 
 """Abstract parser module.
 

@@ -2,8 +2,6 @@
 # type: ignore
 # This needs a lot of refactoring so disable checks
 
-"""JSON parser module.
-
 Main objective of this module is to map the json files to
 a format accepted by the mytardis_ingestion
 """
@@ -17,10 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
-from src.blueprints.datafile import RawDatafile
-from src.blueprints.dataset import RawDataset
-from src.blueprints.experiment import RawExperiment
-from src.blueprints.project import RawProject
+from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 from src.profiles import profile_consts as pc
 

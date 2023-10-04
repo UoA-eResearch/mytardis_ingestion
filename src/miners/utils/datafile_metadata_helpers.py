@@ -2,23 +2,28 @@
 
 import hashlib
 import mimetypes
-from pathlib import Path
 
 
-def calculate_md5sum(  # pylint: disable=missing-function-docstring
-    filepath: Path,
+def calculate_md5sum(
+    fp: str,
 ) -> str:
-    with filepath.open(mode="rb") as input_file:
-        chunk = hashlib.new("md5", usedforsecurity=False)
-        for buffer in iter(lambda: input_file.read(128 * 1024), b""):
-            chunk.update(buffer)
-    return chunk.hexdigest()
+    with open(fp, mode="rb") as f:
+        d = hashlib.md5()
+        for buf in iter(lambda: f.read(128 * 1024), b""):
+            d.update(buf)
+    return d.hexdigest()
 
 
-def determine_mimetype(  # pylint: disable=missing-function-docstring
-    filename: str,
-) -> str:
-    mimetype, _ = mimetypes.guess_type(filename)
-    if not mimetype:
-        mimetype = filename.split(".")[-1]
+def determine_mimetype(
+    fn: str,
+) -> str | None:
+    mimetype, encoding = mimetypes.guess_type(fn)
     return mimetype
+
+def replace_micrometer_values(data, replacement):
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if isinstance(value, str) and value.endswith('µm'):
+                data[key] = value[:-2] + replacement
+            elif isinstance(value, (dict, list)):
+                replace_micrometer_values(value, replacement)

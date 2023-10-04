@@ -14,7 +14,7 @@ from types import ModuleType
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
 from src.config.singleton import Singleton
 from src.miners.abstract_custom_miner import AbstractCustomMiner
-from src.prospectors.prospector import AbstractProspector
+from src.prospectors.abstract_custom_prospector import AbstractCustomProspector
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -23,7 +23,6 @@ prof_base_lib = "src.profiles."
 custom_prspctr_lib = ".custom_prospector"
 custom_miner_lib = ".custom_miner"
 custom_beneficiation_lib = ".custom_beneficiation"
-
 
 # ---Code
 class ProfileLoader(metaclass=Singleton):

@@ -46,18 +46,18 @@ class CustomMiner:
 
     def mine(
         self,
-        path: Path,
+        path: str,
         recursive: bool = True,
         out_man: Optional[om.OutputManager] = None,
-        options: Optional[Dict[str, Any]] = None,
+        options: Optional[dict[str, Any]] = None,
     ) -> om.OutputManager:
         """Mines metadata in a path
 
         Args:
-            path (Path): the path to inspect for metadata
+            path (str): the path to inspect for metadata
             recursive (bool): True to inspect all subdirectories in path, False to inspect path only
             out_man (om.OutputManager): class which stores info of outputs of the pre-ingestion processes
-            options (Dict[str, any]): extra options for the inspection
+            options (dict[str, any]): extra options for the inspection
 
         Returns:
             om.OutputManager: output manager instance containing the outputs of the process

@@ -5,7 +5,7 @@
 
 from typing import Annotated, List, Optional, Union
 
-from pydantic import AfterValidator, BaseModel, Field, PlainSerializer, WithJsonSchema
+from src.blueprints.custom_data_types import URI, Username
 
 # Note the validate_schema function is a fusion of validating a MTUrl and a URI
 # It is kept with the regex definitions of both
@@ -38,7 +38,7 @@ class Parameter(BaseModel):
     """
 
     name: str
-    value: Union[str, int, float, bool]
+    value: Union[str, int, float, bool, None]
 
     def __lt__(self, other: "Parameter") -> bool:
         if self.name != other.name:
@@ -96,10 +96,5 @@ class Parameter(BaseModel):
 class ParameterSet(BaseModel):
     """Pydantic class to hold a parameter set ready for ingestion into MyTardis."""
 
-    parameter_schema: Annotated[
-        str,
-        AfterValidator(validate_schema),
-        PlainSerializer(lambda x: str(x), return_type=str),
-        WithJsonSchema({"type": "string"}, mode="serialization"),
-    ] = Field(alias="schema")
+    parameter_schema: str = Field(alias="schema")
     parameters: Optional[List[Parameter]] = None
