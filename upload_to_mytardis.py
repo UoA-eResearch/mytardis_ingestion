@@ -2,6 +2,9 @@
 
 import logging
 import sys
+from typing import Dict
+
+from pydantic import BaseModel
 
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import Dataset, RawDataset
@@ -33,7 +36,7 @@ root.addHandler(console_handler)
 #####################################################################################
 
 
-def print_field_comparison(models):
+def print_field_comparison(models: Dict[str, BaseModel]):
     jsons = {name: model.model_dump() for name, model in models.items()}
 
     fields = set()
@@ -178,7 +181,7 @@ def create_experiment_example(smelter: Smelter, crucible: Crucible, forge: Forge
 
 def create_dataset_example(smelter: Smelter, crucible: Crucible, forge: Forge):
     raw_dataset = RawDataset(
-        description="Andrew's test dataset 13, now with more metadata",
+        description="Andrew Smelter-Crucible-Forge-Example",
         data_classification=DataClassification.PUBLIC,
         directory=None,
         users=None,
@@ -222,39 +225,6 @@ def create_dataset_example(smelter: Smelter, crucible: Crucible, forge: Forge):
 # DATAFILE
 
 
-# def forge_datafile_example(forge: Forge, with_metadata: bool = False):
-#     parameter_set: ParameterSet = ParameterSet(
-#         schema=URI("/api/v1/schema/7/"),
-#         # schema='http://andrew-test.com/df-param-schema/1',
-#         parameters=[
-#             Parameter(name="image_width", value=1920),
-#             Parameter(name="image_height", value=1080),
-#             Parameter(name="num_channels", value=3),
-#         ],
-#     )
-
-#     datafile: Datafile = Datafile(
-#         filename="dummy_image_2.png",
-#         directory="a/dummy/dir/dummy_image_2.png",
-#         md5sum="a345bcf3489e8dd8e8a823b01cc834f2",
-#         mimetype="image/png",
-#         size="3474853",
-#         users=None,
-#         groups=None,
-#         replicas=[
-#             DatafileReplica(
-#                 uri="a/dummy/dir/dummy_image_2.png", location="andrew_w_test"
-#             )
-#         ],
-#         parameter_sets=[parameter_set] if with_metadata else None,
-#         dataset="/api/v1/dataset/1/",
-#     )
-
-#     _ = forge.forge_datafile(refined_object=datafile)
-
-#     print("Forged datafile")
-
-
 def create_datafile_example(smelter: Smelter, crucible: Crucible, forge: Forge):
     metadata = {
         "image_width": 1920,
@@ -263,14 +233,14 @@ def create_datafile_example(smelter: Smelter, crucible: Crucible, forge: Forge):
     }
 
     raw_datafile = RawDatafile(
-        filename="dummy_image_2.png",
-        directory="a/dummy/dir/dummy_image_2.png",
+        filename="dummy_image_3.png",
+        directory="a/dummy/dir/dummy_image_4.png",
         md5sum="a345bcf3489e8dd8e8a823b01cc834f2",
         mimetype="image/png",
         size="3474853",
         users=None,
         groups=None,
-        dataset="TODO",
+        dataset="Andrew Smelter-Crucible-Forge-Example",
         metadata=metadata,
         schema="http://andrew-test.com/df-param-schema/1",
     )
@@ -313,7 +283,7 @@ if __name__ == "__main__":
 
     # create_project_example(smelter=smelter, crucible=crucible, forge=forge)
     # create_experiment_example(smelter, crucible, forge)
-    create_dataset_example(smelter, crucible, forge)
-    # create_datafile_example(smelter, crucible, forge)
+    # create_dataset_example(smelter, crucible, forge)
+    create_datafile_example(smelter, crucible, forge)
 
     print("Done")
