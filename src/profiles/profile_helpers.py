@@ -1,21 +1,13 @@
 # pylint: disable=missing-function-docstring
 """Helpers used throughout a profile in the Extraction Plant
 """
-from typing import Any, Dict, List
+from typing import Any, Dict
 
-from src.helpers.constants import (
-    DATACLASS_ENTRY_DICT_KEYS,
-    DATACLASSES_LIST,
-    KEY_IDX_CL,
-    KEY_IDX_OP,
-    KEY_LVL_SEP,
-    OUTPUT_DICT_KEYS,
-    OUTPUT_SUBDICT_KEYS,
-)
+from src.profiles import profile_consts as pc
 
 
 def create_dataclass_entry_dict() -> Dict[str, Any]:
-    return Dict.fromkeys(DATACLASS_ENTRY_DICT_KEYS)
+    return Dict.fromkeys(pc.DATACLASS_ENTRY_DICT_KEYS)
 
 
 def create_output_dict() -> dict[str, Any]:
@@ -35,7 +27,7 @@ def format_field_for_key_seq(
 ) -> str:
     frmtd_key = key_seq[0]
     for i in range(len(key_seq) - 1):
-        frmtd_key += KEY_LVL_SEP + key_seq[i + 1]
+        frmtd_key += pc.KEY_LVL_SEP + key_seq[i + 1]
     return frmtd_key
 
 
@@ -44,5 +36,5 @@ def format_key_for_indexed_field(
     idx: int,
 ) -> str:
     frmtd_key = key
-    frmtd_key += KEY_IDX_OP + str(idx) + KEY_IDX_CL
+    frmtd_key += pc.KEY_IDX_OP + str(idx) + pc.KEY_IDX_CL
     return frmtd_key
