@@ -7,8 +7,7 @@ whether the files and directory structure can be used for ingestion.
 # ---Imports
 import logging
 import os
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Tuple
 
 from src.profiles import profile_consts as pc
 from src.prospectors.common_system_files import CommonSystemFiles
@@ -50,7 +49,7 @@ class CommonDirectoryTreeChecks:
         ingestion_list: list[str] = []
 
         if recursive:
-            for root, dirs, files in os.walk(path):
+            for root, dirs, _ in os.walk(path):
                 out = self._iterate_dir(
                     root,
                     self.common_fnames_lut,
@@ -60,10 +59,12 @@ class CommonDirectoryTreeChecks:
                 rejection_list = self._extend_list(rejection_list, out[0])
                 ingestion_list = self._extend_list(ingestion_list, out[1])
 
-                for dir in dirs:
-                    dirlist = os.listdir(os.path.join(root, dir))
+                for directory in dirs:
+                    dirlist = os.listdir(os.path.join(root, directory))
                     if len(dirlist) == 0:
-                        logger.debug("Empty dir {0} found in {1}".format(root, dir))
+                        logger.debug(  # pylint: disable=logging-fstring-interpolation
+                            f"Empty dir {root} found in {directory}"
+                        )
         else:
             out = self._iterate_dir(
                 path, self.common_fnames_lut, self.reject_prefix_lut
@@ -86,13 +87,13 @@ class CommonDirectoryTreeChecks:
 
     def _iterate_dir(
         self,
-        dir: str,
+        directory: str,
         cmn_fnames_lut: dict[str, Any],
         rej_prfx_lut: dict[str, Any],
     ) -> tuple[list[str], list[str]]:
         """Iterates through a specified directory to perform common checks
         Args:
-            dir (str): directory to check
+            directory (str): directory to check
             cmn_fnames_lut (dict[str, str]): look-up table of common system filenames
             rej_prfx_lut (dict[str, str]): look-up table of file prefixes to reject
             chk_eqv_file (bool):
@@ -104,11 +105,13 @@ class CommonDirectoryTreeChecks:
         ingestion_list: list[str] = []
 
         dir_list = [
-            item for item in os.listdir(dir) if os.path.isfile(os.path.join(dir, item))
+            item
+            for item in os.listdir(directory)
+            if os.path.isfile(os.path.join(directory, item))
         ]
         dir_lut = dict.fromkeys(dir_list)
         for item in dir_list:
-            test_fp = os.path.join(dir, item)
+            test_fp = os.path.join(directory, item)
             if os.path.isfile(test_fp):
                 if item in cmn_fnames_lut:
                     rejection_list.append(test_fp)

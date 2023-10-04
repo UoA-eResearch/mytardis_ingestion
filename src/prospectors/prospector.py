@@ -73,4 +73,3 @@ class Prospector(metaclass=Singleton):
         logger.info(f"output dict = {out_man_fnl.output_dict}")
 
         return out_man_fnl
-"
