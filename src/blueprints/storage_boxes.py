@@ -2,9 +2,9 @@
 """ Pydantic model to hold storage box from MyTardis"""
 
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ValidationInfo, field_validator
 
 from src.blueprints.custom_data_types import URI
 
@@ -15,22 +15,20 @@ class RawStorageBox(BaseModel):
 
     name: str
     storage_class: str = "django.core.files.storage.FileSystemStorage"
-    description: str = 
+    description: str
     options: Dict[str, str]
     attributes: Optional[Dict[str, str]] = None
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator`
-    # manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @field_validator("description")
+    @classmethod
     def get_description(  # pylint: disable=E0213
         cls,
         description: str,
-        values: Dict[str, Any],
+        info: ValidationInfo,
     ) -> str:
         """Generate a default description if one is not provided."""
-        if not description and "name" in values:
-            return f'Storage box for {values["name"]}'
+        if not description and "name" in info.data:
+            return f'Storage box for {info.data["name"]}'
         return description
 
 
