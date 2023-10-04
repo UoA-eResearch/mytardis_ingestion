@@ -1,12 +1,11 @@
+# pylint: disable=logging-fstring-interpolation
 """Performs the prospecting process
 
 Prospecting checks files and metadata files for any potential issues.
 """
 
 # ---Imports
-import copy
 import logging
-from pathlib import Path
 from typing import Optional, Union
 
 from src.config.singleton import Singleton

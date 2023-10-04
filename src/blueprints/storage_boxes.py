@@ -4,7 +4,7 @@
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from src.blueprints.custom_data_types import URI
 
@@ -15,7 +15,7 @@ class RawStorageBox(BaseModel):
 
     name: str
     storage_class: str = "django.core.files.storage.FileSystemStorage"
-    description: str = ""
+    description: str = 
     options: Dict[str, str]
     attributes: Optional[Dict[str, str]] = None
 
