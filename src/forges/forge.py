@@ -164,9 +164,6 @@ class Forge:
         if overwrite_objects:
             if object_id:
                 action = "PUT"
-                url = urljoin(
-                    self.rest_factory.api_template, object_type["url_substring"]
-                )
                 url = urljoin(url, str(object_id))
             else:
                 logger.warning(
