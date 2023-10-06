@@ -156,8 +156,8 @@ class IngestionFactory(metaclass=Singleton):
                 prepared_project, refined_parameters
             )
 
-            if isinstance(forged_project[0], URI):
-                result.success.append((name, forged_project[0]))
+            if isinstance(forged_project, URI):
+                result.success.append((name, forged_project))
             else:
                 result.success.append((name, None))
 
@@ -212,8 +212,8 @@ class IngestionFactory(metaclass=Singleton):
                 prepared_experiment, refined_parameters
             )
 
-            if isinstance(forged_experiment[0], URI):
-                result.success.append((name, forged_experiment[0]))
+            if isinstance(forged_experiment, URI):
+                result.success.append((name, forged_experiment))
             else:
                 result.success.append((name, None))
 
@@ -267,8 +267,8 @@ class IngestionFactory(metaclass=Singleton):
             forged_dataset = self.forge.forge_dataset(
                 prepared_dataset, refined_parameters
             )
-            if isinstance(forged_dataset[0], URI):
-                result.success.append((name, forged_dataset[0]))
+            if isinstance(forged_dataset, URI):
+                result.success.append((name, forged_dataset))
             else:
                 result.success.append((name, None))
 

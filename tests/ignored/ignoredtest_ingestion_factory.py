@@ -79,7 +79,7 @@ def fixture_mock_ingestion_factory(
         ],
         smelter_method_mock: Mock = MagicMock(return_value=None),
         crucible_method_mock: Mock = MagicMock(return_value=None),
-        forge_method_mock: Mock = MagicMock(return_value=(None, None)),
+        forge_method_mock: Mock = MagicMock(return_value=None),
     ) -> IngestionFactory:
         match object_type:
             case MyTardisObject.PROJECT:
