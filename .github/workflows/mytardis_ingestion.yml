@@ -3,7 +3,7 @@ name: Test and Lint MyTardis Ingestion
 on:
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   test:
