@@ -66,10 +66,8 @@ def print_field_comparison(models: Dict[str, BaseModel]):
     for row in rows:
         print("| ", end="")
         for entry in row:
-            # max_length = 40
             display = entry[0:display_limit].ljust(display_limit)
             print(display, " | ", end="")
-        # print('|')
         print("")
 
 
@@ -79,7 +77,7 @@ def print_field_comparison(models: Dict[str, BaseModel]):
 
 def create_project_example(smelter: Smelter, crucible: Crucible, forge: Forge) -> None:
     raw_project: RawProject = RawProject(
-        name="Andrew W SCF Test 1",
+        name="Andrew W SCF Test 2",
         description="A test project for working through a smelter-crucible-forge example",
         principal_investigator="awil308",
         data_classification=DataClassification.PUBLIC,
@@ -87,7 +85,7 @@ def create_project_example(smelter: Smelter, crucible: Crucible, forge: Forge) -
         url=None,
         users=None,
         groups=None,
-        identifiers=["andrew_scf_example"],
+        identifiers=["andrew_scf_example_2"],
         institution=["University of Auckland"],
         # institution=['https://ror.org/03b94tp07'],
         metadata=None,
@@ -109,7 +107,7 @@ def create_project_example(smelter: Smelter, crucible: Crucible, forge: Forge) -
     # print('Refined Project:\n', refined_project.model_dump_json(indent=3))
     # print('Parameters\n:', parameters.model_dump_json(indent=3) if parameters else 'None')
 
-    project: Project = crucible.prepare_project(refined_project)
+    project = crucible.prepare_project(refined_project)
     assert project is not None, "Crucible stage failed"
 
     uri = forge.forge_project(refined_object=project, project_parameters=parameters)
@@ -131,7 +129,7 @@ def create_project_example(smelter: Smelter, crucible: Crucible, forge: Forge) -
 
 def create_experiment_example(smelter: Smelter, crucible: Crucible, forge: Forge):
     raw_experiment = RawExperiment(
-        title="Andrew Test Experiment 5",
+        title="Andrew Test Experiment 6",
         description="A dummy experiment for trying out the API",
         data_classification=DataClassification.PUBLIC,
         created_by="awil308",
@@ -140,7 +138,7 @@ def create_experiment_example(smelter: Smelter, crucible: Crucible, forge: Forge
         users=None,
         groups=None,
         identifiers=[],
-        projects=["Andrew W SCF Test 1"],
+        projects=["Andrew W SCF Test 2"],
         institution_name="University of Auckland",
         # institution=['https://ror.org/03b94tp07'],
         metadata={},
@@ -157,7 +155,7 @@ def create_experiment_example(smelter: Smelter, crucible: Crucible, forge: Forge
 
     refined_experiment, parameters = smelt_result
 
-    experiment: Experiment = crucible.prepare_experiment(refined_experiment)
+    experiment = crucible.prepare_experiment(refined_experiment)
     assert experiment is not None, "Experiment creation failed"
 
     uri = forge.forge_experiment(
@@ -181,14 +179,14 @@ def create_experiment_example(smelter: Smelter, crucible: Crucible, forge: Forge
 
 def create_dataset_example(smelter: Smelter, crucible: Crucible, forge: Forge):
     raw_dataset = RawDataset(
-        description="Andrew Smelter-Crucible-Forge-Example",
+        description="Andrew Smelter-Crucible-Forge-Example 2",
         data_classification=DataClassification.PUBLIC,
         directory=None,
         users=None,
         groups=None,
         immutable=False,
         identifiers=None,
-        experiments=["Andrew Test Experiment 5"],
+        experiments=["Andrew Test Experiment 6"],
         instrument="Dummy Microscope",
         metadata={"image_width": 1921, "image_height": 1082, "num_channels": 4},
         schema="http://andrew-test.com/ds-param-schema/1",
@@ -200,8 +198,10 @@ def create_dataset_example(smelter: Smelter, crucible: Crucible, forge: Forge):
     assert smelt_result is not None, "Smelting dataset failed"
 
     refined_dataset, parameters = smelt_result
+    assert smelt_result is not None
+    assert parameters is not None
 
-    dataset: Dataset = crucible.prepare_dataset(refined_dataset)
+    dataset = crucible.prepare_dataset(refined_dataset)
     assert dataset is not None, "Dataset preparation failed"
 
     uri = forge.forge_dataset(refined_object=dataset, dataset_parameters=parameters)
@@ -233,14 +233,14 @@ def create_datafile_example(smelter: Smelter, crucible: Crucible, forge: Forge):
     }
 
     raw_datafile = RawDatafile(
-        filename="dummy_image_3.png",
-        directory="a/dummy/dir/dummy_image_4.png",
+        filename="dummy_image_5.png",
+        directory="a/dummy/dir/dummy_image_5.png",
         md5sum="a345bcf3489e8dd8e8a823b01cc834f2",
         mimetype="image/png",
         size="3474853",
         users=None,
         groups=None,
-        dataset="Andrew Smelter-Crucible-Forge-Example",
+        dataset="Andrew Smelter-Crucible-Forge-Example 2",
         metadata=metadata,
         schema="http://andrew-test.com/df-param-schema/1",
     )
