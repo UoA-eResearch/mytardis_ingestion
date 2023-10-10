@@ -1,15 +1,16 @@
 # pylint: disable=missing-module-docstring, missing-function-docstring, redefined-outer-name
 
 import logging
+from pathlib import Path
 import sys
 from typing import Dict
 
 from pydantic import BaseModel
 
 from src.blueprints.datafile import RawDatafile
-from src.blueprints.dataset import Dataset, RawDataset
-from src.blueprints.experiment import Experiment, RawExperiment
-from src.blueprints.project import Project, RawProject
+from src.blueprints.dataset import RawDataset
+from src.blueprints.experiment import RawExperiment
+from src.blueprints.project import RawProject
 from src.config.config import ConfigFromEnv
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
@@ -234,10 +235,10 @@ def create_datafile_example(smelter: Smelter, crucible: Crucible, forge: Forge):
 
     raw_datafile = RawDatafile(
         filename="dummy_image_5.png",
-        directory="a/dummy/dir/dummy_image_5.png",
+        directory=Path("a/dummy/dir/dummy_image_5.png"),
         md5sum="a345bcf3489e8dd8e8a823b01cc834f2",
         mimetype="image/png",
-        size="3474853",
+        size=3474853,
         users=None,
         groups=None,
         dataset="Andrew Smelter-Crucible-Forge-Example 2",
