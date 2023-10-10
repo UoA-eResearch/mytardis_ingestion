@@ -228,8 +228,8 @@ class Forge:
         Returns:
             The URI of the forged project if the forging was successful, otherwise None
         """
-        project_uri = self.forge_object(refined_object)
-        if project_uri is None:
+        uri = self.forge_object(refined_object)
+        if uri is None:
             raise ForgeError(
                 f"No URI returned when forging project {refined_object.name}. Check MyTardis."
             )
@@ -238,13 +238,13 @@ class Forge:
             refined_parameters = ProjectParameterSet(
                 schema=project_parameters.parameter_schema,
                 parameters=project_parameters.parameters,
-                project=project_uri,
+                project=uri,
             )
 
             # No URI is yielded when forging parameters
             _ = self.forge_object(refined_parameters)
 
-        return project_uri
+        return uri
 
     def forge_experiment(
         self,
@@ -262,8 +262,8 @@ class Forge:
         Returns:
             The URI of the forged experiment if the forging was successful, otherwise None
         """
-        experiment_uri = self.forge_object(refined_object)
-        if experiment_uri is None:
+        uri = self.forge_object(refined_object)
+        if uri is None:
             raise ForgeError(
                 f"No URI returned when forging experiment {refined_object.title}. Check MyTardis."
             )
@@ -272,12 +272,12 @@ class Forge:
             refined_parameters = ExperimentParameterSet(
                 schema=experiment_parameters.parameter_schema,
                 parameters=experiment_parameters.parameters,
-                experiment=experiment_uri,
+                experiment=uri,
             )
             # No URI is yielded when forging parameters
             _ = self.forge_object(refined_parameters)
 
-        return experiment_uri
+        return uri
 
     def forge_dataset(
         self,
@@ -295,8 +295,8 @@ class Forge:
         Returns:
             The URI of the forged dataset if the forging was successful, otherwise None
         """
-        dataset_uri = self.forge_object(refined_object)
-        if dataset_uri is None:
+        uri = self.forge_object(refined_object)
+        if uri is None:
             raise ForgeError(
                 f"No URI returned when forging experiment ('{refined_object.description}'). "
                 "Check MyTardis."
@@ -306,12 +306,12 @@ class Forge:
             refined_parameters = DatasetParameterSet(
                 schema=dataset_parameters.parameter_schema,
                 parameters=dataset_parameters.parameters,
-                dataset=dataset_uri,
+                dataset=uri,
             )
             _ = self.forge_object(refined_parameters)
 
         # No URI yielded when forging parameters
-        return dataset_uri
+        return uri
 
     def forge_datafile(
         self,
