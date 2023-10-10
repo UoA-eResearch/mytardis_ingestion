@@ -21,11 +21,7 @@ from src.helpers.mt_rest import BadGateWayException, MyTardisRESTFactory
 logger = logging.getLogger(__name__)
 
 
-class ForgeFailureException(Exception):  # pylint: disable=missing-class-docstring
-    pass
-
-
-class ForgeStatusUnknownException(Exception):  # pylint: disable=missing-class-docstring
+class ForgeError(Exception):  # pylint: disable=missing-class-docstring
     pass
 
 
@@ -68,9 +64,9 @@ class Forge:
                 "Failed HTTP request from forge_object call\n"
                 f"Url: {url}\nAction: {action}\nData: {data}"
             )
-            logger.warning(message)
+
             logger.error(error, exc_info=True)
-            raise ForgeFailureException(
+            raise ForgeError(
                 f"Forge error during request to {url}. Details: {message}"
             ) from error
         except Exception as error:
@@ -80,7 +76,7 @@ class Forge:
             )
             logger.error(message)
             logger.error(error, exc_info=True)
-            raise ForgeFailureException(
+            raise ForgeError(
                 f"Forge error during request to {url}. Details: {message}"
             ) from error
 
@@ -92,7 +88,7 @@ class Forge:
                 f"response status code: {response.status_code}"
             )
             logger.warning(message)
-            raise ForgeFailureException(
+            raise ForgeError(
                 f"Forge failure: request to {url} received a redirect response. Details: {message}"
             )
 
@@ -189,7 +185,7 @@ class Forge:
                     f"Object in question is: {refined_object}"
                 )
                 logger.warning(message)
-                raise ForgeStatusUnknownException(message) from error
+                raise ForgeError(message) from error
 
             # This check may be redundant as "expect_json" is false for parameters
             if not isinstance(refined_object, ParameterSet):
@@ -202,7 +198,7 @@ class Forge:
                         "investigation."
                     )
                     logger.warning(message)
-                    raise ForgeStatusUnknownException(message)
+                    raise ForgeError(message)
 
                 logger.info(
                     (
@@ -234,7 +230,7 @@ class Forge:
         """
         project_uri = self.forge_object(refined_object)
         if project_uri is None:
-            raise ForgeStatusUnknownException(
+            raise ForgeError(
                 f"No URI returned when forging project {refined_object.name}. Check MyTardis."
             )
 
@@ -268,7 +264,7 @@ class Forge:
         """
         experiment_uri = self.forge_object(refined_object)
         if experiment_uri is None:
-            raise ForgeStatusUnknownException(
+            raise ForgeError(
                 f"No URI returned when forging experiment {refined_object.title}. Check MyTardis."
             )
 
@@ -301,7 +297,7 @@ class Forge:
         """
         dataset_uri = self.forge_object(refined_object)
         if dataset_uri is None:
-            raise ForgeStatusUnknownException(
+            raise ForgeError(
                 f"No URI returned when forging experiment ('{refined_object.description}'). "
                 "Check MyTardis."
             )
