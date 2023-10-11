@@ -1,8 +1,8 @@
 # pylint: disable=missing-module-docstring, missing-function-docstring, redefined-outer-name
 
 import logging
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Dict
 
 from pydantic import BaseModel
