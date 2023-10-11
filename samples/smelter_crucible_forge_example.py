@@ -78,7 +78,7 @@ def print_field_comparison(models: Dict[str, BaseModel]):
 
 def create_project_example(smelter: Smelter, crucible: Crucible, forge: Forge) -> None:
     raw_project: RawProject = RawProject(
-        name="Andrew W SCF Test 2",
+        name="SCF Example Project",
         description="A test project for working through a smelter-crucible-forge example",
         principal_investigator="awil308",
         data_classification=DataClassification.PUBLIC,
@@ -86,7 +86,7 @@ def create_project_example(smelter: Smelter, crucible: Crucible, forge: Forge) -
         url=None,
         users=None,
         groups=None,
-        identifiers=["andrew_scf_example_2"],
+        identifiers=["scf_example"],
         institution=["University of Auckland"],
         # institution=['https://ror.org/03b94tp07'],
         metadata=None,
@@ -130,7 +130,7 @@ def create_project_example(smelter: Smelter, crucible: Crucible, forge: Forge) -
 
 def create_experiment_example(smelter: Smelter, crucible: Crucible, forge: Forge):
     raw_experiment = RawExperiment(
-        title="Andrew Test Experiment 6",
+        title="SCF Example Experiment",
         description="A dummy experiment for trying out the API",
         data_classification=DataClassification.PUBLIC,
         created_by="awil308",
@@ -139,7 +139,7 @@ def create_experiment_example(smelter: Smelter, crucible: Crucible, forge: Forge
         users=None,
         groups=None,
         identifiers=[],
-        projects=["Andrew W SCF Test 2"],
+        projects=["SCF Example Project"],
         institution_name="University of Auckland",
         # institution=['https://ror.org/03b94tp07'],
         metadata={},
@@ -180,14 +180,14 @@ def create_experiment_example(smelter: Smelter, crucible: Crucible, forge: Forge
 
 def create_dataset_example(smelter: Smelter, crucible: Crucible, forge: Forge):
     raw_dataset = RawDataset(
-        description="Andrew Smelter-Crucible-Forge-Example 2",
+        description="SCF Example Dataset",
         data_classification=DataClassification.PUBLIC,
         directory=None,
         users=None,
         groups=None,
         immutable=False,
         identifiers=None,
-        experiments=["Andrew Test Experiment 6"],
+        experiments=["SCF Example Experiment"],
         instrument="Dummy Microscope",
         metadata={"image_width": 1921, "image_height": 1082, "num_channels": 4},
         schema="http://andrew-test.com/ds-param-schema/1",
@@ -234,14 +234,14 @@ def create_datafile_example(smelter: Smelter, crucible: Crucible, forge: Forge):
     }
 
     raw_datafile = RawDatafile(
-        filename="dummy_image_5.png",
-        directory=Path("a/dummy/dir/dummy_image_5.png"),
+        filename="dummy_image.png",
+        directory=Path("a/dummy/dir/dummy_image.png"),
         md5sum="a345bcf3489e8dd8e8a823b01cc834f2",
         mimetype="image/png",
         size=3474853,
         users=None,
         groups=None,
-        dataset="Andrew Smelter-Crucible-Forge-Example 2",
+        dataset="SCF Example Dataset",
         metadata=metadata,
         schema="http://andrew-test.com/df-param-schema/1",
     )
@@ -282,9 +282,9 @@ if __name__ == "__main__":
 
     forge: Forge = Forge(rest_factory=rest_client)
 
-    # create_project_example(smelter=smelter, crucible=crucible, forge=forge)
-    # create_experiment_example(smelter, crucible, forge)
-    # create_dataset_example(smelter, crucible, forge)
+    create_project_example(smelter=smelter, crucible=crucible, forge=forge)
+    create_experiment_example(smelter, crucible, forge)
+    create_dataset_example(smelter, crucible, forge)
     create_datafile_example(smelter, crucible, forge)
 
     print("Done")
