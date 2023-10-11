@@ -81,6 +81,7 @@ ignore_missing_imports = true
 exclude = [
        "^tests/.*$",
        "^docs/.*$",
+       "^samples/.*$",
        ]
 plugins = ["pydantic.mypy"]
 strict = true
