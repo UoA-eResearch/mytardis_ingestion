@@ -65,7 +65,7 @@ ignore-module = true
 ignore-nested-functions = false
 ignore-nested-classes = true
 ignore-setters = false
-exclude = ["tests", "docs", "build"]
+exclude = ["tests", "docs", "build", "samples"]
 ignore-regex = ["^get$", "^mock_.*", ".*BaseClass.*", "^test$"]
 verbose = 2
 quiet = false
@@ -81,6 +81,7 @@ ignore_missing_imports = true
 exclude = [
        "^tests/.*$",
        "^docs/.*$",
+       "^samples/.*$",
        ]
 plugins = ["pydantic.mypy"]
 strict = true
@@ -90,7 +91,7 @@ max-line-length = 88
 extend-ignore = "E203"
 
 [tool.bandit.assert_used]
-skips = ["tests/*", "test_*.py"]
+skips = ["tests/*", "test_*.py", "samples/*"]
 
 
 [tool.coverage.run]
