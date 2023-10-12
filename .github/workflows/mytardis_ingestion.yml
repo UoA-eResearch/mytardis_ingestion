@@ -4,6 +4,11 @@ on:
   pull_request:
     branches:
       - main
+  # Run on main every day at 5am
+  schedule:
+      - cron: '0 5 * * *'
+  # Allow manual triggering through GitHub
+  workflow_dispatch:
 
 jobs:
   test:
