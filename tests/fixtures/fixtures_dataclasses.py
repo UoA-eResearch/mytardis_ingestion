@@ -2,6 +2,7 @@
 # pylint: disable=missing-module-docstring
 
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -19,6 +20,7 @@ from src.blueprints.dataset import Dataset, RawDataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RawExperiment, RefinedExperiment
 from src.blueprints.project import Project, RawProject, RefinedProject
 from src.blueprints.storage_boxes import StorageBox
+from src.helpers.enumerators import DataClassification
 
 
 @fixture
