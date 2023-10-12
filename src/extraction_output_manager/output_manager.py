@@ -7,15 +7,13 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Union
 
-from src.config.singleton import Singleton
-
 # ---Constants
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # set the level for which this logger will be printed.
 
 
 # ---Code
-class OutputManager(metaclass=Singleton):
+class OutputManager:
     """Manage output results, directories to ignore, files to ignore, and metadata files to ingest.
 
     In the output_dict, there are three keys - success, ignored, and issues. The key in the dict
