@@ -1,11 +1,11 @@
 """Helpers to determine required metadata fields for datafiles"""
-
+from pathlib import Path
 import hashlib
 import mimetypes
 
 
 def calculate_md5sum(
-    fp: str,
+    fp: Path,
 ) -> str:
     with open(fp, mode="rb") as f:
         d = hashlib.md5()

@@ -28,6 +28,7 @@ from src.blueprints.common_models import GroupACL, UserACL
 from src.blueprints.custom_data_types import Username
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 from src.miners.utils import datafile_metadata_helpers
+from src.helpers.enumerators import DataClassification
 
 # Constants
 logger = logging.getLogger(__name__)
@@ -161,9 +162,10 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
 
     def _path_constructor(self, loader: Loader, node: MappingNode) -> Path:
         # TO Do: change back the directory when relative path issue is solved
-        path = node.value
-        folder_name = os.path.basename(path)
-        return Path(folder_name)
+        #path = node.value
+        #folder_name = os.path.basename(path)
+        #return Path(folder_name)
+        return Path(node.value)
 
     def _rawdatafile_constructor(
         self, loader: Loader, node: MappingNode
@@ -228,10 +230,14 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         Returns:
             RawProject: A RawProject object constructed from the YAML data.
         """
-        return RawProject(**loader.construct_mapping(node))
+        data = loader.construct_mapping(node, deep=True)
+        # Check if data_classification is None, and assign the default value if needed
+        if data.get('data_classification') is None:
+            data['data_classification'] = DataClassification.SENSITIVE
+        return RawProject(**data)
 
     def beneficiate(
-        self, fpath: Any, ingestible_dclasses: IngestibleDataclasses
+        self, fpath: Path, ingestible_dclasses: IngestibleDataclasses
     ) -> IngestibleDataclasses:
         """
         Parse a YAML file at the specified path and return a list of loaded objects.
@@ -255,5 +261,11 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
                 if isinstance(obj, RawDataset):
                     ingestible_dclasses.add_dataset(obj)
                 if isinstance(obj, RawDatafile):
+                    #print(obj.directory)
+                    df_path = Path(fpath).parent.joinpath(obj.directory)
+                    #print(df_path)
+                    df_dir = df_path / obj.filename
+                    #print(type(df_path))
+                    obj.md5sum= datafile_metadata_helpers.calculate_md5sum(df_dir)
                     ingestible_dclasses.add_datafile(obj)
         return ingestible_dclasses

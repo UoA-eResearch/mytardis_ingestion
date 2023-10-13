@@ -22,7 +22,8 @@ from src.smelters.smelter import Smelter
 logger = logging.getLogger(__name__)
 config = ConfigFromEnv()
 
-pth = "tests/fixtures/fixtures_example.yaml"
+#pth = "tests/fixtures/fixtures_example.yaml"
+pth = '/Volumes/resmed202000005-biru-shared-drive/MyTardisTestData/Haruna_HierarchyStructure/ingestion.yaml'
 profile = str(Path("idw"))
 profile_loader = ProfileLoader(profile)
 
@@ -54,7 +55,30 @@ forge = Forge(mt_rest)
 # default_schema = config.default_schema
 # schema_project = default_schema.project
 # print(schema_project)
-test_project = ingestible_dataclasses.projects[0]
+
+for project_obj in ingestible_dataclasses.projects:
+    refined_project, refined_project_parameters = smelter.smelt_project(project_obj)
+    prepared_project = crucible.prepare_project(refined_project)
+    forge = Forge(mt_rest)
+    forge.forge_project(prepared_project, refined_project_parameters)
+
+for experiment_obj in ingestible_dataclasses.experiments:
+    refined_experiment, refined_experiment_parameters = smelter.smelt_experiment(experiment_obj)
+    prepared_experiment = crucible.prepare_experiment(refined_experiment)
+    forge.forge_experiment(prepared_experiment, refined_experiment_parameters)
+
+for dataset_obj in ingestible_dataclasses.datasets:
+    refined_dataset, refined_dataset_parameters = smelter.smelt_dataset(dataset_obj)
+    prepared_dataset = crucible.prepare_dataset(refined_dataset)
+    forge.forge_dataset(prepared_dataset, refined_dataset_parameters)
+
+for datafile_obj in ingestible_dataclasses.datafiles:
+    smelted_datafile = smelter.smelt_datafile(datafile_obj)
+    refined_datafile = smelted_datafile
+    prepared_datafile = crucible.prepare_datafile(refined_datafile)
+    forge.forge_datafile(prepared_datafile)
+
+'''test_project = ingestible_dataclasses.projects[0]
 test_experiment = ingestible_dataclasses.experiments[0]
 test_dataset = ingestible_dataclasses.datasets[0]
 test_datafiles = ingestible_dataclasses.datafiles[0:1]
@@ -86,7 +110,7 @@ for df in test_datafiles:
     smelted_datafile = smelter.smelt_datafile(df)
     refined_datafile = smelted_datafile
     prepared_datafile = crucible.prepare_datafile(refined_datafile)
-    forge.forge_datafile(prepared_datafile)
+    forge.forge_datafile(prepared_datafile)'''
 
 # refined_datafiles, refined_datafiles_parameters = smelter.smelt_datafile(test_datafile)
 # prepared_datafiles = crucible.prepare_datafile(refined_datafiles)
@@ -99,7 +123,6 @@ for df in test_datafiles:
 #    smelter = smelter,
 #    crucible= crucible,
 # )
-
 
 # rawprojects = ingestible_dataclasses.projects
 # rawexperiments = ingestible_dataclasses.experiments

@@ -58,6 +58,7 @@ class BaseProject(BaseModel, ABC):
     name: str
     description: str
     principal_investigator: Username
+    #data_classification: DataClassification = DataClassification.SENSITIVE
     data_classification: DataClassification = DataClassification.SENSITIVE
     created_by: Optional[str] = None
     url: Optional[str] = None
