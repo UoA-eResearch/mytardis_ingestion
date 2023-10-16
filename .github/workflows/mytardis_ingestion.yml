@@ -4,9 +4,9 @@ on:
   pull_request:
     branches:
       - main
-  # Run on main every day at 5am
+  # Run on main every day at 5am-ish (expressed in UTC time here)
   schedule:
-      - cron: '0 5 * * *'
+      - cron: '0 16 * * *'
   # Allow manual triggering through GitHub
   workflow_dispatch:
 
