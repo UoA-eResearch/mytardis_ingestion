@@ -23,7 +23,7 @@ pydantic-settings = "^2.0.3"
 validators = "^0.22.0"
 
 [tool.poetry.group.dev.dependencies]
-wily = "^1.24.0"
+wily = "^1.25.0"
 pytest-xdist = "^3.2.1"
 types-python-slugify = "^8.0.0.2"
 pytest-mock = "^3.11.1"
