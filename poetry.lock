@@ -1859,13 +1859,13 @@ plugins = ["importlib-metadata"]
 
 [[package]]
 name = "pylint"
-version = "3.0.0"
+version = "3.0.1"
 description = "python code static checker"
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "pylint-3.0.0-py3-none-any.whl", hash = "sha256:21da8ed1294f88d66c82eb3e624a0993291613548bb17fbccaa220c31c41293b"},
-    {file = "pylint-3.0.0.tar.gz", hash = "sha256:d22816c963816d7810b87afe0bdf5c80009e1078ecbb9c8f2e2a24d4430039b1"},
+    {file = "pylint-3.0.1-py3-none-any.whl", hash = "sha256:9c90b89e2af7809a1697f6f5f93f1d0e518ac566e2ac4d2af881a69c13ad01ea"},
+    {file = "pylint-3.0.1.tar.gz", hash = "sha256:81c6125637be216b4652ae50cc42b9f8208dfb725cdc7e04c48f6902f4dbdf40"},
 ]
 
 [package.dependencies]
@@ -1927,13 +1927,13 @@ shellcheck-py = ">=0.9.0.5,<0.10.0.0"
 
 [[package]]
 name = "pyright"
-version = "1.1.329"
+version = "1.1.331"
 description = "Command line wrapper for pyright"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pyright-1.1.329-py3-none-any.whl", hash = "sha256:c16f88a7ac14ddd0513e62fec56d69c37e3c6b412161ad16aa23a9c7e3dabaf4"},
-    {file = "pyright-1.1.329.tar.gz", hash = "sha256:5baf82ff5ecb8c8b3ac400e8536348efbde0b94a09d83d5b440c0d143fd151a8"},
+    {file = "pyright-1.1.331-py3-none-any.whl", hash = "sha256:d200a01794e7f2a04d5042a6c3abee36ce92780287d3037edfc3604d45488f0e"},
+    {file = "pyright-1.1.331.tar.gz", hash = "sha256:c3e7b86154cac86c3bd61ea0f963143d001c201e246825aaabdddfcce5d04293"},
 ]
 
 [package.dependencies]
@@ -2821,13 +2821,13 @@ files = [
 
 [[package]]
 name = "types-requests"
-version = "2.31.0.7"
+version = "2.31.0.9"
 description = "Typing stubs for requests"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "types-requests-2.31.0.7.tar.gz", hash = "sha256:4d930dcabbc2452e3d70728e581ac4ac8c2d13f62509ad9114673f542af8cb4e"},
-    {file = "types_requests-2.31.0.7-py3-none-any.whl", hash = "sha256:39844effefca88f4f824dcdc4127b813d3b86a56b2248d3d1afa58832040d979"},
+    {file = "types-requests-2.31.0.9.tar.gz", hash = "sha256:3bb11188795cc3aa39f9635032044ee771009370fb31c3a06ae952b267b6fcd7"},
+    {file = "types_requests-2.31.0.9-py3-none-any.whl", hash = "sha256:140e323da742a0cd0ff0a5a83669da9ffcebfaeb855d367186b2ec3985ba2742"},
 ]
 
 [package.dependencies]
@@ -2919,30 +2919,30 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 
 [[package]]
 name = "wily"
-version = "1.24.2"
+version = "1.25.0"
 description = "A Python application for tracking, reporting on timing and complexity in tests and applications."
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "wily-1.24.2-py3-none-any.whl", hash = "sha256:01fda9478e7599d5a81be935789ce106892bf56f0ab78c447c4b3e85d7b3555f"},
-    {file = "wily-1.24.2.tar.gz", hash = "sha256:2e908ec14cfda3ab5d51face1dbaa1fdd046e7b812b2adf3ccef0b7fa1ac99aa"},
+    {file = "wily-1.25.0-py3-none-any.whl", hash = "sha256:c8f6333c77fad438f646d49225409b4fb5336474834a52beea18097205d09204"},
+    {file = "wily-1.25.0.tar.gz", hash = "sha256:b63e85be5855aa3bfdd17db9b27475624539adc3bc1c8265805437ed5256a581"},
 ]
 
 [package.dependencies]
 click = ">=7.0,<9.0"
 colorlog = ">=4.0.0,<5.0.0"
-gitpython = ">=3.0.0,<4.0.0"
+gitpython = ">=3.1.32,<4.0.0"
 nbformat = ">=5.1.3,<6.0.0"
 plotly = ">=4.0.0,<6.0.0"
 progress = ">=1.4,<2.0"
 radon = ">=5.1,<5.2"
-tabulate = ">=0.8.2,<1.0.0"
+tabulate = ">=0.9.0,<1.0.0"
 
 [package.extras]
-dev = ["bandit (>=1.7.4,<1.8.0)", "black (>=22.6.0,<22.7.0)", "codespell (>=2.1.0,<2.2.0)", "flake8 (>=4.0.1,<4.1.0)", "flake8-2020 (>=1.6.1,<1.7.0)", "flake8-bugbear (>=22.7.1,<22.8.0)", "flake8-comprehensions (>=3.10.0,<3.11.0)", "isort (>=5.10.1,<5.11.0)", "mypy (>=0.961,<1.0)", "pydocstyle (>=6.1.1,<6.2.0)", "pyupgrade (>=2.37.1,<2.38.0)", "safety (>=2.3.4,<2.4.0)"]
-test = ["pytest (>=7.2,<8.0)", "pytest-cov (>=3.0.0,<3.1.0)"]
+dev = ["black (>=22.6.0,<22.7.0)", "codespell[toml]", "mypy (>=0.961,<1.0)", "ruff (>=0.0.277,<0.1.0)", "safety (>=2.3.4,<2.4.0)"]
+test = ["pytest (>=7.2,<8.0)", "pytest-cov (>=4.1.0,<4.2.0)"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "761070627bad0076af02df8c614c5e4ef0140ec56e5a4a8beb767dc0a4db95b7"
+content-hash = "361abd82aec223f17a34a0470dc6b678cede5566f4e8baf39c342cfa3692dc35"
