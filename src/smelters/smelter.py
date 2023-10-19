@@ -278,6 +278,7 @@ class Smelter:
             )
             return None
         parameters = self.extract_parameters(schema, raw_datafile)
+        print(parameters)
         try:
             refined_datafile = RefinedDatafile(
                 filename=raw_datafile.filename,

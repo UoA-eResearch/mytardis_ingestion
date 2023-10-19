@@ -202,7 +202,8 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         Returns:
             RawDataset: A RawDataset object constructed from the YAML data.
         """
-        return RawDataset(**loader.construct_mapping(node))
+        data = loader.construct_mapping(node, deep=True)
+        return RawDataset(**data)
 
     def _rawexperiment_constructor(
         self, loader: Loader, node: MappingNode
@@ -217,7 +218,8 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         Returns:
             RawExperiment: A RawExperiment object constructed from the YAML data.
         """
-        return RawExperiment(**loader.construct_mapping(node))
+        data = loader.construct_mapping(node, deep=True)
+        return RawExperiment(**data)
 
     def _rawproject_constructor(self, loader: Loader, node: MappingNode) -> RawProject:
         """
@@ -261,7 +263,6 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
                 if isinstance(obj, RawDataset):
                     ingestible_dclasses.add_dataset(obj)
                 if isinstance(obj, RawDatafile):
-                    #print(obj.directory)
                     df_path = Path(fpath).parent.joinpath(obj.directory)
                     #print(df_path)
                     df_dir = df_path / obj.filename

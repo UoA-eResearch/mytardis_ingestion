@@ -55,8 +55,14 @@ forge = Forge(mt_rest)
 # default_schema = config.default_schema
 # schema_project = default_schema.project
 # print(schema_project)
-
-for project_obj in ingestible_dataclasses.projects:
+prj = ingestible_dataclasses.projects[0]
+exp = ingestible_dataclasses.experiments[0]
+ds = ingestible_dataclasses.datasets[0]
+df = ingestible_dataclasses.datafiles[0]
+#print(prj)
+#print(exp)
+#print(ds)
+'''for project_obj in ingestible_dataclasses.projects:
     refined_project, refined_project_parameters = smelter.smelt_project(project_obj)
     prepared_project = crucible.prepare_project(refined_project)
     forge = Forge(mt_rest)
@@ -70,13 +76,21 @@ for experiment_obj in ingestible_dataclasses.experiments:
 for dataset_obj in ingestible_dataclasses.datasets:
     refined_dataset, refined_dataset_parameters = smelter.smelt_dataset(dataset_obj)
     prepared_dataset = crucible.prepare_dataset(refined_dataset)
-    forge.forge_dataset(prepared_dataset, refined_dataset_parameters)
+    forge.forge_dataset(prepared_dataset, refined_dataset_parameters)'''
 
 for datafile_obj in ingestible_dataclasses.datafiles:
     smelted_datafile = smelter.smelt_datafile(datafile_obj)
     refined_datafile = smelted_datafile
-    prepared_datafile = crucible.prepare_datafile(refined_datafile)
-    forge.forge_datafile(prepared_datafile)
+    try:
+        prepared_datafile = crucible.prepare_datafile(refined_datafile)
+        forge.forge_datafile(prepared_datafile)
+    except AttributeError:
+        print(datafile_obj)
+    
+'''smelted_datafile = smelter.smelt_datafile(df)
+refined_datafile = smelted_datafile
+prepared_datafile = crucible.prepare_datafile(refined_datafile)
+forge.forge_datafile(prepared_datafile)'''
 
 '''test_project = ingestible_dataclasses.projects[0]
 test_experiment = ingestible_dataclasses.experiments[0]
