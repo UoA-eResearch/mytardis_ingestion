@@ -1,7 +1,8 @@
 """Helpers to determine required metadata fields for datafiles"""
-from pathlib import Path
 import hashlib
 import mimetypes
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 
 def calculate_md5sum(
@@ -21,10 +22,11 @@ def determine_mimetype(
     return mimetype
 
 
-def replace_micrometer_values(data, replacement):
-    if isinstance(data, dict):
+def replace_micrometer_values(data: Union[Dict,List], replacement: str) -> Union[Dict, List]:
+    if isinstance(data, Dict):
         for key, value in data.items():
             if isinstance(value, str) and value.endswith("µm"):
                 data[key] = value[:-2] + replacement
-            elif isinstance(value, (dict, list)):
+            elif isinstance(value, Union[Dict, List]):
                 replace_micrometer_values(value, replacement)
+    return data
