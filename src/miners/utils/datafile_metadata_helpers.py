@@ -22,7 +22,9 @@ def determine_mimetype(
     return mimetype
 
 
-def replace_micrometer_values(data: Union[Dict,List], replacement: str) -> Union[Dict, List]:
+def replace_micrometer_values(
+    data: Union[Dict, List], replacement: str
+) -> Union[Dict, List]:
     if isinstance(data, Dict):
         for key, value in data.items():
             if isinstance(value, str) and value.endswith("µm"):

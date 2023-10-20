@@ -10,7 +10,7 @@ import copy
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, TypeVar,Union
+from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
 from src.beneficiations.parsers.parser import Parser
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
@@ -21,7 +21,8 @@ from src.utils.ingestibles import IngestibleDataclasses
 logger = logging.getLogger(__name__)
 
 # Define a type variable to represent the possible dataclass types
-T = TypeVar('T', RawProject, RawExperiment, RawDataset, RawDatafile)
+T = TypeVar("T", RawProject, RawExperiment, RawDataset, RawDatafile)
+
 
 # ---Code
 class JsonParser(Parser):

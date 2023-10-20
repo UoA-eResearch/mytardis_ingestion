@@ -9,11 +9,13 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
-from src.beneficiations.beneficiation import Beneficiation # type: src.beneficiations.beneficiation.Beneficiation
+from src.beneficiations.beneficiation import (  # type: src.beneficiations.beneficiation.Beneficiation
+    Beneficiation,
+)
 from src.config.singleton import Singleton
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 from src.extraction_output_manager.output_manager import OutputManager
-from src.miners.miner import Miner # type: src.miners.miner.Miner
+from src.miners.miner import Miner  # type: src.miners.miner.Miner
 from src.prospectors.prospector import Prospector
 
 # ---Constants
@@ -105,7 +107,7 @@ class ExtractionPlant(metaclass=Singleton):
             logger.info("mining")
             return self.miner.mine_directory(str(pth), True, out_man)
         else:
-            return out_man 
+            return out_man
 
     #    def _beneficiate(
     #        self,
