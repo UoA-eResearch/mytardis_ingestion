@@ -1,3 +1,4 @@
+# pylint: disable=C0301
 """Abstract parser module.
 
 This is an abstract parser that defines the protocols
@@ -23,6 +24,7 @@ class Parser(ABC):
     ) -> None:
         pass
 
+    # pylint: disable
     @abstractmethod
     def parse(
         self,
@@ -39,3 +41,4 @@ class Parser(ABC):
             IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
         """
         pass
+    # pylint: enable

@@ -1,16 +1,17 @@
+# pylint: disable=line-too-long
+# pylint: disable=logging-fstring-interpolation
 """JSON parser module.
 
 Main objective of this module is to map the json files to
 a format accepted by the mytardis_ingestion
 """
 
-
 # ---Imports
 import copy
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, Type, TypeVar
 
 from src.beneficiations.parsers.parser import Parser
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject

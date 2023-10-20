@@ -1,3 +1,4 @@
+# pylint: disable=C0301
 """Defines the methodology to inspect metadata and perform related checks on a path.
 """
 
@@ -5,11 +6,9 @@
 # ---Imports
 import copy
 import logging
-import os
-from typing import Any, Optional
+from typing import Optional
 
 from src.profiles import output_manager as om
-from src.profiles import profile_consts as pc
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -50,6 +49,9 @@ class CustomProspector:
             out_man = om.OutputManager()
         else:
             out_man = copy.deepcopy(out_man)
+        _ = recursive # Placeholder for the 'recursive' argument
+        _ = path # Placeholder for the 'path' argument
+
         # Write the main inspection implementation here
 
         return out_man

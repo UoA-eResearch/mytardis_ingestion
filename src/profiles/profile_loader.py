@@ -6,13 +6,9 @@ import importlib
 import logging
 from types import ModuleType
 
-from src.beneficiations.abstract_custom_beneficiation import (  # type: src.beneficiations.abstract_custom_beneficiation.AbstractCustomBeneficiation
-    AbstractCustomBeneficiation,
-)
+from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation # type: src.beneficiations.abstract_custom_beneficiation.AbstractCustomBeneficiation
 from src.config.singleton import Singleton
-from src.miners.abstract_custom_miner import (  # type: src.miners.abstract_custom_miner.AbstractCustomMiner
-    AbstractCustomMiner,
-)
+from src.miners.abstract_custom_miner import AbstractCustomMiner # type: src.miners.abstract_custom_miner
 from src.prospectors.abstract_custom_prospector import AbstractCustomProspector
 
 # ---Constants
