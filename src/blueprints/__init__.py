@@ -1,4 +1,4 @@
-# pylint: disable=missing-module-docstring
+# pylint: disable=missing-module-docstring, R0801
 
 from src.blueprints.common_models import GroupACL, Parameter, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime, MTUrl, Username

@@ -11,6 +11,7 @@ from typing import Any
 from src.profiles import profile_consts as pc
 from src.profiles import profile_helpers as ph
 
+# pylint: disable=R0801
 # ---Constants
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # set the level for which this logger will be printed.
@@ -207,7 +208,7 @@ class OutputManager:
             dict: An empty output dictionary with keys for 'success', 'ignored', and 'issues'.
         """
         out_dict = ph.create_output_dict()
-        for key in out_dict.keys():
+        for key in out_dict:
             out_dict[key] = []
         return out_dict
 
@@ -230,6 +231,6 @@ class OutputManager:
             dict: An empty metadata ingestion dictionary with keys for each dataclass.
         """
         ingestion_dict = ph.create_ingestion_dict()
-        for key in ingestion_dict.keys():
+        for key in ingestion_dict:
             ingestion_dict[key] = []
         return ingestion_dict

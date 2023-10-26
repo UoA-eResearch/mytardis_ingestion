@@ -2,6 +2,7 @@
 
 # File types to be skipped
 
+# pylint: disable=all
 COMMON_MACOS_SYS_FILES = [
     ".DS_Store",
     "._.DS_Store",

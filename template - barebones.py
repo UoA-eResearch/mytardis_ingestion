@@ -1,7 +1,8 @@
+# pylint: disable-all
+
 """
 Write module's purpose here
 """
-
 
 # ---Imports
 import logging

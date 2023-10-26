@@ -29,6 +29,7 @@ class CustomProspector:
         """Do not modify this method"""
         return None
 
+    # pylint: disable=R0801
     def inspect(
         self,
         path: str,
@@ -49,8 +50,8 @@ class CustomProspector:
             out_man = om.OutputManager()
         else:
             out_man = copy.deepcopy(out_man)
-        _ = recursive # Placeholder for the 'recursive' argument
-        _ = path # Placeholder for the 'path' argument
+        _ = recursive  # Placeholder for the 'recursive' argument
+        _ = path  # Placeholder for the 'path' argument
 
         # Write the main inspection implementation here
 

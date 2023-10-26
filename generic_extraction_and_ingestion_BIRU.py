@@ -1,9 +1,39 @@
+"""NB: THIS WILL NOT WORK AS IT IS AND IS PROVIDED FOR INDICATIVE PURPOSES ONLY
+
+Script to create the objects in MyTardis.
+
+The workflow for these scripts are as follows:
+-Extraction Plant
+ -- Prospector: involves checking the files and metadata to
+    see which files are worthy/unworthy of ingestion into MyTardis. Please
+    note that this is not compulsory if the IME is used.
+ -- Miner: involves converting and standardising the metadata so
+    that it can be beneficiated. Please note that this is not compulsory if the
+    IME is used.
+ -- Beneficiating the metadata: involves parsing the mined or IME-produced
+    metadata into raw dataclasses.
+
+-Conveyor
+   Taking datafile metadata from the extraction plant, we generate a list of
+   of files to transfer into MyTardis, then move them using a configured
+   Transport. This happens in a parallel process to the ingestion factory.
+
+-Ingestion Factory # Not working as intended yet, currently using the components separately
+ -- Smelting: Refines the raw dataclasses into refined dataclasses which closely
+    follows the MyTardis's data formats.
+ -- Crucible: Swaps out directory paths in the metadata into URI's. Used mainly
+    for locating datafiles in MyTardis's object store.
+ -- Forges: Creates MyTardis objects, from the URI-converted dataclasses,
+    in the MyTardis database.
+
+For the extraction plant processes, there are two pathways that depends on
+whether the IME is used. The rest of the steps remain the same from
+beneficiation onwards.
+"""
 # ---Imports
 import logging
-import subprocess
 from pathlib import Path
 
-from src import profiles
 from src.beneficiations.beneficiation import Beneficiation
 from src.config.config import ConfigFromEnv
 from src.crucible.crucible import Crucible
@@ -22,8 +52,11 @@ from src.smelters.smelter import Smelter
 logger = logging.getLogger(__name__)
 config = ConfigFromEnv()
 
-#pth = "tests/fixtures/fixtures_example.yaml"
-pth = '/Volumes/resmed202000005-biru-shared-drive/MyTardisTestData/Haruna_HierarchyStructure/ingestion.yaml'
+# pth = "tests/fixtures/fixtures_example.yaml"
+pth = (
+    "/Volumes/resmed202000005-biru-shared-drive/"
+    "MyTardisTestData/Haruna_HierarchyStructure/ingestion.yaml"
+)
 profile = str(Path("idw"))
 profile_loader = ProfileLoader(profile)
 
@@ -59,10 +92,10 @@ prj = ingestible_dataclasses.projects[0]
 exp = ingestible_dataclasses.experiments[0]
 ds = ingestible_dataclasses.datasets[0]
 df = ingestible_dataclasses.datafiles[0]
-#print(prj)
-#print(exp)
-#print(ds)
-'''for project_obj in ingestible_dataclasses.projects:
+# print(prj)
+# print(exp)
+# print(ds)
+"""for project_obj in ingestible_dataclasses.projects:
     refined_project, refined_project_parameters = smelter.smelt_project(project_obj)
     prepared_project = crucible.prepare_project(refined_project)
     forge = Forge(mt_rest)
@@ -76,7 +109,7 @@ for experiment_obj in ingestible_dataclasses.experiments:
 for dataset_obj in ingestible_dataclasses.datasets:
     refined_dataset, refined_dataset_parameters = smelter.smelt_dataset(dataset_obj)
     prepared_dataset = crucible.prepare_dataset(refined_dataset)
-    forge.forge_dataset(prepared_dataset, refined_dataset_parameters)'''
+    forge.forge_dataset(prepared_dataset, refined_dataset_parameters)"""
 
 for datafile_obj in ingestible_dataclasses.datafiles:
     smelted_datafile = smelter.smelt_datafile(datafile_obj)
@@ -86,66 +119,3 @@ for datafile_obj in ingestible_dataclasses.datafiles:
         forge.forge_datafile(prepared_datafile)
     except AttributeError:
         print(datafile_obj)
-    
-'''smelted_datafile = smelter.smelt_datafile(df)
-refined_datafile = smelted_datafile
-prepared_datafile = crucible.prepare_datafile(refined_datafile)
-forge.forge_datafile(prepared_datafile)'''
-
-'''test_project = ingestible_dataclasses.projects[0]
-test_experiment = ingestible_dataclasses.experiments[0]
-test_dataset = ingestible_dataclasses.datasets[0]
-test_datafiles = ingestible_dataclasses.datafiles[0:1]
-
-test_project.identifiers = ["testp1"]
-test_experiment.identifiers = ["teste1"]
-test_dataset.identifiers = ["testd1"]
-test_experiment.projects = ["testP1"]
-test_dataset.experiments = ["testE1"]
-test_dataset.instrument = "Olympus FV1000"
-
-
-refined_project, refined_project_parameters = smelter.smelt_project(test_project)
-prepared_project = crucible.prepare_project(refined_project)
-forge = Forge(mt_rest)
-forge.forge_project(prepared_project, refined_project_parameters)
-
-smelted_experiment = smelter.smelt_experiment(test_experiment)
-refined_experiment, refined_experiment_parameters = smelted_experiment
-prepared_experiment = crucible.prepare_experiment(refined_experiment)
-forge.forge_experiment(prepared_experiment, refined_experiment_parameters)
-
-smelted_dataset = smelter.smelt_dataset(test_dataset)
-refined_dataset, refined_dataset_parameters = smelted_dataset
-prepared_dataset = crucible.prepare_dataset(refined_dataset)
-forge.forge_dataset(prepared_dataset, refined_dataset_parameters)
-
-for df in test_datafiles:
-    smelted_datafile = smelter.smelt_datafile(df)
-    refined_datafile = smelted_datafile
-    prepared_datafile = crucible.prepare_datafile(refined_datafile)
-    forge.forge_datafile(prepared_datafile)'''
-
-# refined_datafiles, refined_datafiles_parameters = smelter.smelt_datafile(test_datafile)
-# prepared_datafiles = crucible.prepare_datafile(refined_datafiles)
-# 3forge.forge_datafile(prepared_datafiles, refined_datafiles_parameters)
-
-# factory = IngestionFactory(
-#    config = config,
-#    mt_rest = mt_rest,
-#    overseer = overseer,
-#    smelter = smelter,
-#    crucible= crucible,
-# )
-
-# rawprojects = ingestible_dataclasses.projects
-# rawexperiments = ingestible_dataclasses.experiments
-# rawdatasets = ingestible_dataclasses.datasets
-# datafiles = ingestible_dataclasses.datafiles
-# print(rawprojects)
-
-# factory.ingest_projects(ingestible_dataclasses.projects)
-
-# factory.ingest_experiments(ingestible_dataclasses.experiments)
-# factory.ingest_datasets(ingestible_dataclasses.datasets)
-# factory.ingest_datafiles(ingestible_dataclasses.datafiles)

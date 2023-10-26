@@ -24,7 +24,6 @@ class Parser(ABC):
     ) -> None:
         pass
 
-    # pylint: disable
     @abstractmethod
     def parse(
         self,
@@ -40,5 +39,3 @@ class Parser(ABC):
         Returns:
             IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
         """
-        pass
-    # pylint: enable

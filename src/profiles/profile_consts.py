@@ -1,6 +1,7 @@
+# pylint: disable-all
+
 """Constants used throughout a profile in the Extraction Plant
 """
-
 PROFILE_NAME_DEFAULT = "default"
 
 DEFAULT_KEY = "default"

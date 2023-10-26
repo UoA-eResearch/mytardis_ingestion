@@ -9,11 +9,11 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
-from src.beneficiations.beneficiation import Beneficiation  # type: src.beneficiations.beneficiation.Beneficiation
+from src.beneficiations.beneficiation import Beneficiation  # type: ignore
 from src.config.singleton import Singleton
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 from src.extraction_output_manager.output_manager import OutputManager
-from src.miners.miner import Miner  # type: src.miners.miner.Miner
+from src.miners.miner import Miner  # type: ignore
 from src.prospectors.prospector import Prospector
 
 # ---Constants
@@ -93,8 +93,8 @@ class ExtractionPlant(metaclass=Singleton):
                 str(pth), True, out_man
             )
             return out_man_fnl
-        else:
-            return out_man
+        logger.info("prospector not set")
+        return OutputManager()
 
     def _mine(
         self,
@@ -103,9 +103,9 @@ class ExtractionPlant(metaclass=Singleton):
     ) -> OutputManager:
         if self.miner:
             logger.info("mining")
-            return self.miner.mine_directory(str(pth), True, out_man)
-        else:
-            return out_man
+            return self.miner.mine_directory(str(pth), True, out_man)  # type: ignore
+        logger.info("miner not set")
+        return OutputManager()
 
     #    def _beneficiate(
     #        self,
@@ -126,4 +126,4 @@ class ExtractionPlant(metaclass=Singleton):
         ingestible_dataclasses = self.beneficiation.beneficiation.beneficiate(
             pth, ing_dclasses
         )
-        return ingestible_dataclasses
+        return ingestible_dataclasses  # type: ignore

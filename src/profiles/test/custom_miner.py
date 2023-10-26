@@ -30,6 +30,7 @@ class CustomMiner:
         """Do not modify this method"""
         return None
 
+    # pylint: disable=R0801
     def mine(
         self,
         path: str,
@@ -53,9 +54,9 @@ class CustomMiner:
         else:
             out_man = copy.deepcopy(out_man)
 
-        _ = recursive # Placeholder for the 'recursive' argument
-        _ = path # Placeholder for the 'path' argument
-        _ = options # Placeholder for the 'options' argument
+        _ = recursive  # Placeholder for the 'recursive' argument
+        _ = path  # Placeholder for the 'path' argument
+        _ = options  # Placeholder for the 'options' argument
 
         # Write the main inspection implementation here
 

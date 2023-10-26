@@ -2,7 +2,7 @@
 import hashlib
 import mimetypes
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 
 
 def calculate_md5sum(
@@ -34,17 +34,17 @@ def determine_mimetype(
     Returns:
         str | None: The MIME type if it can be determined, or None if not.
     """
-    mimetype,  _ = mimetypes.guess_type(fn)
+    mimetype, _ = mimetypes.guess_type(fn)
     return mimetype
 
 
 def replace_micrometer_values(
-    data: Union[Dict, List], replacement: str
-) -> Union[Dict, List]:
+    data: Union[Dict[Any, Any], List[Any]], replacement: str
+) -> Union[Dict[Any, Any], List[Any]]:
     """Recursively replace micrometer values in a dictionary or list.
 
-    This function searches for string values in dictionaries or lists that end with "µm" (micrometers)
-    and replaces them with the specified replacement string.
+    This function searches for string values in dictionaries or lists that end with "µm"
+    (micrometers) and replaces them with the specified replacement string.
 
     Args:
         data (Union[Dict, List]): The dictionary or list containing values to check and replace.
@@ -53,10 +53,26 @@ def replace_micrometer_values(
     Returns:
         Union[Dict, List]: The input data with micrometer values replaced.
     """
-    if isinstance(data, Dict):
+    if isinstance(data, dict):
         for key, value in data.items():
-            if isinstance(value, str) and value.endswith("µm"):
-                data[key] = value[:-2] + replacement
-            elif isinstance(value, Union[Dict, List]):
+            data[key] = (
                 replace_micrometer_values(value, replacement)
+                if isinstance(value, (dict, list))
+                else (
+                    value[:-2] + replacement
+                    if isinstance(value, str) and value.endswith("µm")
+                    else value
+                )
+            )
+    elif isinstance(data, list):
+        return [
+            replace_micrometer_values(item, replacement)
+            if isinstance(item, (dict, list))
+            else (
+                item[:-2] + replacement
+                if isinstance(item, str) and item.endswith("µm")
+                else item
+            )
+            for item in data
+        ]
     return data

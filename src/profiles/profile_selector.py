@@ -40,6 +40,7 @@ class ProfileSelector:
             logger.error(err, exc_info=True)
             raise ImportError("Error loading profile module") from err
 
+    # pylint: disable=R0801
     def load_profile_module(  # pylint: disable=missing-function-docstring
         self,
     ) -> ModuleType:

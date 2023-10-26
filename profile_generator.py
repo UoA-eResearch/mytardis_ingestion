@@ -11,10 +11,9 @@ is generated for the specific setup.
 import logging
 import shutil
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import yaml
-from pydantic.fields import ModelField
 
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
@@ -117,15 +116,18 @@ class ProfileGenerator:
         self,
         class_type: RawDatafile | RawDataset | RawExperiment | RawProject,
     ) -> Dict[str, Dict[str, Any]]:
-        """Generates a dict that is used to help map the fields of the rawdataclasses. The keys of this dict are the
-        attributes of the raw dataclasses which are to be replaced by the equivalent keys from the instrument,
-        and the values for each key is a dict that contains metadata on how to map the key.
+        """Generates a dict that is used to help map the fields of the rawdataclasses.
+        The keys of this dict are the attributes of the raw dataclasses which are to
+        be replaced by the equivalent keys from the instrument, and the values for each
+        key is a dict that contains metadata on how to map the key.
 
         Args:
-            class_type (RawDatafile | RawDataset | RawExperiment | RawProject): the dataclass to produce a dict for
+            class_type (RawDatafile | RawDataset | RawExperiment | RawProject):
+            the dataclass to produce a dict for
 
         Returns:
-            Dict[str,Any]: A dictionary containing the raw dataclasses's fields as the keys to a dictionary of
+            Dict[str,Any]: A dictionary containing the raw dataclasses's fields as
+            the keys to a dictionary of
         """
         raw_dataclass_dict = {}
         fields_dict = class_type.__dict__["__fields__"]

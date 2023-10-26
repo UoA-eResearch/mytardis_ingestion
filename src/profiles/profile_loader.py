@@ -1,3 +1,4 @@
+# pylint: disable=C0103
 """Checks and selects the designated profile and loads the corresponding module
 """
 
@@ -6,9 +7,11 @@ import importlib
 import logging
 from types import ModuleType
 
-from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation # type: src.beneficiations.abstract_custom_beneficiation.AbstractCustomBeneficiation
+from src.beneficiations.abstract_custom_beneficiation import (
+    AbstractCustomBeneficiation,  # type: ignore
+)
 from src.config.singleton import Singleton
-from src.miners.abstract_custom_miner import AbstractCustomMiner # type: src.miners.abstract_custom_miner
+from src.miners.abstract_custom_miner import AbstractCustomMiner  # type: ignore
 from src.prospectors.abstract_custom_prospector import AbstractCustomProspector
 
 # ---Constants
@@ -36,15 +39,17 @@ class ProfileLoader(metaclass=Singleton):
         profile: str,
     ) -> None:
         if not profile:
-            raise Exception("Error! Profile not set")
+            raise ValueError("Profile not set")
         self.profile = profile
         try:
             self.profile_module_str = prof_base_lib + profile
             self.profile_module = importlib.import_module(self.profile_module_str)
+        except ModuleNotFoundError as e:
+            raise Exception("Error loading profile module, profile not found") from e
         except Exception as e:
             logger.error(e)
-            raise Exception("Error loading profile module, profile not found")
 
+    # pylint: disable=R0801
     def load_profile_module(
         self,
     ) -> ModuleType:
@@ -93,7 +98,8 @@ class ProfileLoader(metaclass=Singleton):
             return custom_beneficiation
         except Exception as e:
             logger.info(
-                "AbstractCustomBeneficiation not loaded, will be set to None. Below are the details:"
+                "AbstractCustomBeneficiation not loaded, will be set to None."
+                "Below are the details:"
             )
             logger.info(e)
             return None

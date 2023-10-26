@@ -1,3 +1,4 @@
+# pylint: disable-all
 """NB: THIS WILL NOT WORK AS IT IS AND IS PROVIDED FOR INDICATIVE PURPOSES ONLY
 
 Script to create the objects in MyTardis.
