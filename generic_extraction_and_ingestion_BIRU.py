@@ -1,3 +1,4 @@
+# pylint: disable=C0103
 """NB: THIS WILL NOT WORK AS IT IS AND IS PROVIDED FOR INDICATIVE PURPOSES ONLY
 
 Script to create the objects in MyTardis.
@@ -40,10 +41,8 @@ from src.crucible.crucible import Crucible
 from src.extraction_plant.extraction_plant import ExtractionPlant
 from src.forges.forge import Forge
 from src.helpers.mt_rest import MyTardisRESTFactory
-from src.ingestion_factory.factory import IngestionFactory
 from src.miners.miner import Miner
 from src.overseers.overseer import Overseer
-from src.profiles.idw.custom_beneficiation import CustomBeneficiation
 from src.profiles.profile_loader import ProfileLoader
 from src.prospectors.prospector import Prospector
 from src.smelters.smelter import Smelter

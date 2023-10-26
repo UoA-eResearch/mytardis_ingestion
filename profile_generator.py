@@ -59,8 +59,8 @@ class ProfileGenerator:
         """
         prof_pth = self.profile_path / Path(profile_name)
         if prof_pth.exists():
-            logger.error(f"Profile with name {profile_name} already exists.")
-            raise Exception(f"Profile with name {profile_name} already exists.")
+            logger.error("Profile with name %s already exists.", profile_name)
+            raise FileExistsError(f"Profile with name {profile_name} already exists.")
 
         dst = self._create_profile_folder(
             self.profile_path, profile_name, include_configenv
@@ -158,6 +158,17 @@ class ProfileGenerator:
 
 
 def standalone_generation():
+    """
+    Prompt the user for profile information and generate a profile folder.
+
+    This function interacts with the user to gather information about the profile and
+    whether to generate a .env file. It then calls the `ProfileGenerator` to create the
+    profile folder.
+
+    Raises:
+        Exception: If the user provides an invalid response to the prompt.
+
+    """
     profile_name = input("Please enter profile name: ")
     y_or_n = input("Do you wish to generate a .env file with this profile? (y/n)")
     gen_env = False
@@ -166,7 +177,7 @@ def standalone_generation():
     elif y_or_n.lower() == "n":
         gen_env = False
     else:
-        raise Exception(
+        raise ValueError(
             "Invalid response (can only be either 'y' or 'n'), please try again"
         )
     p_gen = ProfileGenerator()

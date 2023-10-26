@@ -1,5 +1,4 @@
-# pylint: disable-all
-# type: ignore
+# pylint: disable=R0801
 # This needs a lot of refactoring so disable checks
 # noqa
 # nosec
@@ -12,8 +11,7 @@ This is an abstract parser that defines the protocols
 # ---Imports
 import logging
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any
 
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 
@@ -39,10 +37,12 @@ class AbstractCustomBeneficiation(ABC):
         """Parse metadata files of a given file type into raw dataclasses
 
         Args:
-            beneficiation_data (Any): An object that contains a filepath or a structure of filepaths that contains metadata to parse into raw dataclasses
-            ingestible_dataclasses (IngestibleDataclasses): A class that contains the raw datafiles, datasets, experiments, and projects
+            beneficiation_data (Any): An object that contains a filepath or
+            a structure of filepaths that contains metadata to parse into raw dataclasses
+            ingestible_dataclasses (IngestibleDataclasses): A class that contains the raw
+            datafiles, datasets, experiments, and projects
 
         Returns:
-            IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects
+            IngestibleDataclasses: A class that contains the raw datafiles,
+            datasets, experiments, and projects
         """
-        pass

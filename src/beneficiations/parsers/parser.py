@@ -1,4 +1,4 @@
-# pylint: disable=C0301
+# pylint: disable=C0301, R0801
 """Abstract parser module.
 
 This is an abstract parser that defines the protocols
