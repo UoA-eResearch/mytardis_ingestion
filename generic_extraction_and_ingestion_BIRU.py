@@ -94,21 +94,23 @@ df = ingestible_dataclasses.datafiles[0]
 # print(prj)
 # print(exp)
 # print(ds)
-"""for project_obj in ingestible_dataclasses.projects:
+for project_obj in ingestible_dataclasses.projects:
     refined_project, refined_project_parameters = smelter.smelt_project(project_obj)
     prepared_project = crucible.prepare_project(refined_project)
     forge = Forge(mt_rest)
     forge.forge_project(prepared_project, refined_project_parameters)
 
 for experiment_obj in ingestible_dataclasses.experiments:
-    refined_experiment, refined_experiment_parameters = smelter.smelt_experiment(experiment_obj)
+    refined_experiment, refined_experiment_parameters = smelter.smelt_experiment(
+        experiment_obj
+    )
     prepared_experiment = crucible.prepare_experiment(refined_experiment)
     forge.forge_experiment(prepared_experiment, refined_experiment_parameters)
 
 for dataset_obj in ingestible_dataclasses.datasets:
     refined_dataset, refined_dataset_parameters = smelter.smelt_dataset(dataset_obj)
     prepared_dataset = crucible.prepare_dataset(refined_dataset)
-    forge.forge_dataset(prepared_dataset, refined_dataset_parameters)"""
+    forge.forge_dataset(prepared_dataset, refined_dataset_parameters)
 
 for datafile_obj in ingestible_dataclasses.datafiles:
     smelted_datafile = smelter.smelt_datafile(datafile_obj)
