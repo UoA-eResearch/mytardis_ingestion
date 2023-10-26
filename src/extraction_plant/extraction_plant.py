@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
-from src.beneficiations.beneficiation import Beneficiation # type: src.beneficiations.beneficiation.Beneficiation
+from src.beneficiations.beneficiation import Beneficiation  # type: src.beneficiations.beneficiation.Beneficiation
 from src.config.singleton import Singleton
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 from src.extraction_output_manager.output_manager import OutputManager
