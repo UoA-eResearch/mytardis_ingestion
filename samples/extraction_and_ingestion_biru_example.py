@@ -1,3 +1,4 @@
+
 # pylint: disable=C0103
 """NB: THIS WILL NOT WORK AS IT IS AND IS PROVIDED FOR INDICATIVE PURPOSES ONLY
 
@@ -46,6 +47,8 @@ from src.overseers.overseer import Overseer
 from src.profiles.profile_loader import ProfileLoader
 from src.prospectors.prospector import Prospector
 from src.smelters.smelter import Smelter
+from src.conveyor.transports.rsync import RsyncTransport
+from src.conveyor.conveyor import Conveyor
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -59,45 +62,60 @@ pth = (
 profile = str(Path("idw"))
 profile_loader = ProfileLoader(profile)
 
-prospector = Prospector(profile_loader.load_custom_prospector())
-miner = Miner(profile_loader.load_custom_miner())
+def do_ingest():
+   """Runs the ingestion pipeline.
+   """
+   prospector = Prospector(profile_loader.load_custom_prospector())
+   miner = Miner(profile_loader.load_custom_miner())
 
-beneficiation = Beneficiation(profile_loader.load_custom_beneficiation())
+   beneficiation = Beneficiation(profile_loader.load_custom_beneficiation())
 
-ext_plant = ExtractionPlant(prospector, miner, beneficiation)
-ingestible_dataclasses = ext_plant.run_extraction(pth)
+   ext_plant = ExtractionPlant(prospector, miner, beneficiation)
+   ingestible_dataclasses = ext_plant.run_extraction(pth)
 
-###Ingestion step
-mt_rest = MyTardisRESTFactory(config.auth, config.connection)
-overseer = Overseer(mt_rest)
+   # Start conveyor to transfer datafiles.
+   datafiles = ingestible_dataclasses.get_datafiles()
+   rsync_transport = RsyncTransport(Path("/home/szen012/Documents/ingestion-test"))
+   conveyor = Conveyor(rsync_transport)
+   conveyor_process = conveyor.initiate_transfer(Path(pth).parent, datafiles)
 
-crucible = Crucible(
-    overseer=overseer,
-    storage=config.storage,
-)
 
-smelter = Smelter(
-    general=config.general,
-    default_schema=config.default_schema,
-    storage=config.storage,
-    overseer=overseer,
-)
+   ###Ingestion step
+   mt_rest = MyTardisRESTFactory(config.auth, config.connection)
+   overseer = Overseer(mt_rest)
 
-factory = IngestionFactory(
-    config=config,
-    mt_rest=mt_rest,
-    overseer=overseer,
-    smelter=smelter,
-)
+   crucible = Crucible(
+      overseer=overseer,
+      storage=config.storage,
+   )
 
-project_objs = ingestible_dataclasses.get_projects()
-factory.ingest_projects(project_objs)
+   smelter = Smelter(
+      general=config.general,
+      default_schema=config.default_schema,
+      storage=config.storage,
+      overseer=overseer,
+   )
 
-experiment_objs = ingestible_dataclasses.get_experiments()
-factory.ingest_experiments(experiment_objs)
+   factory = IngestionFactory(
+      config=config,
+      mt_rest=mt_rest,
+      overseer=overseer,
+      smelter=smelter,
+   )
 
-dataset_objs = ingestible_dataclasses.get_datasets()
-factory.ingest_datasets(dataset_objs)
+   project_objs = ingestible_dataclasses.get_projects()
+   factory.ingest_projects(project_objs)
 
-datafile_objs = ingestible_dataclasses.get_datafiles()
-factory.ingest_datafiles(datafile_objs)
+   experiment_objs = ingestible_dataclasses.get_experiments()
+   factory.ingest_experiments(experiment_objs)
+
+   dataset_objs = ingestible_dataclasses.get_datasets()
+   factory.ingest_datasets(dataset_objs)
+
+   datafile_objs = ingestible_dataclasses.get_datafiles()
+   factory.ingest_datafiles(datafile_objs)
+   # Wait for file transfer to finish.
+   conveyor_process.join()
+
+if __name__ == "__main__":
+   do_ingest()
