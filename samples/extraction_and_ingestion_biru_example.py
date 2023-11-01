@@ -39,8 +39,8 @@ from src.beneficiations.beneficiation import Beneficiation
 from src.config.config import ConfigFromEnv
 from src.crucible.crucible import Crucible
 from src.extraction_plant.extraction_plant import ExtractionPlant
-from src.forges.forge import Forge
 from src.helpers.mt_rest import MyTardisRESTFactory
+from src.ingestion_factory.factory import IngestionFactory
 from src.miners.miner import Miner
 from src.overseers.overseer import Overseer
 from src.profiles.profile_loader import ProfileLoader
@@ -54,7 +54,7 @@ config = ConfigFromEnv()
 # pth = "tests/fixtures/fixtures_example.yaml"
 pth = (
     "/Volumes/resmed202000005-biru-shared-drive/"
-    "MyTardisTestData/Haruna_HierarchyStructure/ingestion.yaml"
+    "MyTardisTestData/Haruna_HierarchyStructure/20221113_haruna_RWM_sheep_/test.yaml"
 )
 profile = str(Path("idw"))
 profile_loader = ProfileLoader(profile)
@@ -83,40 +83,21 @@ smelter = Smelter(
     overseer=overseer,
 )
 
-forge = Forge(mt_rest)
-# default_schema = config.default_schema
-# schema_project = default_schema.project
-# print(schema_project)
-prj = ingestible_dataclasses.projects[0]
-exp = ingestible_dataclasses.experiments[0]
-ds = ingestible_dataclasses.datasets[0]
-df = ingestible_dataclasses.datafiles[0]
-# print(prj)
-# print(exp)
-# print(ds)
-for project_obj in ingestible_dataclasses.projects:
-    refined_project, refined_project_parameters = smelter.smelt_project(project_obj)
-    prepared_project = crucible.prepare_project(refined_project)
-    forge = Forge(mt_rest)
-    forge.forge_project(prepared_project, refined_project_parameters)
+factory = IngestionFactory(
+    config=config,
+    mt_rest=mt_rest,
+    overseer=overseer,
+    smelter=smelter,
+)
 
-for experiment_obj in ingestible_dataclasses.experiments:
-    refined_experiment, refined_experiment_parameters = smelter.smelt_experiment(
-        experiment_obj
-    )
-    prepared_experiment = crucible.prepare_experiment(refined_experiment)
-    forge.forge_experiment(prepared_experiment, refined_experiment_parameters)
+project_objs = ingestible_dataclasses.get_projects()
+factory.ingest_projects(project_objs)
 
-for dataset_obj in ingestible_dataclasses.datasets:
-    refined_dataset, refined_dataset_parameters = smelter.smelt_dataset(dataset_obj)
-    prepared_dataset = crucible.prepare_dataset(refined_dataset)
-    forge.forge_dataset(prepared_dataset, refined_dataset_parameters)
+experiment_objs = ingestible_dataclasses.get_experiments()
+factory.ingest_experiments(experiment_objs)
 
-for datafile_obj in ingestible_dataclasses.datafiles:
-    smelted_datafile = smelter.smelt_datafile(datafile_obj)
-    refined_datafile = smelted_datafile
-    try:
-        prepared_datafile = crucible.prepare_datafile(refined_datafile)
-        forge.forge_datafile(prepared_datafile)
-    except AttributeError:
-        print(datafile_obj)
+dataset_objs = ingestible_dataclasses.get_datasets()
+factory.ingest_datasets(dataset_objs)
+
+datafile_objs = ingestible_dataclasses.get_datafiles()
+factory.ingest_datafiles(datafile_objs)

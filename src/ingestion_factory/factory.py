@@ -1,4 +1,4 @@
-# pylint: disable=R0801
+# pylint: disable=R0801, C0123
 """IngestionFactory is a base class for specific instances of MyTardis
 Ingestion scripts. The base class contains mostly concrete functions but
 needs to determine the Smelter class that is used by the Factory"""
@@ -115,7 +115,7 @@ class IngestionFactory(metaclass=Singleton):
             storage=config.storage,
         )
         self.crucible = crucible or Crucible(
-            overseer,
+            overseer=overseer,
             storage=config.storage,
         )
 
@@ -157,7 +157,7 @@ class IngestionFactory(metaclass=Singleton):
                 prepared_project, refined_parameters
             )
 
-            if isinstance(forged_project, URI):
+            if type(forged_project) == URI:
                 result.success.append((name, forged_project))
             else:
                 result.success.append((name, None))
@@ -213,7 +213,7 @@ class IngestionFactory(metaclass=Singleton):
                 prepared_experiment, refined_parameters
             )
 
-            if isinstance(forged_experiment, URI):
+            if type(forged_experiment) == URI:
                 result.success.append((name, forged_experiment))
             else:
                 result.success.append((name, None))
@@ -268,7 +268,7 @@ class IngestionFactory(metaclass=Singleton):
             forged_dataset = self.forge.forge_dataset(
                 prepared_dataset, refined_parameters
             )
-            if isinstance(forged_dataset, URI):
+            if type(forged_dataset) == URI:
                 result.success.append((name, forged_dataset))
             else:
                 result.success.append((name, None))
