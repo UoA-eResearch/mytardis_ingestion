@@ -44,65 +44,63 @@ from src.helpers.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 
 
-def init_logging(file_name : Optional[str]):
-   root = logging.getLogger()
-   root.setLevel(logging.DEBUG)
+def init_logging(file_name: Optional[str]):
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
 
-   console_handler = logging.StreamHandler(sys.stdout)
-   console_handler.setLevel(logging.DEBUG)
-   console_handler.setFormatter(logging.Formatter("[%(levelname)s]: %(message)s"))
-   root.addHandler(console_handler)
-   
-   if file_name:
-      file_handler = logging.FileHandler(filename=file_name, mode="w")
-      file_handler.setLevel(logging.DEBUG)
-      file_handler.setFormatter(logging.Formatter("[%(levelname)s]: %(message)s"))
-      root.addHandler(file_handler) 
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.DEBUG)
+    console_handler.setFormatter(logging.Formatter("[%(levelname)s]: %(message)s"))
+    root.addHandler(console_handler)
+
+    if file_name:
+        file_handler = logging.FileHandler(filename=file_name, mode="w")
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(logging.Formatter("[%(levelname)s]: %(message)s"))
+        root.addHandler(file_handler)
 
 
 config = ConfigFromEnv()
 
 
-# def directories(path : Path) -> Iterable[Path]:
-#     return (entry for entry in path.glob('*') if entry.is_dir())
-
-def directories(path : Path) -> Iterable[Path]:
-    for child in path.glob('*'):
+def directories(path: Path) -> Iterable[Path]:
+    for child in path.glob("*"):
         if child.is_dir():
             yield child
+
 
 # ---Code
 def main() -> None:
     """Extracts and ingests metadata from dataclasses into MyTardis.
-   
+
     The extraction is done using the ExtractionPlant class that runs the prospector, miner, and beneficiation
-   
+
     The ingestion is done using the IngestionFactory class that runs the smelter, crucible, and forge
     """
 
     init_logging("abi_extract_and_ingest.log")
-    
+
     ###Extraction step
     data_root = Path("/mnt/abi_test_data")
-    assert data_root.is_dir(), f'Data root {str(data_root)} is not a valid directory'
+    assert data_root.is_dir(), f"Data root {str(data_root)} is not a valid directory"
 
     # Basic sanity check
-    assert any(path.is_dir() for path in data_root.glob('*')), 'Data root directory has no child directories. Does it need to be mounted?'
-    
+    assert any(
+        path.is_dir() for path in data_root.glob("*")
+    ), "Data root directory has no child directories. Does it need to be mounted?"
+
     # profile_name: str = 'abi_music'
     # profile_loader = ProfileLoader(profile_name)
 
-    raw_dir = data_root / 'Vault' / 'Raw'
-    zarr_dir = data_root / 'Zarr'
-    process_dir = data_root / 'Process'
+    raw_dir = data_root / "Vault" / "Raw"
+    zarr_dir = data_root / "Zarr"
+    process_dir = data_root / "Process"
 
-    assert raw_dir.is_dir(), 'Raw data directory not found'
-    assert zarr_dir.is_dir(), 'Zarr directory not found'
-    assert process_dir.is_dir(), 'Process directory not found'
-
+    assert raw_dir.is_dir(), "Raw data directory not found"
+    assert zarr_dir.is_dir(), "Zarr directory not found"
+    assert process_dir.is_dir(), "Process directory not found"
 
     project_names = directories(raw_dir)
-
 
     # Within Raw:
     # - Raw should have projects (currently just "BenP")
@@ -115,7 +113,6 @@ def main() -> None:
     # - Everything under these files should be datafiles
     # - Each dataset should have some metadata linking it to the corresponding "raw" dataset
 
-
     # Within Process:
     # - For each dataset, there should be a "<project>/<experiment>/<dataset file>", e.g. "BenP/PID143/BlockA"
     #   - This contains an intermediate directory named with a timestamp
@@ -124,51 +121,41 @@ def main() -> None:
     #
 
 
-
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
     main()
 
 
+#  prospector = CustomProspector()
 
-  #  prospector = CustomProspector()
+# prospector = profile_loader.load_custom_prospector()
+#  assert prospector is not None, 'Failed to load custom prospector'
 
-    # prospector = profile_loader.load_custom_prospector()
-   #  assert prospector is not None, 'Failed to load custom prospector'
+#  om_vault = prospector.prospect(path=str(data_root / 'Vault'), recursive=True)
+#  om_process = prospector.prospect(path=str(data_root / 'Process'), recursive=True)
+#  om_zarr = prospector.prospect(path=str(data_root / 'Zarr'), recursive=True)
 
-    #  om_vault = prospector.prospect(path=str(data_root / 'Vault'), recursive=True)
-    #  om_process = prospector.prospect(path=str(data_root / 'Process'), recursive=True)
-    #  om_zarr = prospector.prospect(path=str(data_root / 'Zarr'), recursive=True)
+#  om_root = prospector.prospect(path=str(data_root), recursive=True)
 
-   #  om_root = prospector.prospect(path=str(data_root), recursive=True)
+# TODO:  try running the miner
+#  miner = Miner(profile_loader.load_custom_miner)
+#  miner = CustomMiner()
 
-    # TODO:  try running the miner
-    #  miner = Miner(profile_loader.load_custom_miner)
-   #  miner = CustomMiner()
-    
-   #  beneficiation = Beneficiation(profile_loader.load_custom_beneficiation)
-    
-   #  ext_plant = ExtractionPlant(prospector, miner, beneficiation)
-   #  ingestible_dataclasses = ext_plant.run_extraction(data_root)
-    #  ingestibles = ext_plant.run_extraction(pth, bc.JSON_FORMAT) #for json files
-    
-    # # Start conveyor to transfer datafiles.
-   #  datafiles = ingestible_dataclasses.get_datafiles()
-   #  rsync_transport = RsyncTransport(Path("/replace/with/your/transfer/destination"))
-   #  conveyor = Conveyor(rsync_transport)
-   #  conveyor_process = conveyor.initiate_transfer(data_root, datafiles)
-    
-    ###Ingestion step
-   #  mt_rest = MyTardisRESTFactory(config.auth, config.connection)
-   #  overseer = Overseer(mt_rest)
-    # TODO YJ complete the rest of the template script here once the ingestion factory is renovated
-    
-    # After metadata ingestion is done, wait for conveyor to finish.
-   #  conveyor_process.join()
+#  beneficiation = Beneficiation(profile_loader.load_custom_beneficiation)
+
+#  ext_plant = ExtractionPlant(prospector, miner, beneficiation)
+#  ingestible_dataclasses = ext_plant.run_extraction(data_root)
+#  ingestibles = ext_plant.run_extraction(pth, bc.JSON_FORMAT) #for json files
+
+# # Start conveyor to transfer datafiles.
+#  datafiles = ingestible_dataclasses.get_datafiles()
+#  rsync_transport = RsyncTransport(Path("/replace/with/your/transfer/destination"))
+#  conveyor = Conveyor(rsync_transport)
+#  conveyor_process = conveyor.initiate_transfer(data_root, datafiles)
+
+###Ingestion step
+#  mt_rest = MyTardisRESTFactory(config.auth, config.connection)
+#  overseer = Overseer(mt_rest)
+# TODO YJ complete the rest of the template script here once the ingestion factory is renovated
+
+# After metadata ingestion is done, wait for conveyor to finish.
+#  conveyor_process.join()
