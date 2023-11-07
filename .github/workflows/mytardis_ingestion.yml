@@ -47,3 +47,7 @@ jobs:
 
     - name: Run pylint
       run: PYTHONPATH=src/ poetry run python -m pylint src/ --rcfile .pylintrc
+
+    - name: Run mypy
+      # Takes configuration from pyproject.toml
+      run: PYTHONPATH=src/ poetry run python -m mypy
