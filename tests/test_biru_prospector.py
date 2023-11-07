@@ -19,7 +19,7 @@ logger.propagate = True
 
 
 def test_prospector():
-    pth = "tests/fixtures/fixtures_example.yaml"
+    pth = "tests/testdata/test_ingestion.yaml"
     profile = str(Path("idw"))
     profile_loader = ProfileLoader(profile)
 

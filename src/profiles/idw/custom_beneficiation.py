@@ -161,7 +161,6 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         return Username(node.value)
 
     def _path_constructor(self, loader: Loader, node: MappingNode) -> Path:
-        # TO Do: change back the directory when relative path issue is solved
         # path = node.value
         # folder_name = os.path.basename(path)
         # return Path(folder_name)
@@ -266,9 +265,7 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
                     ingestible_dclasses.add_dataset(obj)
                 if isinstance(obj, RawDatafile):
                     df_path = Path(fpath).parent.joinpath(obj.directory)
-                    # print(df_path)
                     df_dir = df_path / obj.filename
-                    # print(type(df_path))
                     obj.md5sum = datafile_metadata_helpers.calculate_md5sum(df_dir)
                     ingestible_dclasses.add_datafile(obj)
         return ingestible_dclasses
