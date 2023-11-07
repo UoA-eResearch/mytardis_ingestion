@@ -1,3 +1,4 @@
+# pylint: disable=R0801
 """Helper functions related to multiple dataclasses."""
 
 from typing import List

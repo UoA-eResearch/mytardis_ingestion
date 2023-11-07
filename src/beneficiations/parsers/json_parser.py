@@ -1,16 +1,17 @@
+# pylint: disable=line-too-long
+# pylint: disable=logging-fstring-interpolation
 """JSON parser module.
 
 Main objective of this module is to map the json files to
 a format accepted by the mytardis_ingestion
 """
 
-
 # ---Imports
 import copy
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Type, TypeVar
 
 from src.beneficiations.parsers.parser import Parser
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
@@ -19,6 +20,9 @@ from src.utils.ingestibles import IngestibleDataclasses
 
 # ---Constants
 logger = logging.getLogger(__name__)
+
+# Define a type variable to represent the possible dataclass types
+T = TypeVar("T", RawProject, RawExperiment, RawDataset, RawDatafile)
 
 
 # ---Code
@@ -131,8 +135,8 @@ class JsonParser(Parser):
     def _parse_json_files(
         self,
         dclass_files: list[Path],
-        dclass_type: RawProject | RawExperiment | RawDataset | RawDatafile,
-    ) -> list[RawProject | RawExperiment | RawDataset | RawDatafile]:
+        dclass_type: Type[T],
+    ) -> list[T]:
         """Casts the json object into the relevant raw dataclass
 
         Args:
@@ -142,7 +146,7 @@ class JsonParser(Parser):
         Returns:
             list[RawProject|RawExperiment|RawDataset|RawDatafile]: list of parsed raw dataclasses
         """
-        raw_dclasses: list[RawProject | RawExperiment | RawDataset | RawDatafile] = []
+        raw_dclasses: list[T] = []
         for fp in dclass_files:
             with fp.open("r") as f:
                 json_obj = json.load(f)

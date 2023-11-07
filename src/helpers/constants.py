@@ -2,6 +2,7 @@
 
 # File types to be skipped
 
+# pylint: disable=all
 COMMON_MACOS_SYS_FILES = [
     ".DS_Store",
     "._.DS_Store",
@@ -16,7 +17,7 @@ COMMON_MACOS_SYS_FILES = [
     ".AppleDB",
 ]
 
-COMMON_WIN_SYS_FILES = ["thumbs.db"]
+COMMON_WIN_SYS_FILES = ["thumbs.db", "Thumbs.db"]
 
 MACOS_PREFIXES_TO_REJECT = ["._"]
 

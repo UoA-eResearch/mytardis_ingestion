@@ -1,3 +1,4 @@
+# pylint: disable=R0801, C0123, fixme
 """IngestionFactory is a base class for specific instances of MyTardis
 Ingestion scripts. The base class contains mostly concrete functions but
 needs to determine the Smelter class that is used by the Factory"""
@@ -114,7 +115,7 @@ class IngestionFactory(metaclass=Singleton):
             storage=config.storage,
         )
         self.crucible = crucible or Crucible(
-            overseer,
+            overseer=overseer,
             storage=config.storage,
         )
 
@@ -155,8 +156,9 @@ class IngestionFactory(metaclass=Singleton):
             forged_project = self.forge.forge_project(
                 prepared_project, refined_parameters
             )
-
-            if isinstance(forged_project, URI):
+            # TODO: This is a temporary fix for TypeError.
+            # Might need to use isinstance() rather than type() for a typecheck.
+            if type(forged_project) == URI:
                 result.success.append((name, forged_project))
             else:
                 result.success.append((name, None))
@@ -211,8 +213,9 @@ class IngestionFactory(metaclass=Singleton):
             forged_experiment = self.forge.forge_experiment(
                 prepared_experiment, refined_parameters
             )
-
-            if isinstance(forged_experiment, URI):
+            # TODO: This is a temporary fix for TypeError.
+            # Might need to use isinstance() rather than type() for a typecheck.
+            if type(forged_experiment) == URI:
                 result.success.append((name, forged_experiment))
             else:
                 result.success.append((name, None))
@@ -267,7 +270,9 @@ class IngestionFactory(metaclass=Singleton):
             forged_dataset = self.forge.forge_dataset(
                 prepared_dataset, refined_parameters
             )
-            if isinstance(forged_dataset, URI):
+            # TODO: This is a temporary fix for TypeError.
+            # Might need to use isinstance() rather than type() for a typecheck.
+            if type(forged_dataset) == URI:
                 result.success.append((name, forged_dataset))
             else:
                 result.success.append((name, None))

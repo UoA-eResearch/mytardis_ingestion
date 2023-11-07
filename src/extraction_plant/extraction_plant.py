@@ -1,3 +1,5 @@
+# pylint: disable=C0301
+
 """Performs pre-ingestion_factory tasks
 
 Pre-ingestion_factory tasks include prospecting, mining, and beneficiation.
@@ -5,13 +7,13 @@ Pre-ingestion_factory tasks include prospecting, mining, and beneficiation.
 # ---Imports
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 
-from src.beneficiations.beneficiation import Beneficiation
+from src.beneficiations.beneficiation import Beneficiation  # type: ignore
 from src.config.singleton import Singleton
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 from src.extraction_output_manager.output_manager import OutputManager
-from src.miners.miner import Miner
+from src.miners.miner import Miner  # type: ignore
 from src.prospectors.prospector import Prospector
 
 # ---Constants
@@ -68,10 +70,10 @@ class ExtractionPlant(metaclass=Singleton):
         out_man = OutputManager()
         ing_dclasses = IngestibleDataclasses()
 
-        if self.prospector.custom_prospector:
+        if self.prospector and self.prospector.custom_prospector:
             out_man = self._prospect(pth, out_man)
 
-        if self.miner.custom_miner:
+        if self.miner and self.miner.custom_miner:
             out_man = self._mine(pth, out_man)
 
         if not ingest_dict:
@@ -85,19 +87,25 @@ class ExtractionPlant(metaclass=Singleton):
         pth: Path,
         out_man: OutputManager,
     ) -> OutputManager:
-        logger.info("prospecting")
-        out_man_fnl: OutputManager = self.prospector.prospect_directory(
-            pth, True, out_man
-        )
-        return out_man_fnl
+        if self.prospector:
+            logger.info("prospecting")
+            out_man_fnl: OutputManager = self.prospector.prospect_directory(
+                str(pth), True, out_man
+            )
+            return out_man_fnl
+        logger.info("prospector not set")
+        return OutputManager()
 
     def _mine(
         self,
         pth: Path,
         out_man: OutputManager,
     ) -> OutputManager:
-        logger.info("mining")
-        return self.miner.mine_directory(pth, True, out_man)
+        if self.miner:
+            logger.info("mining")
+            return self.miner.mine_directory(str(pth), True, out_man)  # type: ignore
+        logger.info("miner not set")
+        return OutputManager()
 
     #    def _beneficiate(
     #        self,
@@ -118,4 +126,4 @@ class ExtractionPlant(metaclass=Singleton):
         ingestible_dataclasses = self.beneficiation.beneficiation.beneficiate(
             pth, ing_dclasses
         )
-        return ingestible_dataclasses
+        return ingestible_dataclasses  # type: ignore

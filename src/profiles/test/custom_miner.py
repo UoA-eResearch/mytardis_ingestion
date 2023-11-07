@@ -1,3 +1,4 @@
+# pylint: disable=C0301
 """Defines the methodology to convert the source metadata to a beneficiable
 format on a path.
 """
@@ -6,11 +7,9 @@ format on a path.
 # ---Imports
 import copy
 import logging
-import os
 from typing import Any, Optional
 
 from src.profiles import output_manager as om
-from src.profiles import profile_consts as pc
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -31,6 +30,7 @@ class CustomMiner:
         """Do not modify this method"""
         return None
 
+    # pylint: disable=R0801
     def mine(
         self,
         path: str,
@@ -53,6 +53,11 @@ class CustomMiner:
             out_man = om.OutputManager()
         else:
             out_man = copy.deepcopy(out_man)
+
+        _ = recursive  # Placeholder for the 'recursive' argument
+        _ = path  # Placeholder for the 'path' argument
+        _ = options  # Placeholder for the 'options' argument
+
         # Write the main inspection implementation here
 
         return out_man

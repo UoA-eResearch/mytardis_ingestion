@@ -11,10 +11,9 @@ is generated for the specific setup.
 import logging
 import shutil
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import yaml
-from pydantic.fields import ModelField
 
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
@@ -60,8 +59,8 @@ class ProfileGenerator:
         """
         prof_pth = self.profile_path / Path(profile_name)
         if prof_pth.exists():
-            logger.error(f"Profile with name {profile_name} already exists.")
-            raise Exception(f"Profile with name {profile_name} already exists.")
+            logger.error("Profile with name %s already exists.", profile_name)
+            raise FileExistsError(f"Profile with name {profile_name} already exists.")
 
         dst = self._create_profile_folder(
             self.profile_path, profile_name, include_configenv
@@ -117,15 +116,18 @@ class ProfileGenerator:
         self,
         class_type: RawDatafile | RawDataset | RawExperiment | RawProject,
     ) -> Dict[str, Dict[str, Any]]:
-        """Generates a dict that is used to help map the fields of the rawdataclasses. The keys of this dict are the
-        attributes of the raw dataclasses which are to be replaced by the equivalent keys from the instrument,
-        and the values for each key is a dict that contains metadata on how to map the key.
+        """Generates a dict that is used to help map the fields of the rawdataclasses.
+        The keys of this dict are the attributes of the raw dataclasses which are to
+        be replaced by the equivalent keys from the instrument, and the values for each
+        key is a dict that contains metadata on how to map the key.
 
         Args:
-            class_type (RawDatafile | RawDataset | RawExperiment | RawProject): the dataclass to produce a dict for
+            class_type (RawDatafile | RawDataset | RawExperiment | RawProject):
+            the dataclass to produce a dict for
 
         Returns:
-            Dict[str,Any]: A dictionary containing the raw dataclasses's fields as the keys to a dictionary of
+            Dict[str,Any]: A dictionary containing the raw dataclasses's fields as
+            the keys to a dictionary of
         """
         raw_dataclass_dict = {}
         fields_dict = class_type.__dict__["__fields__"]
@@ -156,6 +158,17 @@ class ProfileGenerator:
 
 
 def standalone_generation():
+    """
+    Prompt the user for profile information and generate a profile folder.
+
+    This function interacts with the user to gather information about the profile and
+    whether to generate a .env file. It then calls the `ProfileGenerator` to create the
+    profile folder.
+
+    Raises:
+        Exception: If the user provides an invalid response to the prompt.
+
+    """
     profile_name = input("Please enter profile name: ")
     y_or_n = input("Do you wish to generate a .env file with this profile? (y/n)")
     gen_env = False
@@ -164,7 +177,7 @@ def standalone_generation():
     elif y_or_n.lower() == "n":
         gen_env = False
     else:
-        raise Exception(
+        raise ValueError(
             "Invalid response (can only be either 'y' or 'n'), please try again"
         )
     p_gen = ProfileGenerator()

@@ -27,6 +27,7 @@ from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
 from src.blueprints.common_models import GroupACL, UserACL
 from src.blueprints.custom_data_types import Username
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
+from src.helpers.enumerators import DataClassification
 from src.miners.utils import datafile_metadata_helpers
 
 # Constants
@@ -160,10 +161,10 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         return Username(node.value)
 
     def _path_constructor(self, loader: Loader, node: MappingNode) -> Path:
-        # TO Do: change back the directory when relative path issue is solved
-        path = node.value
-        folder_name = os.path.basename(path)
-        return Path(folder_name)
+        # path = node.value
+        # folder_name = os.path.basename(path)
+        # return Path(folder_name)
+        return Path(node.value)
 
     def _rawdatafile_constructor(
         self, loader: Loader, node: MappingNode
@@ -184,8 +185,10 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         # data["md5sum"] = md5sum
         metadata = data.pop("metadata", {})
         # TO DO: change back when debugging from the API side
-        datafile_metadata_helpers.replace_micrometer_values(metadata, "um")
-        data["metadata"] = metadata
+        metadata_replaced = datafile_metadata_helpers.replace_micrometer_values(
+            metadata, "um"
+        )
+        data["metadata"] = metadata_replaced
         datafile = RawDatafile(**data)
         return datafile
 
@@ -200,7 +203,8 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         Returns:
             RawDataset: A RawDataset object constructed from the YAML data.
         """
-        return RawDataset(**loader.construct_mapping(node))
+        data = loader.construct_mapping(node, deep=True)
+        return RawDataset(**data)
 
     def _rawexperiment_constructor(
         self, loader: Loader, node: MappingNode
@@ -215,7 +219,8 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         Returns:
             RawExperiment: A RawExperiment object constructed from the YAML data.
         """
-        return RawExperiment(**loader.construct_mapping(node))
+        data = loader.construct_mapping(node, deep=True)
+        return RawExperiment(**data)
 
     def _rawproject_constructor(self, loader: Loader, node: MappingNode) -> RawProject:
         """
@@ -228,10 +233,14 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         Returns:
             RawProject: A RawProject object constructed from the YAML data.
         """
-        return RawProject(**loader.construct_mapping(node))
+        data = loader.construct_mapping(node, deep=True)
+        # Check if data_classification is None, and assign the default value if needed
+        if data.get("data_classification") is None:
+            data["data_classification"] = DataClassification.SENSITIVE
+        return RawProject(**data)
 
     def beneficiate(
-        self, fpath: Any, ingestible_dclasses: IngestibleDataclasses
+        self, fpath: Path, ingestible_dclasses: IngestibleDataclasses
     ) -> IngestibleDataclasses:
         """
         Parse a YAML file at the specified path and return a list of loaded objects.
@@ -255,5 +264,8 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
                 if isinstance(obj, RawDataset):
                     ingestible_dclasses.add_dataset(obj)
                 if isinstance(obj, RawDatafile):
+                    df_path = Path(fpath).parent.joinpath(obj.directory)
+                    df_dir = df_path / obj.filename
+                    obj.md5sum = datafile_metadata_helpers.calculate_md5sum(df_dir)
                     ingestible_dclasses.add_datafile(obj)
         return ingestible_dclasses

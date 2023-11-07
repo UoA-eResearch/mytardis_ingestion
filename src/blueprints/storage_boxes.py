@@ -15,7 +15,7 @@ class RawStorageBox(BaseModel):
 
     name: str
     storage_class: str = "django.core.files.storage.FileSystemStorage"
-    description: str
+    description: str = ""
     options: Dict[str, str]
     attributes: Optional[Dict[str, str]] = None
 

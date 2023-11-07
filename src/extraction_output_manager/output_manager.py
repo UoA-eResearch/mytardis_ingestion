@@ -7,6 +7,7 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Union
 
+# pylint: disable=R0801
 # ---Constants
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # set the level for which this logger will be printed.

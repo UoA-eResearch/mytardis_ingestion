@@ -76,11 +76,12 @@ The data ingestion part of the ingestion process takes the prepared metadata dic
    - **description**: The dataset name (see experiment **title** above)
    - **dataset_id**: A unique dataset identifier, RAiD for UoA datasets, could also be Dataset DOIs
    - **experiments**: A **list** of experiment identifiers associated with the experiment **raid**. We have assumed a one-to-many relationship between experiments and datasets, rather than the many-to-many relationship that is default in MyTardis. As such the scripts only get the first item in the list and would need refactoring to accommodate a many-to-many relationship.
-   - [**instrument_id**](#instrument-metadata): A unique identifier to the instrument that the data was generated on. Currently there is no standard persistent identifier that has widespread community adoption (DOIs are the most likely candidate).
+   - [**instrument_identifier**](#instrument-metadata): A unique identifier to the instrument that the data was generated on. Currently there is no standard persistent identifier that has widespread community adoption (DOIs are the most likely candidate).
    - **schema**: A schema name as defined within MyTardis for the Dataset level schema. This will include the metadata fields and short names associated with them.
    - As with the project any additional keys will be added as metadata fields
  - Datafile Object. (*NB*: Given the limitations associated with transferring data through the *html* interface of MyTardis, we are streaming the data directly into our object store, using the **boto3** python library, and the **filehandler.py** script provides wrapper functions to do this. We then create a **replica** in MyTardis that points to the file location.
    - **filename**: The file name of the data file to be ingested
+   - **dataset**: A dataset identifier (i.e. the **raid** field from the dataset object in question) for the parent dataset.
    - **md5sum**: The MD5 checksum of the original data file
    - **storage_box**: The MyTardis storage box defined for the facility
    - **local_path**: The full path to the local instance of the data file to be ingested

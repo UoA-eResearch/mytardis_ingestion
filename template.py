@@ -1,3 +1,4 @@
+# pylint: disable-all
 """
 This template script is an example script that is used to show how to structure the code.
 

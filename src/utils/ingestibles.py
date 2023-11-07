@@ -1,4 +1,4 @@
-# pylint: disable=missing-function-docstring
+# pylint: disable-all
 """A model-like class that is designed to contain the raw dataclasses for
 refinery/ingestion. The raw dataclasses are stored in lists.
 """
