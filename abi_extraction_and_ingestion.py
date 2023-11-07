@@ -1,3 +1,5 @@
+# pylint: disable=missing-function-docstring
+
 """NB: THIS WILL NOT WORK AS IT IS AND IS PROVIDED FOR INDICATIVE PURPOSES ONLY
 
 Script to create the objects in MyTardis.
@@ -35,16 +37,16 @@ beneficiation onwards.
 import logging
 from pathlib import Path
 import sys
-from typing import Iterable, Optional
+from typing import Callable, Iterable, Optional
 
 from src.config.config import ConfigFromEnv
 
 from src.conveyor.transports.rsync import RsyncTransport
 from src.helpers.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
+from src.prospectors.common_system_files import FilesystemFilter
 
-
-def init_logging(file_name: Optional[str]):
+def init_logging(file_name: Optional[str]) -> None:
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
 
@@ -63,10 +65,28 @@ def init_logging(file_name: Optional[str]):
 config = ConfigFromEnv()
 
 
-def directories(path: Path) -> Iterable[Path]:
+def child_dirs(path: Path) -> Iterable[Path]:
     for child in path.glob("*"):
         if child.is_dir():
             yield child
+
+def non_empty(path : Path) -> bool:
+    assert path.is_dir(), "Should only be called on directories"
+    children = path.glob('*')
+    return next(children, None) is not None
+
+def visit_children(path : Path, func : Callable[[Path], None]) -> None:
+    for child in path.rglob('*'):
+        func(child)
+
+def retain_entry(path : Path) -> bool:
+    if path.is_dir() and path.name == "Scout":
+        return False
+    
+    if path.suffix in ['.h5']:
+        return False
+    
+    return True
 
 
 # ---Code
@@ -85,12 +105,7 @@ def main() -> None:
     assert data_root.is_dir(), f"Data root {str(data_root)} is not a valid directory"
 
     # Basic sanity check
-    assert any(
-        path.is_dir() for path in data_root.glob("*")
-    ), "Data root directory has no child directories. Does it need to be mounted?"
-
-    # profile_name: str = 'abi_music'
-    # profile_loader = ProfileLoader(profile_name)
+    assert non_empty(data_root), "Data root directory has no entries. Does it need to be mounted?"
 
     raw_dir = data_root / "Vault" / "Raw"
     zarr_dir = data_root / "Zarr"
@@ -100,7 +115,51 @@ def main() -> None:
     assert zarr_dir.is_dir(), "Zarr directory not found"
     assert process_dir.is_dir(), "Process directory not found"
 
-    project_names = directories(raw_dir)
+    project_dirs = list(child_dirs(raw_dir))
+
+    print("Projects\n", [p.name for p in project_dirs])
+
+    file_filter = FilesystemFilter(system_files=True)
+    file_filter.add(retain_entry)
+    
+    for project_dir in project_dirs:
+
+        experiment_dirs = list(child_dirs(project_dir))
+        print('Experiments:\n', [p.name for p in experiment_dirs])
+
+        for experiment_dir in experiment_dirs:
+
+            dataset_dirs = list(child_dirs(experiment_dir))
+            print("Datasets:\n", [p.name for p in dataset_dirs])
+
+            for dataset_dir in dataset_dirs:
+                if dataset_dir.name == "Scout":
+                    # TODO: can we add this to some kind of ignore list?
+                    continue
+
+                datafiles = []
+                ignored = []
+
+                for entry in dataset_dir.rglob('*'):
+                    if entry.is_dir():
+                        continue
+
+                    if file_filter.is_valid(entry):
+                        datafiles.append(entry)
+                    else:
+                        ignored.append(entry)
+
+                print('Dataset ', dataset_dir.name, ' files:')
+                for datafile in datafiles:
+                    print(datafile)
+
+                print('Ignored:')
+                for entry in ignored:
+                    print(entry)
+
+
+
+
 
     # Within Raw:
     # - Raw should have projects (currently just "BenP")
