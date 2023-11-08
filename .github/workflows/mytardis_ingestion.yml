@@ -51,3 +51,6 @@ jobs:
     - name: Run mypy
       # Takes configuration from pyproject.toml
       run: PYTHONPATH=src/ poetry run python -m mypy
+
+    - name: Formatting - check with Black
+      run: PYTHONPATH=src/ poetry run python -m black --check --diff src
