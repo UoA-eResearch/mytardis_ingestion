@@ -53,7 +53,7 @@ jobs:
       run: PYTHONPATH=src/ poetry run python -m mypy
 
     - name: Check import formatting with isort
-      run: PYTHONPATH=src/ poetry run python -m python -m isort --check --diff --profile black src
+      run: PYTHONPATH=src/ poetry run python -m isort --check --diff --profile black src
 
     - name: Check code formatting with Black
       run: PYTHONPATH=src/ poetry run python -m black --check --diff src
