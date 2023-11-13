@@ -1887,13 +1887,13 @@ testutils = ["gitpython (>3)"]
 
 [[package]]
 name = "pyproject-pre-commit"
-version = "0.0.28"
+version = "0.1.0"
 description = "pre-commit hooks for python projects using pyproject.toml."
 optional = false
 python-versions = ">=3.8.1,<4.0.0"
 files = [
-    {file = "pyproject_pre_commit-0.0.28-py3-none-any.whl", hash = "sha256:44899a334b13d65002d1a25341a17778248fe6331837c2655c9aa523fcf7bd93"},
-    {file = "pyproject_pre_commit-0.0.28.tar.gz", hash = "sha256:4f70d427174943565115f9dc0f319d7df8cc88f5bb4711bb4a7df4508199e408"},
+    {file = "pyproject_pre_commit-0.1.0-py3-none-any.whl", hash = "sha256:65e4addae486f4425b7db7eebf5aa111ccbc67074fd6e56fa1f6059cb1472f24"},
+    {file = "pyproject_pre_commit-0.1.0.tar.gz", hash = "sha256:d325072fd1852939781b116219d691a5a57143581ea56998bda47090272d8875"},
 ]
 
 [package.dependencies]
@@ -2945,4 +2945,4 @@ test = ["pytest (>=7.2,<8.0)", "pytest-cov (>=4.1.0,<4.2.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "6cdc693e44099f43ed366a289d59a520618685d8f327795a419d71fd9414914f"
+content-hash = "23f28c38c9c62eb77c7847e7bd33077c5e63ee8d9da4d31a42d0d71b99e20382"
