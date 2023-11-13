@@ -20,6 +20,18 @@ from src.helpers.enumerators import DataClassification
 datetime_pattern = re.compile("^[0-9]{6}-[0-9]{6}$")
 
 
+def parse_timestamp(timestamp: str) -> datetime:
+    """
+    Parse a timestamp string in the ABI Music format: yymmdd-DDMMSS
+
+    Returns a datetime object or raises a ValueError if the string is ill-formed.
+    """
+    if _ := datetime_pattern.match(timestamp):
+        return datetime.strptime(timestamp, r"%y%m%d-%H%M%S")
+    else:
+        raise ValueError("Ill-formed timestamp; expected format 'yymmdd-DDMMSS'")
+
+
 def parse_project_info(json_data: dict[str, Any]) -> RawProject:
     """
     Extract project metadata from JSON content
@@ -81,7 +93,7 @@ def parse_experiment_info(json_data: dict[str, Any]) -> RawExperiment:
         url=None,
         locked=False,
         users=None,
-        groups=None,  # Defined at project level
+        groups=None,  # Will cascade down from project
         identifiers=json_data["experiment_ids"],
         projects=[json_data["project"]],
         institution_name=None,
@@ -107,22 +119,20 @@ def parse_dataset_info(json_data: dict[str, Any], directory: Path) -> RawDataset
 
     dataset_schema_raw = MTUrl("http://abi-music.com/dataset-raw/1")
     dataset_schema_zarr = MTUrl("http://abi-music.com/dataset-zarr/1")
+
     # TODO: populate metadata from JSON file
     metadata: dict[str, Any] = {}
 
-    # N.B. get this from dir name for Raw. Dir name prefix for Zarr. Placeholder datetime for now.
-    date_str = "220228-103800"
-    if _ := datetime_pattern.match(date_str):
-        created_time = datetime.strptime(date_str, r"%y%m%d-%H%M%S")
-    else:
-        created_time = None
+    # N.B. Placeholder. We will get this from dir name for Raw, and dir name prefix for Zarr.
+    timestamp = "220228-103800"
+    created_time = parse_timestamp(timestamp)
 
     return RawDataset(
         description=json_data["Description"],
         data_classification=DataClassification.SENSITIVE,
         directory=directory,
         users=None,
-        groups=None,
+        groups=None,  # Will cascade down from project
         immutable=False,
         identifiers=[
             json_data["Basename"]["Sequence"],
@@ -145,12 +155,8 @@ def parse_dataset_info(json_data: dict[str, Any], directory: Path) -> RawDataset
 # - What to do for times? Indefinite?
 # - what metadata might we have at the project level? Any? Then schema etc.
 # - where do the users come from? Add Greg? We discussed this but I've forgotten
-# - Parse the date/time format from ABI JSON
 # - Add instruments in MT for microscope and HPC post-processing
 # - First draft of metadata schemas
-
-# General questions:
-# - Do groups "cascade" down? If we declare group for project, do we also need to declare for experiment etc.?
 
 
 def main() -> None:
