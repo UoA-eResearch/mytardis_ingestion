@@ -13,7 +13,6 @@ from src.blueprints.custom_data_types import MTUrl
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
-from src.config.config import ConfigFromEnv
 from src.helpers.enumerators import DataClassification
 
 # Expected datetime format is "yymmdd-DDMMSS"
@@ -26,6 +25,7 @@ def parse_timestamp(timestamp: str) -> datetime:
 
     Returns a datetime object or raises a ValueError if the string is ill-formed.
     """
+    # strptime is a bit too lenient with its input format, so pre-validate with a regex
     if _ := datetime_pattern.match(timestamp):
         return datetime.strptime(timestamp, r"%y%m%d-%H%M%S")
     else:
@@ -88,16 +88,16 @@ def parse_experiment_info(json_data: dict[str, Any]) -> RawExperiment:
     raw_experiment = RawExperiment(
         title=json_data["experiment_name"],
         description=json_data["experiment_description"],
-        data_classification=DataClassification.SENSITIVE,  # Get from project?
+        data_classification=None,
         created_by=None,
         url=None,
         locked=False,
         users=None,
-        groups=None,  # Will cascade down from project
+        groups=None,
         identifiers=json_data["experiment_ids"],
         projects=[json_data["project"]],
         institution_name=None,
-        metadata=None,  # Any metadata for experiments?
+        metadata=None,
         schema=None,
         start_time=None,
         end_time=None,
@@ -114,25 +114,32 @@ def parse_dataset_info(json_data: dict[str, Any], directory: Path) -> RawDataset
     Extract dataset metadata from JSON content
     """
 
-    abi_music_microscope = "How to encode instrument? Create entry in MT too"
-    abi_music_post_processing = "As above"
+    # These will be used separately when we implement the directory-parsing logic
+    abi_music_microscope = "abi-music-microscope-v1"
+    # abi_music_post_processing = "abi-music-post-processing-v1"
 
+    # These will be used separately when we implement the directory-parsing logic
     dataset_schema_raw = MTUrl("http://abi-music.com/dataset-raw/1")
-    dataset_schema_zarr = MTUrl("http://abi-music.com/dataset-zarr/1")
+    #  dataset_schema_zarr = MTUrl("http://abi-music.com/dataset-zarr/1")
 
-    # TODO: populate metadata from JSON file
-    metadata: dict[str, Any] = {}
+    # Currently taking the same fields for Raw and Zarr datasets, but that may change
+    metadata: dict[str, Any] = {
+        "description": json_data["Description"],
+        "sequence-id": json_data["SequenceID"],
+        "sqrt-offset": json_data["Offsets"]["SQRT Offset"],
+    }
 
-    # N.B. Placeholder. We will get this from dir name for Raw, and dir name prefix for Zarr.
+    # N.B. Placeholder. We will get this from dir name for Raw, and dir name prefix for Zarr,
+    #      when directory-parsing is implemented
     timestamp = "220228-103800"
     created_time = parse_timestamp(timestamp)
 
     return RawDataset(
         description=json_data["Description"],
-        data_classification=DataClassification.SENSITIVE,
+        data_classification=None,
         directory=directory,
         users=None,
-        groups=None,  # Will cascade down from project
+        groups=None,
         immutable=False,
         identifiers=[
             json_data["Basename"]["Sequence"],
@@ -149,21 +156,10 @@ def parse_dataset_info(json_data: dict[str, Any], directory: Path) -> RawDataset
     )
 
 
-# TODO:
-# - Where do we get the data classification from? Does it cascade like groups?
-# - Safe just to assume UoA as institution for now?
-# - What to do for times? Indefinite?
-# - what metadata might we have at the project level? Any? Then schema etc.
-# - where do the users come from? Add Greg? We discussed this but I've forgotten
-# - Add instruments in MT for microscope and HPC post-processing
-# - First draft of metadata schemas
-
-
 def main() -> None:
     """
     main function
     """
-    config = ConfigFromEnv()
 
     project_json_path = Path(
         "/home/andrew/dev/ro-crate-abi-music/JSON templates/Test/project/project.json"
@@ -172,6 +168,7 @@ def main() -> None:
         project_data = json.load(f)
 
     raw_project = parse_project_info(json_data=project_data)
+    print("Raw Project:\n", raw_project)
 
     experiment_json_path = Path(
         "/home/andrew/dev/ro-crate-abi-music/JSON templates/Test/project/sample/experiment.json"
@@ -180,6 +177,7 @@ def main() -> None:
         experiment_data = json.load(f)
 
     raw_experiment = parse_experiment_info(experiment_data)
+    print("Raw Experiment:\n", raw_experiment)
 
     dataset_json_path = Path(
         "/home/andrew/dev/ro-crate-abi-music/JSON templates/Test/project/sample/Ganglia561/Ganglia561.json"
@@ -192,6 +190,7 @@ def main() -> None:
     dataset_dir = Path("path/to/dir")
 
     raw_dataset = parse_dataset_info(dataset_data, dataset_dir)
+    print("Raw Dataset:\n", raw_dataset)
 
     print("Done")
 
