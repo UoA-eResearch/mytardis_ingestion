@@ -28,8 +28,8 @@ def parse_timestamp(timestamp: str) -> datetime:
     # strptime is a bit too lenient with its input format, so pre-validate with a regex
     if _ := datetime_pattern.match(timestamp):
         return datetime.strptime(timestamp, r"%y%m%d-%H%M%S")
-    else:
-        raise ValueError("Ill-formed timestamp; expected format 'yymmdd-DDMMSS'")
+
+    raise ValueError("Ill-formed timestamp; expected format 'yymmdd-DDMMSS'")
 
 
 def parse_project_info(json_data: dict[str, Any]) -> RawProject:
@@ -158,30 +158,26 @@ def parse_dataset_info(json_data: dict[str, Any], directory: Path) -> RawDataset
 
 def main() -> None:
     """
-    main function - note that this is just for testing - a proper ingestion runner is yet to be written.
+    main function - this is just for testing - a proper ingestion runner is yet to be written.
     """
 
-    project_json_path = Path(
-        "/home/andrew/dev/ro-crate-abi-music/JSON templates/Test/project/project.json"
-    )
+    data_root = Path("/home/andrew/dev/ro-crate-abi-music/JSON templates/Test/project")
+
+    project_json_path = data_root / "project.json"
     with project_json_path.open(encoding="utf-8") as f:
         project_data = json.load(f)
 
     raw_project = parse_project_info(json_data=project_data)
     print("Raw Project:\n", raw_project)
 
-    experiment_json_path = Path(
-        "/home/andrew/dev/ro-crate-abi-music/JSON templates/Test/project/sample/experiment.json"
-    )
+    experiment_json_path = data_root / "sample" / "experiment.json"
     with experiment_json_path.open(encoding="utf-8") as f:
         experiment_data = json.load(f)
 
     raw_experiment = parse_experiment_info(experiment_data)
     print("Raw Experiment:\n", raw_experiment)
 
-    dataset_json_path = Path(
-        "/home/andrew/dev/ro-crate-abi-music/JSON templates/Test/project/sample/Ganglia561/Ganglia561.json"
-    )
+    dataset_json_path = data_root / "sample" / "Ganglia561" / "Ganglia561.json"
     with dataset_json_path.open(encoding="utf-8") as f:
         dataset_data = json.load(f)
 
