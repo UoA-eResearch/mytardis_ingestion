@@ -1,5 +1,5 @@
 """
-Command-line application for ingesting data from the ABI Music Instrument (Microscope)
+Parsing logic for generating PEDD dataclasses from ABI Music files
 """
 
 from datetime import datetime
@@ -158,7 +158,7 @@ def parse_dataset_info(json_data: dict[str, Any], directory: Path) -> RawDataset
 
 def main() -> None:
     """
-    main function
+    main function - note that this is just for testing - a proper ingestion runner is yet to be written.
     """
 
     project_json_path = Path(
