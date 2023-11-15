@@ -111,7 +111,7 @@ def parse_experiment_info(json_data: dict[str, Any]) -> RawExperiment:
     return raw_experiment
 
 
-def parse_dataset_info(json_data: dict[str, Any], directory: Path) -> RawDataset:
+def parse_dataset_info(json_data: dict[str, Any]) -> RawDataset:
     """
     Extract dataset metadata from JSON content
     """
@@ -139,7 +139,7 @@ def parse_dataset_info(json_data: dict[str, Any], directory: Path) -> RawDataset
     return RawDataset(
         description=json_data["Description"],
         data_classification=None,
-        directory=directory,
+        directory=None,
         users=None,
         groups=None,
         immutable=False,
@@ -170,25 +170,21 @@ def main() -> None:
         project_data = json.load(f)
 
     raw_project = parse_project_info(json_data=project_data)
-    print("Raw Project:\n", raw_project)
+    print("Raw Project:\n", raw_project.model_dump_json(indent=4))
 
     experiment_json_path = data_root / "sample" / "experiment.json"
     with experiment_json_path.open(encoding="utf-8") as f:
         experiment_data = json.load(f)
 
     raw_experiment = parse_experiment_info(experiment_data)
-    print("Raw Experiment:\n", raw_experiment)
+    print("Raw Experiment:\n", raw_experiment.model_dump_json(indent=4))
 
     dataset_json_path = data_root / "sample" / "Ganglia561" / "Ganglia561.json"
     with dataset_json_path.open(encoding="utf-8") as f:
         dataset_data = json.load(f)
 
-    # N.B. have seen a dir in one example JSON, but not all
-    # What should this be relative to? Presumably shouldn't be absolute?
-    dataset_dir = Path("path/to/dir")
-
-    raw_dataset = parse_dataset_info(dataset_data, dataset_dir)
-    print("Raw Dataset:\n", raw_dataset)
+    raw_dataset = parse_dataset_info(dataset_data)
+    print("Raw Dataset:\n", raw_dataset.model_dump_json(indent=4))
 
     print("Done")
 
