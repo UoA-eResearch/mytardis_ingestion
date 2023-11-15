@@ -18,6 +18,8 @@ from src.helpers.enumerators import DataClassification
 # Expected datetime format is "yymmdd-DDMMSS"
 datetime_pattern = re.compile("^[0-9]{6}-[0-9]{6}$")
 
+DEFAULT_INSTITUTION = "University of Auckland"
+
 
 def parse_timestamp(timestamp: str) -> datetime:
     """
@@ -66,7 +68,7 @@ def parse_project_info(json_data: dict[str, Any]) -> RawProject:
         users=None,
         groups=groups,
         identifiers=json_data["project_ids"],
-        institution=["University of Auckland"],
+        institution=[DEFAULT_INSTITUTION],
         metadata=None,
         schema=None,
         start_time=None,
