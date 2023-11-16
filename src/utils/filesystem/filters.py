@@ -41,6 +41,13 @@ WINDOWS_EXCLUSION_PATTERNS = FileExclusionPatterns(
 
 
 class PathFilterBase(ABC):
+    """
+    Base class for a path filter. Implements __call__ so concrete subclasses
+    are Callable, but the behaviour is delegated to "exclude", which needs
+    to be implemented by the subclass, to define what is included/excluded
+    by the filter
+    """
+
     def __init__(self) -> None:
         pass
 
@@ -49,10 +56,17 @@ class PathFilterBase(ABC):
 
     @abstractmethod
     def exclude(self, path: Path) -> bool:
+        """
+        Predicate which indicates whether `path` is included/excluded by the filter.
+        """
         raise NotImplementedError("Cannot instantiate base class")
 
 
 class NameSuffixFilter(PathFilterBase):
+    """
+    Filter paths by matching their names against disallowed suffixes.
+    """
+
     def __init__(self, suffixes: list[str]) -> None:
         self._suffixes = suffixes
         super().__init__()
@@ -62,6 +76,10 @@ class NameSuffixFilter(PathFilterBase):
 
 
 class ExtensionPrefixFilter(PathFilterBase):
+    """
+    Filter paths by matching their extensions against disallowed prefixes.
+    """
+
     def __init__(self, prefixes: list[str]) -> None:
         self._prefixes = prefixes
         super().__init__()
@@ -71,6 +89,11 @@ class ExtensionPrefixFilter(PathFilterBase):
 
 
 class PathPatternFilter(PathFilterBase):
+    """
+    Path filter which aggregates different types of filter, defined by an instance of
+    `FileExclusionPatterns`.
+    """
+
     def __init__(self, patterns: FileExclusionPatterns) -> None:
         self._patterns = patterns
 
@@ -89,7 +112,7 @@ class PathPatternFilter(PathFilterBase):
 
 class PathFilterSet:
     """
-    A collection for holding filters to be applied to filesystem entries, to decide whether
+    A collection for holding filters to be applied to paths, to decide whether
     they are "valid" or not.
     """
 
@@ -113,24 +136,3 @@ class PathFilterSet:
         This is determined by applying the filter functions (predicates).
         """
         return any(func(path) for func in self._filters)
-
-
-if __name__ == "__main__":
-    filter_set = PathFilterSet(filter_system_files=True)
-
-    print(filter_set.exclude(Path("Hello/world.txt")))
-    print(filter_set.exclude(Path("Hello/world.DS_Store")))
-    print(filter_set.exclude(Path("Hello/world.DS_Store.txt")))
-    print(filter_set.exclude(Path("Hello/world.thumbs.db")))
-
-    print(
-        NameSuffixFilter(MACOS_EXCLUSION_PATTERNS.suffixes or []).exclude(
-            Path("Hello/world.DS_Store")
-        )
-    )
-
-    print(
-        PathPatternFilter(MACOS_EXCLUSION_PATTERNS).exclude(
-            Path("Hello/world.DS_Store")
-        )
-    )
