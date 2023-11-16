@@ -6,6 +6,7 @@ import mimetypes
 from pathlib import Path
 
 from src.blueprints.datafile import RawDatafile
+from src.utils.filesystem.filters import FilesystemFilterSet
 
 
 def compute_md5(file: Path) -> str:
@@ -52,17 +53,16 @@ def collect_datafiles(root: Path, dataset_name: str) -> list[RawDatafile]:
     Find all files recursively under `root`, and produce a `RawDatafile` object
     for each one.
     """
-    datafiles: list[RawDatafile] = []
-
-    # TODO: collect file filtering logic in a filter object
+    path_filter = FilesystemFilterSet(filter_system_files=True)
     children = root.rglob("*")
 
+    datafiles: list[RawDatafile] = []
+
     for entry in children:
-        if not entry.is_file():
+        if path_filter.exclude(entry):
             continue
 
-        # TODO: make a proper filter to ignore everything
-        if entry.name.endswith(".DS_Store"):
+        if not entry.is_file():
             continue
 
         relative_path = entry.relative_to(root)
