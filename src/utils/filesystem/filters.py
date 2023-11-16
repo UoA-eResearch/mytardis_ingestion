@@ -40,6 +40,26 @@ WINDOWS_EXCLUSION_PATTERNS = FileExclusionPatterns(
 )
 
 
+def get_excluded_system_suffixes() -> list[str]:
+    """
+    Get a list of common system file path suffixes
+    """
+    suffixes: list[str] = []
+    suffixes.extend(MACOS_EXCLUSION_PATTERNS.suffixes or [])
+    suffixes.extend(WINDOWS_EXCLUSION_PATTERNS.suffixes or [])
+    return suffixes
+
+
+def get_excluded_system_extension_prefixes() -> list[str]:
+    """
+    Get a list of common system file path suffixes
+    """
+    prefixes: list[str] = []
+    prefixes.extend(MACOS_EXCLUSION_PATTERNS.extension_prefixes or [])
+    prefixes.extend(WINDOWS_EXCLUSION_PATTERNS.extension_prefixes or [])
+    return prefixes
+
+
 class PathFilterBase(ABC):
     """
     Base class for a path filter. Implements __call__ so concrete subclasses

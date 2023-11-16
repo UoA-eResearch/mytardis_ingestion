@@ -10,7 +10,10 @@ import os
 from typing import Any, List, Tuple
 
 from src.profiles import profile_consts as pc
-from src.prospectors.common_system_files import CommonSystemFiles
+from src.utils.filesystem.filters import (
+    get_excluded_system_extension_prefixes,
+    get_excluded_system_suffixes,
+)
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -27,9 +30,8 @@ class CommonDirectoryTreeChecks:
         self,
     ) -> None:
         """Instantiates look-up tables for common system files."""
-        csf = CommonSystemFiles()
-        self.common_fnames_lut = csf.fnames_lut
-        self.reject_prefix_lut = csf.reject_prefixes_lut
+        self.common_fnames_lut = dict.fromkeys(get_excluded_system_suffixes())
+        self.reject_prefix_lut = dict.fromkeys(get_excluded_system_extension_prefixes())
 
     def perform_common_file_checks(
         self,
