@@ -1,5 +1,10 @@
-# pylint: disable=C0103
-"""NB: THIS WILL NOT WORK AS IT IS AND IS PROVIDED FOR INDICATIVE PURPOSES ONLY
+# pylint: disable=C0103, C0301
+"""
+Example Usage: python ingestion_biru_example.py \
+"/path/to/the/yaml/file" \
+"/path/to/the/rsync/destination"
+
+NB: THIS WILL NOT WORK AS IT IS AND IS PROVIDED FOR INDICATIVE PURPOSES ONLY
 
 Script to create the objects in MyTardis.
 
@@ -73,12 +78,6 @@ def ingest_data(yaml_pth: Path, rsync_pth: Path) -> None:
     ext_plant = ExtractionPlant(prospector, miner, beneficiation)
     ingestible_dataclasses = ext_plant.run_extraction(yaml_pth)
 
-    # Initiate Conveyor
-    datafiles = ingestible_dataclasses.get_datafiles()
-    rsync_transport = RsyncTransport(Path(rsync_pth))
-    conveyor = Conveyor(rsync_transport)
-    conveyor_process = conveyor.initiate_transfer(Path(yaml_pth).parent, datafiles)
-
     # Ingestion Factory
     mt_rest = MyTardisRESTFactory(config.auth, config.connection)
     overseer = Overseer(mt_rest)
@@ -101,6 +100,12 @@ def ingest_data(yaml_pth: Path, rsync_pth: Path) -> None:
     factory.ingest_experiments(ingestible_dataclasses.get_experiments())
     factory.ingest_datasets(ingestible_dataclasses.get_datasets())
     factory.ingest_datafiles(ingestible_dataclasses.get_datafiles())
+
+    # Initiate Conveyor
+    datafiles = ingestible_dataclasses.get_datafiles()
+    rsync_transport = RsyncTransport(Path(rsync_pth))
+    conveyor = Conveyor(rsync_transport)
+    conveyor_process = conveyor.initiate_transfer(Path(yaml_pth).parent, datafiles)
 
     # Wait for file transfer to finish.
     conveyor_process.join()
