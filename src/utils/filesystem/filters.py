@@ -87,7 +87,7 @@ class PathPatternFilter(PathFilterBase):
         return any(filt(path) for filt in self._filters)
 
 
-class FilesystemFilterSet:
+class PathFilterSet:
     """
     A collection for holding filters to be applied to filesystem entries, to decide whether
     they are "valid" or not.
@@ -116,7 +116,7 @@ class FilesystemFilterSet:
 
 
 if __name__ == "__main__":
-    filter_set = FilesystemFilterSet(filter_system_files=True)
+    filter_set = PathFilterSet(filter_system_files=True)
 
     print(filter_set.exclude(Path("Hello/world.txt")))
     print(filter_set.exclude(Path("Hello/world.DS_Store")))

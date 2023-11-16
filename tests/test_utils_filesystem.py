@@ -4,8 +4,8 @@ from pathlib import Path
 from src.utils.filesystem.filters import (
     ExtensionPrefixFilter,
     FileExclusionPatterns,
-    FilesystemFilterSet,
     NameSuffixFilter,
+    PathFilterSet,
     PathPatternFilter,
 )
 
@@ -46,14 +46,14 @@ def test_path_pattern_filter() -> None:
 
 
 def test_file_system_filter_set() -> None:
-    filt = FilesystemFilterSet(filter_system_files=True)
+    filt = PathFilterSet(filter_system_files=True)
 
     assert filt.exclude(Path("path/to/file.DS_Store"))
     assert filt.exclude(Path("path/to/file.thumbs.db"))
 
     assert not filt.exclude(Path("path/to/file.txt"))
 
-    filt = FilesystemFilterSet(filter_system_files=False)
+    filt = PathFilterSet(filter_system_files=False)
 
     assert not filt.exclude(Path("path/to/file.DS_Store"))
     assert not filt.exclude(Path("path/to/file.thumbs.db"))
