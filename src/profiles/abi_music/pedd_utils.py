@@ -6,7 +6,7 @@ import mimetypes
 from pathlib import Path
 
 from src.blueprints.datafile import RawDatafile
-from src.utils.filesystem.filters import FilesystemFilterSet
+from src.utils.filesystem.filters import PathFilterSet
 
 
 def compute_md5(file: Path) -> str:
@@ -53,7 +53,7 @@ def collect_datafiles(root: Path, dataset_name: str) -> list[RawDatafile]:
     Find all files recursively under `root`, and produce a `RawDatafile` object
     for each one.
     """
-    path_filter = FilesystemFilterSet(filter_system_files=True)
+    path_filter = PathFilterSet(filter_system_files=True)
     children = root.rglob("*")
 
     datafiles: list[RawDatafile] = []
