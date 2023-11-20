@@ -254,7 +254,7 @@ class Crucible:
             )
             return None
         dataset = datasets[0]
-        file_path = Path(refined_datafile.directory)
+        file_path = Path(refined_datafile.directory / refined_datafile.filename)
         replicas = self.__create_datafile_replicas(
             dataset,
             file_path,
