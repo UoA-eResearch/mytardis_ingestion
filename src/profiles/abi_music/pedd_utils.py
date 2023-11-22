@@ -1,25 +1,13 @@
 """
 Helpers for assembling the PEDD dataclasses from data in the filesystem
 """
-import hashlib
+
 import mimetypes
 from pathlib import Path
 
 from src.blueprints.datafile import RawDatafile
+from src.utils.filesystem import checksums
 from src.utils.filesystem.filters import PathFilterSet
-
-
-def compute_md5(file: Path) -> str:
-    """
-    Compute the MD5 hash of the file referenced by `file`.
-    NOTE: a version already exists in datafile_metadata_helpers.py - should unify them
-    """
-    with file.open("rb") as f:
-        file_hash = hashlib.md5()
-        while chunk := f.read(8192):
-            file_hash.update(chunk)
-
-        return file_hash.hexdigest()
 
 
 def collate_datafile_info(
@@ -37,7 +25,7 @@ def collate_datafile_info(
     return RawDatafile(
         filename=file_rel_path.name,
         directory=file_rel_path,
-        md5sum=compute_md5(full_path),
+        md5sum=checksums.calculate_md5(full_path),
         mimetype=mimetype,
         size=full_path.stat().st_size,
         users=None,
