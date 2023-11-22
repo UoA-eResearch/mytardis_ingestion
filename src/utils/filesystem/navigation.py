@@ -5,7 +5,10 @@ Helpers for navigating the filesystem, querying layout and finding entries
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Callable, Iterator, Tuple
+from typing import Callable, Iterator, Tuple, TypeAlias, TypeVar
+
+T = TypeVar("T")
+Predicate: TypeAlias = Callable[[T], bool]
 
 
 def collect_children(
@@ -84,13 +87,15 @@ class DirectoryNode:
         for file in self.files():
             if file.path().name == name:
                 return file
-        raise ValueError(f"Directory '{self.path()}' contains no file '{name}'")
+        raise FileNotFoundError(f"Directory '{self.path()}' contains no file '{name}'")
 
     def dir(self, name: str) -> DirectoryNode:
         for directory in self.directories():
             if directory.path().name == name:
                 return directory
-        raise ValueError(f"Directory '{self.path()}' contains no directory '{name}'")
+        raise NotADirectoryError(
+            f"Directory '{self.path()}' contains no directory '{name}'"
+        )
 
     def files(self) -> list[FileNode]:
         if self._files is None:
@@ -138,3 +143,13 @@ class DirectoryNode:
     ) -> None:
         for directory in self.iter_dirs(recursive=recursive):
             func(directory)
+
+    def find_files(
+        self, keep_file: Predicate[FileNode], recursive: bool = False
+    ) -> list[FileNode]:
+        return [f for f in self.iter_files(recursive) if keep_file(f)]
+
+    def find_dirs(
+        self, keep_dir: Predicate[DirectoryNode], recursive: bool = False
+    ) -> list[DirectoryNode]:
+        return [d for d in self.iter_dirs(recursive) if keep_dir(d)]

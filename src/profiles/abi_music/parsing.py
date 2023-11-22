@@ -138,11 +138,6 @@ def parse_dataset_info(json_data: dict[str, Any]) -> tuple[RawDataset, str]:
         "sqrt-offset": json_data["Offsets"]["SQRT Offset"],
     }
 
-    # N.B. Placeholder. We will get this from dir name for Raw, and dir name prefix for Zarr,
-    #      when directory-parsing is implemented
-    timestamp = "220228-103800"
-    created_time = parse_timestamp(timestamp)
-
     main_id = json_data["Basename"]["Sequence"]
 
     dataset = RawDataset(
@@ -162,7 +157,7 @@ def parse_dataset_info(json_data: dict[str, Any]) -> tuple[RawDataset, str]:
         instrument=abi_music_microscope,
         metadata=metadata,
         schema=dataset_schema_raw,
-        created_time=created_time,
+        created_time=None,
         modified_time=None,
     )
 
@@ -197,7 +192,7 @@ def collate_datafile_info(
 
 def parse_raw_data(
     raw_dir: DirectoryNode, root_dir: Path, file_filter: filters.PathFilterSet
-) -> None:
+) -> IngestibleDataclasses:
     """
     Parse the directory containing the raw data
     """
@@ -249,8 +244,19 @@ def parse_raw_data(
                     .read_text(encoding="utf-8")
                 )
 
-                # TODO: get a real timestamp, pass the specific instrument ID, schema etc
                 dataset, dataset_id = parse_dataset_info(json.loads(dataset_json))
+
+                data_dir = next(
+                    filter(
+                        lambda d: datetime_pattern.match(d.path().stem) is not None,
+                        dataset_dir.iter_dirs(),
+                    )
+                )
+
+                dataset.created_time = parse_timestamp(data_dir.name())
+
+                # TODO: pass the specific instrument ID, schema etc
+
                 pedd_builder.add_dataset(dataset)
 
                 for file in dataset_dir.iter_files(recursive=True):
@@ -264,6 +270,58 @@ def parse_raw_data(
                     )
 
                     pedd_builder.add_datafile(datafile)
+
+    return pedd_builder
+
+
+def parse_zarr_data(
+    zarr_root: DirectoryNode, root_dir: Path, file_filter: filters.PathFilterSet
+) -> IngestibleDataclasses:
+    pedd_builder = IngestibleDataclasses()
+
+    for directory in zarr_root.iter_dirs(recursive=True):
+        zarr_dirs = directory.find_dirs(
+            lambda d: d.name().endswith(".zarr"), recursive=True
+        )
+
+        for zarr_dir in zarr_dirs:
+            name_stem = zarr_dir.name().removesuffix(".zarr")
+
+            try:
+                json_file = directory.file(name_stem + ".json")
+            except FileNotFoundError as e:
+                raise FileNotFoundError(
+                    f"Zarr {zarr_dir.path()} has no corresponding JSON file"
+                ) from e
+
+            dataset, dataset_id = parse_dataset_info(
+                json.loads(json_file.path().read_text(encoding="utf-8"))
+            )
+
+            dataset.created_time = parse_timestamp(name_stem)
+
+            pedd_builder.add_dataset(dataset)
+
+            for file in zarr_dir.iter_files(recursive=True):
+                if file_filter.exclude(file.path()):
+                    continue
+
+                file_rel_path = file.path().relative_to(root_dir)
+
+                datafile = collate_datafile_info(file_rel_path, root_dir, dataset_id)
+
+                pedd_builder.add_datafile(datafile)
+
+                # TODO: ensure we already have a corresponding project and experiment defined
+
+    # name_format = re.compile(r"(\w+)-(\w+)-(\w+)")
+
+    # TODO: do we search first for ZARR files, then parse the dir name? Or do we even need to parse the dir name? Should Proj/Exp come from JSON file?
+
+    # BenP-PID143-BlockA
+    # Project-Experiment-Dataset
+
+    return pedd_builder
 
 
 # Not sure what it will return yet
@@ -280,7 +338,8 @@ def parse_data(root: DirectoryNode) -> None:
 
     file_filter = filters.PathFilterSet(filter_system_files=True)
 
-    parse_raw_data(raw_dir, root.path(), file_filter)
+    pedd_builder_raw = parse_raw_data(raw_dir, root.path(), file_filter)
+    pedd_builder_zarr = parse_zarr_data(zarr_dir, root.path(), file_filter)
 
 
 def main1() -> None:
