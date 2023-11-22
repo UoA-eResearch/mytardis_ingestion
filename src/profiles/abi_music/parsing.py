@@ -3,6 +3,7 @@ Parsing logic for generating PEDD dataclasses from ABI Music files
 """
 
 import json
+import logging
 import re
 from datetime import datetime
 from pathlib import Path
@@ -13,7 +14,10 @@ from src.blueprints.custom_data_types import MTUrl
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
+from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 from src.helpers.enumerators import DataClassification
+from src.utils import log_utils
+from src.utils.filesystem.navigation import DirectoryNode, FileNode
 
 # Expected datetime format is "yymmdd-DDMMSS"
 datetime_pattern = re.compile("^[0-9]{6}-[0-9]{6}$")
@@ -158,7 +162,90 @@ def parse_dataset_info(json_data: dict[str, Any]) -> RawDataset:
     )
 
 
-def main() -> None:
+def parse_raw_data(raw_dir: DirectoryNode) -> None:
+    """
+    Parse the directory containing the raw data
+    """
+
+    pedd_builder = IngestibleDataclasses()
+
+    project_dirs = [
+        d for d in raw_dir.iter_dirs(recursive=True) if d.has_file("project.json")
+    ]
+
+    for project_dir in project_dirs:
+        print(f"Project directory: {project_dir.name()}")
+
+        project_json = (
+            project_dir.file("project.json").path().read_text(encoding="utf-8")
+        )
+        pedd_builder.add_project(parse_project_info(json.loads(project_json)))
+
+        experiment_dirs = [
+            d
+            for d in project_dir.iter_dirs(recursive=True)
+            if d.has_file("experiment.json")
+        ]
+
+        for experiment_dir in experiment_dirs:
+            print(f"Experiment directory: {experiment_dir.name()}")
+
+            experiment_json = (
+                experiment_dir.file("experiment.json")
+                .path()
+                .read_text(encoding="utf-8")
+            )
+            pedd_builder.add_experiment(
+                parse_experiment_info(json.loads(experiment_json))
+            )
+
+            dataset_dirs = [
+                d
+                for d in experiment_dir.iter_dirs(recursive=True)
+                if d.has_file(d.name() + ".json")
+            ]
+
+            for dataset_dir in dataset_dirs:
+                print(f"Dataset directory: {dataset_dir.name()}")
+
+                dataset_json = (
+                    dataset_dir.file(dataset_dir.name() + ".json")
+                    .path()
+                    .read_text(encoding="utf-8")
+                )
+                pedd_builder.add_dataset(parse_dataset_info(json.loads(dataset_json)))
+
+                # Note: is_valid_file will be replaced by new filter classes once they are merged
+                def is_valid_file(f: FileNode) -> bool:
+                    return f.path().suffix != ".DS_Store"
+
+                data_file_nodes = [
+                    f
+                    for f in dataset_dir.iter_files(recursive=True)
+                    if is_valid_file(f)
+                ]
+
+                # TODO: create datafile objects from data_file_nodes
+                # datafiles = [parse_datafile_info(df) for df in data_file_nodes]
+                # pedd_builder.add_datafiles(datafiles)
+
+
+# Not sure what it will return yet
+def parse_data(root: DirectoryNode) -> None:
+    """
+    Parse/validate the data directory to extract the files to be ingested
+    """
+
+    # assert root.is_dir(), f"Data root {str(root)} is not a valid directory"
+    assert root.non_empty(), "Data root directory is empty. May not be mounted."
+
+    raw_dir = root.dir("Vault").dir("Raw")
+    zarr_dir = root.dir("Zarr")
+
+    parse_raw_data(raw_dir)
+
+
+def main1() -> None:
     """
     main function - this is just for testing - a proper ingestion runner is yet to be written.
     """
@@ -189,5 +276,17 @@ def main() -> None:
     print("Done")
 
 
+def main2() -> None:
+    log_utils.init_logging(file_name="abi_ingest.log", level=logging.DEBUG)
+
+    # Should come from command-line args or config file
+    data_root = Path("/mnt/abi_test_data")
+
+    root_node = DirectoryNode(data_root)
+
+    parse_data(root_node)
+
+
 if __name__ == "__main__":
-    main()
+    # main1()
+    main2()
