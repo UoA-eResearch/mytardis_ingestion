@@ -1,6 +1,5 @@
 """Helpers to determine required metadata fields for datafiles"""
 import hashlib
-import mimetypes
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
@@ -21,21 +20,6 @@ def calculate_md5sum(
         for buf in iter(lambda: f.read(128 * 1024), b""):
             d.update(buf)
     return d.hexdigest()
-
-
-def determine_mimetype(
-    fn: str,
-) -> str | None:
-    """Determine the MIME type of a file.
-
-    Args:
-        fn (str): The file name or path for which to determine the MIME type.
-
-    Returns:
-        str | None: The MIME type if it can be determined, or None if not.
-    """
-    mimetype, _ = mimetypes.guess_type(fn)
-    return mimetype
 
 
 def replace_micrometer_values(

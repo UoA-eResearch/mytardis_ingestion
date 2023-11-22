@@ -12,6 +12,7 @@
 import copy
 import json
 import logging
+import mimetypes
 import os
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -110,7 +111,7 @@ class DatafileMiner:
         metadata["filename"] = fn
         metadata["directory"] = str(rel_path)
         metadata["md5sum"] = dmh.calculate_md5sum(fp)
-        mtype = dmh.determine_mimetype(fn)
+        mtype, _ = mimetypes.guess_type(fn)
         if not mtype:
             mtype = fn.split(".")[-1]
         metadata["mimetype"] = mtype
