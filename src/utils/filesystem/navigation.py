@@ -5,10 +5,7 @@ Helpers for navigating the filesystem, querying layout and finding entries
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Callable, Iterator, Tuple, TypeAlias, TypeVar
-
-T = TypeVar("T")
-Predicate: TypeAlias = Callable[[T], bool]
+from typing import Callable, Iterator, Tuple
 
 
 def collect_children(
