@@ -4,6 +4,7 @@ Parsing logic for generating PEDD dataclasses from ABI Music files
 
 import json
 import logging
+import mimetypes
 import re
 from datetime import datetime
 from pathlib import Path
@@ -11,13 +12,15 @@ from typing import Any
 
 from src.blueprints.common_models import GroupACL
 from src.blueprints.custom_data_types import MTUrl
+from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 from src.helpers.enumerators import DataClassification
 from src.utils import log_utils
-from src.utils.filesystem.navigation import DirectoryNode, FileNode
+from src.utils.filesystem import checksums, filters
+from src.utils.filesystem.navigation import DirectoryNode
 
 # Expected datetime format is "yymmdd-DDMMSS"
 datetime_pattern = re.compile("^[0-9]{6}-[0-9]{6}$")
@@ -115,7 +118,7 @@ def parse_experiment_info(json_data: dict[str, Any]) -> RawExperiment:
     return raw_experiment
 
 
-def parse_dataset_info(json_data: dict[str, Any]) -> RawDataset:
+def parse_dataset_info(json_data: dict[str, Any]) -> tuple[RawDataset, str]:
     """
     Extract dataset metadata from JSON content
     """
@@ -140,7 +143,9 @@ def parse_dataset_info(json_data: dict[str, Any]) -> RawDataset:
     timestamp = "220228-103800"
     created_time = parse_timestamp(timestamp)
 
-    return RawDataset(
+    main_id = json_data["Basename"]["Sequence"]
+
+    dataset = RawDataset(
         description=json_data["Description"],
         data_classification=None,
         directory=None,
@@ -148,7 +153,7 @@ def parse_dataset_info(json_data: dict[str, Any]) -> RawDataset:
         groups=None,
         immutable=False,
         identifiers=[
-            json_data["Basename"]["Sequence"],
+            main_id,
             str(json_data["SequenceID"]),
         ],
         experiments=[
@@ -161,8 +166,38 @@ def parse_dataset_info(json_data: dict[str, Any]) -> RawDataset:
         modified_time=None,
     )
 
+    return (dataset, main_id)
 
-def parse_raw_data(raw_dir: DirectoryNode) -> None:
+
+def collate_datafile_info(
+    file_rel_path: Path, root_dir: Path, dataset_name: str
+) -> RawDatafile:
+    """
+    Collect and collate all the information needed to define a datafile dataclass
+    """
+    full_path = root_dir / file_rel_path
+
+    mimetype, _ = mimetypes.guess_type(full_path)
+    if mimetype is None:
+        mimetype = "application/octet-stream"
+
+    return RawDatafile(
+        filename=file_rel_path.name,
+        directory=file_rel_path,
+        md5sum=checksums.calculate_md5(full_path),
+        mimetype=mimetype,
+        size=full_path.stat().st_size,
+        users=None,
+        groups=None,
+        dataset=dataset_name,
+        metadata=None,
+        schema=None,
+    )
+
+
+def parse_raw_data(
+    raw_dir: DirectoryNode, root_dir: Path, file_filter: filters.PathFilterSet
+) -> None:
     """
     Parse the directory containing the raw data
     """
@@ -213,21 +248,22 @@ def parse_raw_data(raw_dir: DirectoryNode) -> None:
                     .path()
                     .read_text(encoding="utf-8")
                 )
-                pedd_builder.add_dataset(parse_dataset_info(json.loads(dataset_json)))
 
-                # Note: is_valid_file will be replaced by new filter classes once they are merged
-                def is_valid_file(f: FileNode) -> bool:
-                    return f.path().suffix != ".DS_Store"
+                # TODO: get a real timestamp, pass the specific instrument ID, schema etc
+                dataset, dataset_id = parse_dataset_info(json.loads(dataset_json))
+                pedd_builder.add_dataset(dataset)
 
-                data_file_nodes = [
-                    f
-                    for f in dataset_dir.iter_files(recursive=True)
-                    if is_valid_file(f)
-                ]
+                for file in dataset_dir.iter_files(recursive=True):
+                    if file_filter.exclude(file.path()):
+                        continue
 
-                # TODO: create datafile objects from data_file_nodes
-                # datafiles = [parse_datafile_info(df) for df in data_file_nodes]
-                # pedd_builder.add_datafiles(datafiles)
+                    file_rel_path = file.path().relative_to(root_dir)
+
+                    datafile = collate_datafile_info(
+                        file_rel_path, root_dir, dataset_id
+                    )
+
+                    pedd_builder.add_datafile(datafile)
 
 
 # Not sure what it will return yet
@@ -242,7 +278,9 @@ def parse_data(root: DirectoryNode) -> None:
     raw_dir = root.dir("Vault").dir("Raw")
     zarr_dir = root.dir("Zarr")
 
-    parse_raw_data(raw_dir)
+    file_filter = filters.PathFilterSet(filter_system_files=True)
+
+    parse_raw_data(raw_dir, root.path(), file_filter)
 
 
 def main1() -> None:
@@ -270,7 +308,7 @@ def main1() -> None:
     with dataset_json_path.open(encoding="utf-8") as f:
         dataset_data = json.load(f)
 
-    raw_dataset = parse_dataset_info(dataset_data)
+    raw_dataset, _ = parse_dataset_info(dataset_data)
     print("Raw Dataset:\n", raw_dataset.model_dump_json(indent=4))
 
     print("Done")
