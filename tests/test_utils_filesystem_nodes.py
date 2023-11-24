@@ -3,15 +3,10 @@
 
 from pathlib import Path
 
-import mock
 import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem
 
-from src.utils.filesystem.filesystem_nodes import (
-    DirectoryNode,
-    FileNode,
-    collect_children,
-)
+from src.utils.filesystem.filesystem_nodes import DirectoryNode, FileNode
 
 
 @pytest.fixture(name="_fake_filesystem")
@@ -88,7 +83,7 @@ def test_directory_node_parents(_fake_filesystem: FakeFilesystem):
 
 
 def test_directory_node_query_files(_fake_filesystem: FakeFilesystem):
-    test_dir = DirectoryNode(Path("/"), parent=None, check_exists=True)
+    test_dir = DirectoryNode(Path("/test"), parent=None, check_exists=True)
 
     assert test_dir.has_file("a.txt")
     assert test_dir.has_file("b.jpg")
@@ -116,20 +111,20 @@ def test_directory_node_query_files(_fake_filesystem: FakeFilesystem):
     assert iter_files_recursive[1].path() == Path("/test/b.jpg")
     assert iter_files_recursive[2].path() == Path("/test/foo/b.txt")
     assert iter_files_recursive[3].path() == Path("/test/foo/c.png")
-    assert iter_files_recursive[4].path() == Path("/test/bar/d.pdf")
-    assert iter_files_recursive[5].path() == Path("/test/bar/e.py")
-    assert iter_files_recursive[6].path() == Path("/test/foo/baz/f.mov")
-    assert iter_files_recursive[7].path() == Path("/test/foo/baz/g.json")
+    assert iter_files_recursive[4].path() == Path("/test/foo/baz/f.mov")
+    assert iter_files_recursive[5].path() == Path("/test/foo/baz/g.json")
+    assert iter_files_recursive[6].path() == Path("/test/bar/d.pdf")
+    assert iter_files_recursive[7].path() == Path("/test/bar/e.py")
 
     empty_dir = DirectoryNode(Path("/test/foo/empty"))
     assert len(empty_dir.files()) == 0
 
 
 def test_directory_node_query_directories(_fake_filesystem: FakeFilesystem):
-    test_dir = DirectoryNode(Path("/"), parent=None, check_exists=True)
+    test_dir = DirectoryNode(Path("/test"), parent=None, check_exists=True)
 
     assert test_dir.has_dir("foo")
-    assert test_dir.has_file("bar")
+    assert test_dir.has_dir("bar")
 
     dir_foo = test_dir.dir("foo")
     assert dir_foo.name() == "foo"
@@ -148,24 +143,23 @@ def test_directory_node_query_directories(_fake_filesystem: FakeFilesystem):
     assert iter_dirs[1].name() == "bar"
 
     iter_dirs_recursive = list(test_dir.iter_dirs(recursive=True))
-    assert len(iter_dirs_recursive) == 5
-    assert iter_dirs_recursive[0].path() == Path("/test")
-    assert iter_dirs_recursive[1].path() == Path("/test/foo")
-    assert iter_dirs_recursive[2].path() == Path("/test/bar")
-    assert iter_dirs_recursive[3].path() == Path("/test/foo/baz")
-    assert iter_dirs_recursive[4].path() == Path("/test/foo/empty")
+    assert len(iter_dirs_recursive) == 4
+    assert iter_dirs_recursive[0].path() == Path("/test/foo")
+    assert iter_dirs_recursive[1].path() == Path("/test/bar")
+    assert iter_dirs_recursive[2].path() == Path("/test/foo/baz")
+    assert iter_dirs_recursive[3].path() == Path("/test/foo/empty")
 
     empty_dir = DirectoryNode(Path("/test/foo/empty"))
     assert len(empty_dir.directories()) == 0
 
 
 def test_directory_node_visit_entries(_fake_filesystem: FakeFilesystem):
+    test_dir = DirectoryNode(Path("/test"))
+
     arg_paths: list[Path] = []
 
     def stash_path(file_node: FileNode | DirectoryNode) -> None:
         arg_paths.append(file_node.path())
-
-    test_dir = DirectoryNode(Path("/test"))
 
     test_dir.visit_files(stash_path, recursive=False)
 
@@ -202,6 +196,28 @@ def test_directory_node_visit_entries(_fake_filesystem: FakeFilesystem):
     assert arg_paths == [
         Path("/test/foo"),
         Path("/test/bar"),
+        Path("/test/foo/baz"),
+        Path("/test/foo/empty"),
+    ]
+
+
+def test_directory_node_find_entries(_fake_filesystem: FakeFilesystem):
+    test_dir = DirectoryNode(Path("/test"))
+
+    found_files = test_dir.find_files(lambda f: f.extension() == ".txt", recursive=True)
+
+    found_file_paths = [f.path() for f in found_files]
+    assert found_file_paths == [
+        Path("/test/a.txt"),
+        Path("/test/foo/b.txt"),
+    ]
+
+    found_dirs = test_dir.find_dirs(
+        lambda d: d.parent().name() == "foo", recursive=True
+    )
+
+    found_dir_paths = [d.path() for d in found_dirs]
+    assert found_dir_paths == [
         Path("/test/foo/baz"),
         Path("/test/foo/empty"),
     ]
