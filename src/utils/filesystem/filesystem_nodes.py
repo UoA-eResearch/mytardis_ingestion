@@ -52,6 +52,11 @@ class FileNode:
         if check_exists and not path.is_file():
             raise FileNotFoundError(f"{path} is not a valid file")
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, FileNode):
+            return self.path() == other.path()
+        raise NotImplementedError("Invalid equality comparison")
+
     def name(self) -> str:
         """
         Get the file name
@@ -188,7 +193,7 @@ class DirectoryNode:
 
     def empty(self) -> bool:
         """ "Check whether this directory contains any files or directories"""
-        return len(self.files()) > 0 or len(self.directories()) == 0
+        return len(self.files()) == 0 and len(self.directories()) == 0
 
     def visit_files(
         self, func: Callable[[FileNode], None], recursive: bool = False

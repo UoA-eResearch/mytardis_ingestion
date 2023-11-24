@@ -50,6 +50,7 @@ flake8-bandit = "^4.1.1"
 flake8-pyproject = "^1.2.3"
 toml = "^0.10.2"
 pyproject-pre-commit = "^0.0.28"
+pyfakefs = "^5.3.1"
 
 [tool.isort]
 profile = "black"
