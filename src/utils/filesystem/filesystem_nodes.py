@@ -28,9 +28,21 @@ def collect_children(
 
     for child in directory.path().iterdir():
         if child.is_file():
-            files.append(FileNode(child, parent=directory, check_exists=False))
+            files.append(
+                FileNode(
+                    child,
+                    parent=directory,
+                    check_exists=False,
+                )
+            )
         elif child.is_dir():
-            directories.append(DirectoryNode(child, check_exists=False))
+            directories.append(
+                DirectoryNode(
+                    child,
+                    parent=directory,
+                    check_exists=False,
+                )
+            )
 
     return (files, directories)
 
