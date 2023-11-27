@@ -18,14 +18,19 @@ from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 from src.helpers.enumerators import DataClassification
+from src.profiles.abi_music.abi_music_consts import (
+    ABI_MUSIC_DATASET_RAW_SCHEMA,
+    ABI_MUSIC_DATASET_ZARR_SCHEMA,
+    ABI_MUSIC_MICROSCOPE_INSTRUMENT,
+    ABI_MUSIC_POSTPROCESSING_INSTRUMENT,
+    DEFAULT_INSTITUTION,
+)
 from src.utils import log_utils
 from src.utils.filesystem import checksums, filters
 from src.utils.filesystem.filesystem_nodes import DirectoryNode, FileNode
 
 # Expected datetime format is "yymmdd-DDMMSS"
 datetime_pattern = re.compile("^[0-9]{6}-[0-9]{6}$")
-
-DEFAULT_INSTITUTION = "University of Auckland"
 
 
 def parse_timestamp(timestamp: str) -> datetime:
@@ -138,10 +143,6 @@ def parse_raw_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
 
     json_data = read_json(directory.file(directory.name() + ".json"))
 
-    # TODO: move to constants section
-    abi_music_microscope = "abi-music-microscope-v1"
-    dataset_schema_raw = MTUrl("http://abi-music.com/dataset-raw/1")
-
     metadata: dict[str, Any] = {
         "description": json_data["Description"],
         "sequence-id": json_data["SequenceID"],
@@ -164,9 +165,9 @@ def parse_raw_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         experiments=[
             json_data["Basename"]["Sample"],
         ],
-        instrument=abi_music_microscope,
+        instrument=ABI_MUSIC_MICROSCOPE_INSTRUMENT,
         metadata=metadata,
-        schema=dataset_schema_raw,
+        schema=MTUrl(ABI_MUSIC_DATASET_RAW_SCHEMA),
         created_time=None,
         modified_time=None,
     )
@@ -189,9 +190,6 @@ def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
 
     json_data = read_json(json_file)
 
-    abi_music_post_processing = "abi-music-post-processing-v1"
-    dataset_schema_zarr = MTUrl("http://abi-music.com/dataset-zarr/1")
-
     metadata: dict[str, Any] = {
         "description": json_data["Description"],
         "sequence-id": json_data["SequenceID"],
@@ -214,9 +212,9 @@ def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         experiments=[
             json_data["Basename"]["Sample"],
         ],
-        instrument=abi_music_post_processing,
+        instrument=ABI_MUSIC_POSTPROCESSING_INSTRUMENT,
         metadata=metadata,
-        schema=dataset_schema_zarr,
+        schema=ABI_MUSIC_DATASET_ZARR_SCHEMA,
         created_time=None,
         modified_time=None,
     )
