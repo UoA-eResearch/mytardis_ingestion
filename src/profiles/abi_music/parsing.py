@@ -3,6 +3,8 @@ Parsing logic for generating PEDD dataclasses from ABI Music files
 """
 
 import json
+import logging
+import mimetypes
 import re
 from datetime import datetime
 from pathlib import Path
@@ -10,10 +12,15 @@ from typing import Any
 
 from src.blueprints.common_models import GroupACL
 from src.blueprints.custom_data_types import MTUrl
+from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
+from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 from src.helpers.enumerators import DataClassification
+from src.utils import log_utils
+from src.utils.filesystem import checksums, filters
+from src.utils.filesystem.filesystem_nodes import DirectoryNode
 
 # Expected datetime format is "yymmdd-DDMMSS"
 datetime_pattern = re.compile("^[0-9]{6}-[0-9]{6}$")
@@ -111,7 +118,7 @@ def parse_experiment_info(json_data: dict[str, Any]) -> RawExperiment:
     return raw_experiment
 
 
-def parse_dataset_info(json_data: dict[str, Any]) -> RawDataset:
+def parse_dataset_info(json_data: dict[str, Any]) -> tuple[RawDataset, str]:
     """
     Extract dataset metadata from JSON content
     """
@@ -131,12 +138,9 @@ def parse_dataset_info(json_data: dict[str, Any]) -> RawDataset:
         "sqrt-offset": json_data["Offsets"]["SQRT Offset"],
     }
 
-    # N.B. Placeholder. We will get this from dir name for Raw, and dir name prefix for Zarr,
-    #      when directory-parsing is implemented
-    timestamp = "220228-103800"
-    created_time = parse_timestamp(timestamp)
+    main_id = json_data["Basename"]["Sequence"]
 
-    return RawDataset(
+    dataset = RawDataset(
         description=json_data["Description"],
         data_classification=None,
         directory=None,
@@ -144,7 +148,7 @@ def parse_dataset_info(json_data: dict[str, Any]) -> RawDataset:
         groups=None,
         immutable=False,
         identifiers=[
-            json_data["Basename"]["Sequence"],
+            main_id,
             str(json_data["SequenceID"]),
         ],
         experiments=[
@@ -153,12 +157,191 @@ def parse_dataset_info(json_data: dict[str, Any]) -> RawDataset:
         instrument=abi_music_microscope,
         metadata=metadata,
         schema=dataset_schema_raw,
-        created_time=created_time,
+        created_time=None,
         modified_time=None,
     )
 
+    return (dataset, main_id)
 
-def main() -> None:
+
+def collate_datafile_info(
+    file_rel_path: Path, root_dir: Path, dataset_name: str
+) -> RawDatafile:
+    """
+    Collect and collate all the information needed to define a datafile dataclass
+    """
+    full_path = root_dir / file_rel_path
+
+    mimetype, _ = mimetypes.guess_type(full_path)
+    if mimetype is None:
+        mimetype = "application/octet-stream"
+
+    return RawDatafile(
+        filename=file_rel_path.name,
+        directory=file_rel_path,
+        md5sum=checksums.calculate_md5(full_path),
+        mimetype=mimetype,
+        size=full_path.stat().st_size,
+        users=None,
+        groups=None,
+        dataset=dataset_name,
+        metadata=None,
+        schema=None,
+    )
+
+
+def parse_raw_data(
+    raw_dir: DirectoryNode, root_dir: Path, file_filter: filters.PathFilterSet
+) -> IngestibleDataclasses:
+    """
+    Parse the directory containing the raw data
+    """
+
+    pedd_builder = IngestibleDataclasses()
+
+    project_dirs = [
+        d for d in raw_dir.iter_dirs(recursive=True) if d.has_file("project.json")
+    ]
+
+    for project_dir in project_dirs:
+        print(f"Project directory: {project_dir.name()}")
+
+        project_json = (
+            project_dir.file("project.json").path().read_text(encoding="utf-8")
+        )
+        pedd_builder.add_project(parse_project_info(json.loads(project_json)))
+
+        experiment_dirs = [
+            d
+            for d in project_dir.iter_dirs(recursive=True)
+            if d.has_file("experiment.json")
+        ]
+
+        for experiment_dir in experiment_dirs:
+            print(f"Experiment directory: {experiment_dir.name()}")
+
+            experiment_json = (
+                experiment_dir.file("experiment.json")
+                .path()
+                .read_text(encoding="utf-8")
+            )
+            pedd_builder.add_experiment(
+                parse_experiment_info(json.loads(experiment_json))
+            )
+
+            dataset_dirs = [
+                d
+                for d in experiment_dir.iter_dirs(recursive=True)
+                if d.has_file(d.name() + ".json")
+            ]
+
+            for dataset_dir in dataset_dirs:
+                print(f"Dataset directory: {dataset_dir.name()}")
+
+                dataset_json = (
+                    dataset_dir.file(dataset_dir.name() + ".json")
+                    .path()
+                    .read_text(encoding="utf-8")
+                )
+
+                dataset, dataset_id = parse_dataset_info(json.loads(dataset_json))
+
+                data_dir = next(
+                    filter(
+                        lambda d: datetime_pattern.match(d.path().stem) is not None,
+                        dataset_dir.iter_dirs(),
+                    )
+                )
+
+                dataset.created_time = parse_timestamp(data_dir.name())
+
+                # TODO: pass the specific instrument ID, schema etc
+
+                pedd_builder.add_dataset(dataset)
+
+                for file in dataset_dir.iter_files(recursive=True):
+                    if file_filter.exclude(file.path()):
+                        continue
+
+                    file_rel_path = file.path().relative_to(root_dir)
+
+                    datafile = collate_datafile_info(
+                        file_rel_path, root_dir, dataset_id
+                    )
+
+                    pedd_builder.add_datafile(datafile)
+
+    return pedd_builder
+
+
+def parse_zarr_data(
+    zarr_root: DirectoryNode, root_dir: Path, file_filter: filters.PathFilterSet
+) -> IngestibleDataclasses:
+    pedd_builder = IngestibleDataclasses()
+
+    for directory in zarr_root.iter_dirs(recursive=True):
+        zarr_dirs = directory.find_dirs(
+            lambda d: d.name().endswith(".zarr"), recursive=True
+        )
+
+        for zarr_dir in zarr_dirs:
+            name_stem = zarr_dir.name().removesuffix(".zarr")
+
+            try:
+                json_file = directory.file(name_stem + ".json")
+            except FileNotFoundError as e:
+                raise FileNotFoundError(
+                    f"Zarr {zarr_dir.path()} has no corresponding JSON file"
+                ) from e
+
+            dataset, dataset_id = parse_dataset_info(
+                json.loads(json_file.path().read_text(encoding="utf-8"))
+            )
+
+            dataset.created_time = parse_timestamp(name_stem)
+
+            pedd_builder.add_dataset(dataset)
+
+            for file in zarr_dir.iter_files(recursive=True):
+                if file_filter.exclude(file.path()):
+                    continue
+
+                file_rel_path = file.path().relative_to(root_dir)
+
+                datafile = collate_datafile_info(file_rel_path, root_dir, dataset_id)
+
+                pedd_builder.add_datafile(datafile)
+
+                # TODO: ensure we already have a corresponding project and experiment defined
+
+    # name_format = re.compile(r"(\w+)-(\w+)-(\w+)")
+
+    # TODO: do we search first for ZARR files, then parse the dir name? Or do we even need to parse the dir name? Should Proj/Exp come from JSON file?
+
+    # BenP-PID143-BlockA
+    # Project-Experiment-Dataset
+
+    return pedd_builder
+
+
+# Not sure what it will return yet
+def parse_data(root: DirectoryNode) -> None:
+    """
+    Parse/validate the data directory to extract the files to be ingested
+    """
+
+    assert not root.empty(), "Data root directory is empty. May not be mounted."
+
+    raw_dir = root.dir("Vault").dir("Raw")
+    zarr_dir = root.dir("Zarr")
+
+    file_filter = filters.PathFilterSet(filter_system_files=True)
+
+    pedd_builder_raw = parse_raw_data(raw_dir, root.path(), file_filter)
+    pedd_builder_zarr = parse_zarr_data(zarr_dir, root.path(), file_filter)
+
+
+def main1() -> None:
     """
     main function - this is just for testing - a proper ingestion runner is yet to be written.
     """
@@ -183,11 +366,25 @@ def main() -> None:
     with dataset_json_path.open(encoding="utf-8") as f:
         dataset_data = json.load(f)
 
-    raw_dataset = parse_dataset_info(dataset_data)
+    raw_dataset, _ = parse_dataset_info(dataset_data)
     print("Raw Dataset:\n", raw_dataset.model_dump_json(indent=4))
 
     print("Done")
 
 
+def main2() -> None:
+    log_utils.init_logging(file_name="abi_ingest.log", level=logging.DEBUG)
+
+    # Should come from command-line args or config file
+    data_root = Path("/mnt/abi_test_data")
+
+    root_node = DirectoryNode(data_root)
+
+    parse_data(root_node)
+
+    print("Done")
+
+
 if __name__ == "__main__":
-    main()
+    # main1()
+    main2()
