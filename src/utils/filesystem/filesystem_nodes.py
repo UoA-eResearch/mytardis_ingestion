@@ -4,6 +4,7 @@ Helpers for navigating the filesystem, querying layout and finding entries
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Callable, Iterator, Tuple, TypeAlias, TypeVar
 
@@ -60,6 +61,7 @@ class FileNode:
     ) -> None:
         self._path = path
         self._parent: DirectoryNode | None = parent
+        self._stat_info: os.stat_result | None = None
 
         if check_exists and not path.is_file():
             raise FileNotFoundError(f"{path} is not a valid file")
@@ -94,6 +96,12 @@ class FileNode:
             Path: the path
         """
         return self._path
+
+    def stat(self) -> os.stat_result:
+        """Retrieve file information from a stat() call"""
+        if self._stat_info is None:
+            self._stat_info = self.path().stat()
+        return self._stat_info
 
 
 class DirectoryNode:

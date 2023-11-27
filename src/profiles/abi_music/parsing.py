@@ -20,7 +20,7 @@ from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 from src.helpers.enumerators import DataClassification
 from src.utils import log_utils
 from src.utils.filesystem import checksums, filters
-from src.utils.filesystem.filesystem_nodes import DirectoryNode
+from src.utils.filesystem.filesystem_nodes import DirectoryNode, FileNode
 
 # Expected datetime format is "yymmdd-DDMMSS"
 datetime_pattern = re.compile("^[0-9]{6}-[0-9]{6}$")
@@ -165,23 +165,23 @@ def parse_dataset_info(json_data: dict[str, Any]) -> tuple[RawDataset, str]:
 
 
 def collate_datafile_info(
-    file_rel_path: Path, root_dir: Path, dataset_name: str
+    file: FileNode, root_dir: Path, dataset_name: str
 ) -> RawDatafile:
     """
     Collect and collate all the information needed to define a datafile dataclass
     """
-    full_path = root_dir / file_rel_path
+    file_rel_path = file.path().relative_to(root_dir)
 
-    mimetype, _ = mimetypes.guess_type(full_path)
+    mimetype, _ = mimetypes.guess_type(file.name())
     if mimetype is None:
         mimetype = "application/octet-stream"
 
     return RawDatafile(
         filename=file_rel_path.name,
         directory=file_rel_path,
-        md5sum=checksums.calculate_md5(full_path),
+        md5sum=checksums.calculate_md5(file.path()),
         mimetype=mimetype,
-        size=full_path.stat().st_size,
+        size=file.stat().st_size,
         users=None,
         groups=None,
         dataset=dataset_name,
@@ -263,11 +263,7 @@ def parse_raw_data(
                     if file_filter.exclude(file.path()):
                         continue
 
-                    file_rel_path = file.path().relative_to(root_dir)
-
-                    datafile = collate_datafile_info(
-                        file_rel_path, root_dir, dataset_id
-                    )
+                    datafile = collate_datafile_info(file, root_dir, dataset_id)
 
                     pedd_builder.add_datafile(datafile)
 
@@ -306,9 +302,7 @@ def parse_zarr_data(
                 if file_filter.exclude(file.path()):
                     continue
 
-                file_rel_path = file.path().relative_to(root_dir)
-
-                datafile = collate_datafile_info(file_rel_path, root_dir, dataset_id)
+                datafile = collate_datafile_info(file, root_dir, dataset_id)
 
                 pedd_builder.add_datafile(datafile)
 
@@ -316,7 +310,8 @@ def parse_zarr_data(
 
     # name_format = re.compile(r"(\w+)-(\w+)-(\w+)")
 
-    # TODO: do we search first for ZARR files, then parse the dir name? Or do we even need to parse the dir name? Should Proj/Exp come from JSON file?
+    # TODO: do we search first for ZARR files, then parse the dir name? Or do we even need
+    # to parse the dir name? Should Proj/Exp come from JSON file?
 
     # BenP-PID143-BlockA
     # Project-Experiment-Dataset
@@ -337,8 +332,8 @@ def parse_data(root: DirectoryNode) -> None:
 
     file_filter = filters.PathFilterSet(filter_system_files=True)
 
-    pedd_builder_raw = parse_raw_data(raw_dir, root.path(), file_filter)
-    pedd_builder_zarr = parse_zarr_data(zarr_dir, root.path(), file_filter)
+    _ = parse_raw_data(raw_dir, root.path(), file_filter)
+    _ = parse_zarr_data(zarr_dir, root.path(), file_filter)
 
 
 def main1() -> None:
@@ -373,6 +368,9 @@ def main1() -> None:
 
 
 def main2() -> None:
+    """
+    main function - this is just for testing - a proper ingestion runner is yet to be written.
+    """
     log_utils.init_logging(file_name="abi_ingest.log", level=logging.DEBUG)
 
     # Should come from command-line args or config file
