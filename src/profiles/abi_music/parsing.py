@@ -41,10 +41,20 @@ def parse_timestamp(timestamp: str) -> datetime:
     raise ValueError("Ill-formed timestamp; expected format 'yymmdd-DDMMSS'")
 
 
-def parse_project_info(json_data: dict[str, Any]) -> RawProject:
+def read_json(file: FileNode) -> dict[str, Any]:
+    """Extract the JSON data hierachy from `file`"""
+    file_data = file.path().read_text(encoding="utf-8")
+    json_data: dict[str, Any] = json.loads(file_data)
+    return json_data
+
+
+def parse_project_info(directory: DirectoryNode) -> RawProject:
     """
     Extract project metadata from JSON content
     """
+
+    json_data = read_json(directory.file("project.json"))
+
     groups: list[GroupACL] = []
 
     for group in json_data["groups"]:
@@ -90,10 +100,13 @@ def parse_project_info(json_data: dict[str, Any]) -> RawProject:
     return raw_project
 
 
-def parse_experiment_info(json_data: dict[str, Any]) -> RawExperiment:
+def parse_experiment_info(directory: DirectoryNode) -> RawExperiment:
     """
     Extract experiment metadata from JSON content
     """
+
+    json_data = read_json(directory.file("experiment.json"))
+
     raw_experiment = RawExperiment(
         title=json_data["experiment_name"],
         description=json_data["experiment_description"],
@@ -118,20 +131,17 @@ def parse_experiment_info(json_data: dict[str, Any]) -> RawExperiment:
     return raw_experiment
 
 
-def parse_dataset_info(json_data: dict[str, Any]) -> tuple[RawDataset, str]:
+def parse_raw_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
     """
-    Extract dataset metadata from JSON content
+    Extract Raw dataset metadata from JSON content
     """
 
-    # These will be used separately when we implement the directory-parsing logic
+    json_data = read_json(directory.file(directory.name() + ".json"))
+
+    # TODO: move to constants section
     abi_music_microscope = "abi-music-microscope-v1"
-    # abi_music_post_processing = "abi-music-post-processing-v1"
-
-    # These will be used separately when we implement the directory-parsing logic
     dataset_schema_raw = MTUrl("http://abi-music.com/dataset-raw/1")
-    #  dataset_schema_zarr = MTUrl("http://abi-music.com/dataset-zarr/1")
 
-    # Currently taking the same fields for Raw and Zarr datasets, but that may change
     metadata: dict[str, Any] = {
         "description": json_data["Description"],
         "sequence-id": json_data["SequenceID"],
@@ -157,6 +167,56 @@ def parse_dataset_info(json_data: dict[str, Any]) -> tuple[RawDataset, str]:
         instrument=abi_music_microscope,
         metadata=metadata,
         schema=dataset_schema_raw,
+        created_time=None,
+        modified_time=None,
+    )
+
+    return (dataset, main_id)
+
+
+def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
+    """
+    Extract Zarr dataset metadata from JSON content
+    """
+
+    try:
+        json_file_name = directory.name().replace(".zarr", ".json")
+        json_file = directory.file(json_file_name)
+    except FileNotFoundError as e:
+        raise FileNotFoundError(
+            f"Zarr {directory.path()} has no corresponding JSON file"
+        ) from e
+
+    json_data = read_json(json_file)
+
+    abi_music_post_processing = "abi-music-post-processing-v1"
+    dataset_schema_zarr = MTUrl("http://abi-music.com/dataset-zarr/1")
+
+    metadata: dict[str, Any] = {
+        "description": json_data["Description"],
+        "sequence-id": json_data["SequenceID"],
+        "sqrt-offset": json_data["Offsets"]["SQRT Offset"],
+    }
+
+    main_id = json_data["Basename"]["Sequence"]
+
+    dataset = RawDataset(
+        description=json_data["Description"],
+        data_classification=None,
+        directory=None,
+        users=None,
+        groups=None,
+        immutable=False,
+        identifiers=[
+            main_id,
+            str(json_data["SequenceID"]),
+        ],
+        experiments=[
+            json_data["Basename"]["Sample"],
+        ],
+        instrument=abi_music_post_processing,
+        metadata=metadata,
+        schema=dataset_schema_zarr,
         created_time=None,
         modified_time=None,
     )
@@ -206,10 +266,7 @@ def parse_raw_data(
     for project_dir in project_dirs:
         print(f"Project directory: {project_dir.name()}")
 
-        project_json = (
-            project_dir.file("project.json").path().read_text(encoding="utf-8")
-        )
-        pedd_builder.add_project(parse_project_info(json.loads(project_json)))
+        pedd_builder.add_project(parse_project_info(project_dir))
 
         experiment_dirs = [
             d
@@ -220,14 +277,7 @@ def parse_raw_data(
         for experiment_dir in experiment_dirs:
             print(f"Experiment directory: {experiment_dir.name()}")
 
-            experiment_json = (
-                experiment_dir.file("experiment.json")
-                .path()
-                .read_text(encoding="utf-8")
-            )
-            pedd_builder.add_experiment(
-                parse_experiment_info(json.loads(experiment_json))
-            )
+            pedd_builder.add_experiment(parse_experiment_info(experiment_dir))
 
             dataset_dirs = [
                 d
@@ -238,13 +288,7 @@ def parse_raw_data(
             for dataset_dir in dataset_dirs:
                 print(f"Dataset directory: {dataset_dir.name()}")
 
-                dataset_json = (
-                    dataset_dir.file(dataset_dir.name() + ".json")
-                    .path()
-                    .read_text(encoding="utf-8")
-                )
-
-                dataset, dataset_id = parse_dataset_info(json.loads(dataset_json))
+                dataset, dataset_id = parse_raw_dataset(dataset_dir)
 
                 data_dir = next(
                     filter(
@@ -254,8 +298,6 @@ def parse_raw_data(
                 )
 
                 dataset.created_time = parse_timestamp(data_dir.name())
-
-                # TODO: pass the specific instrument ID, schema etc
 
                 pedd_builder.add_dataset(dataset)
 
@@ -281,19 +323,9 @@ def parse_zarr_data(
         )
 
         for zarr_dir in zarr_dirs:
+            dataset, dataset_id = parse_zarr_dataset(zarr_dir)
+
             name_stem = zarr_dir.name().removesuffix(".zarr")
-
-            try:
-                json_file = directory.file(name_stem + ".json")
-            except FileNotFoundError as e:
-                raise FileNotFoundError(
-                    f"Zarr {zarr_dir.path()} has no corresponding JSON file"
-                ) from e
-
-            dataset, dataset_id = parse_dataset_info(
-                json.loads(json_file.path().read_text(encoding="utf-8"))
-            )
-
             dataset.created_time = parse_timestamp(name_stem)
 
             pedd_builder.add_dataset(dataset)
@@ -336,38 +368,7 @@ def parse_data(root: DirectoryNode) -> None:
     _ = parse_zarr_data(zarr_dir, root.path(), file_filter)
 
 
-def main1() -> None:
-    """
-    main function - this is just for testing - a proper ingestion runner is yet to be written.
-    """
-
-    data_root = Path("/home/andrew/dev/ro-crate-abi-music/JSON templates/Test/project")
-
-    project_json_path = data_root / "project.json"
-    with project_json_path.open(encoding="utf-8") as f:
-        project_data = json.load(f)
-
-    raw_project = parse_project_info(json_data=project_data)
-    print("Raw Project:\n", raw_project.model_dump_json(indent=4))
-
-    experiment_json_path = data_root / "sample" / "experiment.json"
-    with experiment_json_path.open(encoding="utf-8") as f:
-        experiment_data = json.load(f)
-
-    raw_experiment = parse_experiment_info(experiment_data)
-    print("Raw Experiment:\n", raw_experiment.model_dump_json(indent=4))
-
-    dataset_json_path = data_root / "sample" / "Ganglia561" / "Ganglia561.json"
-    with dataset_json_path.open(encoding="utf-8") as f:
-        dataset_data = json.load(f)
-
-    raw_dataset, _ = parse_dataset_info(dataset_data)
-    print("Raw Dataset:\n", raw_dataset.model_dump_json(indent=4))
-
-    print("Done")
-
-
-def main2() -> None:
+def main() -> None:
     """
     main function - this is just for testing - a proper ingestion runner is yet to be written.
     """
@@ -384,5 +385,4 @@ def main2() -> None:
 
 
 if __name__ == "__main__":
-    # main1()
-    main2()
+    main()
