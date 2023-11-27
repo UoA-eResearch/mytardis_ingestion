@@ -57,9 +57,14 @@ class FileNode:
 
 
 class DirectoryNode:
-    def __init__(self, path: Path, check_exists: bool = True):
+    def __init__(
+        self,
+        path: Path,
+        parent: DirectoryNode | None = None,
+        check_exists: bool = True,
+    ):
         self._path = path
-        self._parent: DirectoryNode | None = None
+        self._parent = parent
         self._dirs: list[DirectoryNode] | None = None
         self._files: list[FileNode] | None = None
 
