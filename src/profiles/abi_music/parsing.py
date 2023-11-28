@@ -289,10 +289,9 @@ def parse_raw_data(
                 dataset, dataset_id = parse_raw_dataset(dataset_dir)
 
                 data_dir = next(
-                    filter(
-                        lambda d: datetime_pattern.match(d.path().stem) is not None,
-                        dataset_dir.iter_dirs(),
-                    )
+                    d
+                    for d in dataset_dir.iter_dirs()
+                    if datetime_pattern.match(d.path().stem)
                 )
 
                 dataset.created_time = parse_timestamp(data_dir.name())
@@ -304,7 +303,6 @@ def parse_raw_data(
                         continue
 
                     datafile = collate_datafile_info(file, root_dir, dataset_id)
-
                     pedd_builder.add_datafile(datafile)
 
     return pedd_builder
@@ -313,6 +311,9 @@ def parse_raw_data(
 def parse_zarr_data(
     zarr_root: DirectoryNode, root_dir: Path, file_filter: filters.PathFilterSet
 ) -> IngestibleDataclasses:
+    """
+    Parse the directory containing the derived/post-processed Zarr data
+    """
     pedd_builder = IngestibleDataclasses()
 
     for directory in zarr_root.iter_dirs(recursive=True):
@@ -326,6 +327,9 @@ def parse_zarr_data(
             name_stem = zarr_dir.name().removesuffix(".zarr")
             dataset.created_time = parse_timestamp(name_stem)
 
+            # Note: the parent directory name is expected to be in the format
+            # <Project>-<Experiment>-<Dataset>. Should we cross-validate against these?
+
             pedd_builder.add_dataset(dataset)
 
             for file in zarr_dir.iter_files(recursive=True):
@@ -335,16 +339,6 @@ def parse_zarr_data(
                 datafile = collate_datafile_info(file, root_dir, dataset_id)
 
                 pedd_builder.add_datafile(datafile)
-
-                # TODO: ensure we already have a corresponding project and experiment defined
-
-    # name_format = re.compile(r"(\w+)-(\w+)-(\w+)")
-
-    # TODO: do we search first for ZARR files, then parse the dir name? Or do we even need
-    # to parse the dir name? Should Proj/Exp come from JSON file?
-
-    # BenP-PID143-BlockA
-    # Project-Experiment-Dataset
 
     return pedd_builder
 
