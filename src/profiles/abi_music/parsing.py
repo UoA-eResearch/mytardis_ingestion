@@ -2,6 +2,7 @@
 Parsing logic for generating PEDD dataclasses from ABI Music files
 """
 
+import io
 import json
 import logging
 import mimetypes
@@ -401,7 +402,11 @@ def parse_data(root: DirectoryNode) -> None:
 
     dataclasses = IngestibleDataclasses.merge(dc_raw, dc_zarr)
 
-    dataclasses.print(sys.stdout)
+    # dataclasses.print(sys.stdout)
+
+    stream = io.StringIO()
+    dataclasses.print(stream)
+    logging.info(stream.getvalue())
 
 
 def main() -> None:

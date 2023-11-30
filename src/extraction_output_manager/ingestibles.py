@@ -111,24 +111,28 @@ class IngestibleDataclasses:
     ) -> None:
         self.datafiles.extend(datafiles)
 
-    # def print(self, stream: io.TextIOBase, skip_datafiles: bool = True) -> None:
     def print(self, stream: TextIO, skip_datafiles: bool = True) -> None:
+        def write_header(text: str) -> None:
+            stream.write(f"\n\n{'=' * len(text)}\n")
+            stream.write(text)
+            stream.write(f"\n{'=' * len(text)}\n\n")
+
         def write_dataclasses(models: Sequence[BaseModel]) -> None:
             for model in models:
                 stream.write(model.model_dump_json(indent=4))
                 stream.write("\n")
 
-        stream.write("Projects:\n")
+        write_header("Projects")
         write_dataclasses(self.get_projects())
 
-        stream.write("Experiments:\n")
+        write_header("Experiments")
         write_dataclasses(self.get_experiments())
 
-        stream.write("Datasets:\n")
+        write_header("Datasets")
         write_dataclasses(self.get_datasets())
 
         if not skip_datafiles:
-            stream.write("Datafiles:\n")
+            write_header("Datafiles")
             write_dataclasses(self.get_datafiles())
 
     @staticmethod
