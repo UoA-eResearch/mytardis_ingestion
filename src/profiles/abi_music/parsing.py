@@ -6,6 +6,8 @@ import json
 import logging
 import mimetypes
 import re
+import sys
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -32,6 +34,11 @@ from src.utils.filesystem.filesystem_nodes import DirectoryNode, FileNode
 # Expected datetime format is "yymmdd-DDMMSS"
 datetime_pattern = re.compile("^[0-9]{6}-[0-9]{6}$")
 
+# TODO: these should not be committed in this form - just use MD5 cache to speed
+# up development
+cache_path = Path("/home/andrew/dev/mti_1/.ids_cache")
+cache_path.mkdir(exist_ok=True)
+
 
 def parse_timestamp(timestamp: str) -> datetime:
     """
@@ -51,6 +58,28 @@ def read_json(file: FileNode) -> dict[str, Any]:
     file_data = file.path().read_text(encoding="utf-8")
     json_data: dict[str, Any] = json.loads(file_data)
     return json_data
+
+
+def calculate_md5(data_root: Path, path: Path) -> str:
+    """Calculate MD5 checksum or retrieve from cache
+
+    Just used to speed up development, as computing hashes
+    takes a long time when retrieving files over network.
+    """
+
+    cache_dir = DirectoryNode(cache_path)
+
+    rel_path = path.relative_to(data_root)
+    cached_value_path = Path(str(cache_dir.path() / rel_path) + ".md5")
+
+    if cached_value_path.is_file():
+        md5 = cached_value_path.read_text(encoding="utf-8")
+    else:
+        md5 = checksums.calculate_md5(path)
+        cached_value_path.parent.mkdir(exist_ok=True, parents=True)
+        cached_value_path.write_text(md5, encoding="utf-8")
+
+    return md5
 
 
 def parse_project_info(directory: DirectoryNode) -> RawProject:
@@ -152,7 +181,7 @@ def parse_raw_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
     main_id = json_data["Basename"]["Sequence"]
 
     dataset = RawDataset(
-        description=json_data["Description"],
+        description=json_data["Description"] + "_raw",
         data_classification=None,
         directory=None,
         users=None,
@@ -182,7 +211,7 @@ def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
 
     try:
         json_file_name = directory.name().replace(".zarr", ".json")
-        json_file = directory.file(json_file_name)
+        json_file = directory.parent().file(json_file_name)
     except FileNotFoundError as e:
         raise FileNotFoundError(
             f"Zarr {directory.path()} has no corresponding JSON file"
@@ -191,15 +220,15 @@ def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
     json_data = read_json(json_file)
 
     metadata: dict[str, Any] = {
-        "description": json_data["Description"],
-        "sequence-id": json_data["SequenceID"],
-        "sqrt-offset": json_data["Offsets"]["SQRT Offset"],
+        "description": json_data["config"]["Description"],
+        "sequence-id": json_data["config"]["SequenceID"],
+        "sqrt-offset": json_data["config"]["Offsets"]["SQRT Offset"],
     }
 
-    main_id = json_data["Basename"]["Sequence"]
+    main_id = json_data["config"]["Basename"]["Sequence"]
 
     dataset = RawDataset(
-        description=json_data["Description"],
+        description=json_data["config"]["Description"] + "_zarr",
         data_classification=None,
         directory=None,
         users=None,
@@ -207,10 +236,10 @@ def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         immutable=False,
         identifiers=[
             main_id,
-            str(json_data["SequenceID"]),
+            str(json_data["config"]["SequenceID"]),
         ],
         experiments=[
-            json_data["Basename"]["Sample"],
+            json_data["config"]["Basename"]["Sample"],
         ],
         instrument=ABI_MUSIC_POSTPROCESSING_INSTRUMENT,
         metadata=metadata,
@@ -237,7 +266,8 @@ def collate_datafile_info(
     return RawDatafile(
         filename=file_rel_path.name,
         directory=file_rel_path,
-        md5sum=checksums.calculate_md5(file.path()),
+        # md5sum=checksums.calculate_md5(file.path()),
+        md5sum=calculate_md5(root_dir, file.path()),
         mimetype=mimetype,
         size=file.stat().st_size,
         users=None,
@@ -356,8 +386,22 @@ def parse_data(root: DirectoryNode) -> None:
 
     file_filter = filters.PathFilterSet(filter_system_files=True)
 
-    _ = parse_raw_data(raw_dir, root.path(), file_filter)
-    _ = parse_zarr_data(zarr_dir, root.path(), file_filter)
+    dc_raw = parse_raw_data(raw_dir, root.path(), file_filter)
+    dc_zarr = parse_zarr_data(zarr_dir, root.path(), file_filter)
+
+    # Add name of raw dataset as metadata for Zarr dataset
+    for zarr_dataset in dc_zarr.get_datasets():
+        raw_dataset = next(
+            ds
+            for ds in dc_raw.get_datasets()
+            if ds.description == zarr_dataset.description.replace("_zarr", "_raw")
+        )
+        zarr_dataset.metadata = zarr_dataset.metadata or {}
+        zarr_dataset.metadata["raw_dataset"] = raw_dataset.description
+
+    dataclasses = IngestibleDataclasses.merge(dc_raw, dc_zarr)
+
+    dataclasses.print(sys.stdout)
 
 
 def main() -> None:
@@ -371,9 +415,12 @@ def main() -> None:
 
     root_node = DirectoryNode(data_root)
 
+    start = time.perf_counter(), time.process_time()
+
     parse_data(root_node)
 
-    print("Done")
+    end = time.perf_counter(), time.process_time()
+    print(f"Time:\n{end[0] - start[0]}\n{end[1] - start[1]}")
 
 
 if __name__ == "__main__":

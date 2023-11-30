@@ -3,10 +3,13 @@
 refinery/ingestion. The raw dataclasses are stored in lists.
 """
 
-
 # ---Imports
+from __future__ import annotations
+
 import logging
-from typing import List
+from typing import List, Sequence, TextIO
+
+from pydantic import BaseModel
 
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
@@ -107,3 +110,36 @@ class IngestibleDataclasses:
         datafiles: List[RawDatafile],
     ) -> None:
         self.datafiles.extend(datafiles)
+
+    # def print(self, stream: io.TextIOBase, skip_datafiles: bool = True) -> None:
+    def print(self, stream: TextIO, skip_datafiles: bool = True) -> None:
+        def write_dataclasses(models: Sequence[BaseModel]) -> None:
+            for model in models:
+                stream.write(model.model_dump_json(indent=4))
+                stream.write("\n")
+
+        stream.write("Projects:\n")
+        write_dataclasses(self.get_projects())
+
+        stream.write("Experiments:\n")
+        write_dataclasses(self.get_experiments())
+
+        stream.write("Datasets:\n")
+        write_dataclasses(self.get_datasets())
+
+        if not skip_datafiles:
+            stream.write("Datafiles:\n")
+            write_dataclasses(self.get_datafiles())
+
+    @staticmethod
+    def merge(
+        a: IngestibleDataclasses, b: IngestibleDataclasses
+    ) -> IngestibleDataclasses:
+        result = IngestibleDataclasses()
+
+        result.add_projects(a.get_projects() + b.get_projects())
+        result.add_experiments(a.get_experiments() + b.get_experiments())
+        result.add_datasets(a.get_datasets() + b.get_datasets())
+        result.add_datafiles(a.get_datafiles() + b.get_datafiles())
+
+        return result
