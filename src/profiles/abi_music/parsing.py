@@ -34,11 +34,6 @@ from src.utils.filesystem.filesystem_nodes import DirectoryNode, FileNode
 # Expected datetime format is "yymmdd-DDMMSS"
 datetime_pattern = re.compile("^[0-9]{6}-[0-9]{6}$")
 
-# TODO: these should not be committed in this form - just use MD5 cache to speed
-# up development
-cache_path = Path("/home/andrew/dev/mti_1/.ids_cache")
-cache_path.mkdir(exist_ok=True)
-
 
 def parse_timestamp(timestamp: str) -> datetime:
     """
@@ -58,28 +53,6 @@ def read_json(file: FileNode) -> dict[str, Any]:
     file_data = file.path().read_text(encoding="utf-8")
     json_data: dict[str, Any] = json.loads(file_data)
     return json_data
-
-
-def calculate_md5(data_root: Path, path: Path) -> str:
-    """Calculate MD5 checksum or retrieve from cache
-
-    Just used to speed up development, as computing hashes
-    takes a long time when retrieving files over network.
-    """
-
-    cache_dir = DirectoryNode(cache_path)
-
-    rel_path = path.relative_to(data_root)
-    cached_value_path = Path(str(cache_dir.path() / rel_path) + ".md5")
-
-    if cached_value_path.is_file():
-        md5 = cached_value_path.read_text(encoding="utf-8")
-    else:
-        md5 = checksums.calculate_md5(path)
-        cached_value_path.parent.mkdir(exist_ok=True, parents=True)
-        cached_value_path.write_text(md5, encoding="utf-8")
-
-    return md5
 
 
 def parse_project_info(directory: DirectoryNode) -> RawProject:
@@ -266,8 +239,7 @@ def collate_datafile_info(
     return RawDatafile(
         filename=file_rel_path.name,
         directory=file_rel_path,
-        # md5sum=checksums.calculate_md5(file.path()),
-        md5sum=calculate_md5(root_dir, file.path()),
+        md5sum=checksums.calculate_md5(file.path()),
         mimetype=mimetype,
         size=file.stat().st_size,
         users=None,
@@ -434,7 +406,7 @@ def main() -> None:
     logging.info(stream.getvalue())
 
     end = time.perf_counter(), time.process_time()
-    print(f"Time:\n{end[0] - start[0]}\n{end[1] - start[1]}")
+    print(f"Total time: {end[0] - start[0]}\nCPU Time: {end[1] - start[1]}")
 
 
 if __name__ == "__main__":
