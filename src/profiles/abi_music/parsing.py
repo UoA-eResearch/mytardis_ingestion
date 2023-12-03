@@ -7,7 +7,6 @@ import json
 import logging
 import mimetypes
 import re
-import sys
 import time
 from datetime import datetime
 from pathlib import Path
@@ -182,7 +181,7 @@ def parse_raw_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
     main_id = json_data["Basename"]["Sequence"]
 
     dataset = RawDataset(
-        description=json_data["Description"] + "_raw",
+        description="Raw:" + json_data["Description"],
         data_classification=None,
         directory=None,
         users=None,
@@ -229,7 +228,7 @@ def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
     main_id = json_data["config"]["Basename"]["Sequence"]
 
     dataset = RawDataset(
-        description=json_data["config"]["Description"] + "_zarr",
+        description="Zarr:" + json_data["config"]["Description"],
         data_classification=None,
         directory=None,
         users=None,
@@ -374,8 +373,26 @@ def parse_zarr_data(
     return pedd_builder
 
 
-# Not sure what it will return yet
-def parse_data(root: DirectoryNode) -> None:
+def link_zarr_to_raw(
+    zarr_datasets: list[RawDataset], raw_datasets: list[RawDataset]
+) -> None:
+    """Augment Zarr dataset metadata with information about the source dataset.
+
+    Mutates `zarr_datasets` in-place; should it?
+    """
+    for zarr_dataset in zarr_datasets:
+        raw_dataset = next(
+            ds
+            for ds in raw_datasets
+            # Note: not ideal as the logic for how we suffix the names is duplicated - could go out of sync.
+            # Maybe we shouldn't be doing this retrospectively?
+            if ds.description == zarr_dataset.description.replace("Zarr:", "Raw:")
+        )
+        zarr_dataset.metadata = zarr_dataset.metadata or {}
+        zarr_dataset.metadata["raw_dataset"] = raw_dataset.description
+
+
+def parse_data(root: DirectoryNode) -> IngestibleDataclasses:
     """
     Parse/validate the data directory to extract the files to be ingested
     """
@@ -390,23 +407,9 @@ def parse_data(root: DirectoryNode) -> None:
     dc_raw = parse_raw_data(raw_dir, root.path(), file_filter)
     dc_zarr = parse_zarr_data(zarr_dir, root.path(), file_filter)
 
-    # Add name of raw dataset as metadata for Zarr dataset
-    for zarr_dataset in dc_zarr.get_datasets():
-        raw_dataset = next(
-            ds
-            for ds in dc_raw.get_datasets()
-            if ds.description == zarr_dataset.description.replace("_zarr", "_raw")
-        )
-        zarr_dataset.metadata = zarr_dataset.metadata or {}
-        zarr_dataset.metadata["raw_dataset"] = raw_dataset.description
+    link_zarr_to_raw(dc_zarr.get_datasets(), dc_raw.get_datasets())
 
-    dataclasses = IngestibleDataclasses.merge(dc_raw, dc_zarr)
-
-    # dataclasses.print(sys.stdout)
-
-    stream = io.StringIO()
-    dataclasses.print(stream)
-    logging.info(stream.getvalue())
+    return IngestibleDataclasses.merge(dc_raw, dc_zarr)
 
 
 def main() -> None:
@@ -422,7 +425,11 @@ def main() -> None:
 
     start = time.perf_counter(), time.process_time()
 
-    parse_data(root_node)
+    dataclasses = parse_data(root_node)
+
+    stream = io.StringIO()
+    dataclasses.print(stream)
+    logging.info(stream.getvalue())
 
     end = time.perf_counter(), time.process_time()
     print(f"Time:\n{end[0] - start[0]}\n{end[1] - start[1]}")
