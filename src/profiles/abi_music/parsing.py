@@ -358,7 +358,7 @@ def parse_zarr_data(
             dataset.created_time = parse_timestamp(name_stem)
 
             # Note: the parent directory name is expected to be in the format
-            # <Project>-<Experiment>-<Dataset>. Should we cross-validate against these?
+            # <Project>-<Experiment>-<Dataset>. Should we cross-check against these?
 
             pedd_builder.add_dataset(dataset)
 
@@ -381,11 +381,11 @@ def link_zarr_to_raw(
     Mutates `zarr_datasets` in-place; should it?
     """
     for zarr_dataset in zarr_datasets:
+        # Note: not ideal to repeat the prefixing logic here - should we do
+        # this linking at an earlier stage?
         raw_dataset = next(
             ds
             for ds in raw_datasets
-            # Note: not ideal as the logic for how we suffix the names is duplicated - could go out of sync.
-            # Maybe we shouldn't be doing this retrospectively?
             if ds.description == zarr_dataset.description.replace("Zarr:", "Raw:")
         )
         zarr_dataset.metadata = zarr_dataset.metadata or {}
@@ -418,7 +418,7 @@ def main() -> None:
     """
     log_utils.init_logging(file_name="abi_ingest.log", level=logging.DEBUG)
 
-    # Should come from command-line args or config file
+    # This path will come from command-line args or a config file
     data_root = Path("/mnt/abi_test_data")
 
     root_node = DirectoryNode(data_root)
@@ -427,6 +427,8 @@ def main() -> None:
 
     dataclasses = parse_data(root_node)
 
+    # For now just log the dataclass contents. In a future PR we will submit
+    # them to MyTardis.
     stream = io.StringIO()
     dataclasses.print(stream)
     logging.info(stream.getvalue())
