@@ -10,9 +10,9 @@ import re
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
-from src.blueprints.common_models import GroupACL
+from src.blueprints.common_models import GroupACL, UserACL
 from src.blueprints.custom_data_types import MTUrl
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
@@ -62,26 +62,24 @@ def parse_project_info(directory: DirectoryNode) -> RawProject:
 
     json_data = read_json(directory.file("project.json"))
 
+    def read_permissions(json_node: Mapping[str, Any]) -> dict[str, bool]:
+        is_admin: bool = json_node.get("admin") is True
+
+        return {
+            "is_owner": is_admin or json_node.get("is_owner") is True,
+            "can_download": is_admin or json_node.get("can_download") is True,
+            "see_sensitive": is_admin or json_node.get("see_sensitive") is True,
+        }
+
     groups: list[GroupACL] = []
+    for group_node in json_data.get("groups", []):
+        permissions = read_permissions(group_node)
+        groups.append(GroupACL(group=group_node["name"], **permissions))
 
-    for group in json_data["groups"]:
-        name = group["name"]
-        is_admin = group.get("admin") is True
-
-        if is_admin:
-            is_owner, can_download, see_sensitive = True, True, True
-        else:
-            is_owner = group.get("is_owner") is True
-            can_download = group.get("can_download") is True
-            see_sensitive = group.get("see_sensitive") is True
-
-        group_info = GroupACL(
-            group=name,
-            is_owner=is_owner,
-            can_download=can_download,
-            see_sensitive=see_sensitive,
-        )
-        groups.append(group_info)
+    users: list[UserACL] = []
+    for user_node in json_data.get("users", []):
+        permissions = read_permissions(user_node)
+        users.append(UserACL(user=user_node["user"], **permissions))
 
     raw_project = RawProject(
         name=json_data["project_name"],
@@ -89,8 +87,8 @@ def parse_project_info(directory: DirectoryNode) -> RawProject:
         principal_investigator=json_data["principal_investigator"],
         data_classification=DataClassification.SENSITIVE,
         created_by=json_data["principal_investigator"],
-        users=None,
-        groups=groups,
+        users=users or None,
+        groups=groups or None,
         identifiers=json_data["project_ids"],
         institution=[DEFAULT_INSTITUTION],
         metadata=None,
