@@ -7,7 +7,7 @@ refinery/ingestion. The raw dataclasses are stored in lists.
 from __future__ import annotations
 
 import logging
-from typing import List, Sequence, TextIO
+from typing import List, Optional, Sequence, TextIO
 
 from pydantic import BaseModel
 
@@ -37,79 +37,83 @@ class IngestibleDataclasses:
 
     def __init__(
         self,
+        projects: Optional[list[RawProject]] = None,
+        experiments: Optional[list[RawExperiment]] = None,
+        datasets: Optional[list[RawDataset]] = None,
+        datafiles: Optional[list[RawDatafile]] = None,
     ) -> None:
-        self.projects: List[RawProject] = []
-        self.experiments: List[RawExperiment] = []
-        self.datasets: List[RawDataset] = []
-        self.datafiles: List[RawDatafile] = []
+        self._projects = projects or []
+        self._experiments = experiments or []
+        self._datasets = datasets or []
+        self._datafiles = datafiles or []
 
     def get_projects(  # pylint: disable=missing-function-docstring
         self,
     ) -> List[RawProject]:
-        return self.projects
+        return self._projects
 
     def get_experiments(  # pylint: disable=missing-function-docstring
         self,
     ) -> List[RawExperiment]:
-        return self.experiments
+        return self._experiments
 
     def get_datasets(  # pylint: disable=missing-function-docstring
         self,
     ) -> List[RawDataset]:
-        return self.datasets
+        return self._datasets
 
     def get_datafiles(  # pylint: disable=missing-function-docstring
         self,
     ) -> List[RawDatafile]:
-        return self.datafiles
+        return self._datafiles
 
     def add_project(  # pylint: disable=missing-function-docstring
         self,
         project: RawProject,
     ) -> None:
-        self.projects.append(project)
+        self._projects.append(project)
 
     def add_experiment(  # pylint: disable=missing-function-docstring
         self,
         experiment: RawExperiment,
     ) -> None:
-        self.experiments.append(experiment)
+        self._experiments.append(experiment)
 
     def add_dataset(  # pylint: disable=missing-function-docstring
         self,
         dataset: RawDataset,
     ) -> None:
-        self.datasets.append(dataset)
+        self._datasets.append(dataset)
 
     def add_datafile(  # pylint: disable=missing-function-docstring
         self,
         datafile: RawDatafile,
     ) -> None:
-        self.datafiles.append(datafile)
+        self._datafiles.append(datafile)
 
     def add_projects(  # pylint: disable=missing-function-docstring
         self,
         projects: List[RawProject],
     ) -> None:
-        self.projects.extend(projects)
+        self._projects.extend(projects)
 
     def add_experiments(  # pylint: disable=missing-function-docstring
         self,
         experiments: List[RawExperiment],
     ) -> None:
-        self.experiments.extend(experiments)
+        self._experiments.extend(experiments)
 
     def add_datasets(  # pylint: disable=missing-function-docstring
         self,
         datasets: List[RawDataset],
     ) -> None:
-        self.datasets.extend(datasets)
+        self._datasets.extend(datasets)
 
     def add_datafiles(  # pylint: disable=missing-function-docstring
         self,
         datafiles: List[RawDatafile],
     ) -> None:
-        self.datafiles.extend(datafiles)
+        self._datafiles.extend(datafiles)
 
     def print(self, stream: TextIO, skip_datafiles: bool = True) -> None:
         def write_header(text: str) -> None:
@@ -134,16 +138,3 @@ class IngestibleDataclasses:
         if not skip_datafiles:
             write_header("Datafiles")
             write_dataclasses(self.get_datafiles())
-
-    @staticmethod
-    def merge(
-        a: IngestibleDataclasses, b: IngestibleDataclasses
-    ) -> IngestibleDataclasses:
-        result = IngestibleDataclasses()
-
-        result.add_projects(a.get_projects() + b.get_projects())
-        result.add_experiments(a.get_experiments() + b.get_experiments())
-        result.add_datasets(a.get_datasets() + b.get_datasets())
-        result.add_datafiles(a.get_datafiles() + b.get_datafiles())
-
-        return result

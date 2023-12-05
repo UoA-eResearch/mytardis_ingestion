@@ -381,7 +381,13 @@ def parse_data(root: DirectoryNode) -> IngestibleDataclasses:
 
     link_zarr_to_raw(dc_zarr.get_datasets(), dc_raw.get_datasets())
 
-    return IngestibleDataclasses.merge(dc_raw, dc_zarr)
+    # Note: maybe we should just directly append to the object inside the parsing functions
+    return IngestibleDataclasses(
+        projects=dc_raw.get_projects() + dc_zarr.get_projects(),
+        experiments=dc_raw.get_experiments() + dc_zarr.get_experiments(),
+        datasets=dc_raw.get_datasets() + dc_zarr.get_datasets(),
+        datafiles=dc_raw.get_datafiles() + dc_zarr.get_datafiles(),
+    )
 
 
 def main() -> None:
