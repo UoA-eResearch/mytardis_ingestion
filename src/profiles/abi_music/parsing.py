@@ -35,6 +35,10 @@ from src.utils import log_utils
 from src.utils.filesystem import checksums, filters
 from src.utils.filesystem.filesystem_nodes import DirectoryNode, FileNode
 
+# TODO: md5 caching should not be retained - just to speed up development
+cache = Cache(directory="/home/andrew/dev/tmp/.ingestion_cache/abi")
+checksums.calculate_md5 = cache.memoize()(checksums.calculate_md5)
+
 # Expected datetime format is "yymmdd-DDMMSS"
 datetime_pattern = re.compile("^[0-9]{6}-[0-9]{6}$")
 
@@ -226,17 +230,6 @@ def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
     return (dataset, main_id)
 
 
-# TODO: md5 caching should not be retained - just to speed up development
-cache = Cache(directory="/home/andrew/dev/tmp/.ingestion_cache/abi")
-
-
-@cache.memoize(name="md5")
-def calculate_md5(data_root: Path, path: Path) -> str:
-    """Calculate MD5 checksum or retrieve from cache"""
-
-    return checksums.calculate_md5(path)
-
-
 def collate_datafile_info(
     file: FileNode, root_dir: Path, dataset_name: str
 ) -> RawDatafile:
@@ -252,8 +245,7 @@ def collate_datafile_info(
     return RawDatafile(
         filename=file_rel_path.name,
         directory=file_rel_path,
-        # md5sum=checksums.calculate_md5(file.path()),
-        md5sum=calculate_md5(root_dir, file.path()),
+        md5sum=checksums.calculate_md5(file.path()),
         mimetype=mimetype,
         size=file.stat().st_size,
         users=None,
