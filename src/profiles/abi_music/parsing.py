@@ -12,6 +12,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping
 
+from diskcache import Cache
+
 from src.blueprints.common_models import GroupACL, UserACL
 from src.blueprints.custom_data_types import MTUrl
 from src.blueprints.datafile import RawDatafile
@@ -224,32 +226,15 @@ def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
     return (dataset, main_id)
 
 
-# TODO: these should not be committed in this form - just use MD5 cache to speed
-# up development
-cache_path = Path("/home/andrew/dev/mti_1/.ids_cache")
-cache_path.mkdir(exist_ok=True)
+# TODO: md5 caching should not be retained - just to speed up development
+cache = Cache(directory="/home/andrew/dev/tmp/.ingestion_cache/abi")
 
 
+@cache.memoize(name="md5")
 def calculate_md5(data_root: Path, path: Path) -> str:
-    """Calculate MD5 checksum or retrieve from cache
+    """Calculate MD5 checksum or retrieve from cache"""
 
-    Just used to speed up development, as computing hashes
-    takes a long time when retrieving files over network.
-    """
-
-    cache_dir = DirectoryNode(cache_path)
-
-    rel_path = path.relative_to(data_root)
-    cached_value_path = Path(str(cache_dir.path() / rel_path) + ".md5")
-
-    if cached_value_path.is_file():
-        md5 = cached_value_path.read_text(encoding="utf-8")
-    else:
-        md5 = checksums.calculate_md5(path)
-        cached_value_path.parent.mkdir(exist_ok=True, parents=True)
-        cached_value_path.write_text(md5, encoding="utf-8")
-
-    return md5
+    return checksums.calculate_md5(path)
 
 
 def collate_datafile_info(
