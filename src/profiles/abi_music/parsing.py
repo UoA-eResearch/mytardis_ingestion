@@ -157,7 +157,7 @@ def parse_raw_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         "sqrt-offset": json_data["Offsets"]["SQRT Offset"],
     }
 
-    main_id = json_data["Basename"]["Sequence"]
+    main_id = "raw-" + json_data["Basename"]["Sequence"]
 
     dataset = RawDataset(
         description="Raw:" + json_data["Description"],
@@ -168,7 +168,7 @@ def parse_raw_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         immutable=False,
         identifiers=[
             main_id,
-            str(json_data["SequenceID"]),
+            "raw-" + str(json_data["SequenceID"]),
         ],
         experiments=[
             json_data["Basename"]["Sample"],
@@ -204,7 +204,7 @@ def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         "sqrt-offset": json_data["config"]["Offsets"]["SQRT Offset"],
     }
 
-    main_id = json_data["config"]["Basename"]["Sequence"]
+    main_id = "zarr-" + json_data["config"]["Basename"]["Sequence"]
 
     dataset = RawDataset(
         description="Zarr:" + json_data["config"]["Description"],
@@ -215,7 +215,7 @@ def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         immutable=False,
         identifiers=[
             main_id,
-            str(json_data["config"]["SequenceID"]),
+            "zarr-" + str(json_data["config"]["SequenceID"]),
         ],
         experiments=[
             json_data["config"]["Basename"]["Sample"],
@@ -370,6 +370,7 @@ def link_zarr_to_raw(
         zarr_dataset.metadata["raw_dataset"] = raw_dataset.description
 
 
+# @cache.memoize()  # type: ignore
 def parse_data(root: DirectoryNode) -> IngestibleDataclasses:
     """
     Parse/validate the data directory to extract the files to be ingested
@@ -396,6 +397,24 @@ def parse_data(root: DirectoryNode) -> IngestibleDataclasses:
     )
 
 
+class Timer:
+    def __init__(self, start: bool = True) -> None:
+        self._start: float | None = None
+        if start:
+            self.start()
+
+    def start(self) -> None:
+        self._start = time.perf_counter()
+
+    def stop(self) -> float:
+        if self._start is None:
+            raise RuntimeError("Attempted to stop Timer which was never started.")
+
+        elapsed = time.perf_counter() - self._start
+        self._start = None
+        return elapsed
+
+
 def main() -> None:
     """
     main function - this is just for testing - a proper ingestion runner is yet to be written.
@@ -409,9 +428,11 @@ def main() -> None:
 
     root_node = DirectoryNode(data_root)
 
-    start = time.perf_counter(), time.process_time()
+    timer = Timer(start=True)
 
     dataclasses = parse_data(root_node)
+
+    print("Number of datafiles: ", len(dataclasses.get_datafiles()))
 
     # For now just log the dataclass contents. In a future PR we will submit
     # them to MyTardis.
@@ -419,11 +440,12 @@ def main() -> None:
     dataclasses.print(stream)
     logging.info(stream.getvalue())
 
-    end = time.perf_counter(), time.process_time()
-    print("Parsed dataclasses")
-    print(f"Total time: {end[0] - start[0]}\nCPU Time: {end[1] - start[1]}")
+    elapsed = timer.stop()
+    logging.info("Finished parsing data directory into PEDD hierarchy")
+    logging.info("Total time (s): %.2f", elapsed)
 
-    print("Submitting to MyTardis")
+    logging.info("Submitting to MyTardis")
+    timer.start()
 
     ingestion_agent = IngestionFactory(config=config)
 
@@ -435,6 +457,15 @@ def main() -> None:
         dataclasses.get_datafiles(),
     )
 
+    elapsed = timer.stop()
+    logging.info("Finished submitting dataclasses to MyTardis")
+    logging.info("Total time (s): %.2f", elapsed)
+
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except BaseException as err:
+        logging.error(
+            "An error occurred while running the ingestion. Details:%s", str(err)
+        )
