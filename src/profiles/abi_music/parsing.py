@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping
 
+import typer
 from diskcache import Cache
 
 from src.blueprints.common_models import GroupACL, UserACL
@@ -376,8 +377,6 @@ def parse_data(root: DirectoryNode) -> IngestibleDataclasses:
     Parse/validate the data directory to extract the files to be ingested
     """
 
-    assert not root.empty(), "Data root directory is empty. May not be mounted."
-
     raw_dir = root.dir("Vault").dir("Raw")
     zarr_dir = root.dir("Zarr")
 
@@ -415,27 +414,24 @@ class Timer:
         return elapsed
 
 
-def main() -> None:
+def main(data_root: Path, log_file: Path = Path("ingestion.log")) -> None:
     """
-    main function - this is just for testing - a proper ingestion runner is yet to be written.
+    Run an ingestion for the ABI MuSIC data
     """
-    log_utils.init_logging(file_name="abi_ingest.log", level=logging.DEBUG)
-
+    # log_utils.init_logging(file_name="abi_ingest.log", level=logging.DEBUG)
+    log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
     config = ConfigFromEnv()
-
-    # This path will come from command-line args or a config file
-    data_root = Path("/mnt/abi_test_data")
-
-    root_node = DirectoryNode(data_root)
-
     timer = Timer(start=True)
 
-    dataclasses = parse_data(root_node)
+    root_dir = DirectoryNode(data_root)
+    if root_dir.empty():
+        raise ValueError("Data root directory is empty. May not be mounted.")
 
-    print("Number of datafiles: ", len(dataclasses.get_datafiles()))
+    dataclasses = parse_data(root_dir)
 
-    # For now just log the dataclass contents. In a future PR we will submit
-    # them to MyTardis.
+    logging.info("Number of datafiles: %d", len(dataclasses.get_datafiles()))
+
+    # Does this logging still meet our needs?
     stream = io.StringIO()
     dataclasses.print(stream)
     logging.info(stream.getvalue())
@@ -448,7 +444,6 @@ def main() -> None:
     timer.start()
 
     ingestion_agent = IngestionFactory(config=config)
-
     # TODO: how to check for errors?
     ingestion_agent.ingest(
         dataclasses.get_projects(),
@@ -463,9 +458,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except BaseException as err:
-        logging.error(
-            "An error occurred while running the ingestion. Details:%s", str(err)
-        )
+    typer.run(main)
