@@ -3,6 +3,7 @@ Parsing logic for generating PEDD dataclasses from ABI Music files
 """
 
 import json
+import logging
 import mimetypes
 import re
 from datetime import datetime
@@ -258,7 +259,7 @@ def parse_raw_data(
     ]
 
     for project_dir in project_dirs:
-        print(f"Project directory: {project_dir.name()}")
+        logging.info("Project directory: %s", project_dir.name())
 
         pedd_builder.add_project(parse_project_info(project_dir))
 
@@ -269,7 +270,7 @@ def parse_raw_data(
         ]
 
         for experiment_dir in experiment_dirs:
-            print(f"Experiment directory: {experiment_dir.name()}")
+            logging.info("Experiment directory: %s", experiment_dir.name())
 
             pedd_builder.add_experiment(parse_experiment_info(experiment_dir))
 
@@ -280,7 +281,7 @@ def parse_raw_data(
             ]
 
             for dataset_dir in dataset_dirs:
-                print(f"Dataset directory: {dataset_dir.name()}")
+                logging.info("Dataset directory: %s", dataset_dir.name())
 
                 dataset, dataset_id = parse_raw_dataset(dataset_dir)
 
