@@ -2,16 +2,12 @@
 Parsing logic for generating PEDD dataclasses from ABI Music files
 """
 
-import io
 import json
-import logging
 import mimetypes
 import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping
-
-import typer
 
 from src.blueprints.common_models import GroupACL, UserACL
 from src.blueprints.custom_data_types import MTUrl
@@ -19,10 +15,8 @@ from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
-from src.config.config import ConfigFromEnv
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 from src.helpers.enumerators import DataClassification
-from src.ingestion_factory.factory import IngestionFactory
 from src.profiles.abi_music.abi_music_consts import (
     ABI_MUSIC_DATASET_RAW_SCHEMA,
     ABI_MUSIC_DATASET_ZARR_SCHEMA,
@@ -30,10 +24,8 @@ from src.profiles.abi_music.abi_music_consts import (
     ABI_MUSIC_POSTPROCESSING_INSTRUMENT,
     DEFAULT_INSTITUTION,
 )
-from src.utils import log_utils
 from src.utils.filesystem import checksums, filters
 from src.utils.filesystem.filesystem_nodes import DirectoryNode, FileNode
-from src.utils.timing import Timer
 
 # Expected datetime format is "yymmdd-DDMMSS"
 datetime_pattern = re.compile("^[0-9]{6}-[0-9]{6}$")
@@ -388,49 +380,3 @@ def parse_data(root: DirectoryNode) -> IngestibleDataclasses:
         datasets=dc_raw.get_datasets() + dc_zarr.get_datasets(),
         datafiles=dc_raw.get_datafiles() + dc_zarr.get_datafiles(),
     )
-
-
-def main(data_root: Path, log_file: Path = Path("abi_ingestion.log")) -> None:
-    """
-    Run an ingestion for the ABI MuSIC data
-    """
-    log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
-    config = ConfigFromEnv()
-    timer = Timer(start=True)
-
-    root_dir = DirectoryNode(data_root)
-    if root_dir.empty():
-        raise ValueError("Data root directory is empty. May not be mounted.")
-
-    dataclasses = parse_data(root_dir)
-
-    logging.info("Number of datafiles: %d", len(dataclasses.get_datafiles()))
-
-    # Does this logging still meet our needs?
-    stream = io.StringIO()
-    dataclasses.print(stream)
-    logging.info(stream.getvalue())
-
-    elapsed = timer.stop()
-    logging.info("Finished parsing data directory into PEDD hierarchy")
-    logging.info("Total time (s): %.2f", elapsed)
-
-    logging.info("Submitting to MyTardis")
-    timer.start()
-
-    ingestion_agent = IngestionFactory(config=config)
-
-    ingestion_agent.ingest(
-        dataclasses.get_projects(),
-        dataclasses.get_experiments(),
-        dataclasses.get_datasets(),
-        dataclasses.get_datafiles(),
-    )
-
-    elapsed = timer.stop()
-    logging.info("Finished submitting dataclasses to MyTardis")
-    logging.info("Total time (s): %.2f", elapsed)
-
-
-if __name__ == "__main__":
-    typer.run(main)
