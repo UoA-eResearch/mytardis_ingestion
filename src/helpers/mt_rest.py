@@ -74,6 +74,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
         self.verify_certificate = connection.verify_certificate
         self.api_template = urljoin(connection.hostname, "/api/v1/")
         self.user_agent = f"{self.user_agent_name}/2.0 ({self.user_agent_url})"
+        self._session: Optional[requests.Session] = None
 
     @backoff.on_exception(backoff.expo, BadGateWayException, max_tries=8)
     def mytardis_api_request(
@@ -113,6 +114,9 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
         if method == "POST" and url[-1] != "/":
             url = f"{url}/"
 
+        if self._session is None:
+            self._session = requests.Session()
+
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -121,7 +125,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
         if extra_headers:
             headers = {**headers, **extra_headers}
         if self.proxies:
-            response = requests.request(
+            response = self._session.request(
                 method,
                 url,
                 data=data,
@@ -133,7 +137,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
                 timeout=5,
             )
         else:
-            response = requests.request(
+            response = self._session.request(
                 method,
                 url,
                 data=data,
