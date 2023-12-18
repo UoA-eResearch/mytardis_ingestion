@@ -7,7 +7,6 @@ import json
 import logging
 import mimetypes
 import re
-import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping
@@ -34,6 +33,7 @@ from src.profiles.abi_music.abi_music_consts import (
 from src.utils import log_utils
 from src.utils.filesystem import checksums, filters
 from src.utils.filesystem.filesystem_nodes import DirectoryNode, FileNode
+from src.utils.timing import Timer
 
 # Expected datetime format is "yymmdd-DDMMSS"
 datetime_pattern = re.compile("^[0-9]{6}-[0-9]{6}$")
@@ -388,24 +388,6 @@ def parse_data(root: DirectoryNode) -> IngestibleDataclasses:
         datasets=dc_raw.get_datasets() + dc_zarr.get_datasets(),
         datafiles=dc_raw.get_datafiles() + dc_zarr.get_datafiles(),
     )
-
-
-class Timer:
-    def __init__(self, start: bool = True) -> None:
-        self._start: float | None = None
-        if start:
-            self.start()
-
-    def start(self) -> None:
-        self._start = time.perf_counter()
-
-    def stop(self) -> float:
-        if self._start is None:
-            raise RuntimeError("Attempted to stop Timer which was never started.")
-
-        elapsed = time.perf_counter() - self._start
-        self._start = None
-        return elapsed
 
 
 def main(data_root: Path, log_file: Path = Path("abi_ingestion.log")) -> None:
