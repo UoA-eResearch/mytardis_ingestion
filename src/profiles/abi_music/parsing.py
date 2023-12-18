@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Any, Mapping
 
 import typer
-from diskcache import Cache
 
 from src.blueprints.common_models import GroupACL, UserACL
 from src.blueprints.custom_data_types import MTUrl
@@ -35,10 +34,6 @@ from src.profiles.abi_music.abi_music_consts import (
 from src.utils import log_utils
 from src.utils.filesystem import checksums, filters
 from src.utils.filesystem.filesystem_nodes import DirectoryNode, FileNode
-
-# TODO: md5 caching should not be retained - just to speed up development
-cache = Cache(directory="/home/andrew/dev/tmp/.ingestion_cache/abi")
-checksums.calculate_md5 = cache.memoize()(checksums.calculate_md5)
 
 # Expected datetime format is "yymmdd-DDMMSS"
 datetime_pattern = re.compile("^[0-9]{6}-[0-9]{6}$")
@@ -371,7 +366,6 @@ def link_zarr_to_raw(
         zarr_dataset.metadata["raw_dataset"] = raw_dataset.description
 
 
-# @cache.memoize()  # type: ignore
 def parse_data(root: DirectoryNode) -> IngestibleDataclasses:
     """
     Parse/validate the data directory to extract the files to be ingested
@@ -414,11 +408,10 @@ class Timer:
         return elapsed
 
 
-def main(data_root: Path, log_file: Path = Path("ingestion.log")) -> None:
+def main(data_root: Path, log_file: Path = Path("abi_ingestion.log")) -> None:
     """
     Run an ingestion for the ABI MuSIC data
     """
-    # log_utils.init_logging(file_name="abi_ingest.log", level=logging.DEBUG)
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
     config = ConfigFromEnv()
     timer = Timer(start=True)
@@ -444,7 +437,7 @@ def main(data_root: Path, log_file: Path = Path("ingestion.log")) -> None:
     timer.start()
 
     ingestion_agent = IngestionFactory(config=config)
-    # TODO: how to check for errors?
+
     ingestion_agent.ingest(
         dataclasses.get_projects(),
         dataclasses.get_experiments(),
