@@ -114,11 +114,13 @@ class DirectoryNode:
         path: Path,
         parent: DirectoryNode | None = None,
         check_exists: bool = True,
+        sort_entries: bool = True,
     ):
         self._path = path
         self._parent = parent
         self._dirs: list[DirectoryNode] | None = None
         self._files: list[FileNode] | None = None
+        self._sort_entries = sort_entries
 
         if check_exists and not path.is_dir():
             raise NotADirectoryError(f"'{path}' is not a valid directory")
@@ -173,12 +175,18 @@ class DirectoryNode:
         """Get a list of all the files in this directory"""
         if self._files is None:
             self._files, self._dirs = collect_children(self)
+            if self._sort_entries:
+                self._files.sort(key=lambda fn: fn.name())
+                self._dirs.sort(key=lambda dn: dn.path())
         return self._files
 
     def directories(self) -> list[DirectoryNode]:
         """Get a list of all the directories in this directory"""
         if self._dirs is None:
             self._files, self._dirs = collect_children(self)
+            if self._sort_entries:
+                self._files.sort(key=lambda fn: fn.name())
+                self._dirs.sort(key=lambda dn: dn.path())
         return self._dirs
 
     def iter_files(self, recursive: bool = False) -> Iterator[FileNode]:
