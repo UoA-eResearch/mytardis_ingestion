@@ -19,6 +19,7 @@ from src.config.config import ConfigFromEnv
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
 from src.helpers.dataclass import get_object_name
+from src.mytardis_client.enumerators import ObjectSearchEnum
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
@@ -105,17 +106,17 @@ class IngestionFactory(metaclass=Singleton):
                 sys.exit()
 
         mt_rest = mt_rest or MyTardisRESTFactory(config.auth, config.connection)
-        overseer = overseer or Overseer(mt_rest)
+        self._overseer = overseer or Overseer(mt_rest)
 
         self.forge = forge or Forge(mt_rest)
         self.smelter = smelter or Smelter(
-            overseer=overseer,
+            overseer=self._overseer,
             general=config.general,
             default_schema=config.default_schema,
             storage=config.storage,
         )
         self.crucible = crucible or Crucible(
-            overseer=overseer,
+            overseer=self._overseer,
             storage=config.storage,
         )
 
@@ -153,7 +154,23 @@ class IngestionFactory(metaclass=Singleton):
                 result.error.append(name)
                 continue
 
-            project_uri = self.forge.forge_project(prepared_project, refined_parameters)
+            matching_projects = self._overseer.get_objects(
+                ObjectSearchEnum.PROJECT.value, prepared_project.name
+            )
+            if len(matching_projects) == 0:
+                project_uri = self.forge.forge_project(
+                    prepared_project, refined_parameters
+                )
+            else:
+                project_uri = matching_projects[0]["resource_uri"]
+                logging.info(
+                    'Already ingested project "%s" as "%s". Skipping project ingestion.',
+                    prepared_project.name,
+                    project_uri,
+                )
+
+            # Note: if the ingestion was skipped because the project already exists,
+            #       is that really a "success"?
             result.success.append((name, project_uri))
 
         logger.info(
@@ -203,9 +220,21 @@ class IngestionFactory(metaclass=Singleton):
                 result.error.append(name)
                 continue
 
-            experiment_uri = self.forge.forge_experiment(
-                prepared_experiment, refined_parameters
+            matching_experiments = self._overseer.get_objects(
+                ObjectSearchEnum.EXPERIMENT.value, prepared_experiment.title
             )
+            if len(matching_experiments) == 0:
+                experiment_uri = self.forge.forge_experiment(
+                    prepared_experiment, refined_parameters
+                )
+            else:
+                experiment_uri = matching_experiments[0]["resource_uri"]
+                logging.info(
+                    'Already ingested experiment "%s" as "%s". Skipping experiment ingestion.',
+                    prepared_experiment.title,
+                    experiment_uri,
+                )
+
             result.success.append((name, experiment_uri))
 
         logger.info(
@@ -255,7 +284,21 @@ class IngestionFactory(metaclass=Singleton):
                 result.error.append(name)
                 continue
 
-            dataset_uri = self.forge.forge_dataset(prepared_dataset, refined_parameters)
+            matching_datasets = self._overseer.get_objects(
+                ObjectSearchEnum.DATASET.value, prepared_dataset.description
+            )
+            if len(matching_datasets) == 0:
+                dataset_uri = self.forge.forge_dataset(
+                    prepared_dataset, refined_parameters
+                )
+            else:
+                dataset_uri = matching_datasets[0]["resource_uri"]
+                logging.info(
+                    'Already ingested dataset "%s" as "%s". Skipping dataset ingestion.',
+                    prepared_dataset.description,
+                    dataset_uri,
+                )
+
             result.success.append((name, dataset_uri))
 
         logger.info(
@@ -302,7 +345,25 @@ class IngestionFactory(metaclass=Singleton):
                 result.error.append(name)
                 continue
 
-            self.forge.forge_datafile(prepared_datafile)
+            # Search by filename and parent dataset as filenames alone may not be unique
+            matching_datafiles = self._overseer.get_objects_by_fields(
+                ObjectSearchEnum.DATAFILE.value,
+                {
+                    "filename": prepared_datafile.filename,
+                    "dataset": str(
+                        Overseer.resource_uri_to_id(prepared_datafile.dataset)
+                    ),
+                },
+            )
+            if len(matching_datafiles) == 0:
+                self.forge.forge_datafile(prepared_datafile)
+                logging.info("Ingested datafile %s", prepared_datafile.directory)
+            else:
+                logging.info(
+                    'Already ingested datafile "%s". Skipping datafile ingestion.',
+                    prepared_datafile.directory,
+                )
+
             result.success.append((name, None))
 
         logger.info(
