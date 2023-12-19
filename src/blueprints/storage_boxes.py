@@ -1,12 +1,21 @@
 # pylint: disable=too-few-public-methods,no-name-in-module
 """ Pydantic model to hold storage box from MyTardis"""
 
+from enum import Enum
 from pathlib import Path
 from typing import Dict, Optional
 
 from pydantic import BaseModel, ValidationInfo, field_validator
 
 from src.blueprints.custom_data_types import URI
+
+
+class StorageTypesEnum(Enum):
+    """An enumerator to host the different storage types that can be used by
+    MyTardis"""
+
+    FILE_SYSTEM = "file_system"
+    S3 = "s3"
 
 
 class RawStorageBox(BaseModel):

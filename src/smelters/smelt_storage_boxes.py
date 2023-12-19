@@ -12,7 +12,8 @@ from src.blueprints.project import (
     ProjectS3StorageBox,
     ProjectStorageBox,
 )
-from src.config.config import StorageBoxConfig, StorageTypesEnum
+from src.blueprints.storage_boxes import StorageTypesEnum
+from src.config.config import StorageBoxConfig
 
 
 def create_storage_box(
