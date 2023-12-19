@@ -9,7 +9,7 @@ from pytest import fixture
 from slugify import slugify
 
 from src.blueprints.project import ProjectFileSystemStorageBox, ProjectS3StorageBox
-from src.config.config import StorageTypesEnum
+from src.blueprints.storage_boxes import StorageTypesEnum
 
 
 @fixture

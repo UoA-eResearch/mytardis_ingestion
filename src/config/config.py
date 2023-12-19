@@ -12,7 +12,6 @@ the environment automatically and verifies their types and values.
 
 import logging
 from abc import ABC
-from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional
 from urllib.parse import urljoin
@@ -23,17 +22,10 @@ from requests import PreparedRequest
 from requests.auth import AuthBase
 
 from src.blueprints.custom_data_types import MTUrl
+from src.blueprints.storage_boxes import StorageTypesEnum
 from src.helpers.enumerators import MyTardisObject
 
 logger = logging.getLogger(__name__)
-
-
-class StorageTypesEnum(Enum):
-    """An enumerator to host the different storage types that can be used by
-    MyTardis"""
-
-    FILE_SYSTEM = "file_system"
-    S3 = "s3"
 
 
 class GeneralConfig(BaseModel):

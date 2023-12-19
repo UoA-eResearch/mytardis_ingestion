@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime, MTUrl, Username
-from src.config.config import StorageTypesEnum
+from src.blueprints.storage_boxes import StorageTypesEnum
 from src.helpers.enumerators import DataClassification
 
 

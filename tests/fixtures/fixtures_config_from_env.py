@@ -6,6 +6,7 @@ from typing import Any, Dict, List
 
 from pytest import fixture
 
+from src.blueprints.storage_boxes import StorageTypesEnum
 from src.config.config import (
     AuthConfig,
     ConfigFromEnv,
@@ -16,7 +17,6 @@ from src.config.config import (
     SchemaConfig,
     StorageBoxConfig,
     StorageConfig,
-    StorageTypesEnum,
 )
 
 
