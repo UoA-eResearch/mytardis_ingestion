@@ -2,12 +2,10 @@
 Parsing logic for generating PEDD dataclasses from ABI Music files
 """
 
-import io
 import json
 import logging
 import mimetypes
 import re
-import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping
@@ -27,7 +25,6 @@ from src.profiles.abi_music.abi_music_consts import (
     ABI_MUSIC_POSTPROCESSING_INSTRUMENT,
     DEFAULT_INSTITUTION,
 )
-from src.utils import log_utils
 from src.utils.filesystem import checksums, filters
 from src.utils.filesystem.filesystem_nodes import DirectoryNode, FileNode
 
@@ -149,7 +146,7 @@ def parse_raw_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         "sqrt-offset": json_data["Offsets"]["SQRT Offset"],
     }
 
-    main_id = json_data["Basename"]["Sequence"]
+    main_id = "raw-" + json_data["Basename"]["Sequence"]
 
     dataset = RawDataset(
         description="Raw:" + json_data["Description"],
@@ -160,7 +157,7 @@ def parse_raw_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         immutable=False,
         identifiers=[
             main_id,
-            str(json_data["SequenceID"]),
+            "raw-" + str(json_data["SequenceID"]),
         ],
         experiments=[
             json_data["Basename"]["Sample"],
@@ -196,7 +193,7 @@ def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         "sqrt-offset": json_data["config"]["Offsets"]["SQRT Offset"],
     }
 
-    main_id = json_data["config"]["Basename"]["Sequence"]
+    main_id = "zarr-" + json_data["config"]["Basename"]["Sequence"]
 
     dataset = RawDataset(
         description="Zarr:" + json_data["config"]["Description"],
@@ -207,7 +204,7 @@ def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         immutable=False,
         identifiers=[
             main_id,
-            str(json_data["config"]["SequenceID"]),
+            "zarr-" + str(json_data["config"]["SequenceID"]),
         ],
         experiments=[
             json_data["config"]["Basename"]["Sample"],
@@ -262,7 +259,7 @@ def parse_raw_data(
     ]
 
     for project_dir in project_dirs:
-        print(f"Project directory: {project_dir.name()}")
+        logging.info("Project directory: %s", project_dir.name())
 
         pedd_builder.add_project(parse_project_info(project_dir))
 
@@ -273,7 +270,7 @@ def parse_raw_data(
         ]
 
         for experiment_dir in experiment_dirs:
-            print(f"Experiment directory: {experiment_dir.name()}")
+            logging.info("Experiment directory: %s", experiment_dir.name())
 
             pedd_builder.add_experiment(parse_experiment_info(experiment_dir))
 
@@ -284,7 +281,7 @@ def parse_raw_data(
             ]
 
             for dataset_dir in dataset_dirs:
-                print(f"Dataset directory: {dataset_dir.name()}")
+                logging.info("Dataset directory: %s", dataset_dir.name())
 
                 dataset, dataset_id = parse_raw_dataset(dataset_dir)
 
@@ -367,8 +364,6 @@ def parse_data(root: DirectoryNode) -> IngestibleDataclasses:
     Parse/validate the data directory to extract the files to be ingested
     """
 
-    assert not root.empty(), "Data root directory is empty. May not be mounted."
-
     raw_dir = root.dir("Vault").dir("Raw")
     zarr_dir = root.dir("Zarr")
 
@@ -386,32 +381,3 @@ def parse_data(root: DirectoryNode) -> IngestibleDataclasses:
         datasets=dc_raw.get_datasets() + dc_zarr.get_datasets(),
         datafiles=dc_raw.get_datafiles() + dc_zarr.get_datafiles(),
     )
-
-
-def main() -> None:
-    """
-    main function - this is just for testing - a proper ingestion runner is yet to be written.
-    """
-    log_utils.init_logging(file_name="abi_ingest.log", level=logging.DEBUG)
-
-    # This path will come from command-line args or a config file
-    data_root = Path("/mnt/abi_test_data")
-
-    root_node = DirectoryNode(data_root)
-
-    start = time.perf_counter(), time.process_time()
-
-    dataclasses = parse_data(root_node)
-
-    # For now just log the dataclass contents. In a future PR we will submit
-    # them to MyTardis.
-    stream = io.StringIO()
-    dataclasses.print(stream)
-    logging.info(stream.getvalue())
-
-    end = time.perf_counter(), time.process_time()
-    print(f"Total time: {end[0] - start[0]}\nCPU Time: {end[1] - start[1]}")
-
-
-if __name__ == "__main__":
-    main()

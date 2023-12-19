@@ -109,12 +109,12 @@ def test_directory_node_query_files(_fake_filesystem: FakeFilesystem):
     assert len(iter_files_recursive) == 8
     assert iter_files_recursive[0].path() == Path("/test/a.txt")
     assert iter_files_recursive[1].path() == Path("/test/b.jpg")
-    assert iter_files_recursive[2].path() == Path("/test/foo/b.txt")
-    assert iter_files_recursive[3].path() == Path("/test/foo/c.png")
-    assert iter_files_recursive[4].path() == Path("/test/foo/baz/f.mov")
-    assert iter_files_recursive[5].path() == Path("/test/foo/baz/g.json")
-    assert iter_files_recursive[6].path() == Path("/test/bar/d.pdf")
-    assert iter_files_recursive[7].path() == Path("/test/bar/e.py")
+    assert iter_files_recursive[2].path() == Path("/test/bar/d.pdf")
+    assert iter_files_recursive[3].path() == Path("/test/bar/e.py")
+    assert iter_files_recursive[4].path() == Path("/test/foo/b.txt")
+    assert iter_files_recursive[5].path() == Path("/test/foo/c.png")
+    assert iter_files_recursive[6].path() == Path("/test/foo/baz/f.mov")
+    assert iter_files_recursive[7].path() == Path("/test/foo/baz/g.json")
 
     empty_dir = DirectoryNode(Path("/test/foo/empty"))
     assert len(empty_dir.files()) == 0
@@ -134,18 +134,18 @@ def test_directory_node_query_directories(_fake_filesystem: FakeFilesystem):
 
     dirs = test_dir.directories()
     assert len(dirs) == 2
-    assert dirs[0].name() == "foo"
-    assert dirs[1].name() == "bar"
+    assert dirs[0].name() == "bar"
+    assert dirs[1].name() == "foo"
 
     iter_dirs = list(test_dir.iter_dirs(recursive=False))
     assert len(iter_dirs) == 2
-    assert iter_dirs[0].name() == "foo"
-    assert iter_dirs[1].name() == "bar"
+    assert iter_dirs[0].name() == "bar"
+    assert iter_dirs[1].name() == "foo"
 
     iter_dirs_recursive = list(test_dir.iter_dirs(recursive=True))
     assert len(iter_dirs_recursive) == 4
-    assert iter_dirs_recursive[0].path() == Path("/test/foo")
-    assert iter_dirs_recursive[1].path() == Path("/test/bar")
+    assert iter_dirs_recursive[0].path() == Path("/test/bar")
+    assert iter_dirs_recursive[1].path() == Path("/test/foo")
     assert iter_dirs_recursive[2].path() == Path("/test/foo/baz")
     assert iter_dirs_recursive[3].path() == Path("/test/foo/empty")
 
@@ -174,28 +174,28 @@ def test_directory_node_visit_entries(_fake_filesystem: FakeFilesystem):
     assert arg_paths == [
         Path("/test/a.txt"),
         Path("/test/b.jpg"),
+        Path("/test/bar/d.pdf"),
+        Path("/test/bar/e.py"),
         Path("/test/foo/b.txt"),
         Path("/test/foo/c.png"),
         Path("/test/foo/baz/f.mov"),
         Path("/test/foo/baz/g.json"),
-        Path("/test/bar/d.pdf"),
-        Path("/test/bar/e.py"),
     ]
 
     arg_paths.clear()
 
     test_dir.visit_directories(stash_path, recursive=False)
     assert arg_paths == [
-        Path("/test/foo"),
         Path("/test/bar"),
+        Path("/test/foo"),
     ]
 
     arg_paths.clear()
 
     test_dir.visit_directories(stash_path, recursive=True)
     assert arg_paths == [
-        Path("/test/foo"),
         Path("/test/bar"),
+        Path("/test/foo"),
         Path("/test/foo/baz"),
         Path("/test/foo/empty"),
     ]

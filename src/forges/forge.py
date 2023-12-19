@@ -323,10 +323,6 @@ class Forge:
         Args:
             object_dict: The object dictionary containing the metadata to create
                 the datafile in MyTardis
-
-        Returns:
-            a tuple containing the URI of the forged project and boolean flags indicating the
-                status of the object creation.
         """
         # No URI is yielded when forging a datafile
         _ = self.forge_object(refined_object)
