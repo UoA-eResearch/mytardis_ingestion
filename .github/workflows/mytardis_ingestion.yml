@@ -47,7 +47,7 @@ jobs:
       run: PYTHONPATH=src/ poetry run python -m coverage xml
 
     - name: Upload Coverage to Codecov
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
 
