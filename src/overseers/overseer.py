@@ -202,6 +202,16 @@ class Overseer(metaclass=Singleton):
         object_type: ObjectSearchDict,
         field_values: dict[str, str],
     ) -> list[dict[str, Any]]:
+        """Query MyTardis for objects whose attributes match the values in `field_values`.
+
+        Args:
+            object_type: the type of MyTardis object to search for
+            field_values: a collection of (attribute, value) pairs defining. Objects
+                with these attribute values will be returned.
+
+        Returns:
+            A collection of JSON objects representing the objects matching `field_values`
+        """
         response = self._get_object_from_mytardis(object_type, field_values)
         if response is None:
             raise HTTPError("MyTardis object query yielded no response")
