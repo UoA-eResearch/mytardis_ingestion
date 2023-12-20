@@ -38,7 +38,7 @@ mypy = "^1.6"
 types-requests = "^2.31.0"
 types-mock = "^5.1.0"
 PySnooper = "^1.1.0"
-responses = "^0.23.3"
+responses = "^0.24.1"
 pre-commit = "^3.5.0"
 pytest-cov = "^4.0.0"
 genbadge = {extras = ["tests", "coverage"], version = "^1.0.6"}
