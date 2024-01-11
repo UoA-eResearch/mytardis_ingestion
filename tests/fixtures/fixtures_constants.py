@@ -11,7 +11,7 @@ from pytz import BaseTzInfo
 from src.blueprints.common_models import GroupACL, Parameter, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime, Username
 from src.blueprints.storage_boxes import StorageTypesEnum
-from src.helpers.enumerators import DataClassification
+from src.mytardis_client.enumerators import DataClassification
 
 
 @fixture

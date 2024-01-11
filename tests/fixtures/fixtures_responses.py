@@ -8,7 +8,7 @@ from pytest import fixture
 from src.blueprints.custom_data_types import URI
 from src.blueprints.project import Project
 from src.blueprints.storage_boxes import StorageBox
-from src.helpers.enumerators import URLSubstring
+from src.mytardis_client.enumerators import URLSubstring
 
 
 @fixture

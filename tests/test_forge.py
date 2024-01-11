@@ -16,7 +16,7 @@ from src.blueprints.custom_data_types import URI
 from src.blueprints.project import Project
 from src.config.config import ConnectionConfig
 from src.forges.forge import Forge
-from src.helpers.enumerators import ObjectPostEnum
+from src.mytardis_client.enumerators import ObjectPostEnum
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -146,7 +146,7 @@ def test_HTTPError_fully_logs_error_at_error(  # pylint: disable=invalid-name
 
 
 @pytest.mark.xfail
-@mock.patch("src.helpers.mt_rest.MyTardisRESTFactory.mytardis_api_request")
+@mock.patch("src.mytardis_client.mt_rest.MyTardisRESTFactory.mytardis_api_request")
 def test_non_HTTPError_logs_error(  # pylint: disable=invalid-name
     mock_mytardis_api_request: Any,
     caplog: LogCaptureFixture,

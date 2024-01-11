@@ -16,7 +16,7 @@ from src.blueprints.dataset import Dataset, DatasetParameterSet
 from src.blueprints.experiment import Experiment, ExperimentParameterSet
 from src.blueprints.project import Project, ProjectParameterSet
 from src.helpers.dataclass import get_object_name, get_object_post_type
-from src.helpers.mt_rest import BadGateWayException, MyTardisRESTFactory
+from src.mytardis_client.mt_rest import BadGateWayException, MyTardisRESTFactory
 
 logger = logging.getLogger(__name__)
 

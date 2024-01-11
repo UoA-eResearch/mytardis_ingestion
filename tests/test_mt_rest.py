@@ -12,7 +12,7 @@ import pytest
 from requests import HTTPError, Request, RequestException, Response
 
 from src.config.config import AuthConfig, ConnectionConfig
-from src.helpers.mt_rest import MyTardisRESTFactory
+from src.mytardis_client.mt_rest import MyTardisRESTFactory
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -40,7 +40,7 @@ def test_mytardis_rest_factory_setup(
     assert test_factory.proxies["https"] == "http://myproxy.com"  # type: ignore
     assert (
         test_factory.user_agent
-        == "src.helpers.mt_rest/2.0 (https://github.com/UoA-eResearch/mytardis_ingestion.git)"
+        == "src.mytardis_client.mt_rest/2.0 (https://github.com/UoA-eResearch/mytardis_ingestion.git)"
     )
 
 
