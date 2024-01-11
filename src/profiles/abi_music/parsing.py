@@ -17,7 +17,7 @@ from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
-from src.helpers.enumerators import DataClassification
+from src.mytardis_client.enumerators import DataClassification
 from src.profiles.abi_music.abi_music_consts import (
     ABI_MUSIC_DATASET_RAW_SCHEMA,
     ABI_MUSIC_DATASET_ZARR_SCHEMA,

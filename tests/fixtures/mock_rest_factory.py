@@ -5,7 +5,7 @@ import responses
 from pytest import fixture
 
 from src.config.config import AuthConfig, ConnectionConfig
-from src.helpers.mt_rest import MyTardisRESTFactory
+from src.mytardis_client.mt_rest import MyTardisRESTFactory
 
 
 class MockMtRest(MyTardisRESTFactory):

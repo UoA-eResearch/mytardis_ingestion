@@ -22,7 +22,7 @@ from src.blueprints.project import (
     RawProject,
     RefinedProject,
 )
-from src.helpers.enumerators import (
+from src.mytardis_client.enumerators import (
     ObjectDict,
     ObjectEnum,
     ObjectPostDict,

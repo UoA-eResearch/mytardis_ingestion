@@ -17,8 +17,8 @@ from responses import matchers
 from src.blueprints.custom_data_types import URI
 from src.blueprints.storage_boxes import StorageBox
 from src.config.config import ConnectionConfig, IntrospectionConfig
-from src.helpers.enumerators import ObjectSearchEnum
-from src.helpers.mt_rest import MyTardisRESTFactory
+from src.mytardis_client.enumerators import ObjectSearchEnum
+from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers import Overseer
 
 logger = logging.getLogger(__name__)
@@ -126,7 +126,7 @@ def test_get_objects_http_error(
     Overseer.clear()
 
 
-@mock.patch("src.helpers.mt_rest.MyTardisRESTFactory.mytardis_api_request")
+@mock.patch("src.mytardis_client.mt_rest.MyTardisRESTFactory.mytardis_api_request")
 def test_get_objects_general_error(
     mock_mytardis_api_request: Any,
     caplog: LogCaptureFixture,
@@ -361,7 +361,7 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
     Overseer.clear()
 
 
-@mock.patch("src.helpers.mt_rest.MyTardisRESTFactory.mytardis_api_request")
+@mock.patch("src.mytardis_client.mt_rest.MyTardisRESTFactory.mytardis_api_request")
 def test_get_uris_general_error(
     mock_mytardis_api_request: Any,
     overseer: Overseer,

@@ -35,10 +35,10 @@ from src.blueprints.project import (
 from src.config.config import ConfigFromEnv
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
-from src.helpers.enumerators import MyTardisObject
-from src.helpers.mt_rest import MyTardisRESTFactory
 from src.ingestion_factory import IngestionFactory
 from src.ingestion_factory.factory import IngestionResult
+from src.mytardis_client.enumerators import MyTardisObject
+from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 
