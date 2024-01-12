@@ -16,13 +16,13 @@ from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
 from src.config.config import ConfigFromEnv
-from src.config.singleton import Singleton
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
 from src.helpers.dataclass import get_object_name
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
+from src.utils.types.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 

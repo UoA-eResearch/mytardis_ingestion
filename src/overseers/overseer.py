@@ -12,9 +12,9 @@ from requests.exceptions import HTTPError
 from src.blueprints.custom_data_types import URI
 from src.blueprints.storage_boxes import StorageBox
 from src.config.config import IntrospectionConfig
-from src.config.singleton import Singleton
 from src.mytardis_client.enumerators import ObjectSearchDict, ObjectSearchEnum
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
+from src.utils.types.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 

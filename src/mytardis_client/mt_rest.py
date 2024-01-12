@@ -14,7 +14,7 @@ from requests import Response
 from requests.exceptions import RequestException
 
 from src.config.config import AuthConfig, ConnectionConfig
-from src.config.singleton import Singleton
+from src.utils.types.singleton import Singleton
 
 
 class BadGateWayException(RequestException):
