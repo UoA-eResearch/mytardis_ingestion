@@ -15,8 +15,6 @@ from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
 from src.config.config import StorageConfig
-
-# from src.config.singleton import Singleton
 from src.mytardis_client.enumerators import ObjectSearchEnum
 from src.overseers import Overseer
 

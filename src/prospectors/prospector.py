@@ -9,10 +9,10 @@ import logging
 from pathlib import Path
 from typing import Optional, Union
 
-from src.config.singleton import Singleton
 from src.extraction_output_manager import output_manager as om
 from src.prospectors.abstract_custom_prospector import AbstractCustomProspector
 from src.prospectors.common_file_checks import CommonDirectoryTreeChecks
+from src.utils.types.singleton import Singleton
 
 # ---Constants
 logger = logging.getLogger(__name__)

@@ -10,13 +10,12 @@ into raw dataclasses.
 
 
 # ---Imports
-import copy
 import logging
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
-from src.config.singleton import Singleton
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
+from src.utils.types.singleton import Singleton
 
 # ---Constants
 logger = logging.getLogger(__name__)

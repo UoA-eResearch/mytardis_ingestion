@@ -10,11 +10,11 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 from src.beneficiations.beneficiation import Beneficiation  # type: ignore
-from src.config.singleton import Singleton
 from src.extraction_output_manager.ingestibles import IngestibleDataclasses
 from src.extraction_output_manager.output_manager import OutputManager
 from src.miners.miner import Miner  # type: ignore
 from src.prospectors.prospector import Prospector
+from src.utils.types.singleton import Singleton
 
 # ---Constants
 logger = logging.getLogger(__name__)
