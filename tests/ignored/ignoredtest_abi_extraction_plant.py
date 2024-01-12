@@ -8,8 +8,8 @@ from pytest import fixture
 
 from src.beneficiations import beneficiation_consts as bc
 from src.beneficiations.beneficiation import Beneficiation
-from src.extraction_output_manager.ingestibles import IngestibleDataclasses
-from src.extraction_plant.extraction_plant import ExtractionPlant
+from src.extraction.extraction_plant import ExtractionPlant
+from src.extraction.ingestibles import IngestibleDataclasses
 from src.miners.miner import Miner
 from src.profiles.profile_loader import ProfileLoader
 from src.prospectors.prospector import Prospector

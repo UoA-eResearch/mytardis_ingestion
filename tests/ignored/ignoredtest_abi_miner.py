@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, Mock
 import pytest
 from pytest import fixture
 
-from src.extraction_output_manager.output_manager import OutputManager
+from src.extraction.output_manager import OutputManager
 from src.miners.miner import Miner
 from src.profiles import profile_consts as pc
 from src.profiles.profile_loader import ProfileLoader

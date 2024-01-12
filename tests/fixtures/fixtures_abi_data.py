@@ -9,7 +9,7 @@ import responses
 from pytest import fixture
 
 from src.beneficiations import beneficiation_consts as bc
-from src.extraction_output_manager.output_manager import OutputManager
+from src.extraction.output_manager import OutputManager
 from src.profiles import profile_consts as pc
 
 logger = logging.getLogger(__name__)

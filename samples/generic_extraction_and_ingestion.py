@@ -47,7 +47,7 @@ from src.config.config import ConfigFromEnv
 from src.conveyor.conveyor import Conveyor
 from src.conveyor.transports.rsync import RsyncTransport
 from src.crucible import crucible
-from src.extraction_plant.extraction_plant import ExtractionPlant
+from src.extraction.extraction_plant import ExtractionPlant
 from src.forges import forge
 from src.ingestion_factory.factory import IngestionFactory
 from src.miners.miner import Miner

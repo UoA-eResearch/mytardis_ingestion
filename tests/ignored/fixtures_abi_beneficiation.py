@@ -11,7 +11,7 @@
 # from src.beneficiations.parsers.json_parser import JsonParser
 # from src.beneficiations import beneficiation_consts as bc
 # from src.profiles import profile_consts as pc
-# from src.extraction_output_manager.output_manager import OutputManager
+# from src.extraction.output_manager import OutputManager
 
 
 # @fixture

@@ -8,7 +8,7 @@ import pytest
 from pytest import fixture
 
 from src.config.config import ConfigFromEnv
-from src.extraction_output_manager.output_manager import OutputManager
+from src.extraction.output_manager import OutputManager
 from src.profiles import profile_consts as pc
 from src.profiles.profile_loader import ProfileLoader
 from src.prospectors.prospector import Prospector
