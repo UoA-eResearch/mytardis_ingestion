@@ -7,16 +7,16 @@ from typing import Any, List
 import mock
 from pytest import fixture
 
-from src.helpers.constants import (
-    COMMON_MACOS_SYS_FILES,
-    COMMON_WIN_SYS_FILES,
-    MACOS_PREFIXES_TO_REJECT,
-)
+import src.utils.filesystem.filters as fs_filters
 from src.prospectors.common_file_checks import (
     check_file_prefix,
     iterate_dir,
     perform_common_file_checks,
 )
+
+COMMON_MACOS_SYS_FILES = fs_filters.MACOS_EXCLUSION_PATTERNS.suffixes or []
+MACOS_PREFIXES_TO_REJECT = fs_filters.MACOS_EXCLUSION_PATTERNS.extension_prefixes or []
+COMMON_WIN_SYS_FILES = fs_filters.WINDOWS_EXCLUSION_PATTERNS.suffixes or []
 
 
 @fixture

@@ -1,25 +1,6 @@
 """Constants used in various places in the code base."""
 
-# File types to be skipped
-
 # pylint: disable=all
-COMMON_MACOS_SYS_FILES = [
-    ".DS_Store",
-    "._.DS_Store",
-    ".Trashes",
-    ".Spotlight-V100",
-    ".fseventsd",
-    ".TemporaryItems",
-    ".com.apple.timemachine.donotpresent",
-    ".vol",
-    ".AppleDouble",
-    ".FileSync-lock",
-    ".AppleDB",
-]
-
-COMMON_WIN_SYS_FILES = ["thumbs.db", "Thumbs.db"]
-
-MACOS_PREFIXES_TO_REJECT = ["._"]
 
 # Constants used throughout a profile in the Extraction Plant
 
