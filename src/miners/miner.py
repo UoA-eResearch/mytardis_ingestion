@@ -15,7 +15,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from src.extraction_output_manager import output_manager as om
+from src.extraction import output_manager as om
 from src.miners.abstract_custom_miner import AbstractCustomMiner
 from src.utils.types.singleton import Singleton
 

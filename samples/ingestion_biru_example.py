@@ -47,7 +47,7 @@ from src.beneficiations.beneficiation import Beneficiation
 from src.config.config import ConfigFromEnv
 from src.conveyor.conveyor import Conveyor
 from src.conveyor.transports.rsync import RsyncTransport
-from src.extraction_plant.extraction_plant import ExtractionPlant
+from src.extraction.extraction_plant import ExtractionPlant
 from src.ingestion_factory.factory import IngestionFactory
 from src.miners.miner import Miner
 from src.mytardis_client.mt_rest import MyTardisRESTFactory

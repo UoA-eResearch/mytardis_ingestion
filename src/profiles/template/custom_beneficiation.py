@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
-from src.extraction_output_manager.ingestibles import IngestibleDataclasses
+from src.extraction.ingestibles import IngestibleDataclasses
 from src.profiles import profile_consts as pc
 
 # ---Constants

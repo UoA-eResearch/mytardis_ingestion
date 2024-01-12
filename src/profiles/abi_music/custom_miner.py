@@ -16,7 +16,7 @@ from typing import Any, Dict, Optional
 
 import yaml
 
-from src.extraction_output_manager import output_manager as om
+from src.extraction import output_manager as om
 from src.profiles.abi_music.miner_helpers.dataclass_identifier import (
     DataclassIdentifier,
 )
