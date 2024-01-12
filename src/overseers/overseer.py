@@ -19,6 +19,13 @@ from src.mytardis_client.mt_rest import MyTardisRESTFactory
 logger = logging.getLogger(__name__)
 
 
+MYTARDIS_PROJECTS_DISABLED_MESSAGE = (
+    "MyTardis is not currently set up to use projects. Please check settings.py "
+    "and ensure that the 'projects' app is enabled. This may require rerunning "
+    "migrations."
+)
+
+
 class Overseer(metaclass=Singleton):
     """The Overseer class inspects MyTardis
 

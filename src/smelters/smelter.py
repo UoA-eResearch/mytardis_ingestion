@@ -16,8 +16,7 @@ from src.blueprints.dataset import RawDataset, RefinedDataset
 from src.blueprints.experiment import RawExperiment, RefinedExperiment
 from src.blueprints.project import RawProject, RefinedProject
 from src.config.config import GeneralConfig, SchemaConfig, StorageConfig
-from src.helpers.project_aware import log_if_projects_disabled
-from src.overseers.overseer import Overseer
+from src.overseers.overseer import MYTARDIS_PROJECTS_DISABLED_MESSAGE, Overseer
 from src.smelters.smelt_storage_boxes import create_storage_box
 
 logger = logging.getLogger(__name__)
@@ -102,7 +101,8 @@ class Smelter:
         """Inject the schema into the project dictionary if it's not
         already present. Do the same for an institution and convert to
         a RawProject dataclass for validation."""
-        if not log_if_projects_disabled(self.overseer.mytardis_setup.projects_enabled):
+        if not self.overseer.mytardis_setup.projects_enabled:
+            logger.warning(MYTARDIS_PROJECTS_DISABLED_MESSAGE)
             return None
         schema = raw_project.object_schema or self.default_schema.project
         if not schema:
