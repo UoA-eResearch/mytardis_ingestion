@@ -6,6 +6,7 @@ import logging
 from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin, urlparse
 
+import aiohttp
 from pydantic import ValidationError
 from requests.exceptions import HTTPError
 
@@ -56,9 +57,18 @@ class Overseer(metaclass=Singleton):
         self.rest_factory = rest_factory
 
     @property
-    def mytardis_setup(self) -> IntrospectionConfig:
+    async def mytardis_setup(self) -> IntrospectionConfig:
         """Getter for mytardis_setup. Sends API request if self._mytardis_setup is None"""
-        return self._mytardis_setup or self.get_mytardis_setup()
+        if self._mytardis_setup is None:
+            #     async with aiohttp.ClientSession() as session:
+            #         # self._mytardis_setup = await self.get_mytardis_setup(session)
+            #         # NOTE: we definitely don't want to query this every time - this is a hack for prototyping
+            #         return await self.get_mytardis_setup(session)
+
+            # NOTE: we definitely don't want to query this every time - this is a hack for prototyping
+            self._mytardis_setup = await self.get_mytardis_setup()
+
+        return self._mytardis_setup
 
     @staticmethod
     def resource_uri_to_id(uri: URI) -> int:
@@ -76,15 +86,16 @@ class Overseer(metaclass=Singleton):
         uri_sep: str = "/"
         return int(urlparse(uri).path.rstrip(uri_sep).split(uri_sep).pop())
 
-    def _get_object_from_mytardis(
+    async def _get_object_from_mytardis(
         self,
         object_type: ObjectSearchDict,
+        session: aiohttp.ClientSession,
         query_params: Dict[str, str],
     ) -> Any | None:
         url = urljoin(self.rest_factory.api_template, object_type["url_substring"])
         try:
-            response = self.rest_factory.mytardis_api_request(
-                "GET", url, params=query_params
+            response = await self.rest_factory.mytardis_api_request(
+                "GET", url, session, params=query_params
             )
         except HTTPError:
             logger.warning(
@@ -106,11 +117,12 @@ class Overseer(metaclass=Singleton):
                 exc_info=True,
             )
             raise error
-        return response.json()
+        return await response.json()
 
-    def get_object_by_uri(
+    async def get_object_by_uri(
         self,
         uri: URI,
+        session: aiohttp.ClientSession,
     ) -> Optional[Any]:
         """GET an object from MyTardis using the URI
 
@@ -128,7 +140,7 @@ class Overseer(metaclass=Singleton):
         """
         url = urljoin(self.rest_factory.hostname, uri)
         try:
-            response = self.rest_factory.mytardis_api_request("GET", url)
+            response = await self.rest_factory.mytardis_api_request("GET", url, session)
         except HTTPError:
             logger.warning(
                 ("Failed HTTP request from Overseer.get_objects call\n" f"URI = {uri}"),
@@ -141,7 +153,7 @@ class Overseer(metaclass=Singleton):
                 exc_info=True,
             )
             raise error
-        return response.json()
+        return await response.json()
 
     # TODO pylint:disable=fixme
     # we might want to add a get_objects function that let's you search for
@@ -149,9 +161,10 @@ class Overseer(metaclass=Singleton):
     # string is in any of the object_type["target"] and "identifier" fields but often
     # we know where those should be found, i.e. when we pass in a search_string
     # we know it's either a pid, alternative_id or name
-    def get_objects(
+    async def get_objects(
         self,
         object_type: ObjectSearchDict,
+        session: aiohttp.ClientSession,
         search_string: str,
     ) -> List[Dict[str, Any]]:
         """Gets a list of objects matching the search parameters passed
@@ -172,16 +185,22 @@ class Overseer(metaclass=Singleton):
         """
         return_list = []
         response_dict = None
+
+        setup = await self.mytardis_setup
+
         if (  # pylint: disable=unsupported-membership-test
-            self.mytardis_setup.objects_with_ids
-            and object_type["type"] in self.mytardis_setup.objects_with_ids
+            setup.objects_with_ids and object_type["type"] in setup.objects_with_ids
         ):
             query_params = {"identifier": search_string}
-            response_dict = self._get_object_from_mytardis(object_type, query_params)
+            response_dict = await self._get_object_from_mytardis(
+                object_type, session, query_params
+            )
             if response_dict and "objects" in response_dict.keys():
                 return_list.extend(iter(response_dict["objects"]))
         query_params = {object_type["target"]: search_string}
-        response_dict = self._get_object_from_mytardis(object_type, query_params)
+        response_dict = await self._get_object_from_mytardis(
+            object_type, session, query_params
+        )
         if response_dict and "objects" in response_dict.keys():
             return_list.extend(iter(response_dict["objects"]))
         new_list = []
@@ -190,9 +209,10 @@ class Overseer(metaclass=Singleton):
                 new_list.append(obj)
         return new_list
 
-    def get_objects_by_fields(
+    async def get_objects_by_fields(
         self,
         object_type: ObjectSearchDict,
+        session: aiohttp.ClientSession,
         field_values: dict[str, str],
     ) -> list[dict[str, Any]]:
         """Query MyTardis for objects whose attributes match the values in `field_values`.
@@ -205,16 +225,19 @@ class Overseer(metaclass=Singleton):
         Returns:
             A collection of JSON objects representing the objects matching `field_values`
         """
-        response = self._get_object_from_mytardis(object_type, field_values)
+        response = await self._get_object_from_mytardis(
+            object_type, session, field_values
+        )
         if response is None:
             raise HTTPError("MyTardis object query yielded no response")
         if objects := response.get("objects"):
             return [objects]
         return []
 
-    def get_uris(
+    async def get_uris(
         self,
         object_type: ObjectSearchDict,
+        session: aiohttp.ClientSession,
         search_string: str,
     ) -> List[URI]:
         """Calls self.get_objects() to get a list of objects matching search then extracts URIs
@@ -231,7 +254,7 @@ class Overseer(metaclass=Singleton):
             A list of object URIs from the search request made.
         """
         return_list: list[URI] = []
-        objects = self.get_objects(object_type, search_string)
+        objects = await self.get_objects(object_type, session, search_string)
         if not objects:
             return []
         for obj in objects:
@@ -259,9 +282,10 @@ class Overseer(metaclass=Singleton):
             return_list.append(uri)
         return return_list
 
-    def get_storage_box(  # pylint: disable=too-many-return-statements
+    async def get_storage_box(  # pylint: disable=too-many-return-statements
         self,
         storage_box_name: str,
+        session: aiohttp.ClientSession,
     ) -> StorageBox | None:
         """Helper function to get a storage box from MyTardis and to verify that there
         is a location associated with it.
@@ -274,8 +298,8 @@ class Overseer(metaclass=Singleton):
                 box is completely defined, or None if this is not the case.
         """
 
-        storage_box_list = self.get_objects(
-            ObjectSearchEnum.STORAGE_BOX.value, storage_box_name
+        storage_box_list = await self.get_objects(
+            ObjectSearchEnum.STORAGE_BOX.value, session, storage_box_name
         )
         if storage_box_list and len(storage_box_list) > 1:
             logger.warning(
@@ -341,15 +365,16 @@ class Overseer(metaclass=Singleton):
         )
         return None
 
-    def get_mytardis_setup(self) -> IntrospectionConfig:
+    async def get_mytardis_setup(self) -> IntrospectionConfig:
         """Query introspection API
 
         Requests introspection info from MyTardis instance configured in connection
         """
-        url = urljoin(self.rest_factory.api_template, "introspection")
-        response = self.rest_factory.mytardis_api_request("GET", url)
+        async with aiohttp.ClientSession() as session:
+            url = urljoin(self.rest_factory.api_template, "introspection")
+            response = await self.rest_factory.mytardis_api_request("GET", url, session)
+            response_dict = await response.json()
 
-        response_dict = response.json()
         if response_dict == {} or response_dict["objects"] == []:
             logger.error(
                 (

@@ -8,6 +8,7 @@ is heavily based on the NGS ingestor for MyTardis found at
 from typing import Dict, Optional
 from urllib.parse import urljoin
 
+import aiohttp
 import backoff
 import requests
 from requests import Response
@@ -17,18 +18,14 @@ from src.config.config import AuthConfig, ConnectionConfig
 from src.config.singleton import Singleton
 
 
-class BadGateWayException(RequestException):
+class BadGateWayException(Exception):
     """A specific exception for 502 errors to trigger backoff retries.
 
     502 Bad Gateway triggers retries, since the proxy web server (eg Nginx
     or Apache) in front of MyTardis could be temporarily restarting
     """
 
-    # Included for clarity even though it is unnecessary
-    def __init__(
-        self, response: Response
-    ) -> None:  # pylint: disable=useless-super-delegation
-        super().__init__(response)
+    pass
 
 
 class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
@@ -74,17 +71,22 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
         self.verify_certificate = connection.verify_certificate
         self.api_template = urljoin(connection.hostname, "/api/v1/")
         self.user_agent = f"{self.user_agent_name}/2.0 ({self.user_agent_url})"
-        self._session = requests.Session()
+        # self._session = requests.Session()
+        # NOTE: we probably want to ensure this is destructed, maybe by using a context manager
+        # self._session = aiohttp.ClientSession()
+        # self._session: aiohttp.ClientSession | None = None
 
     @backoff.on_exception(backoff.expo, BadGateWayException, max_tries=8)
-    def mytardis_api_request(
+    async def mytardis_api_request(
         self,
         method: str,  # REST api method
         url: str,
+        session: aiohttp.ClientSession,
         data: Optional[str] = None,
         params: Optional[Dict[str, str]] = None,
         extra_headers: Optional[Dict[str, str]] = None,
-    ) -> Response:
+        # ) -> Response:
+    ) -> aiohttp.ClientResponse:
         """Function to handle the REST API calls
 
         Takes a REST method and url and prepares a requests request. Once the request has been
@@ -122,20 +124,37 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
         if extra_headers:
             headers = {**headers, **extra_headers}
 
-        response = self._session.request(
+        headers["Authorization"] = f"ApiKey {self.auth.username}:{self.auth.api_key}"
+
+        # response = self._session.request(
+        #     method,
+        #     url,
+        #     data=data,
+        #     params=params,
+        #     headers=headers,
+        #     auth=self.auth,
+        #     verify=self.verify_certificate,
+        #     proxies=self.proxies,
+        #     timeout=5,
+        # )
+
+        async with session.request(
             method,
             url,
             data=data,
             params=params,
             headers=headers,
-            auth=self.auth,
-            verify=self.verify_certificate,
-            proxies=self.proxies,
+            # auth=self.auth,
+            # auth=aiohttp.BasicAuth(
+            #     login=self.auth.username, password=self.auth.api_key, encoding="utf-8"
+            # ),
+            verify_ssl=self.verify_certificate,
+            # proxies=self.proxies,
+            proxy_headers=self.proxies,
             timeout=5,
-        )
+        ) as response:
+            if response.status == 502:
+                raise BadGateWayException(response)
+            response.raise_for_status()
 
-        if response.status_code == 502:
-            raise BadGateWayException(response)
-        response.raise_for_status()
-
-        return response
+            return response

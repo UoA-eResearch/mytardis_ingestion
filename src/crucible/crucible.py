@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List
 
+import aiohttp
 from slugify import slugify
 
 from src.blueprints.custom_data_types import URI
@@ -39,13 +40,15 @@ class Crucible:
         self.active_stores = storage.active_stores
         self.archive = storage.archives
 
-    def prepare_project(self, refined_project: RefinedProject) -> Project | None:
+    async def prepare_project(
+        self, refined_project: RefinedProject, session: aiohttp.ClientSession
+    ) -> Project | None:
         """Refine a project by getting the objects that need to exist in
         MyTardis and finding their URIs"""
         institutions: list[URI] = []
         for institution in refined_project.institution:
-            if institution_uri := self.overseer.get_uris(
-                ObjectSearchEnum.INSTITUTION.value, institution
+            if institution_uri := await self.overseer.get_uris(
+                ObjectSearchEnum.INSTITUTION.value, session, institution
             ):
                 institutions.append(*institution_uri)
         institutions = list(set(institutions))
@@ -84,23 +87,21 @@ class Crucible:
             active_stores=refined_project.active_stores,
         )
 
-    def prepare_experiment(
-        self, refined_experiment: RefinedExperiment
+    async def prepare_experiment(
+        self, refined_experiment: RefinedExperiment, session: aiohttp.ClientSession
     ) -> Experiment | None:
         """Refine an experiment by getting the objects that need to exist
         in MyTardis and finding their URIs"""
         projects: list[URI] = []
-        if (
-            refined_experiment.projects
-            and self.overseer.mytardis_setup.projects_enabled
-        ):
+        setup = await self.overseer.mytardis_setup
+        if refined_experiment.projects and setup.projects_enabled:
             for project in refined_experiment.projects:
-                if project_uri := self.overseer.get_uris(
-                    ObjectSearchEnum.PROJECT.value, project
+                if project_uri := await self.overseer.get_uris(
+                    ObjectSearchEnum.PROJECT.value, session, project
                 ):
                     projects.append(*project_uri)
             projects = list(set(projects))
-        if not projects and self.overseer.mytardis_setup.projects_enabled:
+        if not projects and setup.projects_enabled:
             logger.warning(
                 "No projects identified for this experiment and projects enabled in MyTardis."
             )
@@ -144,13 +145,15 @@ class Crucible:
             ),
         )
 
-    def prepare_dataset(self, refined_dataset: RefinedDataset) -> Dataset | None:
+    async def prepare_dataset(
+        self, refined_dataset: RefinedDataset, session: aiohttp.ClientSession
+    ) -> Dataset | None:
         """Refine a dataset by finding URIs from MyTardis for the
         relevant fields of interest"""
         experiment_uris: list[URI] = []
         for experiment in refined_dataset.experiments:
-            if uris := self.overseer.get_uris(
-                ObjectSearchEnum.EXPERIMENT.value, experiment
+            if uris := await self.overseer.get_uris(
+                ObjectSearchEnum.EXPERIMENT.value, session, experiment
             ):
                 experiment_uris.extend(uris)
             else:
@@ -160,8 +163,8 @@ class Crucible:
         if not experiment_uris:
             logger.warning("Unable to find experiments associated with this dataset.")
             return None
-        instruments = self.overseer.get_uris(
-            ObjectSearchEnum.INSTRUMENT.value, refined_dataset.instrument
+        instruments = await self.overseer.get_uris(
+            ObjectSearchEnum.INSTRUMENT.value, session, refined_dataset.instrument
         )
         if instruments:
             instruments = list(set(instruments))
@@ -203,13 +206,11 @@ class Crucible:
             ),
         )
 
-    def __create_datafile_replicas(
-        self,
-        dataset: URI,
-        file_path: Path,
+    async def __create_datafile_replicas(
+        self, dataset: URI, file_path: Path, session: aiohttp.ClientSession
     ) -> List[DatafileReplica]:  # sourcery skip: for-append-to-extend
         """Use the dataset associated with datafile to construct replicas"""
-        if dataset_obj := self.overseer.get_object_by_uri(dataset):
+        if dataset_obj := await self.overseer.get_object_by_uri(dataset, session):
             # dataset_obj = response["objects"][0]
             # Should be handled by API - create setting to prefix
             # instrument = slugify(dataset_obj["instrument"]["name"])
@@ -232,11 +233,13 @@ class Crucible:
             return replicas
         raise ValueError(f"Unable to find dataset: {dataset}")
 
-    def prepare_datafile(self, refined_datafile: RefinedDatafile) -> Datafile | None:
+    async def prepare_datafile(
+        self, refined_datafile: RefinedDatafile, session: aiohttp.ClientSession
+    ) -> Datafile | None:
         """Refine a datafile by finding URIs from MyTardis for the
         relevant fields of interest."""
-        datasets = self.overseer.get_uris(
-            ObjectSearchEnum.DATASET.value, refined_datafile.dataset
+        datasets = await self.overseer.get_uris(
+            ObjectSearchEnum.DATASET.value, session, refined_datafile.dataset
         )
         if not datasets:
             logger.warning(
@@ -255,10 +258,7 @@ class Crucible:
             return None
         dataset = datasets[0]
         file_path = Path(refined_datafile.directory / refined_datafile.filename)
-        replicas = self.__create_datafile_replicas(
-            dataset,
-            file_path,
-        )
+        replicas = await self.__create_datafile_replicas(dataset, file_path, session)
         # TODO revisit the logic here to see if we need to push this out to individual DFOs
         return Datafile(
             filename=refined_datafile.filename,

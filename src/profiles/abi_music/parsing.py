@@ -10,6 +10,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping
 
+# TODO: md5 caching should not be retained - just to speed up development
+from diskcache import Cache
+
 from src.blueprints.common_models import GroupACL, UserACL
 from src.blueprints.custom_data_types import MTUrl
 from src.blueprints.datafile import RawDatafile
@@ -27,6 +30,9 @@ from src.profiles.abi_music.abi_music_consts import (
 )
 from src.utils.filesystem import checksums, filters
 from src.utils.filesystem.filesystem_nodes import DirectoryNode, FileNode
+
+cache = Cache(directory="/home/andrew/dev/tmp/.ingestion_cache/abi")
+checksums.calculate_md5 = cache.memoize()(checksums.calculate_md5)
 
 # Expected datetime format is "yymmdd-DDMMSS"
 datetime_pattern = re.compile("^[0-9]{6}-[0-9]{6}$")

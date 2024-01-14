@@ -96,13 +96,14 @@ class Smelter:
                 continue
         return ParameterSet(schema=schema, parameters=parameter_list)
 
-    def smelt_project(
+    async def smelt_project(
         self, raw_project: RawProject
     ) -> Tuple[RefinedProject, Optional[ParameterSet]] | None:
         """Inject the schema into the project dictionary if it's not
         already present. Do the same for an institution and convert to
         a RawProject dataclass for validation."""
-        if not log_if_projects_disabled(self.overseer.mytardis_setup.projects_enabled):
+        setup = await self.overseer.mytardis_setup
+        if not log_if_projects_disabled(setup.projects_enabled):
             return None
         schema = raw_project.object_schema or self.default_schema.project
         if not schema:
@@ -169,7 +170,7 @@ class Smelter:
         parameters = self.extract_parameters(MTUrl(schema), raw_project)
         return (refined_project, parameters)
 
-    def smelt_experiment(
+    async def smelt_experiment(
         self, raw_experiment: RawExperiment
     ) -> Tuple[RefinedExperiment, Optional[ParameterSet]] | None:
         """Inject the schema into the experiment dictionary if it's not
@@ -181,10 +182,8 @@ class Smelter:
                 "Unable to find default experiment schema and no schema provided"
             )
             return None
-        if (
-            self.overseer.mytardis_setup.projects_enabled
-            and not raw_experiment.projects
-        ):  # test this
+        setup = await self.overseer.mytardis_setup
+        if setup.projects_enabled and not raw_experiment.projects:  # test this
             logger.warning(
                 "Projects enabled in MyTardis and no projects provided to link this experiment to. Experiment provided %s",  # pylint: disable=line-too-long
                 raw_experiment,

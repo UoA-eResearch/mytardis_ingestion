@@ -8,6 +8,7 @@ import logging
 import sys
 from typing import Optional
 
+import aiohttp
 from pydantic import ValidationError
 
 from src.blueprints.custom_data_types import URI
@@ -120,9 +121,8 @@ class IngestionFactory(metaclass=Singleton):
             storage=config.storage,
         )
 
-    def ingest_projects(
-        self,
-        projects: list[RawProject] | None,
+    async def ingest_projects(
+        self, projects: list[RawProject] | None, session: aiohttp.ClientSession
     ) -> IngestionResult | None:  # sourcery skip: class-extract-method
         """Wrapper function to create the projects from input files"""
         if not projects:
@@ -142,24 +142,26 @@ class IngestionFactory(metaclass=Singleton):
                 result.error.append("unknown")
                 continue
 
-            smelted_project = self.smelter.smelt_project(project)
+            smelted_project = await self.smelter.smelt_project(project)
             if not smelted_project:
                 result.error.append(name)
                 continue
 
             refined_project, refined_parameters = smelted_project
 
-            prepared_project = self.crucible.prepare_project(refined_project)
+            prepared_project = await self.crucible.prepare_project(
+                refined_project, session
+            )
             if not prepared_project:
                 result.error.append(name)
                 continue
 
-            matching_projects = self._overseer.get_objects(
-                ObjectSearchEnum.PROJECT.value, prepared_project.name
+            matching_projects = await self._overseer.get_objects(
+                ObjectSearchEnum.PROJECT.value, session, prepared_project.name
             )
             if len(matching_projects) == 0:
-                project_uri = self.forge.forge_project(
-                    prepared_project, refined_parameters
+                project_uri = await self.forge.forge_project(
+                    prepared_project, refined_parameters, session
                 )
             else:
                 project_uri = matching_projects[0]["resource_uri"]
@@ -185,9 +187,8 @@ class IngestionFactory(metaclass=Singleton):
 
         return result
 
-    def ingest_experiments(  # pylint: disable=too-many-locals
-        self,
-        experiments: list[RawExperiment] | None,
+    async def ingest_experiments(  # pylint: disable=too-many-locals
+        self, experiments: list[RawExperiment] | None, session: aiohttp.ClientSession
     ) -> IngestionResult | None:
         """Wrapper function to create the experiments from input files"""
         if not experiments:
@@ -208,24 +209,26 @@ class IngestionFactory(metaclass=Singleton):
                 result.error.append("unknown")
                 continue
 
-            smelted_experiment = self.smelter.smelt_experiment(experiment)
+            smelted_experiment = await self.smelter.smelt_experiment(experiment)
             if not smelted_experiment:
                 result.error.append(name)
                 continue
 
             refined_experiment, refined_parameters = smelted_experiment
 
-            prepared_experiment = self.crucible.prepare_experiment(refined_experiment)
+            prepared_experiment = await self.crucible.prepare_experiment(
+                refined_experiment, session
+            )
             if not prepared_experiment:
                 result.error.append(name)
                 continue
 
-            matching_experiments = self._overseer.get_objects(
-                ObjectSearchEnum.EXPERIMENT.value, prepared_experiment.title
+            matching_experiments = await self._overseer.get_objects(
+                ObjectSearchEnum.EXPERIMENT.value, session, prepared_experiment.title
             )
             if len(matching_experiments) == 0:
-                experiment_uri = self.forge.forge_experiment(
-                    prepared_experiment, refined_parameters
+                experiment_uri = await self.forge.forge_experiment(
+                    prepared_experiment, session, refined_parameters
                 )
             else:
                 experiment_uri = matching_experiments[0]["resource_uri"]
@@ -251,9 +254,8 @@ class IngestionFactory(metaclass=Singleton):
 
         return result
 
-    def ingest_datasets(  # pylint: disable=too-many-locals
-        self,
-        datasets: list[RawDataset] | None,
+    async def ingest_datasets(  # pylint: disable=too-many-locals
+        self, datasets: list[RawDataset] | None, session: aiohttp.ClientSession
     ) -> IngestionResult | None:
         """Wrapper function to create the experiments from input files"""
         if not datasets:
@@ -279,17 +281,19 @@ class IngestionFactory(metaclass=Singleton):
                 continue
 
             refined_dataset, refined_parameters = smelted_dataset
-            prepared_dataset = self.crucible.prepare_dataset(refined_dataset)
+            prepared_dataset = await self.crucible.prepare_dataset(
+                refined_dataset, session
+            )
             if not prepared_dataset:
                 result.error.append(name)
                 continue
 
-            matching_datasets = self._overseer.get_objects(
-                ObjectSearchEnum.DATASET.value, prepared_dataset.description
+            matching_datasets = await self._overseer.get_objects(
+                ObjectSearchEnum.DATASET.value, session, prepared_dataset.description
             )
             if len(matching_datasets) == 0:
-                dataset_uri = self.forge.forge_dataset(
-                    prepared_dataset, refined_parameters
+                dataset_uri = await self.forge.forge_dataset(
+                    prepared_dataset, session, refined_parameters
                 )
             else:
                 dataset_uri = matching_datasets[0]["resource_uri"]
@@ -313,9 +317,8 @@ class IngestionFactory(metaclass=Singleton):
 
         return result
 
-    def ingest_datafiles(
-        self,
-        datafiles: list[RawDatafile] | None,
+    async def ingest_datafiles(
+        self, datafiles: list[RawDatafile] | None, session: aiohttp.ClientSession
     ) -> IngestionResult | None:
         """Wrapper function to create the experiments from input files"""
         if not datafiles:
@@ -340,14 +343,17 @@ class IngestionFactory(metaclass=Singleton):
                 result.error.append(name)
                 continue
 
-            prepared_datafile = self.crucible.prepare_datafile(refined_datafile)
+            prepared_datafile = await self.crucible.prepare_datafile(
+                refined_datafile, session
+            )
             if not prepared_datafile:
                 result.error.append(name)
                 continue
 
             # Search by filename and parent dataset as filenames alone may not be unique
-            matching_datafiles = self._overseer.get_objects_by_fields(
+            matching_datafiles = await self._overseer.get_objects_by_fields(
                 ObjectSearchEnum.DATAFILE.value,
+                session,
                 {
                     "filename": prepared_datafile.filename,
                     "dataset": str(
@@ -356,7 +362,7 @@ class IngestionFactory(metaclass=Singleton):
                 },
             )
             if len(matching_datafiles) == 0:
-                self.forge.forge_datafile(prepared_datafile)
+                await self.forge.forge_datafile(prepared_datafile, session)
                 logging.info("Ingested datafile %s", prepared_datafile.directory)
             else:
                 logging.info(
@@ -399,28 +405,29 @@ class IngestionFactory(metaclass=Singleton):
                 indent=4,
             )
 
-    def ingest(  # pylint: disable=missing-function-docstring
+    async def ingest(  # pylint: disable=missing-function-docstring
         self,
         projects: list[RawProject] | None = None,
         experiments: list[RawExperiment] | None = None,
         datasets: list[RawDataset] | None = None,
         datafiles: list[RawDatafile] | None = None,
     ) -> None:
-        ingested_projects = self.ingest_projects(projects)
-        if not ingested_projects:
-            logger.error("Fatal error while ingesting projects. Check logs.")
+        async with aiohttp.ClientSession() as session:
+            ingested_projects = await self.ingest_projects(projects, session)
+            if not ingested_projects:
+                logger.error("Fatal error while ingesting projects. Check logs.")
 
-        ingested_experiments = self.ingest_experiments(experiments)
-        if not ingested_experiments:
-            logger.error("Fatal error ingesting experiments. Check logs.")
+            ingested_experiments = await self.ingest_experiments(experiments, session)
+            if not ingested_experiments:
+                logger.error("Fatal error ingesting experiments. Check logs.")
 
-        ingested_datasets = self.ingest_datasets(datasets)
-        if not ingested_datasets:
-            logger.error("Fatal error ingesting datasets. Check logs.")
+            ingested_datasets = await self.ingest_datasets(datasets, session)
+            if not ingested_datasets:
+                logger.error("Fatal error ingesting datasets. Check logs.")
 
-        ingested_datafiles = self.ingest_datafiles(datafiles)
-        if not ingested_datafiles:
-            logger.error("Fatal error ingesting datafiles. Check logs.")
+            ingested_datafiles = await self.ingest_datafiles(datafiles, session)
+            if not ingested_datafiles:
+                logger.error("Fatal error ingesting datafiles. Check logs.")
 
         self.dump_ingestion_result_json(
             projects_result=ingested_projects,

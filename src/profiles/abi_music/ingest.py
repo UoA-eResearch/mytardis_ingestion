@@ -2,10 +2,12 @@
 Ingestion runner for the ABI MuSIC data
 """
 
+import asyncio
 import io
 import logging
 from pathlib import Path
 
+import trio
 import typer
 
 from src.config.config import ConfigFromEnv
@@ -16,7 +18,7 @@ from src.utils.filesystem.filesystem_nodes import DirectoryNode
 from src.utils.timing import Timer
 
 
-def main(data_root: Path, log_file: Path = Path("abi_ingestion.log")) -> None:
+async def main2(data_root: Path, log_file: Path = Path("abi_ingestion.log")) -> None:
     """
     Run an ingestion for the ABI MuSIC data
     """
@@ -46,7 +48,7 @@ def main(data_root: Path, log_file: Path = Path("abi_ingestion.log")) -> None:
 
     ingestion_agent = IngestionFactory(config=config)
 
-    ingestion_agent.ingest(
+    await ingestion_agent.ingest(
         dataclasses.get_projects(),
         dataclasses.get_experiments(),
         dataclasses.get_datasets(),
@@ -58,5 +60,10 @@ def main(data_root: Path, log_file: Path = Path("abi_ingestion.log")) -> None:
     logging.info("Total time (s): %.2f", elapsed)
 
 
+def main1(data_root: Path, log_file: Path = Path("abi_ingestion.log")) -> None:
+    # trio.run(main2, data_root, log_file)
+    asyncio.run(main2(data_root, log_file))
+
+
 if __name__ == "__main__":
-    typer.run(main)
+    typer.run(main1)
