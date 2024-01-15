@@ -22,6 +22,8 @@ dependency-injector = "^4.41.0"
 pydantic-settings = "^2.0.3"
 validators = "^0.22.0"
 typer = "^0.9.0"
+aiohttp = "^3.9.1"
+tqdm = "^4.66.1"
 
 [tool.poetry.group.dev.dependencies]
 wily = "^1.25.0"
