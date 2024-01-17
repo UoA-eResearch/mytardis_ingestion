@@ -22,7 +22,6 @@ import yaml
 from src.extraction import output_manager as om
 from src.miners.utils import datafile_metadata_helpers as dmh
 from src.profiles import profile_consts as pc
-from src.profiles import profile_helpers as ph
 from src.profiles.abi_music import abi_music_consts as amc
 from src.profiles.abi_music.miner_helpers import metadata_helpers as mh
 
