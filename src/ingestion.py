@@ -16,9 +16,9 @@ from src.utils.filesystem.filesystem_nodes import DirectoryNode
 from src.utils.timing import Timer
 
 
-def main(data_root: Path, log_file: Path = Path("abi_ingestion.log")) -> None:
+def main(data_root: Path, log_file: Path = Path("ingestion.log")) -> None:
     """
-    Run an ingestion for the ABI MuSIC data
+    Run an ingestion
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
     config = ConfigFromEnv()
