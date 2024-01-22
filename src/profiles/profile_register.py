@@ -19,6 +19,7 @@ To register a new profile, add an entry here.
 """
 _profiles = {
     "abi_music": "abi_music.profile",
+    "idw": "idw.profile",
 }
 
 

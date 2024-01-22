@@ -82,7 +82,7 @@ def main():
     beneficiation = Beneficiation(profile_loader.load_custom_beneficiation)
 
     ext_plant = ExtractionPlant(prospector, miner, beneficiation)
-    ingestible_dataclasses = ext_plant.run_extraction(pth)
+    ingestible_dataclasses = ext_plant.extract(pth)
     #  ingestibles = ext_plant.run_extraction(pth, bc.JSON_FORMAT) #for json files
 
     # Start conveyor to transfer datafiles.
