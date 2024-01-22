@@ -10,25 +10,32 @@ import typer
 
 from src.config.config import ConfigFromEnv
 from src.ingestion_factory.factory import IngestionFactory
-from src.profiles.abi_music import parsing
+from src.profiles.profile_register import load_profile
 from src.utils import log_utils
 from src.utils.filesystem.filesystem_nodes import DirectoryNode
 from src.utils.timing import Timer
 
 
-def main(data_root: Path, log_file: Path = Path("ingestion.log")) -> None:
+def main(
+    data_root: Path, profile_name: str, log_file: Path = Path("ingestion.log")
+) -> None:
     """
     Run an ingestion
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
     config = ConfigFromEnv()
+
     timer = Timer(start=True)
 
     root_dir = DirectoryNode(data_root)
     if root_dir.empty():
         raise ValueError("Data root directory is empty. May not be mounted.")
 
-    dataclasses = parsing.parse_data(root_dir)
+    # TODO: where does version come from?
+    profile = load_profile(profile_name, "v1")
+
+    extractor = profile.get_extractor()
+    dataclasses = extractor.extract(root_dir.path())
 
     logging.info("Number of datafiles: %d", len(dataclasses.get_datafiles()))
 
