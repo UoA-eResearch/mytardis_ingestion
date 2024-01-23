@@ -33,14 +33,13 @@ def main(
 
     timer = Timer(start=True)
 
-    root_dir = DirectoryNode(data_root)
-    if root_dir.empty():
+    if DirectoryNode(data_root).empty():
         raise ValueError("Data root directory is empty. May not be mounted.")
 
     profile = load_profile(profile_name, profile_version)
 
     extractor = profile.get_extractor()
-    metadata = extractor.extract(root_dir.path())
+    metadata = extractor.extract(data_root)
 
     logging.info("Number of datafiles: %d", len(metadata.get_datafiles()))
 
