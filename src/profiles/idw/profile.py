@@ -15,6 +15,10 @@ class IDWProfile(IProfile):
     def __init__(self) -> None:
         pass
 
+    @property
+    def name(self) -> str:
+        return "idw"
+
     def get_extractor(self) -> IMetadataExtractor:
         return ExtractionPlant(
             prospector=None,

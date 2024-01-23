@@ -13,6 +13,10 @@ class AbiMusicProfile(IProfile):
     def __init__(self) -> None:
         pass
 
+    @property
+    def name(self) -> str:
+        return "abi_music"
+
     def get_extractor(self) -> IMetadataExtractor:
         return ABIMusicExtractor()
 
