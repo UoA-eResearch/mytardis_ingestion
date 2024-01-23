@@ -1,6 +1,5 @@
 # pylint: disable=logging-fstring-interpolation
 # pylint: disable-all
-# type: ignore
 # noqa
 # nosec
 
@@ -60,7 +59,7 @@ class Miner(metaclass=Singleton):
 
         if self.custom_miner:
             out_man_fnl: om.OutputManager = self.custom_miner.mine(
-                path, recursive, out_man
+                Path(path), recursive, out_man
             )
         else:
             out_man_fnl = out_man

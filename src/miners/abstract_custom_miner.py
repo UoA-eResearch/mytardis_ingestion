@@ -1,5 +1,4 @@
 # pylint: disable-all
-# type: ignore
 # noqa
 # nosec
 
