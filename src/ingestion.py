@@ -9,6 +9,8 @@ from pathlib import Path
 import typer
 
 from src.config.config import ConfigFromEnv
+from src.conveyor.conveyor import Conveyor
+from src.conveyor.transports.rsync import RsyncTransport
 from src.ingestion_factory.factory import IngestionFactory
 from src.profiles.profile_register import load_profile
 from src.utils import log_utils
@@ -17,7 +19,11 @@ from src.utils.timing import Timer
 
 
 def main(
-    data_root: Path, profile_name: str, log_file: Path = Path("ingestion.log")
+    data_root: Path,
+    storage_dir: Path,
+    profile_name: str,
+    profile_version: str,
+    log_file: Path = Path("ingestion.log"),
 ) -> None:
     """
     Run an ingestion
@@ -31,17 +37,16 @@ def main(
     if root_dir.empty():
         raise ValueError("Data root directory is empty. May not be mounted.")
 
-    # TODO: where does version come from?
-    profile = load_profile(profile_name, "v1")
+    profile = load_profile(profile_name, profile_version)
 
     extractor = profile.get_extractor()
-    dataclasses = extractor.extract(root_dir.path())
+    metadata = extractor.extract(root_dir.path())
 
-    logging.info("Number of datafiles: %d", len(dataclasses.get_datafiles()))
+    logging.info("Number of datafiles: %d", len(metadata.get_datafiles()))
 
     # Does this logging still meet our needs?
     stream = io.StringIO()
-    dataclasses.print(stream)
+    metadata.print(stream)
     logging.info(stream.getvalue())
 
     elapsed = timer.stop()
@@ -54,15 +59,21 @@ def main(
     ingestion_agent = IngestionFactory(config=config)
 
     ingestion_agent.ingest(
-        dataclasses.get_projects(),
-        dataclasses.get_experiments(),
-        dataclasses.get_datasets(),
-        dataclasses.get_datafiles(),
+        metadata.get_projects(),
+        metadata.get_experiments(),
+        metadata.get_datasets(),
+        metadata.get_datafiles(),
     )
 
     elapsed = timer.stop()
     logging.info("Finished submitting dataclasses to MyTardis")
     logging.info("Total time (s): %.2f", elapsed)
+
+    datafiles = metadata.get_datafiles()
+    transport = RsyncTransport(Path(storage_dir))
+    conveyor = Conveyor(transport)
+    conveyor_process = conveyor.initiate_transfer(data_root, datafiles)
+    conveyor_process.join()
 
 
 if __name__ == "__main__":
