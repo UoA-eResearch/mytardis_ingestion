@@ -45,11 +45,11 @@ def load_profile(name: str, version: str) -> IProfile:
 
     if not hasattr(module, "load_profile"):
         raise ImportError(
-            f"The module for profile {name} has no 'load_profile()' function"
+            f"The module for profile {name} has no 'get_profile()' function"
         )
 
     try:
-        profile: IProfile = module.load_profile(version)
+        profile: IProfile = module.get_profile(version)
     except Exception as e:
         raise ImportError(
             f"An error occurred while loading the profile '{name}'"

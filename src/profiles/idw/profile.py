@@ -27,7 +27,7 @@ class IDWProfile(IProfile):
         )
 
 
-def load_profile(version: str) -> IProfile:
+def get_profile(version: str) -> IProfile:
     """Entry point for the profile - returns the profile corresponding to the requested version"""
     match version:
         case "v1":
