@@ -5,7 +5,7 @@ Ingestion profile for ingestions using the Instrument Data Wizard (IDW)
 from src.beneficiations.beneficiation import Beneficiation
 from src.extraction.extraction_plant import ExtractionPlant
 from src.extraction.metadata_extractor import IMetadataExtractor
-from src.profiles.idw.custom_beneficiation import CustomBeneficiation
+from src.profiles.idw.custom_beneficiation import CustomBeneficiation  # type: ignore
 from src.profiles.profile_base import IProfile
 
 
