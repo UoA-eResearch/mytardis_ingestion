@@ -23,6 +23,11 @@ _profiles = {
 }
 
 
+def get_profile_names() -> list[str]:
+    """Get a list containing the name of every profile"""
+    return list(_profiles.keys())
+
+
 def load_profile(name: str, version: str) -> IProfile:
     """Load an ingestion profile corresponding to 'name' and 'version'"""
     profile_location = _profiles.get(name)
