@@ -69,11 +69,9 @@ def main(
     logging.info("Finished submitting dataclasses to MyTardis")
     logging.info("Total time (s): %.2f", elapsed)
 
-    datafiles = metadata.get_datafiles()
     transport = RsyncTransport(Path(storage_dir))
     conveyor = Conveyor(transport)
-    conveyor_process = conveyor.initiate_transfer(data_root, datafiles)
-    conveyor_process.join()
+    conveyor.initiate_transfer(data_root, metadata.get_datafiles()).join()
 
 
 if __name__ == "__main__":
