@@ -28,7 +28,7 @@ def test_get_profile_names() -> None:
 
 @pytest.fixture(name="mock_profile_info")
 def fixture_mock_profile_info() -> mock.MagicMock:
-    return mock.MagicMock(return_value={"mock_profile": "mock_profile.module.path"})
+    return mock.MagicMock(return_value={"mock_profile": "fake.module.path"})
 
 
 @pytest.fixture(name="mock_profile_module")
