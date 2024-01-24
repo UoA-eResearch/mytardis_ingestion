@@ -2,6 +2,8 @@
 Ingestion profile for ingestions using the Instrument Data Wizard (IDW)
 """
 
+from typing import Optional
+
 from src.beneficiations.beneficiation import Beneficiation
 from src.extraction.extraction_plant import ExtractionPlant
 from src.extraction.metadata_extractor import IMetadataExtractor
@@ -27,10 +29,10 @@ class IDWProfile(IProfile):
         )
 
 
-def get_profile(version: str) -> IProfile:
+def get_profile(version: Optional[str]) -> IProfile:
     """Entry point for the profile - returns the profile corresponding to the requested version"""
     match version:
-        case "v1":
+        case "v1" | None:
             return IDWProfile()
         case _:
             raise ValueError(f"Unknown version '{version}' for 'IDW' profile")

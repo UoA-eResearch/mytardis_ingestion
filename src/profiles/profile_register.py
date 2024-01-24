@@ -4,6 +4,7 @@ for loading profiles.
 """
 
 import importlib
+from typing import Optional
 
 from src.profiles.profile_base import IProfile
 
@@ -33,7 +34,7 @@ def get_profile_names() -> list[str]:
     return list(get_profile_register().keys())
 
 
-def load_profile(name: str, version: str) -> IProfile:
+def load_profile(name: str, version: Optional[str] = None) -> IProfile:
     """Load an ingestion profile corresponding to 'name' and 'version'"""
     profile_location = get_profile_register().get(name)
     if profile_location is None:

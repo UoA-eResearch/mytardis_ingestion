@@ -5,8 +5,10 @@ Ingestion runner for the ABI MuSIC data
 import io
 import logging
 from pathlib import Path
+from typing import Optional
 
 import typer
+from typing_extensions import Annotated
 
 from src.config.config import ConfigFromEnv
 from src.conveyor.conveyor import Conveyor
@@ -19,11 +21,37 @@ from src.utils.timing import Timer
 
 
 def main(
-    data_root: Path,
-    storage_dir: Path,
-    profile_name: str,
-    profile_version: str,
-    log_file: Path = Path("ingestion.log"),
+    data_root: Annotated[
+        Path,
+        typer.Argument(help="Directory containing the data to be extracted"),
+    ],
+    storage_dir: Annotated[
+        Path,
+        typer.Argument(help="Directory where the extracted data will be stored"),
+    ],
+    profile_name: Annotated[
+        str,
+        typer.Argument(
+            help="Name of the ingestion profile to be used to extract the data"
+        ),
+    ],
+    profile_version: Optional[
+        Annotated[
+            str,
+            typer.Argument(
+                help=(
+                    "Version of the profile to be used. If left unspecified, the latest "
+                    "will be used"
+                )
+            ),
+        ]
+    ] = None,
+    log_file: Optional[
+        Annotated[
+            Path,
+            typer.Argument(help="Name to be used for the log file"),
+        ]
+    ] = Path("ingestion.log"),
 ) -> None:
     """
     Run an ingestion

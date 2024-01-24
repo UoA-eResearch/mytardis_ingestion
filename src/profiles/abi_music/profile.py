@@ -2,6 +2,8 @@
 Ingestion profile for the "ABI MuSIC" Microscope
 """
 
+from typing import Optional
+
 from src.extraction.metadata_extractor import IMetadataExtractor
 from src.profiles.abi_music.parsing import ABIMusicExtractor
 from src.profiles.profile_base import IProfile
@@ -21,10 +23,11 @@ class AbiMusicProfile(IProfile):
         return ABIMusicExtractor()
 
 
-def get_profile(version: str) -> IProfile:
+def get_profile(version: Optional[str]) -> IProfile:
     """Entry point for the profile - returns the profile corresponding to the requested version"""
+
     match version:
-        case "v1":
+        case "v1" | None:
             return AbiMusicProfile()
         case _:
             raise ValueError(f"Unknown version '{version}' for 'ABI MuSIC' profile")
