@@ -35,22 +35,15 @@ def main(
             help="Name of the ingestion profile to be used to extract the data"
         ),
     ],
-    profile_version: Optional[
-        Annotated[
-            str,
-            typer.Argument(
-                help=(
-                    "Version of the profile to be used. If left unspecified, the latest "
-                    "will be used"
-                )
-            ),
-        ]
+    profile_version: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Version of the profile to be used. If left unspecified, the latest will be used"
+        ),
     ] = None,
-    log_file: Optional[
-        Annotated[
-            Path,
-            typer.Argument(help="Name to be used for the log file"),
-        ]
+    log_file: Annotated[
+        Optional[Path],
+        typer.Argument(help="Path to be used for the log file"),
     ] = Path("ingestion.log"),
 ) -> None:
     """
