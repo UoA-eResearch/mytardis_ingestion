@@ -1,5 +1,5 @@
 """
-Ingestion runner for the ABI MuSIC data
+CLI frontend for extracting metadata, and ingesting it with the data into MyTardis.
 """
 
 import io
