@@ -28,7 +28,7 @@ def test_extraction_plant(tmpdir_metadata, get_abi_profile):
     bnfc: Beneficiation = Beneficiation(prof_loader.load_custom_beneficiation())
     ext_plant = ExtractionPlant(prospector, miner, bnfc)
 
-    ingestible_dataclasses = ext_plant.run_extraction(tmpdir_metadata[0])
+    ingestible_dataclasses = ext_plant.extract(tmpdir_metadata[0])
     projs = ingestible_dataclasses.get_projects()
     expts = ingestible_dataclasses.get_experiments()
     dsets = ingestible_dataclasses.get_datasets()
@@ -58,7 +58,7 @@ def test_extraction_plant_no_profile(tmpdir_metadata):
         miner = Miner(prof_loader.load_custom_miner())
         bnfc: Beneficiation = Beneficiation(prof_loader.load_custom_beneficiation())
         ext_plant = ExtractionPlant(prospector, miner, bnfc)
-        ext_plant.run_extraction(tmpdir_metadata[0])
+        ext_plant.extract(tmpdir_metadata[0])
 
     Prospector.clear()
     Miner.clear()
