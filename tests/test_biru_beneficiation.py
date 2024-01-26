@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 logger.propagate = True
 
 
-def test_beneficiate():
+def test_beneficiate() -> None:
     with tempfile.NamedTemporaryFile(
         mode="w", delete=False, suffix=".yaml"
     ) as tmp_yaml_file:
@@ -19,18 +19,18 @@ def test_beneficiate():
         yaml.dump(yaml_data, tmp_yaml_file, default_flow_style=False)
     a = CustomBeneficiation()
     fpath = "tests/testdata/test_ingestion.yaml"
-    ingestible_dataclasses = a.beneficiate(fpath, IngestibleDataclasses)
-    df = ingestible_dataclasses.datafiles[0]
-    assert df.filename == "20221113_slide3-2_humanRWM_cd34_x20_0.12umpix_3.czi"
-    assert df.metadata["Experimenter|UserName"] == "hsuz002"
+    ingestible_dataclass = a.beneficiate(fpath, IngestibleDataclasses)
+    df = ingestible_dataclass.get_datafiles()
+    assert df[0].filename == "20221113_slide3-2_humanRWM_cd34_x20_0.12umpix_8.czi"
+    assert df[0].metadata["Experimenter|UserName"] == "hsuz002"
 
 
-def test_beneficiate_replace_micrometer():
+def test_beneficiate_replace_micrometer() -> None:
     a = CustomBeneficiation()
     fpath = "tests/testdata/test_ingestion.yaml"
-    ingestible_dataclasses = a.beneficiate(fpath, IngestibleDataclasses)
-    df = ingestible_dataclasses.datafiles[0]
-    assert df.filename == "20221113_slide3-2_humanRWM_cd34_x20_0.12umpix_3.czi"
-    assert df.metadata["Image|Pixels|Channel|Channel:0:0|PinholeSizeUnit"] == "um"
-    assert df.metadata["Image|Pixels|Channel|Channel:0:1|PinholeSizeUnit"] == "um"
-    assert df.md5sum == "66dae4208956c7b0081bd31acae35506"
+    ingestible_dataclass = a.beneficiate(fpath, IngestibleDataclasses)
+    df = ingestible_dataclass.get_datafiles()
+    assert df[0].filename == "20221113_slide3-2_humanRWM_cd34_x20_0.12umpix_8.czi"
+    assert df[0].metadata["Image|Pixels|Channel|Channel:0:0|PinholeSizeUnit"] == "um"
+    assert df[0].metadata["Image|Pixels|Channel|Channel:0:1|PinholeSizeUnit"] == "um"
+    assert df[0].md5sum == "ba367447a14db59627850eed55a0d5f2"

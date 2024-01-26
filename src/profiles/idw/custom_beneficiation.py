@@ -21,7 +21,6 @@ from yaml.loader import Loader
 from yaml.nodes import MappingNode, Node
 
 # User-defined imports
-# from src.profiles.idw.beneficiation_helpers.models import IngestionMetadata
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
 from src.blueprints.common_models import GroupACL, UserACL
@@ -239,6 +238,25 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
             data["data_classification"] = DataClassification.SENSITIVE
         return RawProject(**data)
 
+    def write_to_yaml(
+        self, fpath: Path, ingestible_dclasses: IngestibleDataclasses
+    ) -> None:
+        """
+        Write the IngestibleDataclasses to a YAML file.
+        """
+        data_list = []
+        for project in ingestible_dclasses.get_projects():
+            data_list.append(project.to_dict())
+        for experiment in ingestible_dclasses.get_experiments():
+            data_list.append(experiment.to_dict())
+        for dataset in ingestible_dclasses.get_datasets():
+            data_list.append(dataset.to_dict())
+        for datafile in ingestible_dclasses.get_datafiles():
+            data_list.append(datafile.to_dict())
+
+        with open(fpath, "w") as f:
+            yaml.dump_all(data_list, f)
+
     def beneficiate(
         self, fpath: Path, ingestible_dclasses: IngestibleDataclasses
     ) -> IngestibleDataclasses:
@@ -255,9 +273,9 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         logger.info("parsing {0}".format(fpath))
         with open(fpath) as f:
             data = yaml.safe_load_all(f)
-            # data = {k: (v if v != 'null' else None) for k, v in data.items()}
             for obj in data:
                 if isinstance(obj, RawProject):
+                    print(obj)
                     ingestible_dclasses.add_project(obj)
                 if isinstance(obj, RawExperiment):
                     ingestible_dclasses.add_experiment(obj)

@@ -200,3 +200,16 @@ class DataClassification(Enum):
     SENSITIVE = 25
     INTERNAL = 50
     PUBLIC = 100
+
+
+class DataStatus(Enum):
+    """An enumerator for data status.
+
+    Gaps have been left deliberately in the enumeration to allow for intermediate
+    classifications of data that may arise. The larger the integer that the classification
+    resolves to, the less sensitive the data is.
+    """
+
+    READY_FOR_INGESTION = 1
+    INGESTED = 5
+    FAILED = 10

@@ -5,7 +5,7 @@ from multiprocessing.context import SpawnProcess
 from pathlib import Path
 from typing import Sequence
 
-from src.blueprints.datafile import BaseDatafile
+from src.blueprints.datafile import RawDatafile
 from src.conveyor.transports.common import AbstractTransport
 
 
@@ -20,7 +20,7 @@ class Conveyor:
         """
         self.transport = transport
 
-    def transfer_blocking(self, src: Path, dfs: list[BaseDatafile]) -> None:
+    def transfer_blocking(self, src: Path, dfs: list[RawDatafile]) -> None:
         """Initiates a transfer via specified transport and
         blocks until it returns.
 
@@ -38,7 +38,7 @@ class Conveyor:
         files = [file.directory / file.filename for file in dfs]
         self.transport.transfer(src, files)
 
-    def initiate_transfer(self, src: Path, dfs: Sequence[BaseDatafile]) -> SpawnProcess:
+    def initiate_transfer(self, src: Path, dfs: Sequence[RawDatafile]) -> SpawnProcess:
         """Spawns a separate Process to transfer via specified transport and
         returns the Process. Client code should store this reference,
         perform the rest of the metadata ingestion operations,

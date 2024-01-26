@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime, MTUrl, Username
 from src.config.config import StorageTypesEnum
-from src.helpers.enumerators import DataClassification
+from src.helpers.enumerators import DataClassification, DataStatus
 
 
 class ProjectStorageBox(BaseModel, ABC):
@@ -58,8 +58,8 @@ class BaseProject(BaseModel, ABC):
     name: str
     description: str
     principal_investigator: Username
-    # data_classification: DataClassification = DataClassification.SENSITIVE
     data_classification: DataClassification = DataClassification.SENSITIVE
+    data_status: Optional[DataStatus] = None
     created_by: Optional[str] = None
     url: Optional[str] = None
     users: Optional[List[UserACL]] = None

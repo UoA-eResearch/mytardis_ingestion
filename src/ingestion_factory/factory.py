@@ -157,8 +157,11 @@ class IngestionFactory(metaclass=Singleton):
                 prepared_project, refined_parameters
             )
             # TODO: This is a temporary fix for TypeError.
-            # Might need to use isinstance() rather than type() for a typecheck.
-            if type(forged_project) == URI:
+            # Might need to use isinstance() instead of type() for a typecheck.
+            # if type(forged_project) == URI:
+            if (
+                forged_project is not None
+            ):  ## need to tweak the forged_project to be a URI
                 result.success.append((name, forged_project))
             else:
                 result.success.append((name, None))
@@ -215,7 +218,8 @@ class IngestionFactory(metaclass=Singleton):
             )
             # TODO: This is a temporary fix for TypeError.
             # Might need to use isinstance() rather than type() for a typecheck.
-            if type(forged_experiment) == URI:
+            # if type(forged_experiment) == URI:
+            if forged_experiment is not None:
                 result.success.append((name, forged_experiment))
             else:
                 result.success.append((name, None))
@@ -272,7 +276,8 @@ class IngestionFactory(metaclass=Singleton):
             )
             # TODO: This is a temporary fix for TypeError.
             # Might need to use isinstance() rather than type() for a typecheck.
-            if type(forged_dataset) == URI:
+            # if type(forged_dataset) == URI:
+            if forged_dataset is not None:
                 result.success.append((name, forged_dataset))
             else:
                 result.success.append((name, None))

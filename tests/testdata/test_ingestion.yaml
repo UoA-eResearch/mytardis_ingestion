@@ -1,41 +1,36 @@
 !Project
 data_classification: 1
 data_status: null
-description: 'this is the project1 description'
+description: this is the project1 description
 groups: []
 identifiers:
 - testp1
 metadata: {}
 name: testP1
 object_schema: ''
-principal_investigator: !Username 'xli677'
-delete_in_days: 365
-archive_in_days: 90
+principal_investigator: xli677
 users:
 - !UserACL
   can_download: true
   is_owner: false
   see_sensitive: true
-  user: !Username 'xli677'
+  user: xli677
 --- !Project
 data_classification: 1
 data_status: null
-description: 'this is the project2 description'
+description: this is the project2 description
 groups: []
 identifiers:
 - testp2
 metadata: {}
 name: testP2
 object_schema: ''
-principal_investigator: !Username 'xli677'
-delete_in_days: 365
-archive_in_days: 90
+principal_investigator: xli677
 users: []
 --- !Experiment
 data_classification: 1
 data_status: null
 description: ''
-experiment_id: ''
 groups: null
 identifiers:
 - teste1
@@ -49,7 +44,6 @@ users: null
 data_classification: 1
 data_status: null
 description: ''
-experiment_id: ''
 groups: null
 identifiers:
 - teste2
@@ -62,42 +56,36 @@ users: null
 --- !Dataset
 data_classification: 1
 data_status: null
-dataset_name: testDS1
 description: testDS1
-experiment_id:
+experiments:
 - teste1
-experiments: []
 groups: null
 identifiers:
 - testDS1
-instrument: ''
-instrument_id: ''
+instrument: vslide
 metadata: {}
 object_schema: ''
 users: null
 --- !Dataset
 data_classification: 25
 data_status: null
-dataset_name: testDS2
 description: testDS2
-experiment_id:
+experiments:
 - teste2
-experiments: []
 groups: null
 identifiers:
 - testds2
-instrument: ''
-instrument_id: ''
+instrument: vslide
 metadata: {}
 object_schema: ''
 users: null
 --- !Datafile
 data_status: null
-dataset: 'testDS1'
+dataset: testDS1
 directory: !Path '.'
-filename: 20221113_slide3-2_humanRWM_cd34_x20_0.12umpix_3.czi
+filename: 20221113_slide3-2_humanRWM_cd34_x20_0.12umpix_8.czi
 groups: null
-md5sum: '66dae4208956c7b0081bd31acae35506'
+md5sum: ba367447a14db59627850eed55a0d5f2
 metadata:
   Experimenter|UserName: hsuz002
   Image|AcquisitionDate: '2022-11-13T04:57:29.218'

@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, MTUrl
+from src.helpers.enumerators import DataStatus
 
 
 class DatafileReplica(BaseModel):
@@ -53,6 +54,7 @@ class BaseDatafile(BaseModel, ABC):
     size: int
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None
+    data_status: Optional[DataStatus] = None
 
 
 class RawDatafile(BaseDatafile):
