@@ -12,16 +12,16 @@
 import copy
 import json
 import logging
+import mimetypes
 import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 import yaml
 
-from src.extraction_output_manager import output_manager as om
+from src.extraction import output_manager as om
 from src.miners.utils import datafile_metadata_helpers as dmh
 from src.profiles import profile_consts as pc
-from src.profiles import profile_helpers as ph
 from src.profiles.abi_music import abi_music_consts as amc
 from src.profiles.abi_music.miner_helpers import metadata_helpers as mh
 
@@ -110,7 +110,7 @@ class DatafileMiner:
         metadata["filename"] = fn
         metadata["directory"] = str(rel_path)
         metadata["md5sum"] = dmh.calculate_md5sum(fp)
-        mtype = dmh.determine_mimetype(fn)
+        mtype, _ = mimetypes.guess_type(fn)
         if not mtype:
             mtype = fn.split(".")[-1]
         metadata["mimetype"] = mtype

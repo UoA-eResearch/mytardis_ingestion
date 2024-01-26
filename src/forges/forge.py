@@ -16,7 +16,7 @@ from src.blueprints.dataset import Dataset, DatasetParameterSet
 from src.blueprints.experiment import Experiment, ExperimentParameterSet
 from src.blueprints.project import Project, ProjectParameterSet
 from src.helpers.dataclass import get_object_name, get_object_post_type
-from src.helpers.mt_rest import BadGateWayException, MyTardisRESTFactory
+from src.mytardis_client.mt_rest import BadGateWayException, MyTardisRESTFactory
 
 logger = logging.getLogger(__name__)
 
@@ -323,10 +323,6 @@ class Forge:
         Args:
             object_dict: The object dictionary containing the metadata to create
                 the datafile in MyTardis
-
-        Returns:
-            a tuple containing the URI of the forged project and boolean flags indicating the
-                status of the object creation.
         """
         # No URI is yielded when forging a datafile
         _ = self.forge_object(refined_object)

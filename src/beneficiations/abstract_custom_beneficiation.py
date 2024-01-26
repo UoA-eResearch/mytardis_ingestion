@@ -13,7 +13,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
-from src.extraction_output_manager.ingestibles import IngestibleDataclasses
+from src.extraction.ingestibles import IngestibleDataclasses
 
 # ---Constants
 logger = logging.getLogger(__name__)

@@ -15,8 +15,8 @@ from src.config.config import (
 )
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
-from src.helpers.mt_rest import MyTardisRESTFactory
 from src.ingestion_factory import IngestionFactory
+from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 from tests.fixtures.mock_rest_factory import MockMtRest

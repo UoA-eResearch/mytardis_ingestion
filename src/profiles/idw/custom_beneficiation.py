@@ -25,9 +25,9 @@ from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBenef
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
 from src.blueprints.common_models import GroupACL, UserACL
 from src.blueprints.custom_data_types import Username
-from src.extraction_output_manager.ingestibles import IngestibleDataclasses
-from src.helpers.enumerators import DataClassification
+from src.extraction.ingestibles import IngestibleDataclasses
 from src.miners.utils import datafile_metadata_helpers
+from src.mytardis_client.enumerators import DataClassification
 
 # Constants
 logger = logging.getLogger(__name__)

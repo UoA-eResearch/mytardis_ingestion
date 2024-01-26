@@ -1,3 +1,4 @@
+# mypy: disable-error-code="arg-type, type-arg, no-untyped-def, no-untyped-call"
 """
 Generates a folder for a custom prospector/miner setup tailored for a specific profile
 

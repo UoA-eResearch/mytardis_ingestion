@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, MTUrl
-from src.helpers.enumerators import DataStatus
+from src.mytardis_client.enumerators import DataStatus
 
 
 class DatafileReplica(BaseModel):

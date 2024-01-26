@@ -1,5 +1,4 @@
 # pylint: disable-all
-# type: ignore
 # This needs a lot of refactoring so disable checks
 # noqa
 # nosec
@@ -10,13 +9,12 @@ into raw dataclasses.
 
 
 # ---Imports
-import copy
 import logging
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
-from src.config.singleton import Singleton
-from src.extraction_output_manager.ingestibles import IngestibleDataclasses
+from src.extraction.ingestibles import IngestibleDataclasses
+from src.utils.types.singleton import Singleton
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -57,9 +55,9 @@ class Beneficiation(metaclass=Singleton):
             ingestible_dclasses=ingestible_dataclasses,
         )
 
-        logger.info(f"ingestible projects = {ing_dclasses_out.projects}")
-        logger.info(f"ingestible experiments = {ing_dclasses_out.experiments}")
-        logger.info(f"ingestible datasets = {ing_dclasses_out.datasets}")
-        logger.info(f"ingestible datafiles = {ing_dclasses_out.datafiles}")
+        logger.info(f"ingestible projects = {ing_dclasses_out.get_projects()}")
+        logger.info(f"ingestible experiments = {ing_dclasses_out.get_experiments()}")
+        logger.info(f"ingestible datasets = {ing_dclasses_out.get_datasets()}")
+        logger.info(f"ingestible datafiles = {ing_dclasses_out.get_datafiles()}")
 
         return ing_dclasses_out

@@ -47,12 +47,12 @@ from src.blueprints.project import RawProject
 from src.config.config import ConfigFromEnv
 from src.conveyor.conveyor import Conveyor
 from src.conveyor.transports.rsync import RsyncTransport
-from src.extraction_output_manager.ingestibles import IngestibleDataclasses
-from src.extraction_plant.extraction_plant import ExtractionPlant
-from src.helpers.enumerators import DataStatus
-from src.helpers.mt_rest import MyTardisRESTFactory
+from src.extraction.extraction_plant import ExtractionPlant
+from src.extraction.ingestibles import IngestibleDataclasses
 from src.ingestion_factory.factory import IngestionFactory
 from src.miners.miner import Miner
+from src.mytardis_client.enumerators import DataStatus
+from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.profiles.profile_loader import ProfileLoader
 from src.prospectors.prospector import Prospector

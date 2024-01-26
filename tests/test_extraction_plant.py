@@ -6,7 +6,7 @@ import pytest
 from pytest import fixture
 
 from src.beneficiations import beneficiation_consts as bc
-from src.extraction_plant.extraction_plant import ExtractionPlant
+from src.extraction.extraction_plant import ExtractionPlant
 
 logger = logging.getLogger(__name__)
 logger.propagate = True

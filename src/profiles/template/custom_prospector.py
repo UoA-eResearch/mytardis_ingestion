@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 from typing import Any, Optional
 
-from src.extraction_output_manager import output_manager as om
+from src.extraction import output_manager as om
 from src.profiles import profile_consts as pc
 from src.prospectors.abstract_custom_prospector import AbstractCustomProspector
 

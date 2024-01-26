@@ -20,7 +20,7 @@ from src.blueprints.dataset import Dataset, RawDataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RawExperiment, RefinedExperiment
 from src.blueprints.project import Project, RawProject, RefinedProject
 from src.blueprints.storage_boxes import StorageBox
-from src.helpers.enumerators import DataClassification
+from src.mytardis_client.enumerators import DataClassification
 
 
 @fixture

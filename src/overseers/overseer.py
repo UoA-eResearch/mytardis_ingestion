@@ -12,11 +12,18 @@ from requests.exceptions import HTTPError
 from src.blueprints.custom_data_types import URI
 from src.blueprints.storage_boxes import StorageBox
 from src.config.config import IntrospectionConfig
-from src.config.singleton import Singleton
-from src.helpers.enumerators import ObjectSearchDict, ObjectSearchEnum
-from src.helpers.mt_rest import MyTardisRESTFactory
+from src.mytardis_client.enumerators import ObjectSearchDict, ObjectSearchEnum
+from src.mytardis_client.mt_rest import MyTardisRESTFactory
+from src.utils.types.singleton import Singleton
 
 logger = logging.getLogger(__name__)
+
+
+MYTARDIS_PROJECTS_DISABLED_MESSAGE = (
+    "MyTardis is not currently set up to use projects. Please check settings.py "
+    "and ensure that the 'projects' app is enabled. This may require rerunning "
+    "migrations."
+)
 
 
 class Overseer(metaclass=Singleton):

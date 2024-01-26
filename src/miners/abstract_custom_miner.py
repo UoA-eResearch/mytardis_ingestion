@@ -1,5 +1,4 @@
 # pylint: disable-all
-# type: ignore
 # noqa
 # nosec
 
@@ -13,7 +12,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional
 
-from src.extraction_output_manager import output_manager as om
+from src.extraction import output_manager as om
 
 # ---Constants
 

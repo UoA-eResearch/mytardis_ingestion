@@ -1,6 +1,5 @@
 # pylint: disable=logging-fstring-interpolation
 # pylint: disable-all
-# type: ignore
 # noqa
 # nosec
 
@@ -15,9 +14,9 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from src.config.singleton import Singleton
-from src.extraction_output_manager import output_manager as om
+from src.extraction import output_manager as om
 from src.miners.abstract_custom_miner import AbstractCustomMiner
+from src.utils.types.singleton import Singleton
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -60,7 +59,7 @@ class Miner(metaclass=Singleton):
 
         if self.custom_miner:
             out_man_fnl: om.OutputManager = self.custom_miner.mine(
-                path, recursive, out_man
+                Path(path), recursive, out_man
             )
         else:
             out_man_fnl = out_man

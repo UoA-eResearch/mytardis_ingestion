@@ -14,7 +14,7 @@ import os
 from pathlib import Path
 from typing import Any, Optional
 
-from src.extraction_output_manager import output_manager as om
+from src.extraction import output_manager as om
 from src.miners.abstract_custom_miner import AbstractCustomMiner
 from src.profiles import profile_consts as pc
 

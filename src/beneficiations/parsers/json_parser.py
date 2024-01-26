@@ -15,8 +15,8 @@ from typing import Any, Type, TypeVar
 
 from src.beneficiations.parsers.parser import Parser
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
+from src.extraction.ingestibles import IngestibleDataclasses
 from src.profiles import profile_consts as pc
-from src.utils.ingestibles import IngestibleDataclasses
 
 # ---Constants
 logger = logging.getLogger(__name__)

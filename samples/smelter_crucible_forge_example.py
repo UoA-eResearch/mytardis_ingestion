@@ -14,8 +14,8 @@ from src.blueprints.project import RawProject
 from src.config.config import ConfigFromEnv
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
-from src.helpers.enumerators import DataClassification
-from src.helpers.mt_rest import MyTardisRESTFactory
+from src.mytardis_client.enumerators import DataClassification
+from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 

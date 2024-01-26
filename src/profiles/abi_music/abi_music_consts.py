@@ -20,11 +20,15 @@ FOLDER_SUFFIX_LUT = dict.fromkeys(FOLDER_SUFFIX_KEYS)
 
 OUTPUT_NOTE_JSON_MATCH_SUCCESS = "json matches folder path"
 OUTPUT_NOTE_JSON_MATCH_FAIL = "json does not match folder path"
-OUTPUT_NOTE_JSON_BUT_DELIM = ", but "
-OUTPUT_NOTE_JSON_BAD_MD_FIELDS = "non-conforming json metadata fields"
-
-DEFAULT_INSTRUMENT_NAME = "MµSIC microscope"
 
 METADATA_FILE_TYPE = ".json"
 
 ABI_SCHEMA = "https://abi.music"
+
+DEFAULT_INSTITUTION = "University of Auckland"
+
+ABI_MUSIC_MICROSCOPE_INSTRUMENT = "abi-music-microscope-v1"
+ABI_MUSIC_POSTPROCESSING_INSTRUMENT = "abi-music-post-processing-v1"
+
+ABI_MUSIC_DATASET_RAW_SCHEMA = "http://abi-music.com/dataset-raw/1"
+ABI_MUSIC_DATASET_ZARR_SCHEMA = "http://abi-music.com/dataset-zarr/1"

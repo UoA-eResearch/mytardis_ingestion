@@ -16,13 +16,13 @@ from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
 from src.config.config import ConfigFromEnv
-from src.config.singleton import Singleton
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
 from src.helpers.dataclass import get_object_name
-from src.helpers.mt_rest import MyTardisRESTFactory
+from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
+from src.utils.types.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
@@ -153,18 +153,8 @@ class IngestionFactory(metaclass=Singleton):
                 result.error.append(name)
                 continue
 
-            forged_project = self.forge.forge_project(
-                prepared_project, refined_parameters
-            )
-            # TODO: This is a temporary fix for TypeError.
-            # Might need to use isinstance() instead of type() for a typecheck.
-            # if type(forged_project) == URI:
-            if (
-                forged_project is not None
-            ):  ## need to tweak the forged_project to be a URI
-                result.success.append((name, forged_project))
-            else:
-                result.success.append((name, None))
+            project_uri = self.forge.forge_project(prepared_project, refined_parameters)
+            result.success.append((name, project_uri))
 
         logger.info(
             "Successfully ingested %d projects: %s", len(result.success), result.success
@@ -213,16 +203,10 @@ class IngestionFactory(metaclass=Singleton):
                 result.error.append(name)
                 continue
 
-            forged_experiment = self.forge.forge_experiment(
+            experiment_uri = self.forge.forge_experiment(
                 prepared_experiment, refined_parameters
             )
-            # TODO: This is a temporary fix for TypeError.
-            # Might need to use isinstance() rather than type() for a typecheck.
-            # if type(forged_experiment) == URI:
-            if forged_experiment is not None:
-                result.success.append((name, forged_experiment))
-            else:
-                result.success.append((name, None))
+            result.success.append((name, experiment_uri))
 
         logger.info(
             "Successfully ingested %d experiments: %s",
@@ -271,16 +255,8 @@ class IngestionFactory(metaclass=Singleton):
                 result.error.append(name)
                 continue
 
-            forged_dataset = self.forge.forge_dataset(
-                prepared_dataset, refined_parameters
-            )
-            # TODO: This is a temporary fix for TypeError.
-            # Might need to use isinstance() rather than type() for a typecheck.
-            # if type(forged_dataset) == URI:
-            if forged_dataset is not None:
-                result.success.append((name, forged_dataset))
-            else:
-                result.success.append((name, None))
+            dataset_uri = self.forge.forge_dataset(prepared_dataset, refined_parameters)
+            result.success.append((name, dataset_uri))
 
         logger.info(
             "Successfully ingested %d datasets: %s", len(result.success), result.success

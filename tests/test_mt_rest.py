@@ -12,7 +12,7 @@ import pytest
 from requests import HTTPError, Request, RequestException, Response
 
 from src.config.config import AuthConfig, ConnectionConfig
-from src.helpers.mt_rest import MyTardisRESTFactory
+from src.mytardis_client.mt_rest import MyTardisRESTFactory
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -40,11 +40,11 @@ def test_mytardis_rest_factory_setup(
     assert test_factory.proxies["https"] == "http://myproxy.com"  # type: ignore
     assert (
         test_factory.user_agent
-        == "src.helpers.mt_rest/2.0 (https://github.com/UoA-eResearch/mytardis_ingestion.git)"
+        == "src.mytardis_client.mt_rest/2.0 (https://github.com/UoA-eResearch/mytardis_ingestion.git)"
     )
 
 
-@mock.patch("requests.request")
+@mock.patch("requests.Session.request")
 def test_backoff_on_mytardis_rest_factory_doesnt_trigger_on_httperror(
     mock_requests_request: Any, auth: AuthConfig, connection: ConnectionConfig
 ) -> None:
@@ -57,7 +57,7 @@ def test_backoff_on_mytardis_rest_factory_doesnt_trigger_on_httperror(
         assert mock_requests_request.call_count == 1
 
 
-@mock.patch("requests.request")
+@mock.patch("requests.Session.request")
 @pytest.mark.long
 def test_backoff_on_mytardis_rest_factory(
     mock_requests_request: Any, auth: AuthConfig, connection: ConnectionConfig
