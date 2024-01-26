@@ -14,7 +14,6 @@ from typing import Any, Dict
 
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
 from src.extraction.ingestibles import IngestibleDataclasses
-from src.utils.types.singleton import Singleton
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -22,7 +21,7 @@ logger.setLevel(logging.DEBUG)
 
 
 # ---Code
-class Beneficiation(metaclass=Singleton):
+class Beneficiation:
     """
     This class provides a means of beneficiating project, experiment, dataset and datafile files.
     It takes a list of files in the specified format and parses them into a dictionary of objects.

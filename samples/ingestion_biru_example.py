@@ -117,7 +117,7 @@ class IDSIngestionScript:
         miner = Miner(self.profile_loader.load_custom_miner())
         beneficiation = Beneficiation(self.profile_loader.load_custom_beneficiation())
         ext_plant = ExtractionPlant(prospector, miner, beneficiation)
-        ingestibles = ext_plant.run_extraction(self.yaml_path)
+        ingestibles = ext_plant.extract(self.yaml_path)
         return ingestibles
 
     def run_ingestion(self, ingestible_dataclass: IngestibleDataclasses) -> None:

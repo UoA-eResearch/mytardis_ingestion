@@ -7,14 +7,14 @@ Pre-ingestion_factory tasks include prospecting, mining, and beneficiation.
 # ---Imports
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Optional
 
 from src.beneficiations.beneficiation import Beneficiation
 from src.extraction.ingestibles import IngestibleDataclasses
+from src.extraction.metadata_extractor import IMetadataExtractor
 from src.extraction.output_manager import OutputManager
 from src.miners.miner import Miner
 from src.prospectors.prospector import Prospector
-from src.utils.types.singleton import Singleton
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -22,17 +22,25 @@ logger.setLevel(logging.DEBUG)
 
 
 # ---Code
-class ExtractionPlant(metaclass=Singleton):
-    """Used for extracting data from a given profile and path. Involves prospecting, mining and beneficiating.
-    Prospecting is used to check and filter out data and metadata files that can be staged for ingestion.
-    Mining is used to generate metadata files that contain fields compatible with the raw dataclasses.
-    Beneficiating is used to parse the generated metadata files into the raw dataclasses.
+class ExtractionPlant(IMetadataExtractor):
+    """An implementation of the IMetadataExtractor interface, designed for the case where
+    metadata extraction has been implemented in separate "Prospect->Mine->Beneficiate" stages,
+    or a subset of those.
+
+    - Prospecting is used to check and filter out data and metadata files that can be staged for
+    ingestion.
+    - Mining is used to generate metadata files that contain fields compatible with the raw
+    dataclasses.
+    - Beneficiating is used to parse the generated metadata files into the raw dataclasses.
+
+    Note: If these more granular stages aren't needed, it is preferable to produce a separate
+    implementation of IMetadataExtractor directly.
     """
 
     def __init__(
         self,
-        prospector: Union[Prospector, None],
-        miner: Union[Miner, None],
+        prospector: Optional[Prospector],
+        miner: Optional[Miner],
         beneficiation: Beneficiation,
     ) -> None:
         """Initializes an ExtractionPlant instance with the given parameters.
@@ -50,9 +58,7 @@ class ExtractionPlant(metaclass=Singleton):
         self.miner = miner
         self.beneficiation = beneficiation
 
-    def run_extraction(
-        self, pth: Path, ingest_dict: Optional[Dict[str, list[Any]]] = None
-    ) -> IngestibleDataclasses:
+    def extract(self, root_dir: Path) -> IngestibleDataclasses:
         """Runs the full extraction process on the given path and file format. In the absence of a custom prospector in the
         prospector singleton and a custom miner in the miner singleton, the prospector and the miner will be skipped as this
         assumes the IDW was used.
@@ -71,15 +77,12 @@ class ExtractionPlant(metaclass=Singleton):
         ing_dclasses = IngestibleDataclasses()
 
         if self.prospector and self.prospector.custom_prospector:
-            out_man = self._prospect(pth, out_man)
+            out_man = self._prospect(root_dir, out_man)
 
         if self.miner and self.miner.custom_miner:
-            out_man = self._mine(pth, out_man)
+            out_man = self._mine(root_dir, out_man)
 
-        if not ingest_dict:
-            ingest_dict = out_man.metadata_files_to_ingest_dict
-        # ingestible_dataclasses_out = self._beneficiate(ingest_dict, ing_dclasses) # Libby: changed to below
-        ingestible_dataclasses_out = self._beneficiate(pth, ing_dclasses)
+        ingestible_dataclasses_out = self._beneficiate(root_dir, ing_dclasses)
         return ingestible_dataclasses_out
 
     def _prospect(
