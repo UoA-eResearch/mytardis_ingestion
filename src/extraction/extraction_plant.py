@@ -23,10 +23,18 @@ logger.setLevel(logging.DEBUG)
 
 # ---Code
 class ExtractionPlant(IMetadataExtractor):
-    """Used for extracting data from a given profile and path. Involves prospecting, mining and beneficiating.
-    Prospecting is used to check and filter out data and metadata files that can be staged for ingestion.
-    Mining is used to generate metadata files that contain fields compatible with the raw dataclasses.
-    Beneficiating is used to parse the generated metadata files into the raw dataclasses.
+    """An implementation of the IMetadataExtractor interface, designed for the case where
+    metadata extraction has been implemented in separate "Prospect->Mine->Beneficiate" stages,
+    or a subset of those.
+
+    - Prospecting is used to check and filter out data and metadata files that can be staged for
+    ingestion.
+    - Mining is used to generate metadata files that contain fields compatible with the raw
+    dataclasses.
+    - Beneficiating is used to parse the generated metadata files into the raw dataclasses.
+
+    Note: If these more granular stages aren't needed, it is preferable to produce a separate
+    implementation of IMetadataExtractor directly.
     """
 
     def __init__(
