@@ -300,9 +300,10 @@ class ROCrateParser:
             list[RawDatafile]: list of datafiles now updated with datfiles on disk
         """
         for traversed_dataset in reversed(raw_datasets):
-            dataset_directory = DirectoryNode(
-                Path(self.crate.source) / traversed_dataset.directory
-            )
+            dataset_dir = traversed_dataset.directory
+            if not dataset_dir:
+                continue
+            dataset_directory = DirectoryNode(Path(self.crate.source) / dataset_dir)
             for on_disk_file in dataset_directory.iter_files(recursive=True):
                 if file_filter.exclude(on_disk_file.path()):
                     continue
