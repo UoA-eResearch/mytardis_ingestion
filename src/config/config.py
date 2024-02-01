@@ -263,7 +263,6 @@ class ConfigFromEnv(BaseSettings):
     general: GeneralConfig
     auth: AuthConfig
     connection: ConnectionConfig
-    storage: StorageConfig
     default_schema: SchemaConfig
     # archive: StorageConfig
     # profile: ProfileConfig

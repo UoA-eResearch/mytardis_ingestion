@@ -14,6 +14,7 @@ from src.blueprints.datafile import Datafile, DatafileReplica, RefinedDatafile
 from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
+from src.blueprints.storage_boxes import StorageBox
 from src.config.config import StorageConfig
 from src.mytardis_client.enumerators import ObjectSearchEnum
 from src.overseers import Overseer
@@ -31,7 +32,7 @@ class Crucible:
     def __init__(
         self,
         overseer: Overseer,
-        storage: StorageConfig,
+        store: StorageBox
     ) -> None:
         self.overseer = overseer
         self.active_stores = storage.active_stores

@@ -52,11 +52,7 @@ class Conveyor:
         Returns:
             None.
         """
-        filepaths = 
-        
-        replicas: list[DatafileReplica] = []
         for f in dfs:
-            
             replicas += f.replicas
         for replica in replicas:
             # Check through the replicas.
@@ -65,7 +61,7 @@ class Conveyor:
                     " storage box than the one configured for conveyor.",replica.uri)
                 continue
             
-        self._transport.transfer(src, files)
+        self._transport.transfer(src, dfs)
 
     def initiate_transfer(self, src: Path, dfs: Sequence[Datafile]) -> SpawnProcess:
         """Spawns a separate Process to transfer via specified transport and
