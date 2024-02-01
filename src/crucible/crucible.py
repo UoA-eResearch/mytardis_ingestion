@@ -207,28 +207,20 @@ class Crucible:
         file_path: Path,
     ) -> List[DatafileReplica]:  # sourcery skip: for-append-to-extend
         """Use the dataset associated with datafile to construct replicas"""
-        if dataset_obj := self.overseer.get_object_by_uri(dataset):
-            # dataset_obj = response["objects"][0]
-            # Should be handled by API - create setting to prefix
-            # instrument = slugify(dataset_obj["instrument"]["name"])
-            # facility = slugify(dataset_obj["instrument"]["facility"]["name"])
-            # mid_path = Path(facility) / Path(instrument)
-            replicas = []
-            # combine the archives and active stores into one list
-            instrument = slugify(dataset_obj["instrument"]["name"])
-            facility = slugify(dataset_obj["instrument"]["facility"]["name"])
-            stores = [x for store in (self.active_stores, self.archive) for x in store]
-            for store in stores:
-                replicas.append(
-                    DatafileReplica(
-                        uri=f"{facility}/{instrument}/{file_path.as_posix()}",
-                        location=store.storage_name,
-                        protocol="file",
-                    )
+        dataset_obj = self.overseer.get_object_by_uri(dataset)
+        if dataset_obj is None:
+            raise ValueError(f"Unable to find dataset: {dataset}")
+        stores = [x for store in (self.active_stores, self.archive) for x in store]
+        replicas = []
+        for store in stores:
+            replicas.append(
+                DatafileReplica(
+                    protocol="file",
+                    location=store.storage_name,
+                    uri=f"ds-{dataset_obj.id}/{file_path.as_posix()}"
                 )
-
-            return replicas
-        raise ValueError(f"Unable to find dataset: {dataset}")
+            )
+        return replicas
 
     def prepare_datafile(self, refined_datafile: RefinedDatafile) -> Datafile | None:
         """Refine a datafile by finding URIs from MyTardis for the

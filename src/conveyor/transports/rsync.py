@@ -28,7 +28,8 @@ class RsyncTransport(AbstractTransport):
         if not is_rsync_on_path():
             raise FailedTransferException("rsync is not installed on the system.")
 
-    def transfer(self, src: Path, files: list[Path]) -> None:
+    
+    def transfer(self, src: Path, files: list) -> None:
         """Concrete transfer implementation that uses rsync to move files.
 
         Args:
