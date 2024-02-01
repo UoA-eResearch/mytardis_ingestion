@@ -18,9 +18,9 @@ from rocrate.utils import get_norm_value
 
 from src.blueprints.common_models import GroupACL, UserACL
 from src.blueprints.custom_data_types import validate_isodatetime, validate_url
-from src.blueprints.datafile import RawDatafile
-from src.blueprints.dataset import RawDataset
-from src.blueprints.experiment import RawExperiment
+from src.blueprints.datafile import RawDatafile  # pylint: disable=duplicate-code
+from src.blueprints.dataset import RawDataset  # pylint: disable=duplicate-code
+from src.blueprints.experiment import RawExperiment  # pylint: disable=duplicate-code
 from src.blueprints.project import RawProject  # pylint: disable=duplicate-code
 from src.extraction.ingestibles import IngestibleDataclasses
 from src.extraction.metadata_extractor import (  # pylint: disable=duplicate-code
