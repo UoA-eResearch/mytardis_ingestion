@@ -21,10 +21,19 @@ from src.blueprints.custom_data_types import validate_isodatetime, validate_url
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
-from src.blueprints.project import RawProject
-from src.config.config import SchemaConfig
+from src.blueprints.project import RawProject  # pylint: disable=duplicate-code
 from src.extraction.ingestibles import IngestibleDataclasses
+from src.extraction.metadata_extractor import (  # pylint: disable=duplicate-code
+    IMetadataExtractor,
+)
 from src.mytardis_client.enumerators import MyTardisObject
+from src.profiles.ro_crate._consts import (
+    CRATE_TO_TARDIS_PROFILE,
+    RO_CRATE_DATAFILE_SCHEMA,
+    RO_CRATE_DATASET_SCHEMA,
+    RO_CRATE_EXPERIMENT_SCHEMA,
+    RO_CRATE_PROJECT_SCHEMA,
+)
 from src.profiles.ro_crate.crate_to_tardis_mapper import CrateToTardisMapper
 from src.utils.filesystem import checksums, filters
 from src.utils.filesystem.filesystem_nodes import DirectoryNode
@@ -45,8 +54,6 @@ class ROCrateParser:
     def __init__(
         self,
         crate_root_path: Path,
-        crate_to_tardis_schema: Path,
-        schema_config: SchemaConfig,
         crate_name: str = "",
     ) -> None:
         """Initalizes the ROCrate object and the lookup table for mapping by reading them from disk
@@ -56,8 +63,7 @@ class ROCrateParser:
             crate_to_tardis_schema (Path): Path to json file containing mapping between
             RO-Crate fields and MyTardis fields
         """
-        self.schema_config = schema_config
-        with open(crate_to_tardis_schema, encoding="utf-8") as f:
+        with open(CRATE_TO_TARDIS_PROFILE, encoding="utf-8") as f:
             self.mapper: CrateToTardisMapper = CrateToTardisMapper(json.load(f))
         self.crate = ROCrate(Path(crate_root_path))
         self.crate_name = crate_name
@@ -147,7 +153,7 @@ class ROCrateParser:
                 datafile_dict["metadata"] = self._read_metadata([datafile_meta])
         datafile_dict["dataset"] = parent_dataset_description
         raw_datafile: RawDatafile = RawDatafile.model_validate(datafile_dict)
-        raw_datafile.object_schema = self.schema_config.datafile
+        raw_datafile.object_schema = RO_CRATE_DATAFILE_SCHEMA
         return raw_datafile
 
     def _process_dataset(self, crate_dataset: DataEntity) -> RawDataset:
@@ -189,7 +195,7 @@ class ROCrateParser:
         if dataset_meta := dataset_dict.get("metadata"):
             dataset_dict["metadata"] = self._read_metadata(dataset_meta)
         raw_dataset: RawDataset = RawDataset.model_validate(dataset_dict)
-        raw_dataset.object_schema = self.schema_config.dataset
+        raw_dataset.object_schema = RO_CRATE_DATASET_SCHEMA
         return raw_dataset
 
     def _process_project(self, crate_project: DataEntity) -> RawProject:
@@ -221,7 +227,7 @@ class ROCrateParser:
                 project_dict["modified_time"]
             )
         raw_project: RawProject = RawProject.model_validate(project_dict)
-        raw_project.object_schema = self.schema_config.project
+        raw_project.object_schema = RO_CRATE_PROJECT_SCHEMA
         return raw_project
 
     def _process_experiment(self, crate_catalog: DataEntity) -> RawExperiment:
@@ -251,7 +257,7 @@ class ROCrateParser:
         if experiment_meta := experiment_dict.get("metadata"):
             experiment_dict["metadata"] = self._read_metadata(experiment_meta)
         raw_experiment: RawExperiment = RawExperiment.model_validate(experiment_dict)
-        raw_experiment.object_schema = self.schema_config.experiment
+        raw_experiment.object_schema = RO_CRATE_EXPERIMENT_SCHEMA
         return raw_experiment
 
     def process_projects(
@@ -387,7 +393,7 @@ class ROCrateParser:
 
         return ingestible_classes
 
-    def run_extraction(
+    def parse_crate(
         self, ingestible_classes: IngestibleDataclasses
     ) -> IngestibleDataclasses:
         file_filter = filters.PathFilterSet(filter_system_files=True)
@@ -402,3 +408,17 @@ class ROCrateParser:
             ingestible_classes=ingestible_classes, file_filter=file_filter
         )
         return ingestible_classes
+
+
+class ROCrateExtractor(IMetadataExtractor):
+    """Metadata extractor for data from an RO-Crate"""
+
+    # Seperate from Parser to allow for future parsing nested RO-Crates during a single extraction
+
+    def __init__(self) -> None:
+        pass
+
+    def extract(self, root_dir: Path) -> IngestibleDataclasses:
+        ro_crate_parser = ROCrateParser(root_dir)
+        empty_ingestibleclasses = IngestibleDataclasses()
+        return ro_crate_parser.parse_crate(empty_ingestibleclasses)
