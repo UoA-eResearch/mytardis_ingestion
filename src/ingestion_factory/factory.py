@@ -11,7 +11,7 @@ from typing import Any, Optional
 from pydantic import ValidationError
 
 from src.blueprints.custom_data_types import URI
-from src.blueprints.datafile import RawDatafile
+from src.blueprints.datafile import Datafile, DatafileReplica, RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
@@ -272,13 +272,11 @@ class IngestionFactory(metaclass=Singleton):
 
     def ingest_datafiles(
         self,
-        datafiles: list[RawDatafile] | None,
-    ) -> IngestionResult | None:
+        datafiles: list[RawDatafile],
+    ) -> tuple[IngestionResult, list[Datafile]]:
         """Wrapper function to create the experiments from input files"""
-        if not datafiles:
-            return None
-
         result = IngestionResult()
+        prepared_datafiles: list[Datafile] = []
 
         for datafile in datafiles:
             name = get_object_name(datafile)
@@ -299,8 +297,10 @@ class IngestionFactory(metaclass=Singleton):
 
             prepared_datafile = self.crucible.prepare_datafile(refined_datafile)
             if not prepared_datafile:
-                result.error.append(name)
+                result.error.append(name) 
                 continue
+
+            prepared_datafiles.append(prepared_datafile)
 
             self.forge.forge_datafile(prepared_datafile)
             result.success.append((name, None))
@@ -316,7 +316,7 @@ class IngestionFactory(metaclass=Singleton):
                 len(result.error),
                 result.error,
             )
-        return result
+        return result, prepared_datafiles
 
     def dump_ingestion_result_json(  # pylint:disable=missing-function-docstring
         self,

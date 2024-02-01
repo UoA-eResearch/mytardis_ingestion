@@ -1,6 +1,8 @@
 """common.py - common transport-related class and interface."""
-from abc import ABC
+from abc import ABC, abstractmethod
 from pathlib import Path
+
+from src.blueprints.datafile import Datafile
 
 
 class FailedTransferException(Exception):
@@ -12,7 +14,8 @@ class AbstractTransport(ABC):
     files.
     """
 
-    def transfer(self, src: Path, files: list[Path]) -> None:
+    @abstractmethod
+    def transfer(self, src: Path, files: list[Datafile]) -> None:
         """Abstract method that does the file transfer.
         Given a list of files paths, transfers to
         a configured destination.
@@ -23,5 +26,7 @@ class AbstractTransport(ABC):
 
         Args:
             src (Path): Path to the source directory
-            files (list[Path]): A list of Paths of files to transfer, relative to `src`.
+            files (list[Datafile]): A list of Datafiles 
+                to transfer. Source paths are assumed to be 
+                relative to `src`.
         """
