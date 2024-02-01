@@ -53,7 +53,8 @@ class ROCrateParser:
 
         Args:
             crate_root_path (Path): Path to the RO-crate object
-            crate_to_tardis_schema (Path): Path to json file containing mapping for schema
+            crate_to_tardis_schema (Path): Path to json file containing mapping between
+            RO-Crate fields and MyTardis fields
         """
         self.schema_config = schema_config
         with open(crate_to_tardis_schema, encoding="utf-8") as f:
@@ -145,7 +146,6 @@ class ROCrateParser:
             if datafile_meta := datafile_dict.get("metadata"):
                 datafile_dict["metadata"] = self._read_metadata([datafile_meta])
         datafile_dict["dataset"] = parent_dataset_description
-        print(datafile_dict["filename"], "my parent is,", datafile_dict["dataset"])
         raw_datafile: RawDatafile = RawDatafile.model_validate(datafile_dict)
         raw_datafile.object_schema = self.schema_config.datafile
         return raw_datafile
@@ -160,10 +160,6 @@ class ROCrateParser:
             crate_dataset (DataEntity): roCrate data entity representing this dataset
             ingestible_classes (IngestibleDataclasses): mytardis dataclasses for datafiles/sets
 
-        Raises:
-            ValueError: (to be updated to more apropriate error type)
-            raised if the roCrate doesn't link this dataset to an experiment/data catalog
-
         Returns:
             IngestibleDataclasses:
             the dataclasses object updated with this dataset and all of it's datafile children
@@ -177,10 +173,10 @@ class ROCrateParser:
             crate_dataset.as_jsonld(), "includedInDataCatalog"
         )
         if len(dataset_dict["experiments"]) == 0:
-            raise ValueError(
-                "Dataset "
-                + str(crate_dataset.id)
-                + " not included in a DataCatalog, cannot link this dataset to experiments"
+            logger.error(
+                """"Dataset %s not included in a DataCatalog,
+             cannot link this dataset to experiments""",
+                crate_dataset.id,
             )
         dataset_dict["description"] = self._apply_crate_name(crate_dataset.id)
         dataset_dict["directory"] = Path(crate_dataset.id)
@@ -330,10 +326,11 @@ class ROCrateParser:
         """Read in all datasets and datafiles
 
         Starting at the root dataset (dataset "./")
-        move through all child datasets and datafiles
-        Children are defined by "has part".
-        Then moving upwards from 'leaf' datasets
-        load all child datafiles in the filesystem not explicitly listed.
+        move through all child datasets and datafiles constructing RawDatasets and Datafiles
+        Children are defined by the "has part" field of RO-Crate Datasets.
+        Then moving upwards from 'leaf' datasets:
+        Create RawDatafiles for all child files in dataset directories on disk
+        that do not have explicit file entities in the RO-Crate.
 
 
         Args:
