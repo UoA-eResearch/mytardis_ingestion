@@ -8,7 +8,7 @@ import logging
 from types import ModuleType
 
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
-from src.miners.abstract_custom_miner import AbstractCustomMiner  # type: ignore
+from src.miners.abstract_custom_miner import AbstractCustomMiner
 from src.prospectors.abstract_custom_prospector import AbstractCustomProspector
 from src.utils.types.singleton import Singleton
 

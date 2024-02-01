@@ -76,7 +76,7 @@ def ingest_data(yaml_pth: Path, rsync_pth: Path) -> None:
     beneficiation = Beneficiation(profile_loader.load_custom_beneficiation())
 
     ext_plant = ExtractionPlant(prospector, miner, beneficiation)
-    ingestible_dataclasses = ext_plant.run_extraction(yaml_pth)
+    ingestible_dataclasses = ext_plant.extract(yaml_pth)
 
     # Ingestion Factory
     mt_rest = MyTardisRESTFactory(config.auth, config.connection)

@@ -17,6 +17,7 @@ from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
 from src.extraction.ingestibles import IngestibleDataclasses
+from src.extraction.metadata_extractor import IMetadataExtractor
 from src.mytardis_client.enumerators import DataClassification
 from src.profiles.abi_music.abi_music_consts import (
     ABI_MUSIC_DATASET_RAW_SCHEMA,
@@ -381,3 +382,14 @@ def parse_data(root: DirectoryNode) -> IngestibleDataclasses:
         datasets=dc_raw.get_datasets() + dc_zarr.get_datasets(),
         datafiles=dc_raw.get_datafiles() + dc_zarr.get_datafiles(),
     )
+
+
+class ABIMusicExtractor(IMetadataExtractor):
+    """Metadata extractor for the ABI MuSIC data"""
+
+    def __init__(self) -> None:
+        pass
+
+    def extract(self, root_dir: Path) -> IngestibleDataclasses:
+        root = DirectoryNode(root_dir)
+        return parse_data(root)
