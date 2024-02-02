@@ -40,7 +40,7 @@ from src.utils.filesystem.filesystem_nodes import DirectoryNode
 from src.utils.filesystem.filters import PathFilterSet
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)  # set the level for which this logger will be printed.
+logger.setLevel(logging.DEBUG)  # set the level for which this logger will be printed.
 
 
 def handle_datetime(time_info: str) -> datetime:
@@ -135,8 +135,7 @@ class ROCrateParser:
         """
         datafile_dict: dict[str, Any] = {}
         filepath = self.crate.source / filename
-        datafile_dict["filename"] = filename.as_posix()
-        datafile_dict["directory"] = filepath.relative_to(self.crate.source).as_posix()
+
         datafile_dict["md5sum"] = checksums.calculate_md5(filepath)
         mtype, _ = mimetypes.guess_type(filepath)
         if not mtype:
@@ -151,6 +150,8 @@ class ROCrateParser:
             datafile_dict.update(rocrate_dict)
             if datafile_meta := datafile_dict.get("metadata"):
                 datafile_dict["metadata"] = self._read_metadata([datafile_meta])
+        datafile_dict["filename"] = filename.name
+        datafile_dict["directory"] = filepath.relative_to(self.crate.source).parent
         datafile_dict["dataset"] = parent_dataset_description
         raw_datafile: RawDatafile = RawDatafile.model_validate(datafile_dict)
         raw_datafile.object_schema = RO_CRATE_DATAFILE_SCHEMA
@@ -309,16 +310,16 @@ class ROCrateParser:
             for on_disk_file in dataset_directory.iter_files(recursive=True):
                 if file_filter.exclude(on_disk_file.path()):
                     continue
-                file__relative_path = Path(on_disk_file.path()).relative_to(
+                file_relative_path = Path(on_disk_file.path()).relative_to(
                     self.crate.source
                 )
-                if file__relative_path.as_posix() in [
-                    datafile.filename for datafile in raw_datafiles
+                if file_relative_path in [
+                    datafile.directory / datafile.filename for datafile in raw_datafiles
                 ]:
                     continue
                 raw_datafiles.append(
                     self._process_datafile(
-                        file__relative_path,
+                        file_relative_path,
                         traversed_dataset.description,
                     )
                 )
