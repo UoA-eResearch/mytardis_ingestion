@@ -1,0 +1,53 @@
+{
+    "project": {
+
+        "@id": "name",
+        "description":"description",
+        "founder": "principal_investigator",
+        "data_classification":"data_classification",
+        "name":"crate_name"
+
+    },
+    "experiment": {
+        "@id":"title",
+        "description":"description",
+        "data_classification":"data_classification",
+        "project":"projects",
+        "name":"crate_name"
+        },
+
+    "dataset": {
+        "@id":"directory",
+        "name":"description",
+        "data_classification": "data_classification",
+        "users":"users",
+        "groups": "groups",
+        "immutable": "immutable",
+        "identifiers": "identifiers",
+        "includedInDataCatalog":"experiments",
+        "instrument":  "instrument",
+        "object_schema": "object_schema",
+        "dateCreated":"created_time",
+        "datePublished":"published_time",
+        "dateModified":"modified_time"
+    },
+
+
+    "datafile": {
+        "md5sum": "md5sum",
+        "encodingFormat":"mimetype",
+        "contentSize": "size",
+        "dateCreated":"created_time",
+        "datePublished":"datePublished",
+        "dateModified":"modified_time",
+        "name":"crate_name"
+        },
+    "derefIdentifier":{
+        "Project":"@id",
+        "DataCatalog":"name",
+        "Person":"@id",
+        "Dataset":"name",
+        "File":"@id",
+        "Organization":"@id"
+    }
+}

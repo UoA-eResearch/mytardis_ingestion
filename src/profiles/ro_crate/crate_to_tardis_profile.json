@@ -1,0 +1,201 @@
+{
+    "metadata": {
+        "name": "Research Object Crate Profile - My Tardis ingestion Version",
+        "description": "A Profile extending the RO-crate 1.1 spec for mapping complete objects into MyTardis",
+        "version": 0.1,
+        "warnMissingProperty": true,
+        "keywords": ["RO Crate", "MyTardis", "UOA"]
+    },
+    "layouts": [
+        {
+            "appliesTo": ["Dataset", "Project"],
+            "about": {
+                "label": "About",
+                "description": ""
+            },
+            "overflow": {
+                "label": "Other"
+            }
+        }
+    ],
+    "classes": {
+        "Project": {
+            "definition": "inherit",
+            "subClassOf": [],
+            "inputs": [
+                {
+                    "id": "https://schema.org/identifier",
+                    "name": "@id",
+                    "label": "id of project",
+                    "help": "the URI ID of the project (used to link both RO-Crate and MyTardis data)",
+                    "required": true,
+                    "multiple": false,
+                    "type": ["TextArea"],
+                    "group": "about",
+                    "myTardisValue":"name"
+                },
+                {
+                    "id": "https://schema.org/description",
+                    "name": "description",
+                    "label": "description",
+                    "help": "the description of the project",
+                    "required": true,
+                    "multiple": false,
+                    "type": ["TextArea"],
+                    "group": "about",
+                    "myTardisValue":"description"
+                },
+                {
+                    "id": "https://schema.org/founder",
+                    "name": "founder",
+                    "label": "founder (principal investigator)",
+                    "help": "the PI and/or owner of the project. Used to determine default Access level controls.",
+                    "required": true,
+                    "multiple": false,
+                    "type": ["Person"],
+                    "group": "about",
+                    "myTardisValue":"principal_investigator"
+                },
+                {
+                    "id": "https://mytardis/mynewfakeschema/MyTardisDataProperty",
+                    "name": "metadata",
+                    "label": "metadata",
+                    "help": "MyTardis Metadata info",
+                    "required": true,
+                    "multiple": true,
+                    "type": ["MyTardisDataProperty"],
+                    "group": "about",
+                    "myTardisValue":"Metadata"
+                }
+
+            ]
+        },
+        "dataset": {
+            "definition": "inherit",
+            "subClassOf": [],
+            "inputs": [
+                {
+                    "id": "https://schema.org/identifier",
+                    "name": "@id",
+                    "label": "id of project",
+                    "help": "the URI ID of the project (used to link both RO-Crate and MyTardis data)",
+                    "required": true,
+                    "multiple": false,
+                    "type": ["TextArea"],
+                    "group": "about",
+                    "myTardisValue":"name"
+                },
+                {
+                    "id": "https://schema.org/description",
+                    "name": "description",
+                    "label": "description",
+                    "help": "the description of the project",
+                    "required": true,
+                    "multiple": false,
+                    "type": ["TextArea"],
+                    "group": "about",
+                    "myTardisValue":"description"
+                },
+                {
+                    "id": "https://schema.org/founder",
+                    "name": "founder",
+                    "label": "founder (principal investigator)",
+                    "help": "the PI and/or owner of the project. Used to determine default Access level controls.",
+                    "required": true,
+                    "multiple": false,
+                    "type": ["Person"],
+                    "group": "about",
+                    "myTardisValue":"principal_investigator"
+                },
+                {
+                    "id": "https://mytardis/mynewfakeschema/MyTardisDataProperty",
+                    "name": "metadata",
+                    "label": "metadata",
+                    "help": "MyTardis Metadata info",
+                    "required": true,
+                    "multiple": true,
+                    "type": ["MyTardisDataProperty"],
+                    "group": "about",
+                    "myTardisValue":"Metadata"
+                },
+                {
+                    "id": "https://mytardis/mynewfakeschema/data_classifiation",
+                    "name": "data_classification",
+                    "label": "metadata",
+                    "help": "MyTardis data classification level",
+                    "required": true,
+                    "multiple": false,
+                    "type": ["Number"],
+                    "group": "about",
+                    "myTardisValue":"Metadata"
+                }
+
+
+
+            ]
+        },
+        "MyTardisDataProperty": {
+            "definition": "inherit",
+            "subClassOf": [],
+            "inputs": [
+                {
+                    "id": "https://schema.org/value",
+                    "help": "The value held by this metadata field",
+                    "name": "value",
+                    "required": true,
+                    "multiple": false,
+                    "type": ["Boolean","Number","StructuredValue","Text"]
+                },
+                {
+                    "id": "https://schema.org/DataType",
+                    "help": "The type of value held by this metadata field",
+                    "name": "MyTardis type",
+                    "required": true,
+                    "multiple": false,
+                    "type": ["Text"]
+                },
+                {
+                    "id": "https://schema.org/Boolean",
+                    "help": "A contact point for a person or organization.",
+                    "name": "sensitive",
+                    "required": true,
+                    "multiple": false,
+                    "type": ["Boolean"]
+                }
+
+            ]
+        },
+        "MyTardisACL": {
+            "definition": "inherit",
+            "subClassOf": [],
+            "inputs": [
+                {
+                    "id": "https://schema.org/value",
+                    "help": "The value held by this metadata field",
+                    "name": "value",
+                    "required": true,
+                    "multiple": false,
+                    "type": ["Boolean","Number","StructuredValue","Text"]
+                },
+                {
+                    "id": "https://schema.org/DataType",
+                    "help": "The type of value held by this metadata field",
+                    "name": "MyTardis type",
+                    "required": true,
+                    "multiple": false,
+                    "type": ["Text"]
+                },
+                {
+                    "id": "https://schema.org/Boolean",
+                    "help": "A contact point for a person or organization.",
+                    "name": "sensitive",
+                    "required": true,
+                    "multiple": false,
+                    "type": ["Boolean"]
+                }
+
+            ]
+        }
+},
+    "lookup": {}
+}

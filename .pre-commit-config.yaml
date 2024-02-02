@@ -21,6 +21,8 @@ repos:
       language: python
       args: [src]
       additional_dependencies:
+        - typer
+        - rocrate
         - PyYAML
         - backoff
         - requests
