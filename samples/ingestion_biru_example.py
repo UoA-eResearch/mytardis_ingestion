@@ -39,7 +39,6 @@ import sys
 from pathlib import Path
 from typing import Union
 
-from src.beneficiations.beneficiation import Beneficiation
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
@@ -47,18 +46,13 @@ from src.blueprints.project import RawProject
 from src.config.config import ConfigFromEnv
 from src.conveyor.conveyor import Conveyor
 from src.conveyor.transports.rsync import RsyncTransport
-from src.extraction.extraction_plant import ExtractionPlant
-from src.extraction.ingestibles import IngestibleDataclasses
 from src.ingestion_factory.factory import IngestionFactory
-from src.miners.miner import Miner
 from src.mytardis_client.enumerators import DataStatus
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
-from src.profiles.profile_loader import ProfileLoader
-from src.prospectors.prospector import Prospector
+from src.profiles.idw.custom_beneficiation import write_to_yaml
+from src.profiles.profile_register import load_profile
 from src.smelters.smelter import Smelter
-
-# from src.utils.data_status_update import YAMLUpdater
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -84,7 +78,9 @@ class IDSIngestionScript:
         self.rsync_path = Path(rsync_path)
         self.config = ConfigFromEnv()
         self.profile_name = "idw"
-        self.profile_loader = ProfileLoader(self.profile_name)
+        self.profile = load_profile(self.profile_name)
+        self.extractor = self.profile.get_extractor()
+        self.ingestible_dataclass = self.extractor.extract(self.yaml_path)
         self.factory = self.initialize_factory()
 
     def initialize_factory(self) -> IngestionFactory:
@@ -106,21 +102,7 @@ class IDSIngestionScript:
             config=self.config, mt_rest=mt_rest, overseer=overseer, smelter=smelter
         )
 
-    def run_extract(self) -> IngestibleDataclasses:
-        """
-        Run the extraction plant process.
-
-        Returns:
-            IngestibleDataclasses: Result of the extraction plant process.
-        """
-        prospector = Prospector(self.profile_loader.load_custom_prospector())
-        miner = Miner(self.profile_loader.load_custom_miner())
-        beneficiation = Beneficiation(self.profile_loader.load_custom_beneficiation())
-        ext_plant = ExtractionPlant(prospector, miner, beneficiation)
-        ingestibles = ext_plant.extract(self.yaml_path)
-        return ingestibles
-
-    def run_ingestion(self, ingestible_dataclass: IngestibleDataclasses) -> None:
+    def run_ingestion(self) -> None:
         """
         Run the ingestion process.
 
@@ -131,30 +113,39 @@ class IDSIngestionScript:
         new_ingested_datafiles = []
 
         try:
-            for project in ingestible_dataclass.get_projects():
-                self.update_data_status(project, "project", new_ingested_datafiles)
+            for project in self.ingestible_dataclass.get_projects():
+                self.check_ingest_and_update_status(
+                    project, "project", new_ingested_datafiles
+                )
 
-            for experiment in ingestible_dataclass.get_experiments():
-                self.update_data_status(
+            for experiment in self.ingestible_dataclass.get_experiments():
+                self.check_ingest_and_update_status(
                     experiment, "experiment", new_ingested_datafiles
                 )
 
-            for dataset in ingestible_dataclass.get_datasets():
-                self.update_data_status(dataset, "dataset", new_ingested_datafiles)
+            for dataset in self.ingestible_dataclass.get_datasets():
+                self.check_ingest_and_update_status(
+                    dataset, "dataset", new_ingested_datafiles
+                )
 
-            for datafile in ingestible_dataclass.get_datafiles():
-                self.update_data_status(datafile, "datafile", new_ingested_datafiles)
+            for datafile in self.ingestible_dataclass.get_datafiles():
+                self.check_ingest_and_update_status(
+                    datafile, "datafile", new_ingested_datafiles
+                )
+                print(datafile)
 
         except TimeoutError as e:
             logger.error(e)
 
         # TODO: write the updated ingestible_dataclasses into a YAML file
-        # YAMLUpdater(self.yaml_path.as_posix(), ingestible_dataclass)
+        write_to_yaml(self.yaml_path, self.ingestible_dataclass)
+        # yaml.dump_all(list(self.ingestible_dataclass), self.yaml_path)
+        # yaml_updater.update_data_status()
 
         # Initiate Conveyor
         self.initiate_conveyor(new_ingested_datafiles)
 
-    def update_data_status(
+    def check_ingest_and_update_status(
         self,
         data_obj: Union[RawProject, RawExperiment, RawDataset, RawDatafile],
         obj_type: str,
@@ -171,23 +162,24 @@ class IDSIngestionScript:
         """
         if (
             data_obj.data_status is not None
-            and data_obj.data_status.value == DataStatus.INGESTED.value
+            and data_obj.data_status == DataStatus.INGESTED
         ):
             obj_name_attr = obj_type.lower()
             logger.info("%s %s has already been ingested.", obj_type, obj_name_attr)
             return
 
+        # Ingest the data object
         obj_name_attr = obj_type.lower()
         logger.info("Ingesting %s: %s", obj_type.lower(), obj_name_attr)
         result = getattr(self.factory, f"ingest_{obj_type}s")([data_obj])
 
         # Update the data status
         if result.success is not None:
-            data_obj.data_status = DataStatus.INGESTED
+            data_obj.data_status = DataStatus.INGESTED.value
             if obj_type == "datafile":
                 datafile_list.append(data_obj)
         else:
-            data_obj.data_status = DataStatus.FAILED
+            data_obj.data_status = DataStatus.FAILED.value
 
     def initiate_conveyor(self, new_ingested_datafiles: list) -> None:
         """
@@ -229,5 +221,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     script = IDSIngestionScript(args.yaml_pth, args.rsync_pth)
-    ingestible_dataclasses = script.run_extract()
-    script.run_ingestion(ingestible_dataclasses)
+    script.run_ingestion()
