@@ -1,7 +1,7 @@
 """
 Classes for handling an RO-crate input into ingestible data objects
 """
-# pylint: disable=missing-function-docstring
+
 
 import json
 
@@ -44,12 +44,24 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # set the level for which this logger will be printed.
 
 
-def handle_datetime(time_info: str) -> datetime:
+def handle_datetime(  # pylint: disable=missing-function-docstring
+    time_info: str,
+) -> datetime:
     time_info = validate_isodatetime(time_info)
     return datetime.fromisoformat(time_info)
 
 
-def retrive_property_value(data_object: dict[str, str], value_name: str) -> Any | None:
+def retrieve_property_value(data_object: dict[str, str], value_name: str) -> Any | None:
+    """Validate a dictonary is a generic JSON-LD "property value" https://schema.org/PropertyValue
+     of a given name then return it's value
+
+    Args:
+        data_object (dict[str, str]): the json dict that may be a "propertyvalue"
+        value_name (str): the name/key of the property value pair
+
+    Returns:
+        Any | None: the value given by the propertyvalue
+    """
     if not isinstance(data_object, dict):
         return None
     if (
@@ -87,7 +99,7 @@ class ROCrateParser:
         root_dataset = self.crate.root_dataset
         for identifier in as_list(root_dataset.as_jsonld().get("identifier")):
             logger.debug("checking identifiery %s", identifier)
-            if crate_uuid := retrive_property_value(identifier, "RO-CrateUUID"):
+            if crate_uuid := retrieve_property_value(identifier, "RO-CrateUUID"):
                 return uuid.UUID(crate_uuid)
         logger.info(
             "No UUID provided in RO-Crate using generated value %s from parser",
@@ -100,7 +112,7 @@ class ROCrateParser:
             return self.name
         root_dataset = self.crate.root_dataset
         for identifier in as_list(root_dataset.as_jsonld().get("identifier")):
-            if crate_name := retrive_property_value(identifier, "RO-CrateName"):
+            if crate_name := retrieve_property_value(identifier, "RO-CrateName"):
                 return str(crate_name)
         crate_bagit_dir = self.crate.source.parts[-2]
         logger.info(
@@ -299,7 +311,7 @@ class ROCrateParser:
         raw_experiment.object_schema = RO_CRATE_EXPERIMENT_SCHEMA
         return raw_experiment
 
-    def process_projects(
+    def process_projects(  # pylint: disable=missing-function-docstring
         self, ingestible_classes: IngestibleDataclasses
     ) -> IngestibleDataclasses:
         ingestible_classes.add_projects(
@@ -311,7 +323,7 @@ class ROCrateParser:
         )
         return ingestible_classes
 
-    def process_experiments(
+    def process_experiments(  # pylint: disable=missing-function-docstring
         self, ingestible_classes: IngestibleDataclasses
     ) -> IngestibleDataclasses:
         ingestible_classes.add_experiments(
@@ -432,7 +444,7 @@ class ROCrateParser:
 
         return ingestible_classes
 
-    def parse_crate(
+    def parse_crate(  # pylint: disable=missing-function-docstring
         self, ingestible_classes: IngestibleDataclasses
     ) -> IngestibleDataclasses:
         file_filter = filters.PathFilterSet(filter_system_files=True)
