@@ -8,13 +8,14 @@ import json
 # ---Imports
 import logging
 import mimetypes
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from rocrate.model.data_entity import DataEntity
 from rocrate.rocrate import ROCrate
-from rocrate.utils import get_norm_value
+from rocrate.utils import as_list, get_norm_value
 
 from src.blueprints.common_models import GroupACL, UserACL
 from src.blueprints.custom_data_types import validate_isodatetime, validate_url
@@ -48,6 +49,17 @@ def handle_datetime(time_info: str) -> datetime:
     return datetime.fromisoformat(time_info)
 
 
+def retrive_property_value(data_object: dict[str, str], value_name: str) -> Any | None:
+    if not isinstance(data_object, dict):
+        return None
+    if (
+        data_object.get("@type") == "PropertyValue"
+        and data_object.get("name") == value_name
+    ):
+        return data_object.get("value")
+    return None
+
+
 class ROCrateParser:
     """Parses JSON and file strucures in an RO-Crate into ingestible MyTardis dataclasses"""
 
@@ -66,15 +78,39 @@ class ROCrateParser:
         with open(CRATE_TO_TARDIS_PROFILE, encoding="utf-8") as f:
             self.mapper: CrateToTardisMapper = CrateToTardisMapper(json.load(f))
         self.crate = ROCrate(Path(crate_root_path))
-        self.crate_name = crate_name
-        if not self.crate_name:
-            # To be replaced with UUID defined in RO-Crate root
-            self.crate_name = self.crate.source.parts[-2]
-
+        self.name = crate_name
+        self.name = self._read_crate_name()
+        self.uuid = self._read_crate_uuid()
         self.filters = PathFilterSet(True)
 
+    def _read_crate_uuid(self) -> uuid.UUID:
+        root_dataset = self.crate.root_dataset
+        for identifier in as_list(root_dataset.as_jsonld().get("identifier")):
+            logger.debug("checking identifiery %s", identifier)
+            if crate_uuid := retrive_property_value(identifier, "RO-CrateUUID"):
+                return uuid.UUID(crate_uuid)
+        logger.info(
+            "No UUID provided in RO-Crate using generated value %s from parser",
+            self.crate.uuid,
+        )
+        return uuid.UUID(self.crate.uuid)
+
+    def _read_crate_name(self) -> str:
+        if self.name:
+            return self.name
+        root_dataset = self.crate.root_dataset
+        for identifier in as_list(root_dataset.as_jsonld().get("identifier")):
+            if crate_name := retrive_property_value(identifier, "RO-CrateName"):
+                return str(crate_name)
+        crate_bagit_dir = self.crate.source.parts[-2]
+        logger.info(
+            "No name provided in RO-Crate using path of bagit archive: %s ",
+            crate_bagit_dir,
+        )
+        return str(crate_bagit_dir)
+
     def _apply_crate_name(self, entity_id: str) -> str:
-        return str(self.crate_name + "/" + entity_id)
+        return str(self.uuid.hex + "/" + self.name + "/" + entity_id)
 
     def _read_metadata(
         self, metadata_list: list[str]
@@ -195,6 +231,8 @@ class ROCrateParser:
             )
         if dataset_meta := dataset_dict.get("metadata"):
             dataset_dict["metadata"] = self._read_metadata(dataset_meta)
+            # store UUID of this crate on every dataset that is part of it
+        dataset_dict["metadata"]["RO-Crate_UUID"] = str(self.uuid)
         raw_dataset: RawDataset = RawDataset.model_validate(dataset_dict)
         raw_dataset.object_schema = RO_CRATE_DATASET_SCHEMA
         return raw_dataset
@@ -348,7 +386,7 @@ class ROCrateParser:
             IngestibleDataclasses: Ingestible dataclasses now containing all datafiles and datasets
         """
         datasets_to_read = []
-        datasets_to_read.append("./")
+        datasets_to_read.append(self.crate.root_dataset.id)
         raw_datasets: list[RawDataset] = []
         raw_datafiles: list[RawDatafile] = []
         while len(datasets_to_read) > 0:
