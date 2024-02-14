@@ -13,7 +13,7 @@ import logging
 from typing import Any, Dict
 
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
-from src.extraction.manifest import IngestibleDataclasses
+from src.extraction.manifest import IngestionManifest
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -36,16 +36,16 @@ class Beneficiation:
     def beneficiate(
         self,
         beneficiation_data: Dict[str, Any],
-        ingestible_dataclasses: IngestibleDataclasses,
-    ) -> IngestibleDataclasses:
+        ingestible_dataclasses: IngestionManifest,
+    ) -> IngestionManifest:
         """Parse metadata files of a given file type into raw dataclasses
 
         Args:
             beneficiation_data (Dict[str, Any]): Data that contains information about the dataclasses to parse
-            ingestible_dataclasses (IngestibleDataclasses): A class that contains the raw datafiles, datasets, experiments, and projects.
+            ingestible_dataclasses (IngestionManifest): A class that contains the raw datafiles, datasets, experiments, and projects.
 
         Returns:
-            IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
+            IngestionManifest: A class that contains the raw datafiles, datasets, experiments, and projects.
         """
         logger.info("beneficiating")
 

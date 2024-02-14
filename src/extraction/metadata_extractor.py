@@ -4,7 +4,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from src.extraction.manifest import IngestibleDataclasses
+from src.extraction.manifest import IngestionManifest
 
 
 class IMetadataExtractor(ABC):
@@ -13,6 +13,6 @@ class IMetadataExtractor(ABC):
     """
 
     @abstractmethod
-    def extract(self, root_dir: Path) -> IngestibleDataclasses:
+    def extract(self, root_dir: Path) -> IngestionManifest:
         """Extract the data from root_dir and parse into an ingestible format."""
         raise NotImplementedError("Extraction behaviour must be defined in a subclass.")

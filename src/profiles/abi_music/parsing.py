@@ -16,7 +16,7 @@ from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
-from src.extraction.manifest import IngestibleDataclasses
+from src.extraction.manifest import IngestionManifest
 from src.extraction.metadata_extractor import IMetadataExtractor
 from src.mytardis_client.enumerators import DataClassification
 from src.profiles.abi_music.abi_music_consts import (
@@ -248,12 +248,12 @@ def collate_datafile_info(
 
 def parse_raw_data(
     raw_dir: DirectoryNode, root_dir: Path, file_filter: filters.PathFilterSet
-) -> IngestibleDataclasses:
+) -> IngestionManifest:
     """
     Parse the directory containing the raw data
     """
 
-    pedd_builder = IngestibleDataclasses()
+    pedd_builder = IngestionManifest()
 
     project_dirs = [
         d for d in raw_dir.iter_dirs(recursive=True) if d.has_file("project.json")
@@ -308,11 +308,11 @@ def parse_raw_data(
 
 def parse_zarr_data(
     zarr_root: DirectoryNode, root_dir: Path, file_filter: filters.PathFilterSet
-) -> IngestibleDataclasses:
+) -> IngestionManifest:
     """
     Parse the directory containing the derived/post-processed Zarr data
     """
-    pedd_builder = IngestibleDataclasses()
+    pedd_builder = IngestionManifest()
 
     for directory in zarr_root.iter_dirs(recursive=True):
         zarr_dirs = directory.find_dirs(
@@ -360,7 +360,7 @@ def link_zarr_to_raw(
         zarr_dataset.metadata["raw_dataset"] = raw_dataset.description
 
 
-def parse_data(root: DirectoryNode) -> IngestibleDataclasses:
+def parse_data(root: DirectoryNode) -> IngestionManifest:
     """
     Parse/validate the data directory to extract the files to be ingested
     """
@@ -376,7 +376,7 @@ def parse_data(root: DirectoryNode) -> IngestibleDataclasses:
     link_zarr_to_raw(dc_zarr.get_datasets(), dc_raw.get_datasets())
 
     # Note: maybe we should just directly append to the object inside the parsing functions
-    return IngestibleDataclasses(
+    return IngestionManifest(
         projects=dc_raw.get_projects() + dc_zarr.get_projects(),
         experiments=dc_raw.get_experiments() + dc_zarr.get_experiments(),
         datasets=dc_raw.get_datasets() + dc_zarr.get_datasets(),
@@ -390,6 +390,6 @@ class ABIMusicExtractor(IMetadataExtractor):
     def __init__(self) -> None:
         pass
 
-    def extract(self, root_dir: Path) -> IngestibleDataclasses:
+    def extract(self, root_dir: Path) -> IngestionManifest:
         root = DirectoryNode(root_dir)
         return parse_data(root)

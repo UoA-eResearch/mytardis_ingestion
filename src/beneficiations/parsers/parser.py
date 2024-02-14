@@ -9,7 +9,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
-from src.extraction.manifest import IngestibleDataclasses
+from src.extraction.manifest import IngestionManifest
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # ---Code
 class Parser(ABC):
-    """A class to parse dataclass files into IngestibleDataclasses objects."""
+    """A class to parse dataclass files into IngestionManifest objects."""
 
     def __init__(
         self,
@@ -28,14 +28,14 @@ class Parser(ABC):
     def parse(
         self,
         beneficiation_data: Dict[str, Any],
-        ingestible_dclasses: IngestibleDataclasses,
-    ) -> IngestibleDataclasses:
+        ingestible_dclasses: IngestionManifest,
+    ) -> IngestionManifest:
         """Parse metadata files of a given file type into raw dataclasses
 
         Args:
             beneficiation_data (dict[str, Any]): Data that contains information about the dataclasses to parse
-            ingestible_dataclasses (IngestibleDataclasses): A class that contains the raw datafiles, datasets, experiments, and projects.
+            ingestible_dataclasses (IngestionManifest): A class that contains the raw datafiles, datasets, experiments, and projects.
 
         Returns:
-            IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
+            IngestionManifest: A class that contains the raw datafiles, datasets, experiments, and projects.
         """

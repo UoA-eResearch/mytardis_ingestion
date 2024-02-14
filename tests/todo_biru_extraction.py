@@ -10,7 +10,7 @@ from pytest import fixture
 from src.beneficiations import beneficiation_consts as bc
 from src.beneficiations.beneficiation import Beneficiation
 from src.extraction.extraction_plant import ExtractionPlant
-from src.extraction.manifest import IngestibleDataclasses
+from src.extraction.manifest import IngestionManifest
 from src.miners.miner import Miner
 from src.profiles.profile_loader import ProfileLoader
 from src.prospectors.prospector import Prospector

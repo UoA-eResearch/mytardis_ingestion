@@ -26,7 +26,7 @@ from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBenef
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
 from src.blueprints.common_models import GroupACL, UserACL
 from src.blueprints.custom_data_types import Username
-from src.extraction.manifest import IngestibleDataclasses
+from src.extraction.manifest import IngestionManifest
 from src.miners.utils import datafile_metadata_helpers
 from src.mytardis_client.enumerators import DataClassification
 
@@ -240,8 +240,8 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         return RawProject(**data)
 
     def beneficiate(
-        self, fpath: Path, ingestible_dclasses: IngestibleDataclasses
-    ) -> IngestibleDataclasses:
+        self, fpath: Path, ingestible_dclasses: IngestionManifest
+    ) -> IngestionManifest:
         """
         Parse a YAML file at the specified path and return a list of loaded objects.
 
@@ -251,7 +251,7 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         Returns:
             List[Union[RawDatafile, RawDataset, RawExperiment, RawProject]]: A list of loaded objects.
         """
-        ingestible_dclasses = IngestibleDataclasses()
+        ingestible_dclasses = IngestionManifest()
         logger.info("parsing {0}".format(fpath))
         with open(fpath) as f:
             data = yaml.safe_load_all(f)

@@ -22,7 +22,7 @@ logger.setLevel(logging.DEBUG)
 
 
 # ---Code
-class IngestibleDataclasses:
+class IngestionManifest:
     """
     Class to manage and ingestible data classes.
 

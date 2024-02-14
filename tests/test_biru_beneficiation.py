@@ -4,7 +4,7 @@ import tempfile
 import yaml
 from pytest import fixture
 
-from src.extraction.manifest import IngestibleDataclasses
+from src.extraction.manifest import IngestionManifest
 from src.profiles.idw.custom_beneficiation import CustomBeneficiation
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ def test_beneficiate():
         yaml.dump(yaml_data, tmp_yaml_file, default_flow_style=False)
     a = CustomBeneficiation()
     fpath = "tests/testdata/test_ingestion.yaml"
-    ingestible_dataclasses = a.beneficiate(fpath, IngestibleDataclasses)
+    ingestible_dataclasses = a.beneficiate(fpath, IngestionManifest)
     df = ingestible_dataclasses.get_datafiles()[0]
     assert df.filename == "20221113_slide3-2_humanRWM_cd34_x20_0.12umpix_3.czi"
     assert df.metadata["Experimenter|UserName"] == "hsuz002"
@@ -28,7 +28,7 @@ def test_beneficiate():
 def test_beneficiate_replace_micrometer():
     a = CustomBeneficiation()
     fpath = "tests/testdata/test_ingestion.yaml"
-    ingestible_dataclasses = a.beneficiate(fpath, IngestibleDataclasses)
+    ingestible_dataclasses = a.beneficiate(fpath, IngestionManifest)
     df = ingestible_dataclasses.get_datafiles()[0]
     assert df.filename == "20221113_slide3-2_humanRWM_cd34_x20_0.12umpix_3.czi"
     assert df.metadata["Image|Pixels|Channel|Channel:0:0|PinholeSizeUnit"] == "um"
