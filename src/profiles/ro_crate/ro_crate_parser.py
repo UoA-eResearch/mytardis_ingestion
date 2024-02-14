@@ -344,7 +344,15 @@ class ROCrateParser:
         Returns:
             list[RawDatafile]: list of datafiles now updated with datfiles on disk
         """
-        for traversed_dataset in reversed(raw_datasets):
+
+        for traversed_dataset in sorted(
+            raw_datasets,
+            key=lambda dataset: (
+                dataset.directory is None,
+                dataset.directory,
+            ),
+            reverse=True,
+        ):
             dataset_dir = traversed_dataset.directory
             if not dataset_dir:
                 continue
@@ -374,7 +382,7 @@ class ROCrateParser:
     ) -> IngestionManifest:
         """Read in all datasets and datafiles
 
-        Starting at the root dataset (dataset "./")
+        Starting with a list of all datasets provided by the root (dataset "./")
         move through all child datasets and datafiles constructing RawDatasets and Datafiles
         Children are defined by the "has part" field of RO-Crate Datasets.
         Then moving upwards from 'leaf' datasets:
@@ -393,6 +401,12 @@ class ROCrateParser:
         datasets_to_read.append(self.crate.root_dataset.id)
         raw_datasets: list[RawDataset] = []
         raw_datafiles: list[RawDatafile] = []
+        root_dataset = self.crate.dereference("./")
+        processed_dataset = self._process_dataset(root_dataset)
+        raw_datasets.append(processed_dataset)
+        datasets_to_read = [
+            entity.id for entity in self.crate.data_entities if entity.type == "Dataset"
+        ]
         while len(datasets_to_read) > 0:
             dataset_id = datasets_to_read.pop()
             if self._apply_crate_name(dataset_id) in [
@@ -402,7 +416,6 @@ class ROCrateParser:
             crate_dataset = self.crate.dereference(dataset_id)
             processed_dataset = self._process_dataset(crate_dataset)
             raw_datasets.append(processed_dataset)
-
             dataset_parts = crate_dataset.get("hasPart")
             if dataset_parts:
                 for child_part in dataset_parts:
@@ -425,7 +438,7 @@ class ROCrateParser:
                             raw_datafiles.append(
                                 self._process_datafile(
                                     Path(datafile_id),
-                                    self._apply_crate_name(dataset_id),
+                                    processed_dataset.description,
                                 )
                             )
         raw_datafiles = self._collect_unlisted_datafiles(

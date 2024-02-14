@@ -2,6 +2,7 @@
 # nosec assert_used
 import json
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -37,6 +38,8 @@ def fixture_ingested_rocrate_project(
     created_by_upi: str,
     project_metadata: Dict[str, Any],
     project_url: str,
+    start_time_datetime: datetime,
+    end_time_datetime: datetime,
 ) -> RawProject:
     return RawProject(
         name=project_name,
@@ -49,6 +52,8 @@ def fixture_ingested_rocrate_project(
         created_by=created_by_upi,
         identifiers=project_ids,
         metadata=project_metadata,
+        start_time=start_time_datetime,
+        end_time=end_time_datetime,
     )
 
 
@@ -62,14 +67,15 @@ def fixture_ingested_rocrate_project(
 
 
 @pytest.fixture()
-def ro_crate_dataset_dir() -> Path:
-    return Path("dataset_dir/")
+def ro_crate_dataset_dir(raw_dataset: RawDataset) -> Path:
+    return Path(raw_dataset.directory)
 
 
 @pytest.fixture()
 def test_rocrate_content(
-    fixture_rocrate_uuid: str,
-    fixture_ingested_rocrate_project: RawProject,
+    raw_project: RawProject,
+    raw_dataset: RawDataset,
+    raw_experiment: RawExperiment,
     raw_datafile: RawDatafile,
     ro_crate_dataset_dir: Path,
 ) -> str:
@@ -81,18 +87,21 @@ def test_rocrate_content(
                     "@id": "./",
                     "@type": "Dataset",
                     "hasPart": [
+                        {"@id": ro_crate_dataset_dir.as_posix()},
                         {
-                            "@id": "",  # raw_dataset.directory.as_posix()
-                        }
+                            "@id": (
+                                ro_crate_dataset_dir / raw_datafile.filename
+                            ).as_posix()
+                        },
                     ],
-                    "includedInDataCatalog": "#testing_catalog_experiment",
+                    "includedInDataCatalog": raw_experiment.title,
                     "instrument": "dummy-ro-crate-meta",
                     "identifier": [
                         {
                             "@id": "Crate_UUID",
                             "@type": "PropertyValue",
                             "name": "RO-CrateUUID",
-                            "value": "",  # fixture_rocrate_uuid
+                            "value": "",
                         },
                         {
                             "@id": "Crate_Name",
@@ -105,13 +114,15 @@ def test_rocrate_content(
                 {
                     "@id": ro_crate_dataset_dir.as_posix(),
                     "@type": "Dataset",
-                    "description": "",  # raw_dataset.description,
-                    "includedInDataCatalog": "",  # raw_experiment.title,
-                    "instrument": "",  # raw_dataset.instrument,
-                    "name": "",  # raw_dataset.description,
+                    # "description": raw_dataset.description,
+                    "includedInDataCatalog": raw_experiment.title,
+                    "instrument": raw_dataset.instrument,
+                    "name": raw_dataset.description,
                     "hasPart": [
                         {
-                            "@id": "",  # dataset_dir / raw_datafile.filename
+                            "@id": (
+                                ro_crate_dataset_dir / raw_datafile.filename
+                            ).as_posix()
                         }
                     ],
                 },
@@ -121,29 +132,28 @@ def test_rocrate_content(
                     "about": {"@id": "./"},
                     "conformsTo": {"@id": "https://w3id.org/ro/crate/1.1"},
                 },
-                {"@id": "jlov034", "@type": "Person", "name": "jlov034"},
                 {
-                    "@id": fixture_ingested_rocrate_project.name,
+                    "@id": raw_project.name,
                     "@type": "Project",
-                    "name": fixture_ingested_rocrate_project.name,
-                    "founder": fixture_ingested_rocrate_project.principal_investigator,
-                    "url": fixture_ingested_rocrate_project.url,
-                    "description": fixture_ingested_rocrate_project.description,
+                    "name": raw_project.name,
+                    "founder": raw_project.principal_investigator,
+                    "url": raw_project.url,
+                    "description": raw_project.description,
                 },
                 {
-                    "@id": "#ro_crate_experiment_title",  # raw_experiment.title,
+                    "@id": raw_experiment.title,
                     "@type": "DataCatalog",
                     "name": "#experiment_name",
-                    "project": fixture_ingested_rocrate_project.name,
-                    "description": "an experiment formatted for ro-crate testing",
+                    "project": raw_project.name,
+                    "description": raw_experiment.description,
                 },
                 {
                     "@id": (ro_crate_dataset_dir / raw_datafile.filename).as_posix(),
                     "@type": ["File"],
-                    "name": "",  # dataset_dir / raw_datafile.filename,
-                    "contentSize": "",  # raw_datafile.size,
-                    "encodingFormat": "",  # raw_datafile.mimetype,
-                    "md5sum": "",  # raw_datafile.md5sum,
+                    "name": (ro_crate_dataset_dir / raw_datafile.filename).as_posix(),
+                    "contentSize": raw_datafile.size,
+                    "encodingFormat": raw_datafile.mimetype,
+                    "md5sum": raw_datafile.md5sum,
                 },
             ],
         }
@@ -180,32 +190,35 @@ def rocrate_profile_json() -> str:
 
 @pytest.fixture(name="fakecrate_root")
 def fakecrate_root() -> Path:
-    return Path("/fake_ro_crate/data")
+    return Path("fake_ro_crate")
 
 
-@pytest.fixture(name="ro_crate_filesystem")
+@pytest.fixture(name="fixture_fake_ro_crate")
 def fixture_fake_ro_crate(
-    fs: FakeFilesystem,
+    tmp_path: Path,
+    tmp_path_factory: pytest.TempPathFactory,
     test_rocrate_content: str,
     fakecrate_root: Path,
     rocrate_profile_json: str,
     raw_datafile: RawDatafile,
     ro_crate_dataset_dir: Path,
 ) -> None:
-    fs.create_file(
-        fakecrate_root / "ro-crate-metadata.json", contents=test_rocrate_content
-    )
-    fs.create_file(fakecrate_root / ro_crate_dataset_dir / raw_datafile.filename)
-    fs.create_file(
-        fakecrate_root / ro_crate_dataset_dir / "/testing_dataset/unlisted_file.txt",
-        contents="text",
-    )
-    fs.create_file(CRATE_TO_TARDIS_PROFILE, contents=rocrate_profile_json)
-    yield fs
+    crate_root = tmp_path / fakecrate_root / "data/"
+    crate_root.mkdir(parents=True, exist_ok=True)
+    with open(crate_root / "ro-crate-metadata.json", "w", encoding="utf-8") as f:
+        f.write(test_rocrate_content)
+
+    dataset_path = crate_root / ro_crate_dataset_dir
+    dataset_path.mkdir(parents=True, exist_ok=True)
+    with open(dataset_path / raw_datafile.filename, "w", encoding="utf-8") as f:
+        f.write("size > 0")
+    with open(dataset_path / "unlisted_file.txt", "w", encoding="utf-8") as f:
+        f.write("size > 0")
+    return crate_root
 
 
 @pytest.fixture()
 def fixture_rocrate_parser(
-    ro_crate_filesystem: FakeFilesystem, fakecrate_root: Path
+    fixture_fake_ro_crate: Path, fakecrate_root: Path
 ) -> ROCrateParser:
-    return ROCrateParser(fakecrate_root)
+    return ROCrateParser(fixture_fake_ro_crate)
