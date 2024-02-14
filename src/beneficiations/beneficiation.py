@@ -13,7 +13,7 @@ import logging
 from typing import Any, Dict
 
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
-from src.extraction.ingestibles import IngestibleDataclasses
+from src.extraction.manifest import IngestibleDataclasses
 
 # ---Constants
 logger = logging.getLogger(__name__)

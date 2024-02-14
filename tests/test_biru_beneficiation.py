@@ -4,7 +4,7 @@ import tempfile
 import yaml
 from pytest import fixture
 
-from src.extraction.ingestibles import IngestibleDataclasses
+from src.extraction.manifest import IngestibleDataclasses
 from src.profiles.idw.custom_beneficiation import CustomBeneficiation
 
 logger = logging.getLogger(__name__)

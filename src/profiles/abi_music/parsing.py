@@ -16,7 +16,7 @@ from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
-from src.extraction.ingestibles import IngestibleDataclasses
+from src.extraction.manifest import IngestibleDataclasses
 from src.extraction.metadata_extractor import IMetadataExtractor
 from src.mytardis_client.enumerators import DataClassification
 from src.profiles.abi_music.abi_music_consts import (

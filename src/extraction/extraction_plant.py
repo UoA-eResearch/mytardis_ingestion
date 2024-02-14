@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Optional
 
 from src.beneficiations.beneficiation import Beneficiation
-from src.extraction.ingestibles import IngestibleDataclasses
+from src.extraction.manifest import IngestibleDataclasses
 from src.extraction.metadata_extractor import IMetadataExtractor
 from src.extraction.output_manager import OutputManager
 from src.miners.miner import Miner
