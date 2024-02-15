@@ -90,9 +90,8 @@ class ROCrateParser:
         with open(CRATE_TO_TARDIS_PROFILE, encoding="utf-8") as f:
             self.mapper: CrateToTardisMapper = CrateToTardisMapper(json.load(f))
         self.crate = ROCrate(Path(crate_root_path))
-        self.name = crate_name
-        self.name = self._read_crate_name()
         self.uuid = self._read_crate_uuid()
+        self.name = crate_name or self._read_crate_name()
         self.filters = PathFilterSet(True)
 
     def _read_crate_uuid(self) -> uuid.UUID:
@@ -108,18 +107,12 @@ class ROCrateParser:
         return uuid.UUID(self.crate.uuid)
 
     def _read_crate_name(self) -> str:
-        if self.name:
-            return self.name
         root_dataset = self.crate.root_dataset
         for identifier in as_list(root_dataset.as_jsonld().get("identifier")):
             if crate_name := retrieve_property_value(identifier, "RO-CrateName"):
                 return str(crate_name)
-        crate_bagit_dir = self.crate.source.parts[-2]
-        logger.info(
-            "No name provided in RO-Crate using path of bagit archive: %s ",
-            crate_bagit_dir,
-        )
-        return str(crate_bagit_dir)
+        logger.info("No name provided in RO-Crate using UUID only")
+        return ""
 
     def _apply_crate_name(self, entity_id: str) -> str:
         return str(self.uuid.hex + "/" + self.name + "/" + entity_id)
@@ -243,7 +236,7 @@ class ROCrateParser:
             )
         if dataset_meta := dataset_dict.get("metadata"):
             dataset_dict["metadata"] = self._read_metadata(dataset_meta)
-            # store UUID of this crate on every dataset that is part of it
+        # store UUID of this crate on every dataset that is part of it
         dataset_dict["metadata"]["RO-Crate_UUID"] = str(self.uuid)
         raw_dataset: RawDataset = RawDataset.model_validate(dataset_dict)
         raw_dataset.object_schema = RO_CRATE_DATASET_SCHEMA
