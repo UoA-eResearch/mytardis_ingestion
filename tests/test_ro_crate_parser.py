@@ -62,6 +62,7 @@ def test_read_crate_dataobjects(
     df_dict: dict[str, RawDatafile] = {
         df.filename: df for df in ingestible_dfs.get_datafiles()
     }
+
     testing_datafile = df_dict[raw_datafile.filename]
     assert testing_datafile
     assert testing_datafile.directory == raw_dataset.directory
@@ -71,3 +72,45 @@ def test_read_crate_dataobjects(
     root_datafile = df_dict["ro-crate-metadata.json"]
     assert root_datafile
     assert root_datafile.dataset == fakecrate_root.as_posix() + "/./"
+
+    ds_dict: dict[str, RawDataset] = {
+        ds.description: ds for ds in ingestible_dfs.get_datasets()
+    }
+    # assert len(ds_dict) == 5
+    root_dataset = ds_dict[fakecrate_root.as_posix() + "/./"]
+    assert root_dataset
+    assert root_dataset.instrument == "dummy-ro-crate-meta"
+    assert len(root_dataset.metadata) == 1
+    assert root_dataset.metadata["test-ro-crate-Metadata"] == "test value"
+
+    testing_dataset = ds_dict[(fakecrate_root / raw_dataset.directory).as_posix() + "/"]
+    assert testing_dataset.experiments == raw_dataset.experiments
+    assert testing_dataset.instrument == raw_dataset.instrument
+
+
+def test_read_crate_project(
+    fixture_rocrate_parser: ROCrateParser,
+    raw_project: RawProject,
+) -> None:
+    ingestible_projects: IngestibleDataclasses = (
+        fixture_rocrate_parser.process_projects(IngestibleDataclasses())
+    )
+    assert len(ingestible_projects.get_projects()) == 1
+    testing_project = ingestible_projects.get_projects()[0]
+    assert testing_project.principal_investigator == raw_project.principal_investigator
+    assert testing_project.url == raw_project.url
+    assert testing_project.description == raw_project.description
+
+
+def test_read_crate_experiment(
+    fixture_rocrate_parser: ROCrateParser,
+    raw_experiment: RawExperiment,
+) -> None:
+    ingestible_projects: IngestibleDataclasses = (
+        fixture_rocrate_parser.process_experiments(IngestibleDataclasses())
+    )
+    experiments = ingestible_projects.get_experiments()
+    assert len(experiments) == 1
+    testing_experiment = experiments[0]
+    assert testing_experiment.projects == raw_experiment.projects
+    assert testing_experiment.title == testing_experiment.title
