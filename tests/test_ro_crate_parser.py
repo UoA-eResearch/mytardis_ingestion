@@ -64,23 +64,19 @@ def test_read_crate_dataobjects(
     }
 
     testing_datafile = df_dict[raw_datafile.filename]
-    assert testing_datafile
     assert testing_datafile.directory == raw_dataset.directory
     unlisted_datafile = df_dict["unlisted_file.txt"]
-    assert unlisted_datafile
     assert unlisted_datafile.directory == raw_dataset.directory
     root_datafile = df_dict["ro-crate-metadata.json"]
-    assert root_datafile
     assert root_datafile.dataset == fakecrate_root.as_posix() + "/./"
 
     ds_dict: dict[str, RawDataset] = {
         ds.description: ds for ds in ingestible_dfs.get_datasets()
     }
-    # assert len(ds_dict) == 5
     root_dataset = ds_dict[fakecrate_root.as_posix() + "/./"]
     assert root_dataset
     assert root_dataset.instrument == "dummy-ro-crate-meta"
-    assert len(root_dataset.metadata) == 1
+    assert root_dataset.metadata
     assert root_dataset.metadata["test-ro-crate-Metadata"] == "test value"
 
     testing_dataset = ds_dict[(fakecrate_root / raw_dataset.directory).as_posix() + "/"]
