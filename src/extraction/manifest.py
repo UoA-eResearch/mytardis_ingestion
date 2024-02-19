@@ -130,7 +130,7 @@ class IngestionManifest:
             for i, obj in enumerate(objects):
                 file_path = (objects_dir / str(i)).with_suffix(".json")
                 with file_path.open("w", encoding="utf-8") as f:
-                    f.write(obj.model_dump_json())
+                    f.write(obj.model_dump_json(by_alias=True))
 
         serialize_objects(self.get_projects(), "projects")
         serialize_objects(self.get_experiments(), "experiments")
@@ -142,7 +142,8 @@ class IngestionManifest:
         try:
             directory = DirectoryNode(root_dir)
         except NotADirectoryError as e:
-            raise RuntimeError("Failed to deserialize ingestion manifest") from e
+            e.strerror = f"Failed to deserialize ingestion manifest: {e.strerror}"
+            raise e
 
         def deserialize_objects(
             obj_dir: DirectoryNode, object_type: Type[ModelT]
