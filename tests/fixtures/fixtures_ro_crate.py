@@ -7,23 +7,24 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import pytest
-from pyfakefs.fake_filesystem import FakeFilesystem
-from rocrate.rocrate import DataEntity
 
-import src.utils.filesystem.filters as filters
-from src.blueprints.common_models import GroupACL, Parameter, ParameterSet, UserACL
-from src.blueprints.custom_data_types import URI, ISODateTime, Username
+from src.blueprints.common_models import GroupACL, UserACL
+from src.blueprints.custom_data_types import Username
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
-from src.profiles.ro_crate._consts import CRATE_TO_TARDIS_PROFILE
 from src.profiles.ro_crate.ro_crate_parser import ROCrateParser
 
 
 @pytest.fixture()
 def fixture_rocrate_uuid() -> str:
-    return str(uuid.uuid4())
+    return uuid.uuid4().hex
+
+
+@pytest.fixture()
+def fixture_ro_crate_name() -> str:
+    return "Testing_Ro-crate"
 
 
 @pytest.fixture()
@@ -57,18 +58,19 @@ def fixture_ingested_rocrate_project(
     )
 
 
-# fixture_ingested_rocrate_experiment
-
-# fixture_ingested_rocrate_dataset
-
-# fixture_ingested_rocrate_datafile
-
-# fixture_ingested_rocrate_dataondisk
+@pytest.fixture(name="fakecrate_root")
+def fakecrate_root() -> Path:
+    return Path("fake_ro_crate")
 
 
 @pytest.fixture()
 def ro_crate_dataset_dir(raw_dataset: RawDataset) -> Path:
     return Path(raw_dataset.directory)
+
+
+@pytest.fixture()
+def ro_crate_unlisted_file_dir(ro_crate_dataset_dir: Path) -> Path:
+    return ro_crate_dataset_dir / "unlisted_files_dir"
 
 
 @pytest.fixture()
@@ -78,6 +80,8 @@ def test_rocrate_content(
     raw_experiment: RawExperiment,
     raw_datafile: RawDatafile,
     ro_crate_dataset_dir: Path,
+    fixture_rocrate_uuid: str,
+    fixture_ro_crate_name: str,
 ) -> str:
     return json.dumps(
         {
@@ -101,13 +105,13 @@ def test_rocrate_content(
                             "@id": "Crate_UUID",
                             "@type": "PropertyValue",
                             "name": "RO-CrateUUID",
-                            "value": "",
+                            "value": fixture_rocrate_uuid,
                         },
                         {
                             "@id": "Crate_Name",
                             "@type": "PropertyValue",
                             "name": "RO-CrateName",
-                            "value": "Testing_Ro-crate",
+                            "value": fixture_ro_crate_name,
                         },
                     ],
                     "metadata": ["#test-ro-crate-Metadata"],
@@ -194,21 +198,16 @@ def rocrate_profile_json() -> str:
     )
 
 
-@pytest.fixture(name="fakecrate_root")
-def fakecrate_root() -> Path:
-    return Path("fake_ro_crate")
-
-
 @pytest.fixture(name="fixture_fake_ro_crate")
 def fixture_fake_ro_crate(
     tmp_path: Path,
-    tmp_path_factory: pytest.TempPathFactory,
     test_rocrate_content: str,
     fakecrate_root: Path,
     rocrate_profile_json: str,
     raw_datafile: RawDatafile,
     ro_crate_dataset_dir: Path,
-) -> None:
+    ro_crate_unlisted_file_dir: Path,
+) -> Path:
     crate_root = tmp_path / fakecrate_root / "data/"
     crate_root.mkdir(parents=True, exist_ok=True)
     with open(crate_root / "ro-crate-metadata.json", "w", encoding="utf-8") as f:
@@ -218,6 +217,8 @@ def fixture_fake_ro_crate(
     dataset_path.mkdir(parents=True, exist_ok=True)
     with open(dataset_path / raw_datafile.filename, "w", encoding="utf-8") as f:
         f.write("size > 0")
+    dataset_path = crate_root / ro_crate_unlisted_file_dir
+    dataset_path.mkdir(parents=True, exist_ok=True)
     with open(dataset_path / "unlisted_file.txt", "w", encoding="utf-8") as f:
         f.write("size > 0")
     return crate_root

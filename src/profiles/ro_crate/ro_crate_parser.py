@@ -235,8 +235,10 @@ class ROCrateParser:
             )
         if dataset_meta := dataset_dict.get("metadata"):
             dataset_dict["metadata"] = self._read_metadata(dataset_meta)
-        # store UUID of this crate on every dataset that is part of it
-        dataset_dict["metadata"]["RO-Crate_UUID"] = str(self.uuid)
+            # store UUID of this crate on every dataset that is part of it
+            dataset_dict["metadata"]["RO-Crate_UUID"] = str(self.uuid)
+        else:
+            dataset_dict["metadata"] = {"RO-Crate_UUID": str(self.uuid)}
         raw_dataset: RawDataset = RawDataset.model_validate(dataset_dict)
         raw_dataset.object_schema = RO_CRATE_DATASET_SCHEMA
         return raw_dataset
