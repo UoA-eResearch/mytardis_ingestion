@@ -7,7 +7,8 @@ refinery/ingestion. The raw dataclasses are stored in lists.
 from __future__ import annotations
 
 import logging
-from typing import List, Optional, Sequence, TextIO
+from pathlib import Path
+from typing import List, Optional, Sequence, TextIO, Type, TypeVar
 
 from pydantic import BaseModel
 
@@ -15,14 +16,18 @@ from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
+from src.utils.filesystem.filesystem_nodes import DirectoryNode
 
 # ---Constants
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+ModelT = TypeVar("ModelT", bound=BaseModel)
+
+
 # ---Code
-class IngestibleDataclasses:
+class IngestionManifest:
     """
     Class to manage and ingestible data classes.
 
@@ -114,6 +119,58 @@ class IngestibleDataclasses:
         datafiles: List[RawDatafile],
     ) -> None:
         self._datafiles.extend(datafiles)
+
+    def serialize(self, root_dir: Path) -> None:
+        root_dir.mkdir(parents=True, exist_ok=True)
+
+        def serialize_objects(objects: Sequence[BaseModel], dir_name: str) -> None:
+            objects_dir = root_dir / dir_name
+            objects_dir.mkdir()
+
+            for i, obj in enumerate(objects):
+                file_path = (objects_dir / str(i)).with_suffix(".json")
+                with file_path.open("w", encoding="utf-8") as f:
+                    f.write(obj.model_dump_json(by_alias=True))
+
+        serialize_objects(self.get_projects(), "projects")
+        serialize_objects(self.get_experiments(), "experiments")
+        serialize_objects(self.get_datasets(), "datasets")
+        serialize_objects(self.get_datafiles(), "datafiles")
+
+    @staticmethod
+    def deserialize(root_dir: Path) -> IngestionManifest:
+        try:
+            directory = DirectoryNode(root_dir)
+        except NotADirectoryError as e:
+            e.strerror = f"Failed to deserialize ingestion manifest: {e.strerror}"
+            raise e
+
+        def deserialize_objects(
+            obj_dir: DirectoryNode, object_type: Type[ModelT]
+        ) -> list[ModelT]:
+            objects = []
+
+            json_files = obj_dir.find_files(lambda p: p.extension() == ".json")
+
+            for file in json_files:
+                with file.path().open("r", encoding="utf-8") as f:
+                    json_data = f.read()
+                    obj = object_type.model_validate_json(json_data)
+                    objects.append(obj)
+
+            return objects
+
+        projects = deserialize_objects(directory.dir("projects"), RawProject)
+        experiments = deserialize_objects(directory.dir("experiments"), RawExperiment)
+        datasets = deserialize_objects(directory.dir("datasets"), RawDataset)
+        datafiles = deserialize_objects(directory.dir("datafiles"), RawDatafile)
+
+        return IngestionManifest(
+            projects=projects,
+            experiments=experiments,
+            datasets=datasets,
+            datafiles=datafiles,
+        )
 
     def print(self, stream: TextIO, skip_datafiles: bool = True) -> None:
         def write_header(text: str) -> None:

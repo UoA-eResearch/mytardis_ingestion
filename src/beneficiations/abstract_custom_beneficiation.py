@@ -13,7 +13,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
-from src.extraction.ingestibles import IngestibleDataclasses
+from src.extraction.manifest import IngestionManifest
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 # ---Code
 class AbstractCustomBeneficiation(ABC):
-    """A class to parse dataclass files into IngestibleDataclasses objects."""
+    """A class to parse dataclass files into IngestionManifest objects."""
 
     def __init__(
         self,
@@ -32,17 +32,17 @@ class AbstractCustomBeneficiation(ABC):
     def beneficiate(
         self,
         beneficiation_data: Any,
-        ingestible_dclasses: IngestibleDataclasses,
-    ) -> IngestibleDataclasses:
+        ingestible_dclasses: IngestionManifest,
+    ) -> IngestionManifest:
         """Parse metadata files of a given file type into raw dataclasses
 
         Args:
             beneficiation_data (Any): An object that contains a filepath or
             a structure of filepaths that contains metadata to parse into raw dataclasses
-            ingestible_dataclasses (IngestibleDataclasses): A class that contains the raw
+            ingestible_dataclasses (IngestionManifest): A class that contains the raw
             datafiles, datasets, experiments, and projects
 
         Returns:
-            IngestibleDataclasses: A class that contains the raw datafiles,
+            IngestionManifest: A class that contains the raw datafiles,
             datasets, experiments, and projects
         """

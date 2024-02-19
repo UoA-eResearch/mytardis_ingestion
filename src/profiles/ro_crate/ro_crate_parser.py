@@ -2,7 +2,6 @@
 Classes for handling an RO-crate input into ingestible data objects
 """
 
-
 import json
 
 # ---Imports
@@ -23,7 +22,7 @@ from src.blueprints.datafile import RawDatafile  # pylint: disable=duplicate-cod
 from src.blueprints.dataset import RawDataset  # pylint: disable=duplicate-code
 from src.blueprints.experiment import RawExperiment  # pylint: disable=duplicate-code
 from src.blueprints.project import RawProject  # pylint: disable=duplicate-code
-from src.extraction.ingestibles import IngestibleDataclasses
+from src.extraction.manifest import IngestionManifest
 from src.extraction.metadata_extractor import (  # pylint: disable=duplicate-code
     IMetadataExtractor,
 )
@@ -168,11 +167,11 @@ class ROCrateParser:
         Args:
             filename (Path): the path of the file on disk (defined as relative to crate root)
             parent_dataset (str): the URI of the dataset parent of this file
-            ingestible_classes (IngestibleDataclasses): ingestible dataclasses to load the file into
+            ingestible_classes (IngestionManifest): ingestible dataclasses to load the file into
             rocrate_entity (DataEntity, optional): optional, RO-crate file object. Defaults to None.
 
         Returns:
-            IngestibleDataclasses: the ingestible dataclasses now updated with the datafile
+            IngestionManifest: the ingestible dataclasses now updated with the datafile
         """
         datafile_dict: dict[str, Any] = {}
         filepath = self.crate.source / filename
@@ -206,10 +205,10 @@ class ROCrateParser:
 
         Args:
             crate_dataset (DataEntity): roCrate data entity representing this dataset
-            ingestible_classes (IngestibleDataclasses): mytardis dataclasses for datafiles/sets
+            ingestible_classes (IngestionManifest): mytardis dataclasses for datafiles/sets
 
         Returns:
-            IngestibleDataclasses:
+            IngestionManifest:
             the dataclasses object updated with this dataset and all of it's datafile children
         """
         dataset_dict = {
@@ -305,8 +304,8 @@ class ROCrateParser:
         return raw_experiment
 
     def process_projects(  # pylint: disable=missing-function-docstring
-        self, ingestible_classes: IngestibleDataclasses
-    ) -> IngestibleDataclasses:
+        self, ingestible_classes: IngestionManifest
+    ) -> IngestionManifest:
         ingestible_classes.add_projects(
             [
                 self._process_project(p)
@@ -317,8 +316,8 @@ class ROCrateParser:
         return ingestible_classes
 
     def process_experiments(  # pylint: disable=missing-function-docstring
-        self, ingestible_classes: IngestibleDataclasses
-    ) -> IngestibleDataclasses:
+        self, ingestible_classes: IngestionManifest
+    ) -> IngestionManifest:
         ingestible_classes.add_experiments(
             [
                 self._process_experiment(e)
@@ -370,9 +369,9 @@ class ROCrateParser:
 
     def process_datasets(
         self,
-        ingestible_classes: IngestibleDataclasses,
+        ingestible_classes: IngestionManifest,
         file_filter: filters.PathFilterSet,
-    ) -> IngestibleDataclasses:
+    ) -> IngestionManifest:
         """Read in all datasets and datafiles
 
         Starting at the root dataset (dataset "./")
@@ -384,11 +383,11 @@ class ROCrateParser:
 
 
         Args:
-            ingestible_classes (IngestibleDataclasses): Ingestible objects to incorporate raw data
+            ingestible_classes (IngestionManifest): Ingestible objects to incorporate raw data
             file_filter (filters.PathFilterSet): Filter for specific files (i.e. system files)
 
         Returns:
-            IngestibleDataclasses: Ingestible dataclasses now containing all datafiles and datasets
+            IngestionManifest: Ingestible dataclasses now containing all datafiles and datasets
         """
         datasets_to_read = []
         datasets_to_read.append(self.crate.root_dataset.id)
@@ -438,8 +437,8 @@ class ROCrateParser:
         return ingestible_classes
 
     def parse_crate(  # pylint: disable=missing-function-docstring
-        self, ingestible_classes: IngestibleDataclasses
-    ) -> IngestibleDataclasses:
+        self, ingestible_classes: IngestionManifest
+    ) -> IngestionManifest:
         file_filter = filters.PathFilterSet(filter_system_files=True)
         ingestible_classes = self.process_projects(
             ingestible_classes=ingestible_classes
@@ -462,7 +461,7 @@ class ROCrateExtractor(IMetadataExtractor):
     def __init__(self) -> None:
         pass
 
-    def extract(self, root_dir: Path) -> IngestibleDataclasses:
+    def extract(self, root_dir: Path) -> IngestionManifest:
         ro_crate_parser = ROCrateParser(root_dir)
-        empty_ingestibleclasses = IngestibleDataclasses()
+        empty_ingestibleclasses = IngestionManifest()
         return ro_crate_parser.parse_crate(empty_ingestibleclasses)

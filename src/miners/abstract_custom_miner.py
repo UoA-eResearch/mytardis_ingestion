@@ -19,7 +19,7 @@ from src.extraction import output_manager as om
 
 # ---Code
 class AbstractCustomMiner(ABC):
-    """A class to parse dataclass files into IngestibleDataclasses objects."""
+    """A class to parse dataclass files into IngestionManifest objects."""
 
     def __init__(
         self,
