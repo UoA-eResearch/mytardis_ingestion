@@ -5,7 +5,7 @@ CLI frontend for extracting metadata, and ingesting it with the data into MyTard
 import io
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TypeAlias
 
 import typer
 from typing_extensions import Annotated
@@ -21,42 +21,56 @@ from src.utils.timing import Timer
 
 app = typer.Typer()
 
+# =============================================================================
+# SHARED ARGUMENT DEFINITIONS
+# =============================================================================
+
+SourceDataDirArg: TypeAlias = Annotated[
+    Path,
+    typer.Argument(help="Directory containing the data to be extracted"),
+]
+
+ProfileNameArg: TypeAlias = Annotated[
+    str,
+    typer.Argument(help="Name of the ingestion profile to be used to extract the data"),
+]
+
+ProfileVersionArg = Annotated[
+    Optional[str],
+    typer.Argument(
+        help="Version of the profile to be used. If left unspecified, the latest will be used"
+    ),
+]
+
+LogFileArg: TypeAlias = Annotated[
+    Optional[Path],
+    typer.Argument(help="Path to be used for the log file"),
+]
+
+
+# =============================================================================
+# COMMANDS
+# =============================================================================
+
 
 @app.command()
 def extract(
-    data_dir: Annotated[
-        Path,
-        typer.Argument(help="Directory containing the data to be extracted"),
-    ],
+    data_dir: SourceDataDirArg,
     output_dir: Annotated[
         Path,
-        typer.Argument(help="Directory where the extracted data will be stored"),
-    ],
-    profile_name: Annotated[
-        str,
         typer.Argument(
-            help="Name of the ingestion profile to be used to extract the data"
+            help="Directory where the extracted metadata will be stored before ingestion"
         ),
     ],
-    profile_version: Annotated[
-        Optional[str],
-        typer.Argument(
-            help="Version of the profile to be used. If left unspecified, the latest will be used"
-        ),
-    ] = None,
-    log_file: Annotated[
-        Optional[Path],
-        typer.Argument(help="Path to be used for the log file"),
-    ] = Path("ingestion.log"),
+    profile_name: ProfileNameArg,
+    profile_version: ProfileVersionArg = None,
+    log_file: LogFileArg = Path("ingestion.log"),
 ) -> None:
     """
     Extract metadata from a directory tree and parse it into a MyTardis PEDD structure.
     """
 
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
-    # TODO: config currently unneeded, but should profile details come from it?
-    # config = ConfigFromEnv()
-
     timer = Timer(start=True)
 
     if DirectoryNode(data_dir).empty():
@@ -85,33 +99,17 @@ def extract(
 
 @app.command()
 def ingest(
-    data_root: Annotated[
-        Path,
-        typer.Argument(help="Directory containing the data to be extracted"),
-    ],
+    data_root: SourceDataDirArg,
     storage_dir: Annotated[
         Path,
         typer.Argument(help="Directory where the extracted data will be stored"),
     ],
-    profile_name: Annotated[
-        str,
-        typer.Argument(
-            help="Name of the ingestion profile to be used to extract the data"
-        ),
-    ],
-    profile_version: Annotated[
-        Optional[str],
-        typer.Argument(
-            help="Version of the profile to be used. If left unspecified, the latest will be used"
-        ),
-    ] = None,
-    log_file: Annotated[
-        Optional[Path],
-        typer.Argument(help="Path to be used for the log file"),
-    ] = Path("ingestion.log"),
+    profile_name: ProfileNameArg,
+    profile_version: ProfileVersionArg = None,
+    log_file: LogFileArg = Path("ingestion.log"),
 ) -> None:
     """
-    Run an ingestion
+    Run the full ingestion process, from extracting metadata to ingesting it into MyTardis.
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
     config = ConfigFromEnv()
