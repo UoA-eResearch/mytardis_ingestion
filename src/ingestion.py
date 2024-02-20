@@ -2,7 +2,6 @@
 CLI frontend for extracting metadata, and ingesting it with the data into MyTardis.
 """
 
-import io
 import logging
 from pathlib import Path
 from typing import Optional, TypeAlias
@@ -81,20 +80,14 @@ def extract(
     extractor = profile.get_extractor()
     metadata = extractor.extract(data_dir)
 
-    logging.info("Number of datafiles: %d", len(metadata.get_datafiles()))
-
-    # Does this logging still meet our needs?
-    stream = io.StringIO()
-    metadata.print(stream)
-    logging.info(stream.getvalue())
-
     elapsed = timer.stop()
     logging.info("Finished parsing data directory into PEDD hierarchy")
     logging.info("Total time (s): %.2f", elapsed)
+    logging.info(metadata.summarize())
 
     metadata.serialize(output_dir)
 
-    logging.info("Finished. Ingestion manifest written to %s.", output_dir)
+    logging.info("Extraction complete. Ingestion manifest written to %s.", output_dir)
 
 
 @app.command()
@@ -124,16 +117,10 @@ def ingest(
     extractor = profile.get_extractor()
     metadata = extractor.extract(data_root)
 
-    logging.info("Number of datafiles: %d", len(metadata.get_datafiles()))
-
-    # Does this logging still meet our needs?
-    stream = io.StringIO()
-    metadata.print(stream)
-    logging.info(stream.getvalue())
-
     elapsed = timer.stop()
     logging.info("Finished parsing data directory into PEDD hierarchy")
     logging.info("Total time (s): %.2f", elapsed)
+    logging.info(metadata.summarize())
 
     logging.info("Submitting to MyTardis")
     timer.start()
