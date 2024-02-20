@@ -19,8 +19,72 @@ from src.utils import log_utils
 from src.utils.filesystem.filesystem_nodes import DirectoryNode
 from src.utils.timing import Timer
 
+app = typer.Typer()
 
-def main(
+
+@app.command()
+def extract(
+    data_dir: Annotated[
+        Path,
+        typer.Argument(help="Directory containing the data to be extracted"),
+    ],
+    output_dir: Annotated[
+        Path,
+        typer.Argument(help="Directory where the extracted data will be stored"),
+    ],
+    profile_name: Annotated[
+        str,
+        typer.Argument(
+            help="Name of the ingestion profile to be used to extract the data"
+        ),
+    ],
+    profile_version: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Version of the profile to be used. If left unspecified, the latest will be used"
+        ),
+    ] = None,
+    log_file: Annotated[
+        Optional[Path],
+        typer.Argument(help="Path to be used for the log file"),
+    ] = Path("ingestion.log"),
+) -> None:
+    """
+    Extract metadata from a directory tree and parse it into a MyTardis PEDD structure.
+    """
+
+    log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
+    # TODO: config currently unneeded, but should profile details come from it?
+    # config = ConfigFromEnv()
+
+    timer = Timer(start=True)
+
+    if DirectoryNode(data_dir).empty():
+        raise ValueError("Data root directory is empty. May not be mounted.")
+
+    profile = load_profile(profile_name, profile_version)
+
+    extractor = profile.get_extractor()
+    metadata = extractor.extract(data_dir)
+
+    logging.info("Number of datafiles: %d", len(metadata.get_datafiles()))
+
+    # Does this logging still meet our needs?
+    stream = io.StringIO()
+    metadata.print(stream)
+    logging.info(stream.getvalue())
+
+    elapsed = timer.stop()
+    logging.info("Finished parsing data directory into PEDD hierarchy")
+    logging.info("Total time (s): %.2f", elapsed)
+
+    metadata.serialize(output_dir)
+
+    logging.info("Finished. Ingestion manifest written to %s.", output_dir)
+
+
+@app.command()
+def ingest(
     data_root: Annotated[
         Path,
         typer.Argument(help="Directory containing the data to be extracted"),
@@ -95,4 +159,4 @@ def main(
 
 
 if __name__ == "__main__":
-    typer.run(main)
+    app()
