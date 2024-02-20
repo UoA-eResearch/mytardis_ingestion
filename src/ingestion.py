@@ -12,6 +12,7 @@ from typing_extensions import Annotated
 from src.config.config import ConfigFromEnv
 from src.conveyor.conveyor import Conveyor
 from src.conveyor.transports.rsync import RsyncTransport
+from src.extraction.manifest import IngestionManifest
 from src.ingestion_factory.factory import IngestionFactory
 from src.profiles.profile_register import load_profile
 from src.utils import log_utils
@@ -88,6 +89,57 @@ def extract(
     metadata.serialize(output_dir)
 
     logging.info("Extraction complete. Ingestion manifest written to %s.", output_dir)
+
+
+@app.command()
+def upload(
+    manifest_dir: Annotated[
+        Path,
+        typer.Argument(
+            help="Directory containing the previously extracted metadata to be ingested"
+        ),
+    ],
+    data_dir: SourceDataDirArg,
+    storage_dir: Annotated[
+        Path,
+        typer.Argument(help="Directory where the extracted data will be stored"),
+    ],
+    log_file: LogFileArg = Path("ingestion.log"),
+) -> None:
+    """
+    Submit the extracted metadata to MyTardis, and transfer the data to the storage directory.
+    """
+    log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
+    config = ConfigFromEnv()
+
+    if DirectoryNode(manifest_dir).empty():
+        raise ValueError(
+            "Manifest directory is empty. Extract data into a manifest using 'extract' command."
+        )
+
+    metadata = IngestionManifest.deserialize(manifest_dir)
+
+    logging.info("Successfully loaded metadata manifest from %s", manifest_dir)
+    logging.info("Submitting metadata to MyTardis")
+
+    timer = Timer(start=True)
+
+    ingestion_agent = IngestionFactory(config=config)
+
+    ingestion_agent.ingest(
+        metadata.get_projects(),
+        metadata.get_experiments(),
+        metadata.get_datasets(),
+        metadata.get_datafiles(),
+    )
+
+    elapsed = timer.stop()
+    logging.info("Finished submitting dataclasses to MyTardis")
+    logging.info("Total time (s): %.2f", elapsed)
+
+    transport = RsyncTransport(Path(storage_dir))
+    conveyor = Conveyor(transport)
+    conveyor.initiate_transfer(data_dir, metadata.get_datafiles()).join()
 
 
 @app.command()
