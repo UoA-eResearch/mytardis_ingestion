@@ -64,7 +64,7 @@ def extract(
     ],
     profile_name: ProfileNameArg,
     profile_version: ProfileVersionArg = None,
-    log_file: LogFileArg = Path("ingestion.log"),
+    log_file: LogFileArg = Path("extraction.log"),
 ) -> None:
     """
     Extract metadata from a directory tree and parse it into a MyTardis PEDD structure.
@@ -104,7 +104,7 @@ def upload(
         Path,
         typer.Argument(help="Directory where the extracted data will be stored"),
     ],
-    log_file: LogFileArg = Path("ingestion.log"),
+    log_file: LogFileArg = Path("upload.log"),
 ) -> None:
     """
     Submit the extracted metadata to MyTardis, and transfer the data to the storage directory.
