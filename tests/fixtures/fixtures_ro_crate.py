@@ -54,9 +54,6 @@ def fixture_rocrate_datafile(
     raw_datafile: RawDatafile, ro_crate_dataset_dir: Path
 ) -> RawDatafile:
     ro_crate_datafile = copy.copy(raw_datafile)
-    ro_crate_datafile.filename = (
-        ro_crate_dataset_dir / raw_datafile.filename
-    ).as_posix()
     return ro_crate_datafile
 
 
@@ -86,6 +83,11 @@ def test_rocrate_content(
     fixture_rocrate_dataset: RawDataset,
     fixture_rocrate_datafile: RawDatafile,
 ) -> str:
+    project_dict: dict[str, Any] = fixture_rocrate_project.model_dump()
+    project_dict["@id"] = fixture_rocrate_project.name
+    project_dict["@type"] = fixture_rocrate_project.name
+    project_dict["founder"] = fixture_rocrate_project.principal_investigator
+
     return json.dumps(
         {
             "@context": "https://w3id.org/ro/crate/1.1/context",
@@ -94,8 +96,13 @@ def test_rocrate_content(
                     "@id": "./",
                     "@type": "Dataset",
                     "hasPart": [
-                        {"@id": ro_crate_dataset_dir.as_posix()},
-                        {"@id": fixture_rocrate_datafile.filename},
+                        {
+                            "@id": (
+                                fixture_rocrate_dataset.directory
+                                / fixture_rocrate_datafile.filename
+                            ).as_posix()
+                        },
+                        {"@id": fixture_rocrate_dataset.description},
                     ],
                     "includedInDataCatalog": fixture_rocrate_experiment.title,
                     "instrument": "dummy-ro-crate-meta",
@@ -122,7 +129,14 @@ def test_rocrate_content(
                     "includedInDataCatalog": fixture_rocrate_dataset.experiments,
                     "instrument": fixture_rocrate_dataset.instrument,
                     "name": fixture_rocrate_dataset.description,
-                    "hasPart": [{"@id": (fixture_rocrate_datafile.filename)}],
+                    "hasPart": [
+                        {
+                            "@id": (
+                                fixture_rocrate_dataset.directory
+                                / fixture_rocrate_datafile.filename
+                            ).as_posix()
+                        }
+                    ],
                 },
                 {
                     "@id": "ro-crate-metadata.json",
@@ -130,14 +144,7 @@ def test_rocrate_content(
                     "about": {"@id": "./"},
                     "conformsTo": {"@id": "https://w3id.org/ro/crate/1.1"},
                 },
-                {
-                    "@id": fixture_rocrate_project.name,
-                    "@type": "Project",
-                    "name": fixture_rocrate_project.name,
-                    "founder": fixture_rocrate_project.principal_investigator,
-                    "url": fixture_rocrate_project.url,
-                    "description": fixture_rocrate_project.description,
-                },
+                # project_dict,
                 {
                     "@id": fixture_rocrate_experiment.title,
                     "@type": "DataCatalog",
@@ -146,7 +153,10 @@ def test_rocrate_content(
                     "description": fixture_rocrate_experiment.description,
                 },
                 {
-                    "@id": fixture_rocrate_datafile.filename,
+                    "@id": (
+                        fixture_rocrate_dataset.directory
+                        / fixture_rocrate_datafile.filename
+                    ).as_posix(),
                     "@type": ["File"],
                     "name": fixture_rocrate_datafile.filename,
                 },

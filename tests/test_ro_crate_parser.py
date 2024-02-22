@@ -63,6 +63,8 @@ def test_read_crate_dataobjects(
     ro_crate_unlisted_file_dir: Path,
     fixture_ro_crate_name: str,
     fixture_rocrate_uuid: str,
+    fixture_rocrate_datafile: RawDatafile,
+    fixture_rocrate_dataset: RawDataset,
 ) -> None:
     ingestible_dfs: IngestibleDataclasses = fixture_rocrate_parser.process_datasets(
         IngestibleDataclasses(), filters.PathFilterSet(filter_system_files=True)
@@ -76,8 +78,8 @@ def test_read_crate_dataobjects(
         df.filename: df for df in ingestible_dfs.get_datafiles()
     }
     crate_unique_name = fixture_rocrate_uuid + "/" + fixture_ro_crate_name
-    testing_datafile = df_dict[raw_datafile.filename]
-    assert testing_datafile.directory == raw_dataset.directory
+    testing_datafile = df_dict[fixture_rocrate_datafile.filename]
+    assert testing_datafile.directory == fixture_rocrate_dataset.directory
     unlisted_datafile = df_dict["unlisted_file.txt"]
     assert unlisted_datafile.directory == ro_crate_unlisted_file_dir
     root_datafile = df_dict["ro-crate-metadata.json"]
