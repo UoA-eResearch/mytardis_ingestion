@@ -9,7 +9,7 @@ from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
-from src.extraction.ingestibles import IngestibleDataclasses
+from src.extraction.manifest import IngestionManifest
 from src.profiles.ro_crate.ro_crate_parser import ROCrateParser
 from tests.fixtures.fixtures_ro_crate import (
     fakecrate_root,
@@ -45,29 +45,27 @@ def test_load_crate(
     """
     assert fixture_rocrate_parser.name == fixture_ro_crate_name
     assert fixture_rocrate_parser.uuid.hex == fixture_rocrate_uuid
-    ingestible_projects: IngestibleDataclasses = (
-        fixture_rocrate_parser.process_projects(IngestibleDataclasses())
+    ingestible_projects: IngestionManifest = fixture_rocrate_parser.process_projects(
+        IngestionManifest()
     )
     assert len(ingestible_projects.get_projects()) == 1
 
-    ingestible_exps: IngestibleDataclasses = fixture_rocrate_parser.process_experiments(
-        IngestibleDataclasses()
+    ingestible_exps: IngestionManifest = fixture_rocrate_parser.process_experiments(
+        IngestionManifest()
     )
     assert len(ingestible_exps.get_experiments()) == 1
 
 
 def test_read_crate_dataobjects(
     fixture_rocrate_parser: ROCrateParser,
-    raw_datafile: RawDatafile,
-    raw_dataset: RawDataset,
     ro_crate_unlisted_file_dir: Path,
     fixture_ro_crate_name: str,
     fixture_rocrate_uuid: str,
     fixture_rocrate_datafile: RawDatafile,
     fixture_rocrate_dataset: RawDataset,
 ) -> None:
-    ingestible_dfs: IngestibleDataclasses = fixture_rocrate_parser.process_datasets(
-        IngestibleDataclasses(), filters.PathFilterSet(filter_system_files=True)
+    ingestible_dfs: IngestionManifest = fixture_rocrate_parser.process_datasets(
+        IngestionManifest(), filters.PathFilterSet(filter_system_files=True)
     )
     assert len([df.description for df in ingestible_dfs.get_datasets()]) == 2
     assert (
@@ -95,35 +93,38 @@ def test_read_crate_dataobjects(
     assert root_dataset.metadata
     assert root_dataset.metadata["test-ro-crate-Metadata"] == "test value"
     testing_dataset = ds_dict[
-        crate_unique_name + "/" + (raw_dataset.directory).as_posix() + "/"
+        crate_unique_name + "/" + (fixture_rocrate_dataset.directory).as_posix() + "/"
     ]
-    assert testing_dataset.experiments == raw_dataset.experiments
-    assert testing_dataset.instrument == raw_dataset.instrument
+    assert testing_dataset.experiments == fixture_rocrate_dataset.experiments
+    assert testing_dataset.instrument == fixture_rocrate_dataset.instrument
 
 
 def test_read_crate_project(
     fixture_rocrate_parser: ROCrateParser,
-    raw_project: RawProject,
+    fixture_rocrate_project: RawProject,
 ) -> None:
-    ingestible_projects: IngestibleDataclasses = (
-        fixture_rocrate_parser.process_projects(IngestibleDataclasses())
+    ingestible_projects: IngestionManifest = fixture_rocrate_parser.process_projects(
+        IngestionManifest()
     )
     assert len(ingestible_projects.get_projects()) == 1
     testing_project = ingestible_projects.get_projects()[0]
-    assert testing_project.principal_investigator == raw_project.principal_investigator
-    assert testing_project.url == raw_project.url
-    assert testing_project.description == raw_project.description
+    assert (
+        testing_project.principal_investigator
+        == fixture_rocrate_project.principal_investigator
+    )
+    assert testing_project.url == fixture_rocrate_project.url
+    assert testing_project.description == fixture_rocrate_project.description
 
 
 def test_read_crate_experiment(
     fixture_rocrate_parser: ROCrateParser,
-    raw_experiment: RawExperiment,
+    fixture_rocrate_experiment: RawExperiment,
 ) -> None:
-    ingestible_projects: IngestibleDataclasses = (
-        fixture_rocrate_parser.process_experiments(IngestibleDataclasses())
+    ingestible_projects: IngestionManifest = fixture_rocrate_parser.process_experiments(
+        IngestionManifest()
     )
     experiments = ingestible_projects.get_experiments()
     assert len(experiments) == 1
     testing_experiment = experiments[0]
-    assert testing_experiment.projects == raw_experiment.projects
+    assert testing_experiment.projects == fixture_rocrate_experiment.projects
     assert testing_experiment.title == testing_experiment.title

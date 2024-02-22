@@ -144,7 +144,14 @@ def test_rocrate_content(
                     "about": {"@id": "./"},
                     "conformsTo": {"@id": "https://w3id.org/ro/crate/1.1"},
                 },
-                # project_dict,
+                {
+                    "@id": fixture_rocrate_project.name,
+                    "@type": "Project",
+                    "name": fixture_rocrate_project.name,
+                    "founder": fixture_rocrate_project.principal_investigator,
+                    "url": fixture_rocrate_project.url,
+                    "description": fixture_rocrate_project.description,
+                },
                 {
                     "@id": fixture_rocrate_experiment.title,
                     "@type": "DataCatalog",
