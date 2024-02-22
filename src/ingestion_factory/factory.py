@@ -5,8 +5,10 @@ needs to determine the Smelter class that is used by the Factory"""
 
 import json
 import logging
+from multiprocessing.context import SpawnProcess
+from multiprocessing.spawn import prepare
 import sys
-from typing import Optional
+from typing import Optional, Tuple
 
 from pydantic import ValidationError
 
@@ -15,7 +17,8 @@ from src.blueprints.datafile import Datafile, DatafileReplica, RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
-from src.config.config import ConfigFromEnv
+from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
+from src.conveyor.conveyor import Conveyor
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
 from src.helpers.dataclass import get_object_name
@@ -23,6 +26,7 @@ from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 from src.utils.types.singleton import Singleton
+from tests.fixtures.fixtures_config_from_env import storage
 
 logger = logging.getLogger(__name__)
 
@@ -65,12 +69,13 @@ class IngestionFactory(metaclass=Singleton):
 
     def __init__(
         self,
-        config: Optional[ConfigFromEnv] = None,
+        config: ConfigFromEnv,
         mt_rest: Optional[MyTardisRESTFactory] = None,
         overseer: Optional[Overseer] = None,
         smelter: Optional[Smelter] = None,
         forge: Optional[Forge] = None,
         crucible: Optional[Crucible] = None,
+        conveyor: Optional[Conveyor] = None
     ) -> None:
         """Initialises the Factory with the configuration found in the config_dict.
 
@@ -90,19 +95,8 @@ class IngestionFactory(metaclass=Singleton):
             smelter : Smelter
                 class instance of Smelter
         """
-        if not config:
-            try:
-                config = ConfigFromEnv()
-            except ValidationError as error:
-                logger.error(
-                    (
-                        "An error occurred while validating the environment "
-                        "configuration. Make sure all required variables are set "
-                        "or pass your own configuration instance. Error: %s"
-                    ),
-                    error,
-                )
-                sys.exit()
+
+        self.config = config
 
         mt_rest = mt_rest or MyTardisRESTFactory(config.auth, config.connection)
         overseer = overseer or Overseer(mt_rest)
@@ -115,6 +109,10 @@ class IngestionFactory(metaclass=Singleton):
         )
         self.crucible = crucible or Crucible(
             overseer=overseer,
+        )
+        self.conveyor = conveyor or Conveyor(
+            store=config.store,
+            data_root=config.data_root
         )
 
     def ingest_projects(
@@ -271,7 +269,7 @@ class IngestionFactory(metaclass=Singleton):
     def ingest_datafiles(
         self,
         datafiles: list[RawDatafile],
-    ) -> tuple[IngestionResult, list[Datafile]]:
+    ) -> Tuple[IngestionResult, SpawnProcess]:
         """Wrapper function to create the experiments from input files"""
         result = IngestionResult()
         prepared_datafiles: list[Datafile] = []
@@ -297,14 +295,15 @@ class IngestionFactory(metaclass=Singleton):
             if not prepared_datafile:
                 result.error.append(name) 
                 continue
-
-            prepared_datafiles.append(prepared_datafile)
+            # Add a replica to represent the copy transferred by the Conveyor.
+            prepared_datafile.replicas.append(self.conveyor.create_replica(prepared_datafile))
 
             self.forge.forge_datafile(prepared_datafile)
+
             result.success.append((name, None))
 
         logger.info(
-            "Successfully ingested %d datafiles: %s",
+            "Successfully ingested %d datafile metadata: %s",
             len(result.success),
             result.success,
         )
@@ -314,7 +313,11 @@ class IngestionFactory(metaclass=Singleton):
                 len(result.error),
                 result.error,
             )
-        return result, prepared_datafiles
+        
+        # Create a file transfer with the conveyor
+        file_transfer_process = self.conveyor.create_transfer(self.config.data_root, prepared_datafiles)
+
+        return result, file_transfer_process
 
     def dump_ingestion_result_json(  # pylint:disable=missing-function-docstring
         self,
@@ -338,11 +341,11 @@ class IngestionFactory(metaclass=Singleton):
 
     def ingest(  # pylint: disable=missing-function-docstring
         self,
-        projects: list[RawProject] | None = None,
-        experiments: list[RawExperiment] | None = None,
-        datasets: list[RawDataset] | None = None,
-        datafiles: list[RawDatafile] | None = None,
-    ) -> None:
+        projects: list[RawProject],
+        experiments: list[RawExperiment],
+        datasets: list[RawDataset],
+        datafiles: list[RawDatafile],
+    ) -> SpawnProcess:
         ingested_projects = self.ingest_projects(projects)
         if not ingested_projects:
             logger.error("Fatal error while ingesting projects. Check logs.")
@@ -363,5 +366,7 @@ class IngestionFactory(metaclass=Singleton):
             projects_result=ingested_projects,
             experiments_result=ingested_experiments,
             datasets_result=ingested_datasets,
-            datafiles_result=ingested_datafiles,
+            datafiles_result=ingested_datafiles[0],
         )
+
+        return ingested_datafiles[1]

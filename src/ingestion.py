@@ -5,7 +5,9 @@ CLI frontend for extracting metadata, and ingesting it with the data into MyTard
 import io
 import logging
 from pathlib import Path
+import sys
 from typing import Optional
+from pydantic import ValidationError
 
 import typer
 from typing_extensions import Annotated
@@ -19,6 +21,7 @@ from src.utils import log_utils
 from src.utils.filesystem.filesystem_nodes import DirectoryNode
 from src.utils.timing import Timer
 
+logger = logging.getLogger(__name__)
 
 def main(
     data_root: Annotated[
@@ -54,10 +57,24 @@ def main(
     Run an ingestion
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
-    config = ConfigFromEnv()
-
+    try:
+        config = ConfigFromEnv()
+    except ValidationError as error:
+        logger.error(
+            (
+                "An error occurred while validating the environment "
+                "configuration. Make sure all required variables are set "
+                "or pass your own configuration instance. Error: %s"
+            ),
+            error,
+        )
+        sys.exit()
     # Create storagebox config based on passed in argument.
-    config.store = FilesystemStorageBoxConfig(storage_name=storage_name, target_root_dir=storage_dir)
+    config.store = FilesystemStorageBoxConfig(
+        storage_name=storage_name,
+        target_root_dir=storage_dir
+    )
+    config.data_root = data_root
 
     timer = Timer(start=True)
 
@@ -84,7 +101,7 @@ def main(
     timer.start()
     ingestion_agent = IngestionFactory(config=config)
 
-    ingestion_agent.ingest(
+    file_transfer_process = ingestion_agent.ingest(
         metadata.get_projects(),
         metadata.get_experiments(),
         metadata.get_datasets(),
@@ -92,13 +109,13 @@ def main(
     )
 
     elapsed = timer.stop()
-    logging.info("Finished submitting dataclasses to MyTardis")
-    logging.info("Total time (s): %.2f", elapsed)
+    logger.info("Finished submitting dataclasses to MyTardis")
+    logger.info("Total time (s): %.2f", elapsed)
 
-    transport = RsyncTransport(Path(storage_dir))
-    conveyor = Conveyor(transport)
-    conveyor.initiate_transfer(data_root, metadata.get_datafiles()).join()
-
+    logger.info("Starting transfer of datafiles.")
+    file_transfer_process.start()
+    file_transfer_process.join()
+    logger.info("Finished transferring datafiles.")
 
 if __name__ == "__main__":
     typer.run(main)
