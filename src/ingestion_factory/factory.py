@@ -27,9 +27,11 @@ class IngestionResult:  # pylint: disable=missing-class-docstring
     def __init__(
         self,
         success: Optional[list[tuple[str, Optional[URI]]]] = None,
+        skipped: Optional[list[tuple[str, Optional[URI]]]] = None,
         error: Optional[list[str]] = None,
     ) -> None:
         self.success = success or []
+        self.skipped = skipped or []
         self.error = error or []
 
     def __eq__(self, other) -> bool:  # type: ignore
@@ -82,11 +84,9 @@ class IngestionFactory:
 
     def ingest_projects(
         self,
-        projects: list[RawProject] | None,
-    ) -> IngestionResult | None:  # sourcery skip: class-extract-method
+        projects: list[RawProject],
+    ) -> IngestionResult:  # sourcery skip: class-extract-method
         """Wrapper function to create the projects from input files"""
-        if not projects:
-            return None
 
         result = IngestionResult()
 
@@ -114,33 +114,19 @@ class IngestionFactory:
                     project.name,
                     project_uri,
                 )
+                result.skipped.append((project.object_id, project_uri))
                 continue
 
             project_uri = self.forge.forge_project(project, refined_parameters)
-
-            # Note: if the ingestion was skipped because the project already exists,
-            #       is that really a "success"?
             result.success.append((project.object_id, project_uri))
-
-        logger.info(
-            "Successfully ingested %d projects: %s", len(result.success), result.success
-        )
-        if result.error:
-            logger.warning(
-                "There were errors ingesting %d projects: %s",
-                len(result.error),
-                result.error,
-            )
 
         return result
 
     def ingest_experiments(  # pylint: disable=too-many-locals
         self,
-        experiments: list[RawExperiment] | None,
-    ) -> IngestionResult | None:
+        experiments: list[RawExperiment],
+    ) -> IngestionResult:
         """Wrapper function to create the experiments from input files"""
-        if not experiments:
-            return None
 
         result = IngestionResult()
 
@@ -167,34 +153,20 @@ class IngestionFactory:
                     experiment.title,
                     experiment_uri,
                 )
-                # Should we record the skip here?
+                result.skipped.append((experiment.object_id, experiment_uri))
                 continue
 
             experiment_uri = self.forge.forge_experiment(experiment, refined_parameters)
 
             result.success.append((experiment.object_id, experiment_uri))
 
-        logger.info(
-            "Successfully ingested %d experiments: %s",
-            len(result.success),
-            result.success,
-        )
-        if result.error:
-            logger.warning(
-                "There were errors ingesting %d experiments: %s",
-                len(result.error),
-                result.error,
-            )
-
         return result
 
     def ingest_datasets(  # pylint: disable=too-many-locals
         self,
-        datasets: list[RawDataset] | None,
-    ) -> IngestionResult | None:
+        datasets: list[RawDataset],
+    ) -> IngestionResult:
         """Wrapper function to create the experiments from input files"""
-        if not datasets:
-            return None
 
         result = IngestionResult()
 
@@ -220,21 +192,11 @@ class IngestionFactory:
                     dataset.description,
                     dataset_uri,
                 )
-                # Should we record the skip here?
+                result.skipped.append((dataset.object_id, dataset_uri))
                 continue
 
             dataset_uri = self.forge.forge_dataset(dataset, refined_parameters)
             result.success.append((dataset.object_id, dataset_uri))
-
-        logger.info(
-            "Successfully ingested %d datasets: %s", len(result.success), result.success
-        )
-        if result.error:
-            logger.warning(
-                "There were errors ingesting %d datasets: %s",
-                len(result.error),
-                result.error,
-            )
 
         return result
 
@@ -272,7 +234,7 @@ class IngestionFactory:
                     'Already ingested datafile "%s". Skipping datafile ingestion.',
                     datafile.directory,
                 )
-                # Should we record the skip here?
+                result.skipped.append((datafile.object_id, None))
                 continue
 
             self.forge.forge_datafile(datafile)
@@ -340,21 +302,21 @@ class IngestionFactory:
         datasets: list[RawDataset],
         datafiles: list[RawDatafile],
     ) -> None:
-        ingested_projects = self.ingest_projects(projects)
-        if not ingested_projects:
-            logger.error("Fatal error while ingesting projects. Check logs.")
+        if projects is not None:
+            ingested_projects = self.ingest_projects(projects)
+            self.log_results(ingested_projects, "project")
 
-        ingested_experiments = self.ingest_experiments(experiments)
-        if not ingested_experiments:
-            logger.error("Fatal error ingesting experiments. Check logs.")
+        if experiments is not None:
+            ingested_experiments = self.ingest_experiments(experiments)
+            self.log_results(ingested_experiments, "experiment")
 
-        ingested_datasets = self.ingest_datasets(datasets)
-        if not ingested_datasets:
-            logger.error("Fatal error ingesting datasets. Check logs.")
+        if datasets is not None:
+            ingested_datasets = self.ingest_datasets(datasets)
+            self.log_results(ingested_datasets, "dataset")
 
-        ingested_datafiles = self.ingest_datafiles(datafiles)
-        if not ingested_datafiles:
-            logger.error("Fatal error ingesting datafiles. Check logs.")
+        if datafiles is not None:
+            ingested_datafiles = self.ingest_datafiles(datafiles)
+            self.log_results(ingested_datafiles, "datafile")
 
         self.dump_ingestion_result_json(
             projects_result=ingested_projects,
@@ -362,3 +324,19 @@ class IngestionFactory:
             datasets_result=ingested_datasets,
             datafiles_result=ingested_datafiles,
         )
+
+    def log_results(self, result: IngestionResult, object_type: str) -> None:
+        """Logs the details of an ingestion result"""
+
+        logger.info("Finished ingesting %ss", object_type)
+        logger.info("%d %ss successfully ingested", len(result.success), object_type)
+        logger.info("%d %ss skipped", len(result.skipped), object_type)
+        logger.info("%d %ss failed", len(result.error), object_type)
+
+        if result.error:
+            logger.error(
+                "There were errors ingesting %d %ss: %s",
+                len(result.error),
+                object_type,
+                result.error,
+            )
