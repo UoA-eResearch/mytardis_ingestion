@@ -297,6 +297,7 @@ class IngestionFactory(metaclass=Singleton):
             prepared_datafile.replicas.append(self.conveyor.create_replica(prepared_datafile))
 
             self.forge.forge_datafile(prepared_datafile)
+            prepared_datafiles.append(prepared_datafile)
             result.success.append((name, None))
 
         logger.info(
