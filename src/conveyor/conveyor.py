@@ -6,9 +6,8 @@ from multiprocessing.context import SpawnProcess
 from pathlib import Path
 from typing import Sequence
 
-from src.blueprints.datafile import Datafile, DatafileReplica, RawDatafile
-from src.blueprints.storage_boxes import StorageTypesEnum
-from src.config.config import StorageBoxConfig
+from src.blueprints.datafile import Datafile
+from src.config.config import FilesystemStorageBoxConfig, StorageBoxConfig
 from src.conveyor.transports.common import AbstractTransport
 from src.conveyor.transports.rsync import RsyncTransport
 
@@ -19,14 +18,10 @@ class Conveyor:
     transport: AbstractTransport
 
     def _get_transport_by_store(self, store: StorageBoxConfig) -> AbstractTransport:
-        match store.storage_class:
-            case StorageTypesEnum.FILE_SYSTEM:
-                if store.options is None:
-                    raise ValueError()
-                dest_path = Path(store.options["target_root_directory"])
-                return RsyncTransport(dest_path)
-            case StorageTypesEnum.S3:
-                raise NotImplementedError()
+        if not isinstance(store, FilesystemStorageBoxConfig):
+            raise NotImplementedError("StorageBox class is not supported.")
+        # Create a transport for filesystem storagebox
+        return RsyncTransport(store.target_root_dir)
 
     def __init__(self, store: StorageBoxConfig) -> None:
         """Initialises the file ingestion object.
