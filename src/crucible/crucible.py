@@ -13,6 +13,7 @@ from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
 from src.config.config import StorageBoxConfig
+from src.conveyor.conveyor import Conveyor
 from src.mytardis_client.enumerators import ObjectSearchEnum
 from src.overseers import Overseer
 
@@ -28,11 +29,9 @@ class Crucible:
 
     def __init__(
         self,
-        overseer: Overseer,
-        store: StorageBoxConfig
+        overseer: Overseer
     ) -> None:
         self.overseer = overseer
-        self.store = store
 
     def prepare_project(self, refined_project: RefinedProject) -> Project | None:
         """Refine a project by getting the objects that need to exist in
@@ -196,22 +195,6 @@ class Crucible:
             ),
         )
 
-    def __create_datafile_replicas(
-        self,
-        dataset: URI,
-        file_path: Path,
-    ) -> List[DatafileReplica]:  # sourcery skip: for-append-to-extend
-        """Use the dataset associated with datafile to construct replicas"""
-        dataset_obj = self.overseer.get_object_by_uri(dataset)
-        if dataset_obj is None:
-            raise ValueError(f"Unable to find dataset: {dataset}")
-        replica = DatafileReplica(
-                protocol="file",
-                location=self.store.storage_name,
-                uri=f"ds-{dataset_obj.id}/{file_path.as_posix()}"
-        )
-        return [replica]
-
     def prepare_datafile(self, refined_datafile: RefinedDatafile) -> Datafile | None:
         """Refine a datafile by finding URIs from MyTardis for the
         relevant fields of interest."""
@@ -234,11 +217,6 @@ class Crucible:
             )
             return None
         dataset = datasets[0]
-        file_path = Path(refined_datafile.directory / refined_datafile.filename)
-        replicas = self.__create_datafile_replicas(
-            dataset,
-            file_path,
-        )
         # TODO revisit the logic here to see if we need to push this out to individual DFOs
         return Datafile(
             filename=refined_datafile.filename,
@@ -250,5 +228,5 @@ class Crucible:
             groups=refined_datafile.groups,
             dataset=dataset,
             parameter_sets=refined_datafile.parameter_sets,
-            replicas=replicas,
+            replicas=[],
         )
