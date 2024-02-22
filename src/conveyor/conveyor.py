@@ -78,7 +78,7 @@ class Conveyor:
             destination_dir = self._store.target_root_dir / f"ds-{dataset_id}"
             self._transfer_with_rsync(data_root, file_paths, destination_dir)
 
-    def initiate_transfer(self, data_root: Path, dfs: Sequence[Datafile]) -> SpawnProcess:
+    def create_transfer(self, data_root: Path, dfs: Sequence[Datafile]) -> SpawnProcess:
         """Spawns a separate Process to transfer via specified transport and
         returns the Process. Client code should store this reference,
         perform the rest of the metadata ingestion operations,

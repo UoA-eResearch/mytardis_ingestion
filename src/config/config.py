@@ -266,5 +266,5 @@ class ConfigFromEnv(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", env_nested_delimiter="__"
     )
-    store: FilesystemStorageBoxConfig
-    data_root: Path
+    store: Optional[FilesystemStorageBoxConfig] = None
+    data_root: Optional[Path] = None
