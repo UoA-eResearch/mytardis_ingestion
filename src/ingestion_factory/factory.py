@@ -38,24 +38,17 @@ class IngestionResult:  # pylint: disable=missing-class-docstring
 
 
 class IngestionFactory:
-    """Ingestion Factory base class to orchestrate the Smelting, and Forging of
-    objects within MyTardis.
+    """Orchestrates the ingestion of raw metadata into MyTardis.
 
-    IngestionFactory is an abstract base class from which specific ingestion
-    factories should be subclassed. The Factory classes orchestrate the various
-    classes associated with ingestion in such a way that the Smelter, Overseer and Forge
-    classes are unaware of each other
+    The class runs the smelter-crucible-forge stages of the ingestion process, such that
+    the Smelter, Crucible and Forge classes are unaware of each other.
 
     Attributes:
-        self.overseer: An instance of the Overseer class
-        self.mytardis_setup: The return from the introspection API that specifies how MyTardis is
-            set up.
-        self.forge: An instance of the Forge class
-        self.smelter: An instance of a smelter class that varies for different ingestion approaches
-        self.glob_string: For smelters that use files, what is the extension or similar to search
-            for. See pathlib documentations for glob details.
-        self.default_institution: Either a name, or an identifier for an Institution to use as the
-            default for Project and Experiment creation.
+        mt_rest: client for interacting with MyTardis REST API
+        overseer: An instance of the Overseer class
+        smelter: used to refine the metadata for ingestion
+        crucible: used to prepare the metadata for ingestion
+        forge: used to upload the metadata to MyTardis
     """
 
     def __init__(
@@ -68,24 +61,7 @@ class IngestionFactory:
         crucible: Optional[Crucible] = None,
         conveyor: Optional[Conveyor] = None,
     ) -> None:
-        """Initialises the Factory with the configuration found in the config_dict.
-
-        Passes the config_dict to the overseer and forge instances to ensure that the
-        specific MyTardis configuration is shared across all classes
-
-        Args:
-            general : GeneralConfig
-                Pydantic config class containing general information
-            auth : AuthConfig
-                Pydantic config class containing information about authenticating with a MyTardis
-                instance
-            connection : ConnectionConfig
-                Pydantic config class containing information about connecting to a MyTardis instance
-            mytardis_setup : IntrospectionConfig
-                Pydantic config class containing information from the introspection API
-            smelter : Smelter
-                class instance of Smelter
-        """
+        """Initialises the IngestionFactory with the given configuration"""
 
         self.config = config
 
