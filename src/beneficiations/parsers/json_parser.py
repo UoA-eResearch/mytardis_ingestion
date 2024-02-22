@@ -15,7 +15,7 @@ from typing import Any, Type, TypeVar
 
 from src.beneficiations.parsers.parser import Parser
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
-from src.extraction.ingestibles import IngestibleDataclasses
+from src.extraction.manifest import IngestionManifest
 from src.profiles import profile_consts as pc
 
 # ---Constants
@@ -27,7 +27,7 @@ T = TypeVar("T", RawProject, RawExperiment, RawDataset, RawDatafile)
 
 # ---Code
 class JsonParser(Parser):
-    """A class to parse dataclass files into IngestibleDataclasses objects."""
+    """A class to parse dataclass files into IngestionManifest objects."""
 
     def __init__(
         self,
@@ -37,23 +37,23 @@ class JsonParser(Parser):
     def parse(
         self,
         beneficiation_data: dict[str, Any],
-        ingestible_dclasses: IngestibleDataclasses,
-    ) -> IngestibleDataclasses:
-        """Parse dataclass files into IngestibleDataclasses objects.
+        ingestible_dclasses: IngestionManifest,
+    ) -> IngestionManifest:
+        """Parse dataclass files into IngestionManifest objects.
 
         Args:
             beneficiation_data (dict[str, Any]): Data that contains information about the dataclasses to parse
-            ingestible_dclasses (IngestibleDataclasses): object that conatins parsed dataclasses
+            ingestible_dclasses (IngestionManifest): object that conatins parsed dataclasses
 
         Returns:
-            IngestibleDataclasses: object containing parsed dataclass objects.
+            IngestionManifest: object containing parsed dataclass objects.
         """
         proj_files: list[Path] = beneficiation_data[pc.PROJECT_NAME]
         expt_files: list[Path] = beneficiation_data[pc.EXPERIMENT_NAME]
         dset_files: list[Path] = beneficiation_data[pc.DATASET_NAME]
         dfile_files: list[Path] = beneficiation_data[pc.DATAFILE_NAME]
 
-        ing_dclasses: IngestibleDataclasses = copy.deepcopy(ingestible_dclasses)
+        ing_dclasses: IngestionManifest = copy.deepcopy(ingestible_dclasses)
         logger.debug(f"proj_files = {str(proj_files)}")
         projects = self._parse_project_files(proj_files)
         ing_dclasses.add_projects(projects)
