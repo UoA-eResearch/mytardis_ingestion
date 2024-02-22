@@ -2,8 +2,6 @@
 # nosec assert_used
 from pathlib import Path
 
-from pyfakefs.fake_filesystem import FakeFilesystem
-
 import src.utils.filesystem.filters as filters
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
@@ -45,15 +43,6 @@ def test_load_crate(
     """
     assert fixture_rocrate_parser.name == fixture_ro_crate_name
     assert fixture_rocrate_parser.uuid.hex == fixture_rocrate_uuid
-    ingestible_projects: IngestionManifest = fixture_rocrate_parser.process_projects(
-        IngestionManifest()
-    )
-    assert len(ingestible_projects.get_projects()) == 1
-
-    ingestible_exps: IngestionManifest = fixture_rocrate_parser.process_experiments(
-        IngestionManifest()
-    )
-    assert len(ingestible_exps.get_experiments()) == 1
 
 
 def test_read_crate_dataobjects(
@@ -64,6 +53,10 @@ def test_read_crate_dataobjects(
     fixture_rocrate_datafile: RawDatafile,
     fixture_rocrate_dataset: RawDataset,
 ) -> None:
+    """Test to confrim the RO-Crate parser has traversed datafiles correctly
+    and associated them with the correct datasets.
+    Also confirms that datasets haved been parsed correctly.
+    """
     ingestible_dfs: IngestionManifest = fixture_rocrate_parser.process_datasets(
         IngestionManifest(), filters.PathFilterSet(filter_system_files=True)
     )
@@ -72,14 +65,28 @@ def test_read_crate_dataobjects(
         len([(df.dataset, df.filename) for df in ingestible_dfs.get_datafiles()]) == 3
     )  # raw_datafile, ro_crate_metadata.json and unlistedfile.txt
 
+    # test file traversal of datafiles
     df_dict: dict[str, RawDatafile] = {
         df.filename: df for df in ingestible_dfs.get_datafiles()
     }
+    # RO-Crate parser applies a unique name to each dataset
+    # (as each must be named based on it's relative path)
     crate_unique_name = fixture_rocrate_uuid + "/" + fixture_ro_crate_name
     testing_datafile = df_dict[fixture_rocrate_datafile.filename]
+
     assert testing_datafile.directory == fixture_rocrate_dataset.directory
+    assert testing_datafile.dataset == (
+        crate_unique_name + "/" + fixture_rocrate_datafile.dataset + "/"
+    )
+
+    # a file not explicityl listed in the RO-Crate should accurately list it's directory
+    # ... and be associated with it's nearest dataset in the path
     unlisted_datafile = df_dict["unlisted_file.txt"]
     assert unlisted_datafile.directory == ro_crate_unlisted_file_dir
+    assert testing_datafile.dataset == (
+        crate_unique_name + "/" + fixture_rocrate_dataset.description + "/"
+    )
+    # The RO-crate metadata file should be associated with the root dataset at ./
     root_datafile = df_dict["ro-crate-metadata.json"]
     assert root_datafile.dataset == crate_unique_name + "/./"
 
@@ -99,7 +106,7 @@ def test_read_crate_dataobjects(
     assert testing_dataset.instrument == fixture_rocrate_dataset.instrument
 
 
-def test_read_crate_project(
+def test_parse_crate_project(
     fixture_rocrate_parser: ROCrateParser,
     fixture_rocrate_project: RawProject,
 ) -> None:
@@ -116,7 +123,7 @@ def test_read_crate_project(
     assert testing_project.description == fixture_rocrate_project.description
 
 
-def test_read_crate_experiment(
+def test_parse_crate_experiment(
     fixture_rocrate_parser: ROCrateParser,
     fixture_rocrate_experiment: RawExperiment,
 ) -> None:

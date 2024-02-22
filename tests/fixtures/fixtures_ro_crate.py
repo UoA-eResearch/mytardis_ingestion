@@ -1,16 +1,12 @@
-# pylint: disable=missing-function-docstring
+# pylint: disable=missing-docstring
 # nosec assert_used
 import copy
 import json
 import uuid
-from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
 
 import pytest
 
-from src.blueprints.common_models import GroupACL, UserACL
-from src.blueprints.custom_data_types import Username
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
@@ -51,9 +47,12 @@ def fixture_rocrate_dataset(
 
 @pytest.fixture()
 def fixture_rocrate_datafile(
-    raw_datafile: RawDatafile, ro_crate_dataset_dir: Path
+    raw_datafile: RawDatafile,
+    ro_crate_dataset_dir: Path,
+    fixture_rocrate_dataset: RawDataset,
 ) -> RawDatafile:
     ro_crate_datafile = copy.copy(raw_datafile)
+    ro_crate_datafile.dataset = fixture_rocrate_dataset.description
     return ro_crate_datafile
 
 
@@ -72,7 +71,6 @@ def ro_crate_unlisted_file_dir(ro_crate_dataset_dir: Path) -> Path:
     return ro_crate_dataset_dir / "unlisted_files_dir"
 
 
-# TODO replace with MyTardis to RO-Crate serializer when that exists
 @pytest.fixture()
 def test_rocrate_content(
     ro_crate_dataset_dir: Path,
@@ -83,11 +81,6 @@ def test_rocrate_content(
     fixture_rocrate_dataset: RawDataset,
     fixture_rocrate_datafile: RawDatafile,
 ) -> str:
-    project_dict: dict[str, Any] = fixture_rocrate_project.model_dump()
-    project_dict["@id"] = fixture_rocrate_project.name
-    project_dict["@type"] = fixture_rocrate_project.name
-    project_dict["founder"] = fixture_rocrate_project.principal_investigator
-
     return json.dumps(
         {
             "@context": "https://w3id.org/ro/crate/1.1/context",
