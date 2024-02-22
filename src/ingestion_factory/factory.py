@@ -18,7 +18,6 @@ from src.forges.forge import Forge
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
-from src.utils.types.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +37,7 @@ class IngestionResult:  # pylint: disable=missing-class-docstring
         return NotImplemented
 
 
-class IngestionFactory(metaclass=Singleton):
+class IngestionFactory:
     """Ingestion Factory base class to orchestrate the Smelting, and Forging of
     objects within MyTardis.
 
