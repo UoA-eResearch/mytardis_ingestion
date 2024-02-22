@@ -17,7 +17,7 @@ class BaseProject(BaseModel, ABC):
     validate against different standards, with the Project having a more strict
     validation than the RawProject class."""
 
-    name: str
+    name: str = Field(min_length=1)
     description: str
     principal_investigator: Username
     data_classification: DataClassification = DataClassification.SENSITIVE
@@ -27,6 +27,11 @@ class BaseProject(BaseModel, ABC):
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None
     identifiers: Optional[List[str]] = None
+
+    @property
+    def object_id(self) -> str:
+        """Main ID for a project"""
+        return self.name
 
 
 class RawProject(BaseProject):

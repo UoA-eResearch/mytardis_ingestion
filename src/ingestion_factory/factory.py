@@ -15,7 +15,6 @@ from src.config.config import ConfigFromEnv
 from src.conveyor.conveyor import Conveyor, FailedTransferException
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
-from src.helpers.dataclass import get_object_name
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
@@ -115,32 +114,21 @@ class IngestionFactory(metaclass=Singleton):
 
         result = IngestionResult()
 
-        for project in projects:
-            name = get_object_name(project)
-            if not name:
-                logger.warning(
-                    (
-                        "Unable to find the name of the project, skipping project defined by %s",
-                        project,
-                    )
-                )
-                result.error.append("unknown")
-                continue
-
-            smelted_project = self.smelter.smelt_project(project)
+        for raw_project in projects:
+            smelted_project = self.smelter.smelt_project(raw_project)
             if not smelted_project:
-                result.error.append(name)
+                result.error.append(raw_project.object_id)
                 continue
 
             refined_project, refined_parameters = smelted_project
 
-            prepared_project = self.crucible.prepare_project(refined_project)
-            if not prepared_project:
-                result.error.append(name)
+            project = self.crucible.prepare_project(refined_project)
+            if not project:
+                result.error.append(refined_project.object_id)
                 continue
 
-            project_uri = self.forge.forge_project(prepared_project, refined_parameters)
-            result.success.append((name, project_uri))
+            project_uri = self.forge.forge_project(project, refined_parameters)
+            result.success.append((project.object_id, project_uri))
 
         logger.info(
             "Successfully ingested %d projects: %s", len(result.success), result.success
@@ -164,35 +152,21 @@ class IngestionFactory(metaclass=Singleton):
 
         result = IngestionResult()
 
-        for experiment in experiments:
-            name = get_object_name(experiment)
-            if not name:
-                logger.warning(
-                    (
-                        "Unable to find the name of the experiment, skipping experiment "
-                        "defined by %s",
-                        experiment,
-                    )
-                )
-                result.error.append("unknown")
-                continue
-
-            smelted_experiment = self.smelter.smelt_experiment(experiment)
+        for raw_experiment in experiments:
+            smelted_experiment = self.smelter.smelt_experiment(raw_experiment)
             if not smelted_experiment:
-                result.error.append(name)
+                result.error.append(raw_experiment.object_id)
                 continue
 
             refined_experiment, refined_parameters = smelted_experiment
 
-            prepared_experiment = self.crucible.prepare_experiment(refined_experiment)
-            if not prepared_experiment:
-                result.error.append(name)
+            experiment = self.crucible.prepare_experiment(refined_experiment)
+            if not experiment:
+                result.error.append(refined_experiment.object_id)
                 continue
 
-            experiment_uri = self.forge.forge_experiment(
-                prepared_experiment, refined_parameters
-            )
-            result.success.append((name, experiment_uri))
+            experiment_uri = self.forge.forge_experiment(experiment, refined_parameters)
+            result.success.append((experiment.object_id, experiment_uri))
 
         logger.info(
             "Successfully ingested %d experiments: %s",
@@ -218,31 +192,20 @@ class IngestionFactory(metaclass=Singleton):
 
         result = IngestionResult()
 
-        for dataset in datasets:
-            name = get_object_name(dataset)
-            if not name:
-                logger.warning(
-                    (
-                        "Unable to find the name of the dataset, skipping dataset defined by %s",
-                        dataset,
-                    )
-                )
-                result.error.append("unknown")
-                continue
-
-            smelted_dataset = self.smelter.smelt_dataset(dataset)
+        for raw_dataset in datasets:
+            smelted_dataset = self.smelter.smelt_dataset(raw_dataset)
             if not smelted_dataset:
-                result.error.append(name)
+                result.error.append(raw_dataset.object_id)
                 continue
 
             refined_dataset, refined_parameters = smelted_dataset
-            prepared_dataset = self.crucible.prepare_dataset(refined_dataset)
-            if not prepared_dataset:
-                result.error.append(name)
+            dataset = self.crucible.prepare_dataset(refined_dataset)
+            if not dataset:
+                result.error.append(refined_dataset.object_id)
                 continue
 
-            dataset_uri = self.forge.forge_dataset(prepared_dataset, refined_parameters)
-            result.success.append((name, dataset_uri))
+            dataset_uri = self.forge.forge_dataset(dataset, refined_parameters)
+            result.success.append((dataset.object_id, dataset_uri))
 
         logger.info(
             "Successfully ingested %d datasets: %s", len(result.success), result.success
@@ -258,41 +221,28 @@ class IngestionFactory(metaclass=Singleton):
 
     def ingest_datafiles(
         self,
-        datafiles: list[RawDatafile],
+        raw_datafiles: list[RawDatafile],
     ) -> IngestionResult:
         """Wrapper function to create the experiments from input files"""
         result = IngestionResult()
-        prepared_datafiles: list[Datafile] = []
+        datafiles: list[Datafile] = []
 
-        for datafile in datafiles:
-            name = get_object_name(datafile)
-            if not name:
-                logger.warning(
-                    (
-                        "Unable to find the name of the datafile, skipping datafile defined by %s",
-                        datafile,
-                    )
-                )
-                result.error.append("unknown")
-                continue
-
-            refined_datafile = self.smelter.smelt_datafile(datafile)
+        for raw_datafile in raw_datafiles:
+            refined_datafile = self.smelter.smelt_datafile(raw_datafile)
             if not refined_datafile:
-                result.error.append(name)
+                result.error.append(raw_datafile.object_id)
                 continue
 
-            prepared_datafile = self.crucible.prepare_datafile(refined_datafile)
-            if not prepared_datafile:
-                result.error.append(name)
+            datafile = self.crucible.prepare_datafile(refined_datafile)
+            if not datafile:
+                result.error.append(refined_datafile.object_id)
                 continue
             # Add a replica to represent the copy transferred by the Conveyor.
-            prepared_datafile.replicas.append(
-                self.conveyor.create_replica(prepared_datafile)
-            )
+            datafile.replicas.append(self.conveyor.create_replica(datafile))
 
-            self.forge.forge_datafile(prepared_datafile)
-            prepared_datafiles.append(prepared_datafile)
-            result.success.append((name, None))
+            self.forge.forge_datafile(datafile)
+            datafiles.append(datafile)
+            result.success.append((datafile.object_id, None))
 
         logger.info(
             "Successfully ingested %d datafile metadata: %s",
@@ -309,7 +259,7 @@ class IngestionFactory(metaclass=Singleton):
         # Create a file transfer with the conveyor
         logger.info("Starting transfer of datafiles.")
         try:
-            self.conveyor.transfer(self.config.source_directory, prepared_datafiles)
+            self.conveyor.transfer(self.config.source_directory, datafiles)
             logger.info("Finished transferring datafiles.")
         except FailedTransferException:
             logger.error(

@@ -47,7 +47,7 @@ class BaseDatafile(BaseModel, ABC):
         delete_date: ISODateTime
             the date that the datafile is able to be deleted"""
 
-    filename: str
+    filename: str = Field(min_length=1)
     directory: Path
     md5sum: str
     mimetype: str
@@ -55,6 +55,11 @@ class BaseDatafile(BaseModel, ABC):
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None
     data_status: Optional[DataStatus] = None
+
+    @property
+    def object_id(self) -> str:
+        """Main ID for a datafile"""
+        return self.filename
 
 
 class RawDatafile(BaseDatafile):

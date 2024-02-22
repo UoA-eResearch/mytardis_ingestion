@@ -15,7 +15,7 @@ from src.blueprints.datafile import Datafile
 from src.blueprints.dataset import Dataset, DatasetParameterSet
 from src.blueprints.experiment import Experiment, ExperimentParameterSet
 from src.blueprints.project import Project, ProjectParameterSet
-from src.helpers.dataclass import get_object_name, get_object_post_type
+from src.helpers.dataclass import get_object_post_type
 from src.mytardis_client.mt_rest import BadGateWayException, MyTardisRESTFactory
 
 logger = logging.getLogger(__name__)
@@ -119,13 +119,15 @@ class Forge:
 
     def forge_object(  # pylint: disable=too-many-return-statements
         self,
-        refined_object: Project
-        | Experiment
-        | Dataset
-        | Datafile
-        | ProjectParameterSet
-        | ExperimentParameterSet
-        | DatasetParameterSet,
+        refined_object: (
+            Project
+            | Experiment
+            | Dataset
+            | Datafile
+            | ProjectParameterSet
+            | ExperimentParameterSet
+            | DatasetParameterSet
+        ),
         object_id: int | None = None,
         overwrite_objects: bool = False,
     ) -> URI | None:
@@ -193,7 +195,7 @@ class Forge:
                 if not uri:
                     message = (
                         "No URI was able to be discerned when creating object: "
-                        f"{get_object_name(refined_object)}. Object may have "
+                        f"{refined_object.object_id}. Object may have "
                         "been successfully created in MyTardis, but needs further "
                         "investigation."
                     )
@@ -202,7 +204,7 @@ class Forge:
 
                 logger.info(
                     (
-                        f"Object: {get_object_name(refined_object)} successfully "
+                        f"Object: {refined_object.object_id} successfully "
                         "created in MyTardis\n"
                         f"Url substring: {object_type['url_substring']}"
                     )

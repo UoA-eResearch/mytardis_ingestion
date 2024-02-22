@@ -17,7 +17,7 @@ class BaseExperiment(BaseModel, ABC):
     validate against different standards, with the Experiment having a more strict
     validation than the RawExperiment class."""
 
-    title: str
+    title: str = Field(min_length=1)
     description: str
     data_classification: Optional[DataClassification] = None
     data_status: Optional[DataStatus] = None
@@ -27,6 +27,11 @@ class BaseExperiment(BaseModel, ABC):
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None
     identifiers: Optional[List[str]] = None
+
+    @property
+    def object_id(self) -> str:
+        """Main ID for an experiment"""
+        return self.title
 
 
 class RawExperiment(BaseExperiment):
