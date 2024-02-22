@@ -15,6 +15,7 @@ from src.config.config import ConfigFromEnv
 from src.conveyor.conveyor import Conveyor, FailedTransferException
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
+from src.mytardis_client.enumerators import ObjectSearchEnum
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
@@ -66,16 +67,16 @@ class IngestionFactory:
         self.config = config
 
         mt_rest = mt_rest or MyTardisRESTFactory(config.auth, config.connection)
-        overseer = overseer or Overseer(mt_rest)
+        self._overseer = overseer or Overseer(mt_rest)
 
         self.forge = forge or Forge(mt_rest)
         self.smelter = smelter or Smelter(
-            overseer=overseer,
+            overseer=self._overseer,
             general=config.general,
             default_schema=config.default_schema,
         )
         self.crucible = crucible or Crucible(
-            overseer=overseer,
+            overseer=self._overseer,
         )
         self.conveyor = conveyor or Conveyor(store=config.storage)
 
@@ -102,7 +103,23 @@ class IngestionFactory:
                 result.error.append(refined_project.object_id)
                 continue
 
+            matching_projects = self._overseer.get_objects(
+                ObjectSearchEnum.PROJECT.value, project.name
+            )
+            if len(matching_projects) > 0:
+                project_uri = matching_projects[0]["resource_uri"]
+                # Would we ever get multiple matches? If so, what should we do?
+                logging.info(
+                    'Already ingested project "%s" as "%s". Skipping project ingestion.',
+                    project.name,
+                    project_uri,
+                )
+                continue
+
             project_uri = self.forge.forge_project(project, refined_parameters)
+
+            # Note: if the ingestion was skipped because the project already exists,
+            #       is that really a "success"?
             result.success.append((project.object_id, project_uri))
 
         logger.info(
@@ -140,7 +157,21 @@ class IngestionFactory:
                 result.error.append(refined_experiment.object_id)
                 continue
 
+            matching_experiments = self._overseer.get_objects(
+                ObjectSearchEnum.EXPERIMENT.value, experiment.title
+            )
+            if len(matching_experiments) > 0:
+                experiment_uri = matching_experiments[0]["resource_uri"]
+                logging.info(
+                    'Already ingested experiment "%s" as "%s". Skipping experiment ingestion.',
+                    experiment.title,
+                    experiment_uri,
+                )
+                # Should we record the skip here?
+                continue
+
             experiment_uri = self.forge.forge_experiment(experiment, refined_parameters)
+
             result.success.append((experiment.object_id, experiment_uri))
 
         logger.info(
@@ -179,6 +210,19 @@ class IngestionFactory:
                 result.error.append(refined_dataset.object_id)
                 continue
 
+            matching_datasets = self._overseer.get_objects(
+                ObjectSearchEnum.DATASET.value, dataset.description
+            )
+            if len(matching_datasets) > 0:
+                dataset_uri = matching_datasets[0]["resource_uri"]
+                logging.info(
+                    'Already ingested dataset "%s" as "%s". Skipping dataset ingestion.',
+                    dataset.description,
+                    dataset_uri,
+                )
+                # Should we record the skip here?
+                continue
+
             dataset_uri = self.forge.forge_dataset(dataset, refined_parameters)
             result.success.append((dataset.object_id, dataset_uri))
 
@@ -214,6 +258,22 @@ class IngestionFactory:
                 continue
             # Add a replica to represent the copy transferred by the Conveyor.
             datafile.replicas.append(self.conveyor.create_replica(datafile))
+
+            # Search by filename and parent dataset as filenames alone may not be unique
+            matching_datafiles = self._overseer.get_objects_by_fields(
+                ObjectSearchEnum.DATAFILE.value,
+                {
+                    "filename": datafile.filename,
+                    "dataset": str(Overseer.resource_uri_to_id(datafile.dataset)),
+                },
+            )
+            if len(matching_datafiles) > 0:
+                logging.info(
+                    'Already ingested datafile "%s". Skipping datafile ingestion.',
+                    datafile.directory,
+                )
+                # Should we record the skip here?
+                continue
 
             self.forge.forge_datafile(datafile)
             datafiles.append(datafile)
