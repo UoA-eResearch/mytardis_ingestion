@@ -112,11 +112,9 @@ class IngestionFactory(metaclass=Singleton):
             overseer=overseer,
             general=config.general,
             default_schema=config.default_schema,
-            storage=config.storage,
         )
         self.crucible = crucible or Crucible(
             overseer=overseer,
-            storage=config.storage,
         )
 
     def ingest_projects(

@@ -92,8 +92,6 @@ class RefinedProject(BaseProject):
     start_time: Optional[datetime | str] = None
     end_time: Optional[datetime | str] = None
     embargo_until: Optional[datetime | str] = None
-    active_stores: List[ProjectStorageBox]
-    archives: List[ProjectStorageBox]
 
 
 class Project(BaseProject):
@@ -105,8 +103,6 @@ class Project(BaseProject):
     start_time: Optional[ISODateTime] = None
     end_time: Optional[ISODateTime] = None
     embargo_until: Optional[ISODateTime] = None
-    active_stores: List[ProjectStorageBox]
-    archives: List[ProjectStorageBox]
 
 
 class ProjectParameterSet(ParameterSet):

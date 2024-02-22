@@ -7,15 +7,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import List
 
-from slugify import slugify
-
 from src.blueprints.custom_data_types import URI
 from src.blueprints.datafile import Datafile, DatafileReplica, RefinedDatafile
 from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
-from src.blueprints.storage_boxes import StorageBox
-from src.config.config import StorageConfig
+from src.config.config import StorageBoxConfig
 from src.mytardis_client.enumerators import ObjectSearchEnum
 from src.overseers import Overseer
 
@@ -32,11 +29,10 @@ class Crucible:
     def __init__(
         self,
         overseer: Overseer,
-        store: StorageBox
+        store: StorageBoxConfig
     ) -> None:
         self.overseer = overseer
-        self.active_stores = storage.active_stores
-        self.archive = storage.archives
+        self.store = store
 
     def prepare_project(self, refined_project: RefinedProject) -> Project | None:
         """Refine a project by getting the objects that need to exist in
@@ -78,9 +74,7 @@ class Crucible:
                 refined_project.embargo_until.isoformat()
                 if isinstance(refined_project.embargo_until, datetime)
                 else refined_project.embargo_until
-            ),
-            archives=refined_project.archives,
-            active_stores=refined_project.active_stores,
+            )
         )
 
     def prepare_experiment(
@@ -211,17 +205,12 @@ class Crucible:
         dataset_obj = self.overseer.get_object_by_uri(dataset)
         if dataset_obj is None:
             raise ValueError(f"Unable to find dataset: {dataset}")
-        stores = [x for store in (self.active_stores, self.archive) for x in store]
-        replicas = []
-        for store in stores:
-            replicas.append(
-                DatafileReplica(
-                    protocol="file",
-                    location=store.storage_name,
-                    uri=f"ds-{dataset_obj.id}/{file_path.as_posix()}"
-                )
-            )
-        return replicas
+        replica = DatafileReplica(
+                protocol="file",
+                location=self.store.storage_name,
+                uri=f"ds-{dataset_obj.id}/{file_path.as_posix()}"
+        )
+        return [replica]
 
     def prepare_datafile(self, refined_datafile: RefinedDatafile) -> Datafile | None:
         """Refine a datafile by finding URIs from MyTardis for the

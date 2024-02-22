@@ -11,7 +11,7 @@ from src.config.config import (
     GeneralConfig,
     IntrospectionConfig,
     SchemaConfig,
-    StorageConfig,
+    StorageBoxConfig,
 )
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
@@ -55,9 +55,8 @@ def smelter(
     overseer: Overseer,
     general: GeneralConfig,
     default_schema: SchemaConfig,
-    storage: StorageConfig,
 ) -> Smelter:
-    return Smelter(overseer, general, default_schema, storage)
+    return Smelter(overseer, general, default_schema)
 
 
 @fixture
@@ -70,13 +69,11 @@ def forge(
 @fixture
 def crucible(
     overseer: Overseer,
-    active_store: StorageConfig,
-    archive: StorageConfig,
+    active_stores: StorageBoxConfig
 ) -> Crucible:
     return Crucible(
         overseer=overseer,
-        active_stores=active_store,
-        archive=archive,
+        store=active_stores
     )
 
 

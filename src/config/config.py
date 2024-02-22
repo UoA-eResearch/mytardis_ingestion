@@ -22,7 +22,7 @@ from requests import PreparedRequest
 from requests.auth import AuthBase
 
 from src.blueprints.custom_data_types import MTUrl
-from src.blueprints.storage_boxes import StorageTypesEnum
+from src.blueprints.storage_boxes import StorageBox, StorageTypesEnum
 from src.mytardis_client.enumerators import MyTardisObject
 
 logger = logging.getLogger(__name__)
@@ -144,11 +144,7 @@ class StorageBoxConfig(BaseModel, ABC):
         storage_name (str): an identifier that allows the Project to access the
             options and attributes to set up an appropriate set of storage boxes
         storage_class (str): the Django storage class
-        options (dict): dictionary of storage box options NB: if the storage box
-            is a file system type then this MUST contain a key 'target_root_dir'
-            with a file path to the target root directory.
-            if the storage box is an s3 bucket then this MUST contain a key 's3_bucket'
-            with the bucket name in it.
+        options (dict): dictionary of storage box options.
         attributes (dict): dictionary of the storage box attributes
     """
 
@@ -157,6 +153,13 @@ class StorageBoxConfig(BaseModel, ABC):
     options: Optional[Dict[str, str | Path]] = None
     attributes: Optional[Dict[str, str]] = None
 
+class FilesystemStorageBoxConfig(StorageBoxConfig):
+    """Pydantic model for a filesystem-based MyTardis storagebox configuration.
+    This is used primarily to represent the ingestion storagebox.
+    """
+    storage_class: StorageTypesEnum = StorageTypesEnum.FILE_SYSTEM
+    target_root_dir: Path
+    
 
 class StorageConfig(BaseModel):
     """Default storage box information for MyTardis
@@ -241,10 +244,6 @@ class ConfigFromEnv(BaseSettings):
     CONNECTION__HOSTNAME=https://test-mytardis.nectar.auckland.ac.nz/
     #CONNECTION__PROXY__HTTP=
     #CONNECTION__PROXY__HTTPS=
-    # Storage, prefix with STORAGE__
-    STORAGE__STORAGE_BOX__STORAGE_CLASS=django..core.files.storage.FileSystemStorage
-    STORAGE__STORAGE_BOX__OPTIONS__KEY=value
-    STORAGE__STORAGE_BOX__ATTRIBUTES__KEY=value
     # Schema, prefix with MYTARDIS_SCHEMA__
     # DEFAULT_SCHEMA__PROJECT=https://test.test.com
     # DEFAULT_SCHEMA__EXPERIMENT=
@@ -264,8 +263,7 @@ class ConfigFromEnv(BaseSettings):
     auth: AuthConfig
     connection: ConnectionConfig
     default_schema: SchemaConfig
-    # archive: StorageConfig
-    # profile: ProfileConfig
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", env_nested_delimiter="__"
     )
+    store: StorageBoxConfig

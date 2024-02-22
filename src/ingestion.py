@@ -10,7 +10,7 @@ from typing import Optional
 import typer
 from typing_extensions import Annotated
 
-from src.config.config import ConfigFromEnv
+from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
 from src.conveyor.conveyor import Conveyor
 from src.conveyor.transports.rsync import RsyncTransport
 from src.ingestion_factory.factory import IngestionFactory
@@ -25,9 +25,13 @@ def main(
         Path,
         typer.Argument(help="Directory containing the data to be extracted"),
     ],
+    storage_name: Annotated[
+        str,
+        typer.Argument(help="Name of the ingestion storagebox.")
+    ],
     storage_dir: Annotated[
         Path,
-        typer.Argument(help="Directory where the extracted data will be stored"),
+        typer.Argument(help="Directory of the ingestion storagebox"),
     ],
     profile_name: Annotated[
         str,
@@ -52,6 +56,9 @@ def main(
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
     config = ConfigFromEnv()
 
+    # Create storagebox config based on passed in argument.
+    config.store = FilesystemStorageBoxConfig(storage_name=storage_name, target_root_dir=storage_dir)
+
     timer = Timer(start=True)
 
     if DirectoryNode(data_root).empty():
@@ -75,7 +82,6 @@ def main(
 
     logging.info("Submitting to MyTardis")
     timer.start()
-
     ingestion_agent = IngestionFactory(config=config)
 
     ingestion_agent.ingest(
