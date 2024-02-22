@@ -6,7 +6,6 @@ needs to determine the Smelter class that is used by the Factory"""
 import json
 import logging
 from multiprocessing.context import SpawnProcess
-from multiprocessing.spawn import prepare
 import sys
 from typing import Any, Optional, Tuple
 
@@ -26,7 +25,6 @@ from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 from src.utils.types.singleton import Singleton
-from tests.fixtures.fixtures_config_from_env import storage
 
 logger = logging.getLogger(__name__)
 
@@ -293,13 +291,13 @@ class IngestionFactory(metaclass=Singleton):
 
             prepared_datafile = self.crucible.prepare_datafile(refined_datafile)
             if not prepared_datafile:
-                result.error.append(name) 
+                result.error.append(name)
                 continue
             # Add a replica to represent the copy transferred by the Conveyor.
             prepared_datafile.replicas.append(self.conveyor.create_replica(prepared_datafile))
 
             self.forge.forge_datafile(prepared_datafile)
-
+            prepared_datafiles.append(prepared_datafile)
             result.success.append((name, None))
 
         logger.info(

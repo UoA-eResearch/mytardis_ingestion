@@ -69,7 +69,7 @@ class Conveyor:
         for df in dfs:
             # Group datafiles by the dataset they are in.
             dataset_id = Overseer.resource_uri_to_id(df.dataset)
-            if files_by_dataset[dataset_id] is None:
+            if dataset_id not in files_by_dataset:
                 files_by_dataset[dataset_id] = []
             files_by_dataset[dataset_id].append(df)
         for dataset_id, file_list in files_by_dataset.items():
