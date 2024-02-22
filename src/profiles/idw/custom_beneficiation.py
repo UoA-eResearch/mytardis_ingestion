@@ -253,7 +253,8 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         """
         ingestible_dclasses = IngestibleDataclasses()
         logger.info("parsing {0}".format(fpath))
-        with open(fpath) as f:
+        ingestion_file_path = fpath / "ingestion.yaml"
+        with open(ingestion_file_path) as f:
             data = yaml.safe_load_all(f)
             # data = {k: (v if v != 'null' else None) for k, v in data.items()}
             for obj in data:
@@ -264,7 +265,7 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
                 if isinstance(obj, RawDataset):
                     ingestible_dclasses.add_dataset(obj)
                 if isinstance(obj, RawDatafile):
-                    df_path = Path(fpath).parent.joinpath(obj.directory)
+                    df_path = Path(ingestion_file_path).parent.joinpath(obj.directory)
                     df_dir = df_path / obj.filename
                     obj.md5sum = datafile_metadata_helpers.calculate_md5sum(df_dir)
                     ingestible_dclasses.add_datafile(obj)
