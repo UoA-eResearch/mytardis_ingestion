@@ -6,9 +6,9 @@ from multiprocessing.context import SpawnProcess
 from pathlib import Path
 from typing import Sequence
 
-from src.blueprints.datafile import Datafile
+from src.blueprints.datafile import Datafile, DatafileReplica
 from src.config.config import FilesystemStorageBoxConfig, StorageBoxConfig
-from src.conveyor.transports.common import AbstractTransport
+from src.conveyor.transports.common import AbstractTransport, TransferObject
 from src.conveyor.transports.rsync import RsyncTransport
 
 logger = logging.getLogger(__name__)
@@ -47,16 +47,26 @@ class Conveyor:
         Returns:
             None.
         """
+        files_to_transfer: list[TransferObject] = []
         for f in dfs:
-            replicas += f.replicas
-        for replica in replicas:
-            # Check through the replicas.
-            if not replica.location == self._store.storage_name:
-                logger.error("Replica %s is intended for a different" + 
-                    " storage box than the one configured for conveyor.",replica.uri)
+            if len(f.replicas) == 0:
+                logger.error("No replica was created for %s. File will not be transferred",
+                    f.filename)
                 continue
-            
-        self._transport.transfer(src, dfs)
+            if len(f.replicas) > 1:
+                logger.warning(
+                    "More than one replica was created in the forged Datafile. " +
+                    "Conveyor will only transfer the first replica."
+                )
+            replica = f.replicas[0]
+            if replica.location != self._store.storage_name:
+                logger.error(
+                    "Replica for %s is not intended for the storagebox configured for the conveyor."
+                    , f.filename
+                )
+                continue
+            files_to_transfer.append(TransferObject(f.directory, f.filename, replica.uri))
+        self._transport.transfer(src, files_to_transfer)
 
     def initiate_transfer(self, src: Path, dfs: Sequence[Datafile]) -> SpawnProcess:
         """Spawns a separate Process to transfer via specified transport and

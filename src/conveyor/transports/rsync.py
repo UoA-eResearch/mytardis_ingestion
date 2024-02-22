@@ -2,8 +2,9 @@
 import subprocess
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from src.blueprints.datafile import Datafile
 
-from src.conveyor.transports.common import AbstractTransport, FailedTransferException
+from src.conveyor.transports.common import AbstractTransport, FailedTransferException, TransferObject
 
 
 def is_rsync_on_path() -> bool:
@@ -28,8 +29,7 @@ class RsyncTransport(AbstractTransport):
         if not is_rsync_on_path():
             raise FailedTransferException("rsync is not installed on the system.")
 
-    
-    def transfer(self, src: Path, files: list) -> None:
+    def transfer(self, src: Path, files: list[TransferObject]) -> None:
         """Concrete transfer implementation that uses rsync to move files.
 
         Args:
@@ -42,6 +42,10 @@ class RsyncTransport(AbstractTransport):
         Returns:
             None.
         """
+        # First, group files by common directories
+        for f in files:
+            src = f.src_directory / f.src_filename.as_posix()
+            destination = f.destination_uri
         with NamedTemporaryFile("r+") as list_f:
             # Write to temporary file list for rsync to sync over.
             for path in files:
