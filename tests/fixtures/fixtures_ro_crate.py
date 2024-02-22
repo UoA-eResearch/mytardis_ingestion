@@ -1,5 +1,6 @@
 # pylint: disable=missing-function-docstring
 # nosec assert_used
+import copy
 import json
 import uuid
 from datetime import datetime
@@ -28,34 +29,35 @@ def fixture_ro_crate_name() -> str:
 
 
 @pytest.fixture()
-def fixture_ingested_rocrate_project(
-    project_name: str,
-    project_description: str,
-    project_ids: List[str],
-    project_principal_investigator: str,
-    project_institutions: List[str],
-    split_and_parse_users: List[UserACL],
-    split_and_parse_groups: List[GroupACL],
-    created_by_upi: str,
-    project_metadata: Dict[str, Any],
-    project_url: str,
-    start_time_datetime: datetime,
-    end_time_datetime: datetime,
-) -> RawProject:
-    return RawProject(
-        name=project_name,
-        description=project_description,
-        principal_investigator=Username(project_principal_investigator),
-        url=project_url,
-        users=split_and_parse_users,
-        groups=split_and_parse_groups,
-        institution=project_institutions,
-        created_by=created_by_upi,
-        identifiers=project_ids,
-        metadata=project_metadata,
-        start_time=start_time_datetime,
-        end_time=end_time_datetime,
-    )
+def fixture_rocrate_project(raw_project: RawProject) -> RawProject:
+    ro_crate_project = copy.copy(raw_project)
+    return ro_crate_project
+
+
+@pytest.fixture()
+def fixture_rocrate_experiment(raw_experiment: RawExperiment) -> RawExperiment:
+    ro_crate_experiment = copy.copy(raw_experiment)
+    return ro_crate_experiment
+
+
+@pytest.fixture()
+def fixture_rocrate_dataset(
+    raw_dataset: RawDataset, ro_crate_dataset_dir: Path
+) -> RawDataset:
+    ro_crate_dataset = copy.copy(raw_dataset)
+    ro_crate_dataset.description = ro_crate_dataset_dir.as_posix()
+    return ro_crate_dataset
+
+
+@pytest.fixture()
+def fixture_rocrate_datafile(
+    raw_datafile: RawDatafile, ro_crate_dataset_dir: Path
+) -> RawDatafile:
+    ro_crate_datafile = copy.copy(raw_datafile)
+    ro_crate_datafile.filename = (
+        ro_crate_dataset_dir / raw_datafile.filename
+    ).as_posix()
+    return ro_crate_datafile
 
 
 @pytest.fixture(name="fakecrate_root")
@@ -64,8 +66,8 @@ def fakecrate_root() -> Path:
 
 
 @pytest.fixture()
-def ro_crate_dataset_dir(raw_dataset: RawDataset) -> Path:
-    return Path(raw_dataset.directory)
+def ro_crate_dataset_dir(dataset_dir: Path) -> Path:
+    return dataset_dir
 
 
 @pytest.fixture()
@@ -73,15 +75,16 @@ def ro_crate_unlisted_file_dir(ro_crate_dataset_dir: Path) -> Path:
     return ro_crate_dataset_dir / "unlisted_files_dir"
 
 
+# TODO replace with MyTardis to RO-Crate serializer when that exists
 @pytest.fixture()
 def test_rocrate_content(
-    raw_project: RawProject,
-    raw_dataset: RawDataset,
-    raw_experiment: RawExperiment,
-    raw_datafile: RawDatafile,
     ro_crate_dataset_dir: Path,
     fixture_rocrate_uuid: str,
     fixture_ro_crate_name: str,
+    fixture_rocrate_project: RawProject,
+    fixture_rocrate_experiment: RawExperiment,
+    fixture_rocrate_dataset: RawDataset,
+    fixture_rocrate_datafile: RawDatafile,
 ) -> str:
     return json.dumps(
         {
@@ -92,13 +95,9 @@ def test_rocrate_content(
                     "@type": "Dataset",
                     "hasPart": [
                         {"@id": ro_crate_dataset_dir.as_posix()},
-                        {
-                            "@id": (
-                                ro_crate_dataset_dir / raw_datafile.filename
-                            ).as_posix()
-                        },
+                        {"@id": fixture_rocrate_datafile.filename},
                     ],
-                    "includedInDataCatalog": raw_experiment.title,
+                    "includedInDataCatalog": fixture_rocrate_experiment.title,
                     "instrument": "dummy-ro-crate-meta",
                     "identifier": [
                         {
@@ -117,19 +116,13 @@ def test_rocrate_content(
                     "metadata": ["#test-ro-crate-Metadata"],
                 },
                 {
-                    "@id": ro_crate_dataset_dir.as_posix(),
+                    "@id": fixture_rocrate_dataset.description,
                     "@type": "Dataset",
                     # "description": raw_dataset.description,
-                    "includedInDataCatalog": raw_dataset.experiments,
-                    "instrument": raw_dataset.instrument,
-                    "name": raw_dataset.description,
-                    "hasPart": [
-                        {
-                            "@id": (
-                                ro_crate_dataset_dir / raw_datafile.filename
-                            ).as_posix()
-                        }
-                    ],
+                    "includedInDataCatalog": fixture_rocrate_dataset.experiments,
+                    "instrument": fixture_rocrate_dataset.instrument,
+                    "name": fixture_rocrate_dataset.description,
+                    "hasPart": [{"@id": (fixture_rocrate_datafile.filename)}],
                 },
                 {
                     "@id": "ro-crate-metadata.json",
@@ -138,24 +131,24 @@ def test_rocrate_content(
                     "conformsTo": {"@id": "https://w3id.org/ro/crate/1.1"},
                 },
                 {
-                    "@id": raw_project.name,
+                    "@id": fixture_rocrate_project.name,
                     "@type": "Project",
-                    "name": raw_project.name,
-                    "founder": raw_project.principal_investigator,
-                    "url": raw_project.url,
-                    "description": raw_project.description,
+                    "name": fixture_rocrate_project.name,
+                    "founder": fixture_rocrate_project.principal_investigator,
+                    "url": fixture_rocrate_project.url,
+                    "description": fixture_rocrate_project.description,
                 },
                 {
-                    "@id": raw_experiment.title,
+                    "@id": fixture_rocrate_experiment.title,
                     "@type": "DataCatalog",
-                    "name": "#experiment_name",
-                    "project": raw_experiment.projects,
-                    "description": raw_experiment.description,
+                    "name": fixture_rocrate_experiment.title,
+                    "project": fixture_rocrate_experiment.projects,
+                    "description": fixture_rocrate_experiment.description,
                 },
                 {
-                    "@id": (ro_crate_dataset_dir / raw_datafile.filename).as_posix(),
+                    "@id": fixture_rocrate_datafile.filename,
                     "@type": ["File"],
-                    "name": (ro_crate_dataset_dir / raw_datafile.filename).as_posix(),
+                    "name": fixture_rocrate_datafile.filename,
                 },
                 {
                     "@id": "#test-ro-crate-Metadata",

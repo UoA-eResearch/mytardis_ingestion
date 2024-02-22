@@ -14,9 +14,12 @@ from src.profiles.ro_crate.ro_crate_parser import ROCrateParser
 from tests.fixtures.fixtures_ro_crate import (
     fakecrate_root,
     fixture_fake_ro_crate,
-    fixture_ingested_rocrate_project,
     fixture_ro_crate_name,
+    fixture_rocrate_datafile,
+    fixture_rocrate_dataset,
+    fixture_rocrate_experiment,
     fixture_rocrate_parser,
+    fixture_rocrate_project,
     fixture_rocrate_uuid,
     ro_crate_dataset_dir,
     ro_crate_unlisted_file_dir,
