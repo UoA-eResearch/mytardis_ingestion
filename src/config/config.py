@@ -22,7 +22,7 @@ from requests import PreparedRequest
 from requests.auth import AuthBase
 
 from src.blueprints.custom_data_types import MTUrl
-from src.blueprints.storage_boxes import StorageBox, StorageTypesEnum
+from src.blueprints.storage_boxes import StorageTypesEnum
 from src.mytardis_client.enumerators import MyTardisObject
 
 logger = logging.getLogger(__name__)
@@ -266,5 +266,4 @@ class ConfigFromEnv(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", env_nested_delimiter="__"
     )
-    store: Optional[FilesystemStorageBoxConfig] = None
-    data_root: Optional[Path] = None
+    store: FilesystemStorageBoxConfig

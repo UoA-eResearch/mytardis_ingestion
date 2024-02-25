@@ -110,7 +110,7 @@ class IngestionFactory(metaclass=Singleton):
         )
         self.conveyor = conveyor or Conveyor(
             store=config.store,
-            data_root=config.data_root
+            data_root=config.general.source_directory
         )
 
     def ingest_projects(
@@ -267,7 +267,7 @@ class IngestionFactory(metaclass=Singleton):
     def ingest_datafiles(
         self,
         datafiles: list[RawDatafile],
-    ) -> Tuple[IngestionResult, SpawnProcess]:
+    ) -> IngestionResult:
         """Wrapper function to create the experiments from input files"""
         result = IngestionResult()
         prepared_datafiles: list[Datafile] = []
@@ -313,9 +313,16 @@ class IngestionFactory(metaclass=Singleton):
             )
         
         # Create a file transfer with the conveyor
-        file_transfer_process = self.conveyor.create_transfer(self.config.data_root, prepared_datafiles)
+        logger.info("Starting transfer of datafiles.")
+        file_transfer_process = self.conveyor.create_transfer(
+            self.config.general.source_directory,
+            prepared_datafiles
+        )
+        file_transfer_process.start()
+        file_transfer_process.join()
+        logger.info("Finished transferring datafiles.")
 
-        return result, file_transfer_process
+        return result
 
     def dump_ingestion_result_json(  # pylint:disable=missing-function-docstring
         self,
@@ -354,7 +361,7 @@ class IngestionFactory(metaclass=Singleton):
         experiments: list[RawExperiment],
         datasets: list[RawDataset],
         datafiles: list[RawDatafile],
-    ) -> SpawnProcess:
+    ) -> None:
         ingested_projects = self.ingest_projects(projects)
         if not ingested_projects:
             logger.error("Fatal error while ingesting projects. Check logs.")
@@ -375,7 +382,5 @@ class IngestionFactory(metaclass=Singleton):
             projects_result=ingested_projects,
             experiments_result=ingested_experiments,
             datasets_result=ingested_datasets,
-            datafiles_result=ingested_datafiles[0],
+            datafiles_result=ingested_datafiles,
         )
-
-        return ingested_datafiles[1]

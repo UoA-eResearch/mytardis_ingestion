@@ -58,7 +58,13 @@ def main(
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
     try:
-        config = ConfigFromEnv()
+        config = ConfigFromEnv() # type: ignore
+        # Create storagebox config based on passed in argument.
+        config.general.source_directory = data_root
+        config.store = FilesystemStorageBoxConfig(
+            storage_name=storage_name,
+            target_root_dir=storage_dir
+        )
     except ValidationError as error:
         logger.error(
             (
@@ -69,13 +75,6 @@ def main(
             error,
         )
         sys.exit()
-    # Create storagebox config based on passed in argument.
-    config.store = FilesystemStorageBoxConfig(
-        storage_name=storage_name,
-        target_root_dir=storage_dir
-    )
-    config.data_root = data_root
-
     timer = Timer(start=True)
 
     if DirectoryNode(data_root).empty():
@@ -101,7 +100,7 @@ def main(
     timer.start()
     ingestion_agent = IngestionFactory(config=config)
 
-    file_transfer_process = ingestion_agent.ingest(
+    ingestion_agent.ingest(
         metadata.get_projects(),
         metadata.get_experiments(),
         metadata.get_datasets(),
@@ -111,11 +110,6 @@ def main(
     elapsed = timer.stop()
     logger.info("Finished submitting dataclasses to MyTardis")
     logger.info("Total time (s): %.2f", elapsed)
-
-    logger.info("Starting transfer of datafiles.")
-    file_transfer_process.start()
-    file_transfer_process.join()
-    logger.info("Finished transferring datafiles.")
 
 if __name__ == "__main__":
     typer.run(main)
