@@ -16,6 +16,16 @@ class FailedTransferException(Exception):
     """A custom exception for transfer failures."""
 
 
+def is_rsync_on_path() -> bool:
+    """Tests whether rsync is available on the PATH.
+
+    Returns:
+        bool: True if rsync is found, false if not.
+    """
+    state = subprocess.run(["rsync", "-h"], capture_output=True, check=False)  # nosec
+    return state.returncode == 0
+
+
 class Conveyor:
     """Class for transferring datafiles as part of ingestion pipeline.
     Currently, Conveyor supports using rsync to transfer files
@@ -28,6 +38,8 @@ class Conveyor:
         Args:
             transport (AbstractTransport): The concrete transport mechanism to use.
         """
+        if not is_rsync_on_path():
+            logger.error("Could not find rsync on PATH.")
         self._store = store
 
     def create_replica(self, file: Datafile) -> DatafileReplica:
