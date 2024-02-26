@@ -37,7 +37,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Union
+from typing import Any, List, Union
 
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
@@ -50,7 +50,7 @@ from src.ingestion_factory.factory import IngestionFactory
 from src.mytardis_client.enumerators import DataStatus
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
-from src.profiles.idw.custom_beneficiation import write_to_yaml
+from src.profiles.idw.yaml_wrapper import write_to_yaml
 from src.profiles.profile_register import load_profile
 from src.smelters.smelter import Smelter
 
@@ -110,7 +110,7 @@ class IDSIngestionScript:
             ingestible_dataclasses (IngestibleDataclasses): Ingestible data classes
             containing data to be updated.
         """
-        new_ingested_datafiles = []
+        new_ingested_datafiles: List[Any] = []
 
         try:
             for project in self.ingestible_dataclass.get_projects():
@@ -137,10 +137,8 @@ class IDSIngestionScript:
         except TimeoutError as e:
             logger.error(e)
 
-        # TODO: write the updated ingestible_dataclasses into a YAML file
+        # Write the updated ingestible_dataclasses into a YAML file
         write_to_yaml(self.yaml_path, self.ingestible_dataclass)
-        # yaml.dump_all(list(self.ingestible_dataclass), self.yaml_path)
-        # yaml_updater.update_data_status()
 
         # Initiate Conveyor
         self.initiate_conveyor(new_ingested_datafiles)
@@ -149,7 +147,7 @@ class IDSIngestionScript:
         self,
         data_obj: Union[RawProject, RawExperiment, RawDataset, RawDatafile],
         obj_type: str,
-        datafile_list: list,
+        datafile_list: List[RawDatafile],
     ) -> None:
         """
         Update the data status for a specific object type.
@@ -175,13 +173,15 @@ class IDSIngestionScript:
 
         # Update the data status
         if result.success is not None:
-            data_obj.data_status = DataStatus.INGESTED.value
+            data_obj.data_status = DataStatus.INGESTED
             if obj_type == "datafile":
+                if not isinstance(data_obj, RawDatafile):
+                    raise TypeError("data_obj must be an instance of RawDatafile")
                 datafile_list.append(data_obj)
         else:
-            data_obj.data_status = DataStatus.FAILED.value
+            data_obj.data_status = DataStatus.FAILED
 
-    def initiate_conveyor(self, new_ingested_datafiles: list) -> None:
+    def initiate_conveyor(self, new_ingested_datafiles: List[RawDatafile]) -> None:
         """
         Initiate the Conveyor for file transfer.
 

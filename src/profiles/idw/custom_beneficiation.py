@@ -71,21 +71,3 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
                     obj.md5sum = datafile_metadata_helpers.calculate_md5sum(df_dir)
                     ingestible_dclasses.add_datafile(obj)
         return ingestible_dclasses
-
-
-def write_to_yaml(fpath: Path, ingestible: IngestibleDataclasses) -> None:
-    """
-    Write the IngestibleDataclasses to a YAML file.
-    """
-    data_list = []
-    for project in ingestible.get_projects():
-        data_list.append(project)
-    for experiment in ingestible.get_experiments():
-        data_list.append(experiment)
-    for dataset in ingestible.get_datasets():
-        data_list.append(dataset)
-    for datafile in ingestible.get_datafiles():
-        data_list.append(datafile)
-
-    with open(fpath, "w") as f:
-        yaml.dump_all(data_list, f)
