@@ -8,12 +8,9 @@ appropriate dataclasses.
 """
 
 import logging
-import os
 
 # Standard library imports
-from copy import deepcopy
 from pathlib import Path
-from typing import Any, List, Union
 
 # Third-party imports
 import yaml

@@ -4,17 +4,15 @@ CLI frontend for extracting metadata, and ingesting it with the data into MyTard
 
 import io
 import logging
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Optional
-from pydantic import ValidationError
 
 import typer
+from pydantic import ValidationError
 from typing_extensions import Annotated
 
 from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
-from src.conveyor.conveyor import Conveyor
-from src.conveyor.transports.rsync import RsyncTransport
 from src.ingestion_factory.factory import IngestionFactory
 from src.profiles.profile_register import load_profile
 from src.utils import log_utils
@@ -23,14 +21,14 @@ from src.utils.timing import Timer
 
 logger = logging.getLogger(__name__)
 
+
 def main(
     data_root: Annotated[
         Path,
         typer.Argument(help="Directory containing the data to be extracted"),
     ],
     storage_name: Annotated[
-        str,
-        typer.Argument(help="Name of the ingestion storagebox.")
+        str, typer.Argument(help="Name of the ingestion storagebox.")
     ],
     storage_dir: Annotated[
         Path,
@@ -59,13 +57,12 @@ def main(
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
     try:
         config = ConfigFromEnv(
-        # Create storagebox config based on passed in argument.
-            source_directory = data_root,
-            store = FilesystemStorageBoxConfig(
-            storage_name=storage_name,
-            target_root_dir=storage_dir
-            )
-         ) # type: ignore
+            # Create storagebox config based on passed in argument.
+            source_directory=data_root,
+            store=FilesystemStorageBoxConfig(
+                storage_name=storage_name, target_root_dir=storage_dir
+            ),
+        )
     except ValidationError as error:
         logger.error(
             (
@@ -111,6 +108,7 @@ def main(
     elapsed = timer.stop()
     logger.info("Finished submitting dataclasses and transferring files to MyTardis")
     logger.info("Total time (s): %.2f", elapsed)
+
 
 if __name__ == "__main__":
     typer.run(main)

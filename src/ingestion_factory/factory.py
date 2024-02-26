@@ -2,21 +2,17 @@
 """IngestionFactory is a base class for specific instances of MyTardis
 Ingestion scripts. The base class contains mostly concrete functions but
 needs to determine the Smelter class that is used by the Factory"""
-
 import json
 import logging
-from multiprocessing.context import SpawnProcess
 import sys
-from typing import Any, Optional, Tuple
-
-from pydantic import ValidationError
+from typing import Any, Optional
 
 from src.blueprints.custom_data_types import URI
-from src.blueprints.datafile import Datafile, DatafileReplica, RawDatafile
+from src.blueprints.datafile import Datafile, RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
-from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
+from src.config.config import ConfigFromEnv
 from src.conveyor.conveyor import Conveyor, FailedTransferException
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
@@ -73,7 +69,7 @@ class IngestionFactory(metaclass=Singleton):
         smelter: Optional[Smelter] = None,
         forge: Optional[Forge] = None,
         crucible: Optional[Crucible] = None,
-        conveyor: Optional[Conveyor] = None
+        conveyor: Optional[Conveyor] = None,
     ) -> None:
         """Initialises the Factory with the configuration found in the config_dict.
 
@@ -108,9 +104,7 @@ class IngestionFactory(metaclass=Singleton):
         self.crucible = crucible or Crucible(
             overseer=overseer,
         )
-        self.conveyor = conveyor or Conveyor(
-            store=config.store
-        )
+        self.conveyor = conveyor or Conveyor(store=config.store)
 
     def ingest_projects(
         self,
@@ -293,7 +287,9 @@ class IngestionFactory(metaclass=Singleton):
                 result.error.append(name)
                 continue
             # Add a replica to represent the copy transferred by the Conveyor.
-            prepared_datafile.replicas.append(self.conveyor.create_replica(prepared_datafile))
+            prepared_datafile.replicas.append(
+                self.conveyor.create_replica(prepared_datafile)
+            )
 
             self.forge.forge_datafile(prepared_datafile)
             prepared_datafiles.append(prepared_datafile)
@@ -310,14 +306,11 @@ class IngestionFactory(metaclass=Singleton):
                 len(result.error),
                 result.error,
             )
-        
+
         # Create a file transfer with the conveyor
         logger.info("Starting transfer of datafiles.")
         try:
-            self.conveyor.transfer(
-                self.config.source_directory,
-                prepared_datafiles
-            )
+            self.conveyor.transfer(self.config.source_directory, prepared_datafiles)
             logger.info("Finished transferring datafiles.")
         except FailedTransferException:
             logger.error(
