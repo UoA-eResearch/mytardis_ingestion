@@ -151,13 +151,15 @@ class StorageBoxConfig(BaseModel, ABC):
     options: Optional[Dict[str, str | Path]] = None
     attributes: Optional[Dict[str, str]] = None
 
+
 class FilesystemStorageBoxConfig(StorageBoxConfig):
     """Pydantic model for a filesystem-based MyTardis storagebox configuration.
     This is used primarily to represent the ingestion storagebox.
     """
+
     storage_class: StorageTypesEnum = StorageTypesEnum.FILE_SYSTEM
     target_root_dir: Path
-    
+
 
 class StorageConfig(BaseModel):
     """Default storage box information for MyTardis
@@ -223,7 +225,7 @@ class ConfigFromEnv(BaseSettings):
             instance of Pydantic schema model
         archive: TimeOffsetConfig
             instance of Pydantic time offset model
-        source_directory: 
+        source_directory:
             The root directory to the data source.
 
 

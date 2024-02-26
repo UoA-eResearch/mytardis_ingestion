@@ -4,16 +4,12 @@ fields that exist within the MyTardis Database with their equivalent URIs.
 """
 import logging
 from datetime import datetime
-from pathlib import Path
-from typing import List
 
 from src.blueprints.custom_data_types import URI
-from src.blueprints.datafile import Datafile, DatafileReplica, RefinedDatafile
+from src.blueprints.datafile import Datafile, RefinedDatafile
 from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
-from src.config.config import StorageBoxConfig
-from src.conveyor.conveyor import Conveyor
 from src.mytardis_client.enumerators import ObjectSearchEnum
 from src.overseers import Overseer
 
@@ -27,10 +23,7 @@ class Crucible:
     """The Crucible class reads in a RefinedObject and replaces the identified
     fields with URIs."""
 
-    def __init__(
-        self,
-        overseer: Overseer
-    ) -> None:
+    def __init__(self, overseer: Overseer) -> None:
         self.overseer = overseer
 
     def prepare_project(self, refined_project: RefinedProject) -> Project | None:
@@ -73,7 +66,7 @@ class Crucible:
                 refined_project.embargo_until.isoformat()
                 if isinstance(refined_project.embargo_until, datetime)
                 else refined_project.embargo_until
-            )
+            ),
         )
 
     def prepare_experiment(

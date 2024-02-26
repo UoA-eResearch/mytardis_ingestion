@@ -1,18 +1,22 @@
 # pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
+from pathlib import Path
 from typing import Any, Callable
 
 import responses
 from pytest import fixture
 
+from src.blueprints.storage_boxes import StorageTypesEnum
 from src.config.config import (
     AuthConfig,
     ConfigFromEnv,
     ConnectionConfig,
+    FilesystemStorageBoxConfig,
     GeneralConfig,
     IntrospectionConfig,
     SchemaConfig,
     StorageBoxConfig,
 )
+from src.conveyor.conveyor import Conveyor
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
 from src.ingestion_factory import IngestionFactory
@@ -21,6 +25,10 @@ from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 from tests.fixtures.mock_rest_factory import MockMtRest
 
+
+@fixture
+def storage() -> StorageBoxConfig:
+    return FilesystemStorageBoxConfig(storage_name="unix_fs", target_root_dir=Path("."))
 
 @fixture
 def rest_factory(
@@ -72,10 +80,14 @@ def crucible(
     active_stores: StorageBoxConfig
 ) -> Crucible:
     return Crucible(
-        overseer=overseer,
-        store=active_stores
+        overseer=overseer
     )
 
+@fixture
+def conveyor(
+    storage: FilesystemStorageBoxConfig
+) -> Conveyor:
+    return Conveyor(storage)
 
 @fixture
 def factory(
@@ -85,6 +97,7 @@ def factory(
     smelter: Smelter,
     forge: Forge,
     crucible: Crucible,
+    conveyor: Conveyor
 ) -> IngestionFactory:
     return IngestionFactory(
         config=mytardis_settings,
@@ -93,4 +106,5 @@ def factory(
         smelter=smelter,
         forge=forge,
         crucible=crucible,
+        conveyor=conveyor
     )

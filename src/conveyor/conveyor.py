@@ -1,12 +1,9 @@
 "conveyor.py - Script for file transferring."
 
 import logging
-import multiprocessing as mp
-from multiprocessing.context import SpawnProcess
-from pathlib import Path
 import subprocess
+from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Sequence
 
 from src.blueprints.datafile import Datafile, DatafileReplica
 from src.config.config import FilesystemStorageBoxConfig
@@ -14,14 +11,16 @@ from src.overseers.overseer import Overseer
 
 logger = logging.getLogger(__name__)
 
+
 class FailedTransferException(Exception):
     """A custom exception for transfer failures."""
 
+
 class Conveyor:
     """Class for transferring datafiles as part of ingestion pipeline.
-       Currently, Conveyor supports using rsync to transfer files
-       on the filesystem. Other mechanisms and storage types can be supported
-       by extracting an interface from the conveyor."""
+    Currently, Conveyor supports using rsync to transfer files
+    on the filesystem. Other mechanisms and storage types can be supported
+    by extracting an interface from the conveyor."""
 
     def __init__(self, store: FilesystemStorageBoxConfig) -> None:
         """Initialises the file transfer Conveyor object.
@@ -36,12 +35,14 @@ class Conveyor:
         file_path = file.directory / file.filename
         dataset_id = Overseer.resource_uri_to_id(file.dataset)
         return DatafileReplica(
-                protocol="file",
-                location=self._store.storage_name,
-                uri=f"ds-{dataset_id}/{file_path.as_posix()}"
+            protocol="file",
+            location=self._store.storage_name,
+            uri=f"ds-{dataset_id}/{file_path.as_posix()}",
         )
 
-    def _transfer_with_rsync(self, src: Path, files: list[Path], destination_dir: Path) -> None:
+    def _transfer_with_rsync(
+        self, src: Path, files: list[Path], destination_dir: Path
+    ) -> None:
         """Private method for transferring the files using rsync.
 
         Args:
@@ -50,7 +51,7 @@ class Conveyor:
             destination_dir (Path): The destination directory.
 
         Raises:
-            FailedTransferException: 
+            FailedTransferException:
 
         Returns:
             _type_: _description_
@@ -92,6 +93,6 @@ class Conveyor:
             files_by_dataset[dataset_id].append(df)
         for dataset_id, file_list in files_by_dataset.items():
             # For each group of datafiles, transfer to a separate folder.
-            file_paths = [ df.directory / df.filename for df in file_list]
+            file_paths = [df.directory / df.filename for df in file_list]
             destination_dir = self._store.target_root_dir / f"ds-{dataset_id}"
             self._transfer_with_rsync(data_root, file_paths, destination_dir)
