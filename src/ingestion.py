@@ -58,13 +58,14 @@ def main(
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
     try:
-        config = ConfigFromEnv() # type: ignore
+        config = ConfigFromEnv(
         # Create storagebox config based on passed in argument.
-        config.general.source_directory = data_root
-        config.store = FilesystemStorageBoxConfig(
+            source_directory = data_root,
+            store = FilesystemStorageBoxConfig(
             storage_name=storage_name,
             target_root_dir=storage_dir
-        )
+            )
+         ) # type: ignore
     except ValidationError as error:
         logger.error(
             (
@@ -108,7 +109,7 @@ def main(
     )
 
     elapsed = timer.stop()
-    logger.info("Finished submitting dataclasses to MyTardis")
+    logger.info("Finished submitting dataclasses and transferring files to MyTardis")
     logger.info("Total time (s): %.2f", elapsed)
 
 if __name__ == "__main__":

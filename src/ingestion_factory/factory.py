@@ -109,8 +109,7 @@ class IngestionFactory(metaclass=Singleton):
             overseer=overseer,
         )
         self.conveyor = conveyor or Conveyor(
-            store=config.store,
-            data_root=config.general.source_directory
+            store=config.store
         )
 
     def ingest_projects(
@@ -315,7 +314,7 @@ class IngestionFactory(metaclass=Singleton):
         # Create a file transfer with the conveyor
         logger.info("Starting transfer of datafiles.")
         file_transfer_process = self.conveyor.create_transfer(
-            self.config.general.source_directory,
+            self.config.source_directory,
             prepared_datafiles
         )
         file_transfer_process.start()
