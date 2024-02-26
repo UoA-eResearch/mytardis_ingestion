@@ -30,6 +30,7 @@ from tests.fixtures.mock_rest_factory import MockMtRest
 def storage() -> StorageBoxConfig:
     return FilesystemStorageBoxConfig(storage_name="unix_fs", target_root_dir=Path("."))
 
+
 @fixture
 def rest_factory(
     auth: AuthConfig,
@@ -75,19 +76,14 @@ def forge(
 
 
 @fixture
-def crucible(
-    overseer: Overseer,
-    active_stores: StorageBoxConfig
-) -> Crucible:
-    return Crucible(
-        overseer=overseer
-    )
+def crucible(overseer: Overseer) -> Crucible:
+    return Crucible(overseer=overseer)
+
 
 @fixture
-def conveyor(
-    storage: FilesystemStorageBoxConfig
-) -> Conveyor:
+def conveyor(storage: FilesystemStorageBoxConfig) -> Conveyor:
     return Conveyor(storage)
+
 
 @fixture
 def factory(
@@ -97,7 +93,7 @@ def factory(
     smelter: Smelter,
     forge: Forge,
     crucible: Crucible,
-    conveyor: Conveyor
+    conveyor: Conveyor,
 ) -> IngestionFactory:
     return IngestionFactory(
         config=mytardis_settings,
@@ -106,5 +102,5 @@ def factory(
         smelter=smelter,
         forge=forge,
         crucible=crucible,
-        conveyor=conveyor
+        conveyor=conveyor,
     )
