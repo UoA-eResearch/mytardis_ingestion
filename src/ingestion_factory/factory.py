@@ -17,7 +17,7 @@ from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
 from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
-from src.conveyor.conveyor import Conveyor
+from src.conveyor.conveyor import Conveyor, FailedTransferException
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
 from src.helpers.dataclass import get_object_name
@@ -313,14 +313,17 @@ class IngestionFactory(metaclass=Singleton):
         
         # Create a file transfer with the conveyor
         logger.info("Starting transfer of datafiles.")
-        file_transfer_process = self.conveyor.create_transfer(
-            self.config.source_directory,
-            prepared_datafiles
-        )
-        file_transfer_process.start()
-        file_transfer_process.join()
-        logger.info("Finished transferring datafiles.")
-
+        try:
+            self.conveyor.transfer(
+                self.config.source_directory,
+                prepared_datafiles
+            )
+            logger.info("Finished transferring datafiles.")
+        except FailedTransferException:
+            logger.error(
+                "Datafile transfer could not complete. Check rsync output for more information."
+            )
+            sys.exit()
         return result
 
     def dump_ingestion_result_json(  # pylint:disable=missing-function-docstring
