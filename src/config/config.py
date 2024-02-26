@@ -33,11 +33,9 @@ class GeneralConfig(BaseModel):
 
     Attributes:
         default_institution (Optional[str]): name of the default institution
-        source_directory: The root directory to the data source.
     """
 
     default_institution: Optional[str] = None
-    source_directory: Path
 
 
 class AuthConfig(BaseModel, AuthBase):
@@ -219,12 +217,15 @@ class ConfigFromEnv(BaseSettings):
             instance of Pydantic auth model
         connection : ConnectionConfig
             instance of Pydantic connection model
-        storage : StorageConfig
+        store : StorageConfig
             instance of Pydantic storage model
         default_schema : SchemaConfig
             instance of Pydantic schema model
         archive: TimeOffsetConfig
             instance of Pydantic time offset model
+        source_directory: 
+            The root directory to the data source.
+
 
     Properties:
         mytardis_setup : Optional[IntrospectionConfig] (default: None)
@@ -267,3 +268,4 @@ class ConfigFromEnv(BaseSettings):
         env_file=".env", env_file_encoding="utf-8", env_nested_delimiter="__"
     )
     store: FilesystemStorageBoxConfig
+    source_directory: Path

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class Conveyor:
     """Class for transferring datafiles as part of ingestion pipeline."""
 
-    def __init__(self, store: FilesystemStorageBoxConfig, data_root: Path) -> None:
+    def __init__(self, store: FilesystemStorageBoxConfig) -> None:
         """Initialises the file ingestion object.
 
         Args:
