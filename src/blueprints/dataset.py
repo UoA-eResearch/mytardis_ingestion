@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime, MTUrl
-from src.mytardis_client.enumerators import DataClassification
+from src.mytardis_client.enumerators import DataClassification, DataStatus
 
 
 class BaseDataset(BaseModel, ABC):
@@ -20,6 +20,7 @@ class BaseDataset(BaseModel, ABC):
 
     description: str
     data_classification: Optional[DataClassification] = None
+    data_status: Optional[DataStatus] = None
     directory: Optional[Path] = None
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None

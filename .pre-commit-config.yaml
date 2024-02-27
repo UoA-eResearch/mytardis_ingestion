@@ -30,6 +30,7 @@ repos:
         - python-slugify
         - validators
         - pydantic-settings
+        - typer
 -   repo: local
     hooks:
     - id: pytest

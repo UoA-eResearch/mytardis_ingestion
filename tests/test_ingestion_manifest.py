@@ -254,7 +254,6 @@ def test_deserialize_invalid_dir() -> None:
 
 
 def test_serialize(ingestion_manifest: IngestionManifest, tmp_path: Path) -> None:
-
     output_dir = tmp_path / "test_serialize"
     output_dir.mkdir()
 
@@ -292,7 +291,6 @@ def test_serialize(ingestion_manifest: IngestionManifest, tmp_path: Path) -> Non
 def test_serialize_deserialize_cycle(
     ingestion_manifest: IngestionManifest, tmp_path: Path
 ) -> None:
-
     directory = tmp_path / "test_roundtrip"
     directory.mkdir()
 

@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime, MTUrl
-from src.mytardis_client.enumerators import DataClassification
+from src.mytardis_client.enumerators import DataClassification, DataStatus
 
 
 class BaseExperiment(BaseModel, ABC):
@@ -20,6 +20,7 @@ class BaseExperiment(BaseModel, ABC):
     title: str
     description: str
     data_classification: Optional[DataClassification] = None
+    data_status: Optional[DataStatus] = None
     created_by: Optional[str] = None
     url: Optional[MTUrl] = None
     locked: bool = False
