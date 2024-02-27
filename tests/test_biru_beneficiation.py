@@ -35,4 +35,4 @@ def test_beneficiate_replace_micrometer() -> None:
     assert df.filename == "20221113_slide3-2_humanRWM_cd34_x20_0.12umpix_8.czi"
     assert df.metadata["Image|Pixels|Channel|Channel:0:0|PinholeSizeUnit"] == "um"
     assert df.metadata["Image|Pixels|Channel|Channel:0:1|PinholeSizeUnit"] == "um"
-    assert df.md5sum == "66dae4208956c7b0081bd31acae35506"
+    assert df.md5sum == "ba367447a14db59627850eed55a0d5f2"
