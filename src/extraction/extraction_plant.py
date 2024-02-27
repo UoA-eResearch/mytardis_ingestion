@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Optional
 
 from src.beneficiations.beneficiation import Beneficiation
-from src.extraction.ingestibles import IngestibleDataclasses
+from src.extraction.manifest import IngestionManifest
 from src.extraction.metadata_extractor import IMetadataExtractor
 from src.extraction.output_manager import OutputManager
 from src.miners.miner import Miner
@@ -58,7 +58,7 @@ class ExtractionPlant(IMetadataExtractor):
         self.miner = miner
         self.beneficiation = beneficiation
 
-    def extract(self, root_dir: Path) -> IngestibleDataclasses:
+    def extract(self, root_dir: Path) -> IngestionManifest:
         """Runs the full extraction process on the given path and file format. In the absence of a custom prospector in the
         prospector singleton and a custom miner in the miner singleton, the prospector and the miner will be skipped as this
         assumes the IDW was used.
@@ -68,13 +68,13 @@ class ExtractionPlant(IMetadataExtractor):
             ingest_dict (Optional[Dict[str, list[Any]]]): A dictionary containing metadata files to ingest. Used when IDW was used. ---> Libby: used when IDW was not used?
 
         Returns:
-            IngestibleDataclasses: A class that contains the raw datafiles, datasets, experiments, and projects.
+            IngestionManifest: A class that contains the raw datafiles, datasets, experiments, and projects.
 
         Raises:
             Exception: If profile for extraction is not set.
         """
         out_man = OutputManager()
-        ing_dclasses = IngestibleDataclasses()
+        ing_dclasses = IngestionManifest()
 
         if self.prospector and self.prospector.custom_prospector:
             out_man = self._prospect(root_dir, out_man)
@@ -113,8 +113,8 @@ class ExtractionPlant(IMetadataExtractor):
     #    def _beneficiate(
     #        self,
     #        ingest_dict: Dict[str, list[Any]],
-    #        ing_dclasses: IngestibleDataclasses,
-    #    ) -> IngestibleDataclasses:
+    #        ing_dclasses: IngestionManifest,
+    #    ) -> IngestionManifest:
     #        logger.info("beneficiating")
     #        ingestible_dataclasses = self.beneficiation.beneficiation.beneficiate(ingest_dict, ing_dclasses)
     #        return ingestible_dataclasses
@@ -123,8 +123,8 @@ class ExtractionPlant(IMetadataExtractor):
     def _beneficiate(
         self,
         pth: Path,
-        ing_dclasses: IngestibleDataclasses,
-    ) -> IngestibleDataclasses:
+        ing_dclasses: IngestionManifest,
+    ) -> IngestionManifest:
         logger.info("beneficiating")
         ingestible_dataclasses = self.beneficiation.beneficiation.beneficiate(
             pth, ing_dclasses

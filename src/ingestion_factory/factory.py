@@ -6,7 +6,7 @@ needs to determine the Smelter class that is used by the Factory"""
 import json
 import logging
 import sys
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import ValidationError
 
@@ -325,6 +325,16 @@ class IngestionFactory(metaclass=Singleton):
         datasets_result: IngestionResult | None,
         datafiles_result: IngestionResult | None,
     ) -> None:
+        class IngestionResultEncoder(
+            json.JSONEncoder
+        ):  # pylint: disable=missing-class-docstring
+            def default(
+                self, o: Any
+            ) -> Any:  # pylint:disable=missing-function-docstring
+                if isinstance(o, IngestionResult):
+                    return o.__dict__
+                return json.JSONEncoder.default(self, o)
+
         with open("ingestion_result.json", "w", encoding="utf-8") as file:
             json.dump(
                 {
@@ -336,6 +346,7 @@ class IngestionFactory(metaclass=Singleton):
                 file,
                 ensure_ascii=False,
                 indent=4,
+                cls=IngestionResultEncoder,
             )
 
     def ingest(  # pylint: disable=missing-function-docstring

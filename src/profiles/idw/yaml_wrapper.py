@@ -20,10 +20,10 @@ import yaml
 
 # User-defined imports
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
-from src.extraction.ingestibles import IngestibleDataclasses
+from src.extraction.manifest import IngestionManifest
 
 
-def write_to_yaml(fpath: Path, ingestible: IngestibleDataclasses) -> None:
+def write_to_yaml(fpath: Path, ingestible: IngestionManifest) -> None:
     """
     Write the IngestibleDataclasses to a YAML file.
 

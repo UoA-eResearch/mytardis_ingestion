@@ -21,6 +21,7 @@ To register a new profile, add an entry here.
 _PROFILES = {
     "abi_music": "abi_music.profile",
     "idw": "idw.profile",
+    "ro_crate": "ro_crate.profile",
 }
 
 

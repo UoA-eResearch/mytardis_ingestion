@@ -1,5 +1,7 @@
 """Add profile-specific constants in this module
 """
+PROFILE_VERSION = "0.1.0"
+
 CRATE_TO_TARDIS_PROFILE = "src/profiles/ro_crate/test_mapping.json"
 
 RO_CRATE_DATAFILE_SCHEMA = "http://rocrate.testing/datafile/james"
