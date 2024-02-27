@@ -23,7 +23,7 @@ def test_beneficiate() -> None:
     fpath = "tests/testdata/test_ingestion.yaml"
     ingestible_dataclasses = a.beneficiate(fpath, IngestionManifest)
     df = ingestible_dataclasses.get_datafiles()[0]
-    assert df.filename == "20221113_slide3-2_humanRWM_cd34_x20_0.12umpix_3.czi"
+    assert df.filename == "20221113_slide3-2_humanRWM_cd34_x20_0.12umpix_8.czi"
     assert df.metadata["Experimenter|UserName"] == "hsuz002"
 
 
@@ -32,7 +32,7 @@ def test_beneficiate_replace_micrometer() -> None:
     fpath = "tests/testdata/test_ingestion.yaml"
     ingestible_dataclasses = a.beneficiate(fpath, IngestionManifest)
     df = ingestible_dataclasses.get_datafiles()[0]
-    assert df.filename == "20221113_slide3-2_humanRWM_cd34_x20_0.12umpix_3.czi"
+    assert df.filename == "20221113_slide3-2_humanRWM_cd34_x20_0.12umpix_8.czi"
     assert df.metadata["Image|Pixels|Channel|Channel:0:0|PinholeSizeUnit"] == "um"
     assert df.metadata["Image|Pixels|Channel|Channel:0:1|PinholeSizeUnit"] == "um"
     assert df.md5sum == "66dae4208956c7b0081bd31acae35506"
