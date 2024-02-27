@@ -226,6 +226,7 @@ class IngestionFactory:
                 ObjectSearchEnum.DATAFILE.value,
                 {
                     "filename": datafile.filename,
+                    "directory": datafile.directory.as_posix(),
                     "dataset": str(Overseer.resource_uri_to_id(datafile.dataset)),
                 },
             )

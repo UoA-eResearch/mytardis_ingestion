@@ -5,7 +5,7 @@ from abc import ABC
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, MTUrl
@@ -60,6 +60,11 @@ class BaseDatafile(BaseModel, ABC):
     def object_id(self) -> str:
         """Main ID for a datafile"""
         return self.filename
+
+    @field_serializer("directory")
+    def dir_as_posix_path(self, directory: Path) -> str:
+        """Ensures the directory is always serialized as a posix path"""
+        return directory.as_posix()
 
 
 class RawDatafile(BaseDatafile):
