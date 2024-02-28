@@ -85,7 +85,6 @@ def ingest_data(yaml_pth: Path, rsync_pth: Path) -> None:
     smelter = Smelter(
         general=config.general,
         default_schema=config.default_schema,
-        storage=config.storage,
         overseer=overseer,
     )
 
@@ -104,11 +103,6 @@ def ingest_data(yaml_pth: Path, rsync_pth: Path) -> None:
     # Initiate Conveyor
     datafiles = ingestible_dataclasses.get_datafiles()
     rsync_transport = RsyncTransport(Path(rsync_pth))
-    conveyor = Conveyor(rsync_transport)
-    conveyor_process = conveyor.initiate_transfer(Path(yaml_pth).parent, datafiles)
-
-    # Wait for file transfer to finish.
-    conveyor_process.join()
 
 
 if __name__ == "__main__":

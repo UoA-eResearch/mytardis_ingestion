@@ -59,7 +59,7 @@ def main(
         config = ConfigFromEnv(
             # Create storagebox config based on passed in argument.
             source_directory=data_root,
-            store=FilesystemStorageBoxConfig(
+            storage=FilesystemStorageBoxConfig(
                 storage_name=storage_name, target_root_dir=storage_dir
             ),
         )
