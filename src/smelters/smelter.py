@@ -129,7 +129,7 @@ class Smelter:
                 institution=institution,
                 start_time=raw_project.start_time,
                 end_time=raw_project.end_time,
-                embargo_until=raw_project.embargo_until
+                embargo_until=raw_project.embargo_until,
             )
         except ValidationError:
             logger.warning(
