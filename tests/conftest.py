@@ -562,7 +562,6 @@ auth = cfg.auth
 connection = cfg.connection
 active_store = cfg.active_store
 archive_store = cfg.archive_store
-storage = cfg.storage
 default_schema = cfg.default_schema
 mytardis_setup = cfg.mytardis_setup
 mytardis_settings = cfg.mytardis_settings

@@ -275,10 +275,9 @@ if __name__ == "__main__":
         overseer=overseer,
         general=config.general,
         default_schema=config.default_schema,
-        storage=config.storage,
     )
 
-    crucible: Crucible = Crucible(overseer=overseer, storage=config.storage)
+    crucible: Crucible = Crucible(overseer=overseer)
 
     forge: Forge = Forge(rest_factory=rest_client)
 

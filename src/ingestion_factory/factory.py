@@ -104,7 +104,7 @@ class IngestionFactory(metaclass=Singleton):
         self.crucible = crucible or Crucible(
             overseer=overseer,
         )
-        self.conveyor = conveyor or Conveyor(store=config.store)
+        self.conveyor = conveyor or Conveyor(store=config.storage)
 
     def ingest_projects(
         self,

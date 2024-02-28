@@ -7,7 +7,6 @@ from pathlib import Path
 
 from src.config.config import ConfigFromEnv
 from src.conveyor.conveyor import Conveyor
-from src.conveyor.transports.rsync import RsyncTransport
 from src.ingestion_factory.factory import IngestionFactory
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
@@ -53,7 +52,6 @@ def ingest_data(ro_crate_path: Path, rsync_pth: Path) -> None:
     smelter = Smelter(
         general=config.general,
         default_schema=config.default_schema,
-        storage=config.storage,
         overseer=overseer,
     )
 
@@ -70,13 +68,6 @@ def ingest_data(ro_crate_path: Path, rsync_pth: Path) -> None:
     factory.ingest_datafiles(metadata.get_datafiles())
 
     datafiles = metadata.get_datafiles()
-    rsync_transport = RsyncTransport(Path(rsync_pth))
-    conveyor = Conveyor(rsync_transport)
-    conveyor_process = conveyor.initiate_transfer(Path(ro_crate_path).parent, datafiles)
-
-    #    Wait for file transfer to finish.
-    conveyor_process.join()
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
