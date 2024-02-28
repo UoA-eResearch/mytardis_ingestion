@@ -1,4 +1,7 @@
 <!-- PROJECT LOGO -->
+# Important
+This is a branch preserving some code with project-specific StorageBoxes. As part of IDS-536, it was decided that replicating Datafiles to project-specific StorageBoxes will be dealt with on the MyTardis-side. This means code written with assumption of project-specific StorageBoxes are removed. You can find ProjectStorageBox classes in src/blueprints/project.py.
+
 <br />
 <p align="center">
   <h3 align="center">UoA MyTardis Ingestion Scripts</h3>
