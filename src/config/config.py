@@ -160,19 +160,6 @@ class FilesystemStorageBoxConfig(StorageBoxConfig):
     storage_class: StorageTypesEnum = StorageTypesEnum.FILE_SYSTEM
     target_root_dir: Path
 
-
-class StorageConfig(BaseModel):
-    """Default storage box information for MyTardis
-
-    Attributes:
-        active_stores (List(StorageBoxConfig)): The active storage boxes
-        archives (List(StorageBoxConfig)): The archive storage boxes
-    """
-
-    active_stores: List[StorageBoxConfig]
-    archives: List[StorageBoxConfig]
-
-
 class IntrospectionConfig(BaseModel):
     """MyTardis introspection data.
 
@@ -219,7 +206,7 @@ class ConfigFromEnv(BaseSettings):
             instance of Pydantic auth model
         connection : ConnectionConfig
             instance of Pydantic connection model
-        store : StorageConfig
+        storage : StorageBoxConfig
             instance of Pydantic storage model
         default_schema : SchemaConfig
             instance of Pydantic schema model
@@ -269,5 +256,5 @@ class ConfigFromEnv(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", env_nested_delimiter="__"
     )
-    store: FilesystemStorageBoxConfig
+    storage: FilesystemStorageBoxConfig
     source_directory: Path

@@ -16,7 +16,6 @@ from src.config.config import (
     ProxyConfig,
     SchemaConfig,
     StorageBoxConfig,
-    StorageConfig,
 )
 
 
@@ -191,15 +190,6 @@ def archive(
         options=archive_options,
         attributes=archive_attributes,
     )
-
-
-@fixture
-def storage(
-    active_stores: StorageBoxConfig,
-    archive: StorageBoxConfig,
-) -> StorageConfig:
-    return StorageConfig(active_stores=[active_stores], archives=[archive])
-
 
 @fixture
 def default_schema(
