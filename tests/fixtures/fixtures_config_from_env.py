@@ -191,6 +191,7 @@ def archive(
         attributes=archive_attributes,
     )
 
+
 @fixture
 def default_schema(
     project_schema: str,

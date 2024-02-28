@@ -160,6 +160,7 @@ class FilesystemStorageBoxConfig(StorageBoxConfig):
     storage_class: StorageTypesEnum = StorageTypesEnum.FILE_SYSTEM
     target_root_dir: Path
 
+
 class IntrospectionConfig(BaseModel):
     """MyTardis introspection data.
 

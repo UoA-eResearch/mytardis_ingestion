@@ -69,6 +69,7 @@ def ingest_data(ro_crate_path: Path, rsync_pth: Path) -> None:
 
     datafiles = metadata.get_datafiles()
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Instrument Data Service(IDS) Ingestion Script - RO-Crate Version",
