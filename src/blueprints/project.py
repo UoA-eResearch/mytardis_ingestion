@@ -3,51 +3,13 @@
 
 from abc import ABC
 from datetime import datetime
-from pathlib import Path
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, ISODateTime, MTUrl, Username
-from src.blueprints.storage_boxes import StorageTypesEnum
 from src.mytardis_client.enumerators import DataClassification, DataStatus
-
-
-class ProjectStorageBox(BaseModel, ABC):
-    """Abstract base class for a project storage box. Concrete child classes
-    will need to be constructed for each new Django storage types
-
-    Attributes:
-        name (str): the storage box name
-        storage_class (str): The Django storage class
-        options (dict): A dictionary of options for the storage type that are project specific
-        attrbutes (dict): A dictionary of attributes that the storage type has, most notably
-            whether the storage is disk or tape for optimal selection of multiple data sources
-        delete_in_days (int): duration after which time the data can be flagged for deletion
-        archive_in_days (int): duration after which the data can be removed from active
-            stores
-    """
-
-    name: Optional[str] = None
-    storage_class: StorageTypesEnum
-    options: Optional[Dict[str, str | Path]] = None
-    attributes: Optional[Dict[str, str]] = None
-    delete_in_days: int
-    archive_in_days: int
-
-
-class ProjectFileSystemStorageBox(ProjectStorageBox):
-    """Concrete sub-class of the ProjectStorageBox for unix filesystems"""
-
-    target_directory: Path
-
-
-class ProjectS3StorageBox(ProjectStorageBox):
-    """Concrete sub-class of the ProjectStorageBox for S3 buckets"""
-
-    bucket: str
-    target_key: str
 
 
 class BaseProject(BaseModel, ABC):
@@ -77,8 +39,6 @@ class RawProject(BaseProject):
     start_time: Optional[datetime | str] = None
     end_time: Optional[datetime | str] = None
     embargo_until: Optional[datetime | str] = None
-    active_stores: Optional[List[ProjectStorageBox]] = None
-    archives: Optional[List[ProjectStorageBox]] = None
     delete_in_days: int = -1
     archive_in_days: int = 365
 
