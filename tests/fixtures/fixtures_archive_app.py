@@ -8,7 +8,6 @@ from typing import Dict
 from pytest import fixture
 from slugify import slugify
 
-from src.blueprints.project import ProjectFileSystemStorageBox, ProjectS3StorageBox
 from src.blueprints.storage_boxes import StorageTypesEnum
 
 
@@ -83,50 +82,3 @@ def project_archive_box_name(
     archive_box_name: str,
 ) -> str:
     return f"{slugify(project_name)}-{slugify(archive_box_name)}"
-
-
-@fixture
-def project_active_store(
-    project_name: str,
-    project_storage_box_name: str,
-    storage_class: StorageTypesEnum,
-    storage_attributes: Dict[str, str],
-    storage_options_reduced: Dict[str, str],
-    delete_in_days: int,
-    archive_in_days: int,
-    target_dir: Path,
-) -> ProjectFileSystemStorageBox:
-    return ProjectFileSystemStorageBox(
-        name=project_storage_box_name,
-        storage_class=storage_class,
-        attributes=storage_attributes,
-        options=storage_options_reduced,
-        delete_in_days=delete_in_days,
-        archive_in_days=archive_in_days,
-        target_directory=Path(
-            f"{slugify(target_dir.as_posix())}/{slugify(project_name)}"
-        ),
-    )
-
-
-@fixture
-def project_archive_store(
-    project_archive_box_name: str,
-    archive_class: StorageTypesEnum,
-    archive_options_reduced: Dict[str, str],
-    archive_attributes: Dict[str, str],
-    delete_in_days: int,
-    archive_in_days: int,
-    s3_bucket: str,
-    target_key: str,
-) -> ProjectS3StorageBox:
-    return ProjectS3StorageBox(
-        name=project_archive_box_name,
-        storage_class=archive_class,
-        attributes=archive_attributes,
-        options=archive_options_reduced,
-        delete_in_days=delete_in_days,
-        archive_in_days=archive_in_days,
-        bucket=s3_bucket,
-        target_key=target_key,
-    )
