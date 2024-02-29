@@ -28,11 +28,11 @@ def main(
         typer.Argument(help="Directory containing the data to be extracted"),
     ],
     storage_name: Annotated[
-        str, typer.Argument(help="Name of the ingestion storagebox.")
+        str, typer.Argument(help="Name of the staging storagebox.")
     ],
     storage_dir: Annotated[
         Path,
-        typer.Argument(help="Directory of the ingestion storagebox"),
+        typer.Argument(help="Directory of the staging storagebox"),
     ],
     profile_name: Annotated[
         str,

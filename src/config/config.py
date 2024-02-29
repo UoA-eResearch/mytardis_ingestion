@@ -154,7 +154,7 @@ class StorageBoxConfig(BaseModel, ABC):
 
 class FilesystemStorageBoxConfig(StorageBoxConfig):
     """Pydantic model for a filesystem-based MyTardis storagebox configuration.
-    This is used primarily to represent the ingestion storagebox.
+    This is used primarily to represent the staging storagebox.
     """
 
     storage_class: StorageTypesEnum = StorageTypesEnum.FILE_SYSTEM
