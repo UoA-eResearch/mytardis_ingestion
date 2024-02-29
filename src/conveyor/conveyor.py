@@ -92,7 +92,7 @@ class Conveyor:
     def transfer(self, data_root: Path, dfs: list[Datafile]) -> None:
         """Initiates a transfer and blocks until it returns. The files will be transferred
         to the configured StorageBox, and separated based on the dataset it belongs to.
-        The path of the file will be [storagebox uri]/ds-[dataset id]/[directory]/[filename]. 
+        The path of the file will be [storagebox uri]/ds-[dataset id]/[directory]/[filename].
 
         Raises:
             FailedTransferException: Raised if transport encounters an error

@@ -77,7 +77,7 @@ class IDSIngestionScript:
             source_directory=yaml_path,
             storage=FilesystemStorageBoxConfig(
                 storage_name=storage_name, target_root_dir=Path(storage_dir)
-            )
+            ),
         )
         self.profile_name = "idw"
         self.profile = load_profile(self.profile_name)
@@ -92,9 +92,7 @@ class IDSIngestionScript:
         Returns:
             IngestionFactory: Initialized IngestionFactory instance.
         """
-        return IngestionFactory(
-            config=self.config
-        )
+        return IngestionFactory(config=self.config)
 
     def run_ingestion(self) -> None:
         """
@@ -134,7 +132,6 @@ class IDSIngestionScript:
         # Write the updated ingestible_dataclasses into a YAML file
         write_to_yaml(self.yaml_path, self.ingestible_dataclass)
 
-
     def check_ingest_and_update_status(
         self,
         data_obj: Union[RawProject, RawExperiment, RawDataset, RawDatafile],
@@ -172,6 +169,7 @@ class IDSIngestionScript:
                 datafile_list.append(data_obj)
         else:
             data_obj.data_status = DataStatus.FAILED
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
