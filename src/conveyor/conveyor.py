@@ -43,7 +43,17 @@ class Conveyor:
         self._store = store
 
     def create_replica(self, file: Datafile) -> DatafileReplica:
-        """Use the dataset associated with datafile to construct replicas"""
+        """Method for creating a DatafileReplica representing the files copied by this
+        conveyor. This method does not transfer the files, it merely creates an object
+        representing the copied files in the StorageBox. Use Conveyor.transfer()
+        to transfer the files.
+
+        Args:
+            file (Datafile): The file to create a Replica representation of.
+
+        Returns:
+            DatafileReplica: The Replica representing the copied file.
+        """
         file_path = file.directory / file.filename
         dataset_id = Overseer.resource_uri_to_id(file.dataset)
         return DatafileReplica(
@@ -63,10 +73,7 @@ class Conveyor:
             destination_dir (Path): The destination directory.
 
         Raises:
-            FailedTransferException:
-
-        Returns:
-            _type_: _description_
+            FailedTransferException: Raised when rsync does not return with status code 0.
         """
         with NamedTemporaryFile("r+") as list_f:
             # Write to temporary file list for rsync to sync over.
@@ -83,7 +90,9 @@ class Conveyor:
                 raise FailedTransferException("rsync return code was not 0.")
 
     def transfer(self, data_root: Path, dfs: list[Datafile]) -> None:
-        """Initiates a transfer and blocks until it returns.
+        """Initiates a transfer and blocks until it returns. The files will be transferred
+        to the configured StorageBox, and separated based on the dataset it belongs to.
+        The path of the file will be [storagebox uri]/ds-[dataset id]/[directory]/[filename]. 
 
         Raises:
             FailedTransferException: Raised if transport encounters an error
