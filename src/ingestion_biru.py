@@ -43,7 +43,7 @@ from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
-from src.config.config import ConfigFromEnv
+from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
 from src.ingestion_factory.factory import IngestionFactory
 from src.mytardis_client.enumerators import DataStatus
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
@@ -64,7 +64,7 @@ class IDSIngestionScript:
     This script creates objects in MyTardis using the specified workflow.
     """
 
-    def __init__(self, yaml_path: str, rsync_path: str):
+    def __init__(self, yaml_path: str, storage_dir: str, storage_name: str):
         """
         Initialize the IDSIngestionScript instance.
 
@@ -73,8 +73,12 @@ class IDSIngestionScript:
             rsync_path (str): Path to the rsync destination.
         """
         self.yaml_path = Path(yaml_path)
-        self.rsync_path = Path(rsync_path)
-        self.config = ConfigFromEnv()
+        self.config = ConfigFromEnv(
+            source_directory=yaml_path,
+            storage=FilesystemStorageBoxConfig(
+                storage_name=storage_name, target_root_dir=Path(storage_dir)
+            )
+        )
         self.profile_name = "idw"
         self.profile = load_profile(self.profile_name)
         self.extractor = self.profile.get_extractor()
@@ -88,16 +92,8 @@ class IDSIngestionScript:
         Returns:
             IngestionFactory: Initialized IngestionFactory instance.
         """
-        mt_rest = MyTardisRESTFactory(self.config.auth, self.config.connection)
-        overseer = Overseer(mt_rest)
-        smelter = Smelter(
-            general=self.config.general,
-            default_schema=self.config.default_schema,
-            storage=self.config.storage,
-            overseer=overseer,
-        )
         return IngestionFactory(
-            config=self.config, mt_rest=mt_rest, overseer=overseer, smelter=smelter
+            config=self.config
         )
 
     def run_ingestion(self) -> None:
@@ -186,15 +182,17 @@ if __name__ == "__main__":
             "python ingestion_biru_example.py "
             '"/path/to/the/yaml/file" '
             '"/path/to/the/rsync/destination"'
+            '"unix_fs"'
         ),
     )
     parser.add_argument("yaml_pth", type=str, help="Path to the yaml file")
-    parser.add_argument("rsync_pth", type=str, help="Path to the rsync destination")
+    parser.add_argument("storage_dir", type=str, help="Path to the storage directory")
+    parser.add_argument("storage_name", type=str, help="Name of staging storagebox")
 
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
     args = parser.parse_args()
 
-    script = IDSIngestionScript(args.yaml_pth, args.rsync_pth)
+    script = IDSIngestionScript(args.yaml_pth, args.storage_dir, args.storage_name)
     script.run_ingestion()
