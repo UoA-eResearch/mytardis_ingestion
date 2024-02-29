@@ -44,8 +44,6 @@ from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
 from src.config.config import ConfigFromEnv
-from src.conveyor.conveyor import Conveyor
-from src.conveyor.transports.rsync import RsyncTransport
 from src.ingestion_factory.factory import IngestionFactory
 from src.mytardis_client.enumerators import DataStatus
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
@@ -140,8 +138,6 @@ class IDSIngestionScript:
         # Write the updated ingestible_dataclasses into a YAML file
         write_to_yaml(self.yaml_path, self.ingestible_dataclass)
 
-        # Initiate Conveyor
-        self.initiate_conveyor(new_ingested_datafiles)
 
     def check_ingest_and_update_status(
         self,
@@ -180,26 +176,6 @@ class IDSIngestionScript:
                 datafile_list.append(data_obj)
         else:
             data_obj.data_status = DataStatus.FAILED
-
-    def initiate_conveyor(self, new_ingested_datafiles: List[RawDatafile]) -> None:
-        """
-        Initiate the Conveyor for file transfer.
-
-        Args:
-            new_ingested_datafiles (list): List of newly ingested datafiles.
-        """
-        logger.info("Initiating the Conveyor for file transfer...")
-        rsync_transport = RsyncTransport(self.rsync_path)
-        conveyor = Conveyor(rsync_transport)
-        conveyor_process = conveyor.initiate_transfer(
-            self.yaml_path.parent, new_ingested_datafiles
-        )  # only rsync the newly ingested datafiles
-
-        # Wait for file transfer to finish.
-        conveyor_process.join()
-
-        logger.info("Data ingestion process completed successfully.")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
