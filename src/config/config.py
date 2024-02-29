@@ -13,7 +13,7 @@ the environment automatically and verifies their types and values.
 import logging
 from abc import ABC
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from urllib.parse import urljoin
 
 from pydantic import BaseModel, ConfigDict, PrivateAttr
