@@ -227,7 +227,7 @@ class YamlParser:
         Returns:
             Node: A PyYAML node object.
         """
-        return dumper.represent_mapping(dset_tag, data.__dict__)
+        return dumper.represent_mapping(dfile_tag, data.__dict__)
 
     def _rawdataset_constructor(self, loader: Loader, node: MappingNode) -> RawDataset:
         """

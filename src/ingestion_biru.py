@@ -37,7 +37,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Any, List, Union
+from typing import Union
 
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
@@ -110,28 +110,19 @@ class IDSIngestionScript:
             ingestible_dataclasses (IngestibleDataclasses): Ingestible data classes
             containing data to be updated.
         """
-        new_ingested_datafiles: List[Any] = []
 
         try:
             for project in self.ingestible_dataclass.get_projects():
-                self.check_ingest_and_update_status(
-                    project, "project", new_ingested_datafiles
-                )
+                self.check_ingest_and_update_status(project, "project")
 
             for experiment in self.ingestible_dataclass.get_experiments():
-                self.check_ingest_and_update_status(
-                    experiment, "experiment", new_ingested_datafiles
-                )
+                self.check_ingest_and_update_status(experiment, "experiment")
 
             for dataset in self.ingestible_dataclass.get_datasets():
-                self.check_ingest_and_update_status(
-                    dataset, "dataset", new_ingested_datafiles
-                )
+                self.check_ingest_and_update_status(dataset, "dataset")
 
             for datafile in self.ingestible_dataclass.get_datafiles():
-                self.check_ingest_and_update_status(
-                    datafile, "datafile", new_ingested_datafiles
-                )
+                self.check_ingest_and_update_status(datafile, "datafile")
                 print(datafile)
 
         except TimeoutError as e:
@@ -141,13 +132,12 @@ class IDSIngestionScript:
         write_to_yaml(self.yaml_path, self.ingestible_dataclass)
 
         # Initiate Conveyor
-        self.initiate_conveyor(new_ingested_datafiles)
+        self.initiate_conveyor()
 
     def check_ingest_and_update_status(
         self,
         data_obj: Union[RawProject, RawExperiment, RawDataset, RawDatafile],
         obj_type: str,
-        datafile_list: List[RawDatafile],
     ) -> None:
         """
         Update the data status for a specific object type.
@@ -177,11 +167,10 @@ class IDSIngestionScript:
             if obj_type == "datafile":
                 if not isinstance(data_obj, RawDatafile):
                     raise TypeError("data_obj must be an instance of RawDatafile")
-                datafile_list.append(data_obj)
         else:
             data_obj.data_status = DataStatus.FAILED
 
-    def initiate_conveyor(self, new_ingested_datafiles: List[RawDatafile]) -> None:
+    def initiate_conveyor(self) -> None:
         """
         Initiate the Conveyor for file transfer.
 
@@ -192,8 +181,8 @@ class IDSIngestionScript:
         rsync_transport = RsyncTransport(self.rsync_path)
         conveyor = Conveyor(rsync_transport)
         conveyor_process = conveyor.initiate_transfer(
-            self.yaml_path.parent, new_ingested_datafiles
-        )  # only rsync the newly ingested datafiles
+            self.yaml_path.parent, self.ingestible_dataclass.get_datafiles()
+        )
 
         # Wait for file transfer to finish.
         conveyor_process.join()
