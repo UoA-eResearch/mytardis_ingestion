@@ -6,6 +6,7 @@ refinery/ingestion. The raw dataclasses are stored in lists.
 # ---Imports
 from __future__ import annotations
 
+import io
 import logging
 from pathlib import Path
 from typing import List, Optional, Sequence, TextIO, Type, TypeVar
@@ -172,7 +173,9 @@ class IngestionManifest:
             datafiles=datafiles,
         )
 
-    def print(self, stream: TextIO, skip_datafiles: bool = True) -> None:
+    def summarize(self, skip_datafiles: bool = True) -> str:
+        stream = io.StringIO()
+
         def write_header(text: str) -> None:
             stream.write(f"\n\n{'=' * len(text)}\n")
             stream.write(text)
@@ -192,6 +195,10 @@ class IngestionManifest:
         write_header("Datasets")
         write_dataclasses(self.get_datasets())
 
-        if not skip_datafiles:
+        if skip_datafiles:
+            stream.write(f"Number of datafiles: {len(self.get_datafiles())}")
+        else:
             write_header("Datafiles")
             write_dataclasses(self.get_datafiles())
+
+        return stream.getvalue()

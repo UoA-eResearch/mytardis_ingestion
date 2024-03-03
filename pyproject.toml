@@ -54,6 +54,9 @@ toml = "^0.10.2"
 pyproject-pre-commit = "^0.1.4"
 pyfakefs = "^5.3.1"
 
+[tool.poetry.scripts]
+ids = 'src.ingestion:app'
+
 [tool.isort]
 profile = "black"
 
