@@ -28,10 +28,8 @@ from tests.fixtures.fixtures_ro_crate import (
 
 def test_load_crate(
     fixture_rocrate_parser: ROCrateParser,
-    fakecrate_root: Path,
     fixture_ro_crate_name: str,
     fixture_rocrate_uuid: str,
-    ro_crate_unlisted_file_dir: Path,
 ) -> None:
     """Basic Test to load an entire RO-Crate from a fixture
 
@@ -60,9 +58,9 @@ def test_read_crate_dataobjects(
     ingestible_dfs: IngestionManifest = fixture_rocrate_parser.process_datasets(
         IngestionManifest(), filters.PathFilterSet(filter_system_files=True)
     )
-    assert len([df.description for df in ingestible_dfs.get_datasets()]) == 2
+    assert len(ingestible_dfs.get_datasets()) == 2
     assert (
-        len([(df.dataset, df.filename) for df in ingestible_dfs.get_datafiles()]) == 3
+        len(ingestible_dfs.get_datafiles()) == 3
     )  # raw_datafile, ro_crate_metadata.json and unlistedfile.txt
 
     # test file traversal of datafiles
