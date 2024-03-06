@@ -1,6 +1,7 @@
 "conveyor.py - Script for file transferring."
 
 import logging
+import shutil
 import subprocess
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -22,8 +23,8 @@ def is_rsync_on_path() -> bool:
     Returns:
         bool: True if rsync is found, false if not.
     """
-    state = subprocess.run(["rsync", "-h"], capture_output=True, check=False)  # nosec
-    return state.returncode == 0
+    rsync_path = shutil.which("rsync")
+    return rsync_path is not None
 
 
 class Conveyor:
@@ -39,7 +40,7 @@ class Conveyor:
             transport (AbstractTransport): The concrete transport mechanism to use.
         """
         if not is_rsync_on_path():
-            logger.error("Could not find rsync on PATH.")
+            raise RuntimeError("Could not find rsync on PATH.")
         self._store = store
 
     def create_replica(self, file: Datafile) -> DatafileReplica:
@@ -85,7 +86,11 @@ class Conveyor:
             result = subprocess.run(  # nosec
                 ["rsync", "-av", "--files-from", list_f.name, src, destination_dir],
                 check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
             )
+            logger.info("rsync process finished. Output below.")
+            logger.info(result.stdout)
             if result.returncode > 0:
                 raise FailedTransferException("rsync return code was not 0.")
 
@@ -100,7 +105,7 @@ class Conveyor:
 
         Args:
             src (Path): Path of the source directory.
-            dfs (list[BaseDatafile]): List of Datafiles to transfer.
+            dfs (list[Datafile]): List of Datafiles to transfer.
 
         Returns:
             None.

@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 
 from src.config.config import ConfigFromEnv
-from src.conveyor.conveyor import Conveyor
 from src.ingestion_factory.factory import IngestionFactory
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
@@ -37,7 +36,7 @@ PROFILE_NAME = "ro_crate"
 profile_loader = ProfileLoader(PROFILE_NAME)
 
 
-def ingest_data(ro_crate_path: Path, rsync_pth: Path) -> None:
+def ingest_data(ro_crate_path: Path) -> None:
     """
     Runs the ingestion pipeline.
     """
@@ -67,8 +66,6 @@ def ingest_data(ro_crate_path: Path, rsync_pth: Path) -> None:
     factory.ingest_datasets(metadata.get_datasets())
     factory.ingest_datafiles(metadata.get_datafiles())
 
-    datafiles = metadata.get_datafiles()
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -88,4 +85,4 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(1)
     args = parser.parse_args()
-    ingest_data(args.ro_crate_path, args.rsync_pth)
+    ingest_data(args.ro_crate_path)

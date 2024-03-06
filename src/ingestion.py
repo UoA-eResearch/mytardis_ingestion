@@ -72,7 +72,7 @@ def main(
             ),
             error,
         )
-        sys.exit()
+        sys.exit(1)
     timer = Timer(start=True)
 
     if DirectoryNode(data_root).empty():

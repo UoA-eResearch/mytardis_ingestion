@@ -4,7 +4,6 @@ Ingestion scripts. The base class contains mostly concrete functions but
 needs to determine the Smelter class that is used by the Factory"""
 import json
 import logging
-import sys
 from typing import Any, Optional
 
 from src.blueprints.custom_data_types import URI
@@ -316,7 +315,6 @@ class IngestionFactory(metaclass=Singleton):
             logger.error(
                 "Datafile transfer could not complete. Check rsync output for more information."
             )
-            sys.exit()
         return result
 
     def dump_ingestion_result_json(  # pylint:disable=missing-function-docstring
