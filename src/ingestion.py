@@ -2,7 +2,6 @@
 CLI frontend for extracting metadata, and ingesting it with the data into MyTardis.
 """
 
-import io
 import logging
 import sys
 from pathlib import Path
@@ -115,7 +114,24 @@ def upload(
     Submit the extracted metadata to MyTardis, and transfer the data to the storage directory.
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
-    config = ConfigFromEnv()
+    try:
+        config = ConfigFromEnv(
+            # Create storagebox config based on passed in argument.
+            source_directory=data_root,
+            storage=FilesystemStorageBoxConfig(
+                storage_name=storage_name, target_root_dir=storage_dir
+            ),
+        )
+    except ValidationError as error:
+        logger.error(
+            (
+                "An error occurred while validating the environment "
+                "configuration. Make sure all required variables are set "
+                "or pass your own configuration instance. Error: %s"
+            ),
+            error,
+        )
+        sys.exit(1)
 
     if DirectoryNode(manifest_dir).empty():
         raise ValueError(
@@ -141,11 +157,6 @@ def upload(
     elapsed = timer.stop()
     logging.info("Finished submitting dataclasses to MyTardis")
     logging.info("Total time (s): %.2f", elapsed)
-
-    transport = RsyncTransport(Path(storage_dir))
-    conveyor = Conveyor(transport)
-    conveyor.initiate_transfer(data_dir, metadata.get_datafiles()).join()
-
 
 @app.command()
 def ingest(
