@@ -16,6 +16,7 @@ class MyTardisObject(str, Enum):
     INSTITUTION = "institution"
     DATAFILE = "datafile"
     STORAGE_BOX = "storagebox"
+    USER = "user"
 
 
 class URLSubstring(str, Enum):
