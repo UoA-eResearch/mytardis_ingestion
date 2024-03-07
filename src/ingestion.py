@@ -158,6 +158,7 @@ def upload(
     logging.info("Finished submitting dataclasses to MyTardis")
     logging.info("Total time (s): %.2f", elapsed)
 
+
 @app.command()
 def ingest(
     data_root: SourceDataDirArg,

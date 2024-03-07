@@ -83,7 +83,9 @@ class Conveyor:
             list_f.flush()
             # Run rsync commandline to transfer the files.
             # Disable bandit's warning about subprocess.
-            logger.info("rsync process has started, output not available until it finishes.")
+            logger.info(
+                "rsync process has started, output not available until it finishes."
+            )
             result = subprocess.run(  # nosec
                 ["rsync", "-av", "--files-from", list_f.name, src, destination_dir],
                 check=False,
