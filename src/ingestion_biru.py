@@ -123,7 +123,6 @@ class IDSIngestionScript:
 
             for datafile in self.ingestible_dataclass.get_datafiles():
                 self.check_ingest_and_update_status(datafile, "datafile")
-                print(datafile)
 
         except TimeoutError as e:
             logger.error(e)

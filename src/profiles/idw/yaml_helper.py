@@ -11,16 +11,13 @@ import logging
 import os
 
 # Standard library imports
-from copy import deepcopy
-from enum import Enum
 from pathlib import Path, PosixPath
-from typing import Any, List, Union
 
 # Third-party imports
 import yaml
-from yaml import Dumper, Loader, Node, ScalarNode, UnsafeLoader
+from yaml import Dumper, Loader, Node
 from yaml.loader import Loader
-from yaml.nodes import MappingNode, Node, ScalarNode
+from yaml.nodes import MappingNode, Node
 
 # User-defined imports
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
@@ -180,9 +177,7 @@ class YamlParser:
         return dumper.represent_scalar(username_tag, str(data))
 
     def _path_constructor(self, loader: Loader, node: MappingNode) -> Path:
-        # return Path(node.value)
-        value = loader.construct_scalar(node)
-        return str(Path(value))
+        return Path(loader.construct_scalar(node))
 
     def _path_reprer(self, dumper: Dumper, data: Path) -> Node:
         return dumper.represent_scalar("tag:yaml.org,2002:str", str(data))
