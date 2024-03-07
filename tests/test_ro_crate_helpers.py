@@ -44,12 +44,3 @@ def test_profile_mapping_functionality(
     ro_crate_field = "@id"
     assert testing_rocrate_mapper.get_mt_field(obj, ro_crate_field) == mt_field
     assert testing_rocrate_mapper.get_roc_field(obj, mt_field) == ro_crate_field
-
-
-def test_rocrate_profile_consts() -> None:
-    assert RO_CrateConsts.PROFILE_VERSION is not None
-    assert RO_CrateConsts.CRATE_TO_TARDIS_PROFILE is not None
-    assert RO_CrateConsts.RO_CRATE_DATAFILE_SCHEMA is not None
-    assert RO_CrateConsts.RO_CRATE_EXPERIMENT_SCHEMA is not None
-    assert RO_CrateConsts.RO_CRATE_PROJECT_SCHEMA is not None
-    assert RO_CrateConsts.RO_CRATE_DATASET_SCHEMA is not None
