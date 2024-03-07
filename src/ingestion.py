@@ -117,7 +117,7 @@ def upload(
     try:
         config = ConfigFromEnv(
             # Create storagebox config based on passed in argument.
-            source_directory=data_root,
+            source_directory=data_dir,
             storage=FilesystemStorageBoxConfig(
                 storage_name=storage_name, target_root_dir=storage_dir
             ),
