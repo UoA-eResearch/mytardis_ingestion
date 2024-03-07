@@ -161,6 +161,9 @@ def upload(
 @app.command()
 def ingest(
     data_root: SourceDataDirArg,
+    storage_name: Annotated[
+        str, typer.Argument(help="Name of the staging storagebox.")
+    ],
     storage_dir: Annotated[
         Path,
         typer.Argument(help="Directory where the extracted data will be stored"),
