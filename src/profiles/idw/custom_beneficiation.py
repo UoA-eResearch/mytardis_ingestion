@@ -19,9 +19,7 @@ import yaml
 from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
 from src.extraction.manifest import IngestionManifest
-from src.helpers.dataclass import get_object_name
 from src.miners.utils import datafile_metadata_helpers
-from src.mytardis_client.enumerators import DataStatus as EnumDataStatus
 from src.profiles.idw.yaml_helper import YamlParser
 
 # Constants
@@ -57,7 +55,6 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
             data = yaml.safe_load_all(f)
             for obj in data:
                 if isinstance(obj, RawProject):
-                    print(obj)
                     ingestible_dclasses.add_project(obj)
                 if isinstance(obj, RawExperiment):
                     ingestible_dclasses.add_experiment(obj)

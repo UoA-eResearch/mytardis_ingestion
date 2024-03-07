@@ -37,7 +37,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Any, List, Union
+from typing import Union
 
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
@@ -46,8 +46,11 @@ from src.blueprints.project import RawProject
 from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
 from src.ingestion_factory.factory import IngestionFactory
 from src.mytardis_client.enumerators import DataStatus
+from src.mytardis_client.mt_rest import MyTardisRESTFactory
+from src.overseers.overseer import Overseer
 from src.profiles.idw.yaml_wrapper import write_to_yaml
 from src.profiles.profile_register import load_profile
+from src.smelters.smelter import Smelter
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -89,7 +92,17 @@ class IDSIngestionScript:
         Returns:
             IngestionFactory: Initialized IngestionFactory instance.
         """
-        return IngestionFactory(config=self.config)
+        mt_rest = MyTardisRESTFactory(self.config.auth, self.config.connection)
+        overseer = Overseer(mt_rest)
+        smelter = Smelter(
+            general=self.config.general,
+            default_schema=self.config.default_schema,
+            storage=self.config.storage,
+            overseer=overseer,
+        )
+        return IngestionFactory(
+            config=self.config, mt_rest=mt_rest, overseer=overseer, smelter=smelter
+        )
 
     def run_ingestion(self) -> None:
         """
@@ -99,7 +112,6 @@ class IDSIngestionScript:
             ingestible_dataclasses (IngestibleDataclasses): Ingestible data classes
             containing data to be updated.
         """
-        new_ingested_datafiles: List[Any] = []
 
         try:
             for project in self.ingestible_dataclass.get_projects():
@@ -108,20 +120,13 @@ class IDSIngestionScript:
                 )
 
             for experiment in self.ingestible_dataclass.get_experiments():
-                self.check_ingest_and_update_status(
-                    experiment, "experiment", new_ingested_datafiles
-                )
+                self.check_ingest_and_update_status(experiment, "experiment")
 
             for dataset in self.ingestible_dataclass.get_datasets():
-                self.check_ingest_and_update_status(
-                    dataset, "dataset", new_ingested_datafiles
-                )
+                self.check_ingest_and_update_status(dataset, "dataset")
 
             for datafile in self.ingestible_dataclass.get_datafiles():
-                self.check_ingest_and_update_status(
-                    datafile, "datafile", new_ingested_datafiles
-                )
-                print(datafile)
+                self.check_ingest_and_update_status(datafile, "datafile")
 
         except TimeoutError as e:
             logger.error(e)
@@ -133,7 +138,6 @@ class IDSIngestionScript:
         self,
         data_obj: Union[RawProject, RawExperiment, RawDataset, RawDatafile],
         obj_type: str,
-        datafile_list: List[RawDatafile],
     ) -> None:
         """
         Update the data status for a specific object type.

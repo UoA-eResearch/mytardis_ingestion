@@ -11,15 +11,13 @@ import logging
 import os
 
 # Standard library imports
-from copy import deepcopy
-from pathlib import Path
-from typing import Any, List, Union
+from pathlib import Path, PosixPath
 
 # Third-party imports
 import yaml
-from yaml import Dumper, Loader, Node, ScalarNode, UnsafeLoader
+from yaml import Dumper, Loader, Node
 from yaml.loader import Loader
-from yaml.nodes import MappingNode, Node, ScalarNode
+from yaml.nodes import MappingNode, Node
 
 # User-defined imports
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
@@ -141,21 +139,10 @@ class YamlParser:
         yaml.constructor.SafeConstructor.add_constructor(
             path_tag, self._path_constructor
         )
-        yaml.add_representer(Path, self._path_reprer)
+        yaml.add_representer(PosixPath, self._path_reprer)
 
-        """yaml.add_constructor('tag:yaml.org,2002:int', self._datastatus_constructor)
-        yaml.constructor.SafeConstructor.add_constructor(
-            'tag:yaml.org,2002:int', self._datastatus_constructor
-        )
-        yaml.add_representer(DataStatus, self._datastatus_reprer)
-
-        yaml.add_constructor(
-            'tag:yaml.org,2002:int', self._dataclassification_constructor
-        )
-        yaml.constructor.SafeConstructor.add_constructor(
-            'tag:yaml.org,2002:int', self._dataclassification_constructor
-        )
-        yaml.add_representer(DataClassification, self._dataclassification_reprer)"""
+        yaml.add_representer(DataClassification, self._enum_representer)
+        yaml.add_representer(DataStatus, self._enum_representer)
 
     def _constructor_setup(self, loader: Loader, node: MappingNode) -> dict:
         """
@@ -175,13 +162,13 @@ class YamlParser:
         return GroupACL(**loader.construct_mapping(node))
 
     def _groupacl_reprer(self, dumper: Dumper, data: GroupACL) -> Node:
-        return dumper.represent_mapping(groupacl_tag, data.__dict__())
+        return dumper.represent_mapping(groupacl_tag, data)
 
     def _useracl_constructor(self, loader: Loader, node: MappingNode) -> UserACL:
         return UserACL(**loader.construct_mapping(node))
 
     def _useracl_reprer(self, dumper: Dumper, data: UserACL) -> Node:
-        return dumper.represent_mapping(useracl_tag, data.__dict__())
+        return dumper.represent_mapping(useracl_tag, data)
 
     def _username_constructor(self, loader: Loader, node: MappingNode) -> Username:
         return Username(node.value)
@@ -190,28 +177,13 @@ class YamlParser:
         return dumper.represent_scalar(username_tag, str(data))
 
     def _path_constructor(self, loader: Loader, node: MappingNode) -> Path:
-        # return Path(node.value)
-        value = loader.construct_scalar(node)
-        return str(Path(value))
+        return Path(loader.construct_scalar(node))
 
     def _path_reprer(self, dumper: Dumper, data: Path) -> Node:
-        return dumper.represent_scalar(path_tag, str(data))
+        return dumper.represent_scalar("tag:yaml.org,2002:str", str(data))
 
-    """def _datastatus_constructor(self, loader: Loader, node: MappingNode) -> DataStatus:
-        return DataStatus(loader.construct_scalar(node))
-
-    def _datastatus_reprer(self, dumper: Dumper, data: DataStatus) -> Node:
-        return dumper.represent_scalar('tag:yaml.org,2002:int', str(data.value))
-
-    def _dataclassification_constructor(
-        self, loader: Loader, node: MappingNode
-    ) -> DataClassification:
-        return DataClassification(loader.construct_scalar(node))
-
-    def _dataclassification_reprer(
-        self, dumper: Dumper, data: DataClassification
-    ) -> Node:
-        return dumper.represent_scalar('tag:yaml.org,2002:int', str(data.value))"""
+    def _enum_representer(self, dumper: Dumper, data):
+        return dumper.represent_scalar("tag:yaml.org,2002:int", str(data.value))
 
     def _rawdatafile_constructor(
         self, loader: Loader, node: MappingNode
@@ -239,7 +211,7 @@ class YamlParser:
         datafile = RawDatafile(**data)
         return datafile
 
-    def _rawdatafile_reprer(self, dumper: Dumper, data: RawDataset) -> Node:
+    def _rawdatafile_reprer(self, dumper: Dumper, data: RawDatafile) -> Node:
         """
         A method that represents a RawDataset object using the representer_setup helper method.
 
@@ -250,7 +222,7 @@ class YamlParser:
         Returns:
             Node: A PyYAML node object.
         """
-        return dumper.represent_mapping(dset_tag, data.__dict__)
+        return dumper.represent_mapping(dfile_tag, data.__dict__)
 
     def _rawdataset_constructor(self, loader: Loader, node: MappingNode) -> RawDataset:
         """
