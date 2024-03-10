@@ -20,7 +20,7 @@ The workflow for these scripts are as follows:
    of files to transfer into MyTardis, then move them using a configured
    Transport. This happens in a parallel process to the ingestion factory.
 
--Ingestion Factory # Not working as intended yet, currently using the components separately
+Ingestion Factory # Not working as intended yet, currently using the components separately
  -- Smelting: Refines the raw dataclasses into refined dataclasses which closely
     follows the MyTardis's data formats.
  -- Crucible: Swaps out directory paths in the metadata into URI's. Used mainly
@@ -114,9 +114,7 @@ class IDSIngestionScript:
 
         try:
             for project in self.ingestible_dataclass.get_projects():
-                self.check_ingest_and_update_status(
-                    project, "project"
-                )
+                self.check_ingest_and_update_status(project, "project")
 
             for experiment in self.ingestible_dataclass.get_experiments():
                 self.check_ingest_and_update_status(experiment, "experiment")
