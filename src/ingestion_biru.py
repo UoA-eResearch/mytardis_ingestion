@@ -97,7 +97,6 @@ class IDSIngestionScript:
         smelter = Smelter(
             general=self.config.general,
             default_schema=self.config.default_schema,
-            storage=self.config.storage,
             overseer=overseer,
         )
         return IngestionFactory(
@@ -116,7 +115,7 @@ class IDSIngestionScript:
         try:
             for project in self.ingestible_dataclass.get_projects():
                 self.check_ingest_and_update_status(
-                    project, "project", new_ingested_datafiles
+                    project, "project"
                 )
 
             for experiment in self.ingestible_dataclass.get_experiments():
@@ -146,7 +145,6 @@ class IDSIngestionScript:
             data_obj (Union[RawProject, RawExperiment, RawDataset, RawDatafile]):
                 The data object to update.
             obj_type (str): The type of the data object.
-            new_ingested_datafiles (list): List to store newly ingested datafiles.
         """
         if (
             data_obj.data_status is not None
@@ -167,7 +165,6 @@ class IDSIngestionScript:
             if obj_type == "datafile":
                 if not isinstance(data_obj, RawDatafile):
                     raise TypeError("data_obj must be an instance of RawDatafile")
-                datafile_list.append(data_obj)
         else:
             data_obj.data_status = DataStatus.FAILED
 
