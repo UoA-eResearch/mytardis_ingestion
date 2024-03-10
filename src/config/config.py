@@ -13,7 +13,7 @@ the environment automatically and verifies their types and values.
 import logging
 from abc import ABC
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from urllib.parse import urljoin
 
 from pydantic import BaseModel, ConfigDict, PrivateAttr
@@ -33,11 +33,9 @@ class GeneralConfig(BaseModel):
 
     Attributes:
         default_institution (Optional[str]): name of the default institution
-        source_directory: The root directory to the data source.
     """
 
     default_institution: Optional[str] = None
-    source_directory: Path
 
 
 class AuthConfig(BaseModel, AuthBase):
@@ -144,11 +142,7 @@ class StorageBoxConfig(BaseModel, ABC):
         storage_name (str): an identifier that allows the Project to access the
             options and attributes to set up an appropriate set of storage boxes
         storage_class (str): the Django storage class
-        options (dict): dictionary of storage box options NB: if the storage box
-            is a file system type then this MUST contain a key 'target_root_dir'
-            with a file path to the target root directory.
-            if the storage box is an s3 bucket then this MUST contain a key 's3_bucket'
-            with the bucket name in it.
+        options (dict): dictionary of storage box options.
         attributes (dict): dictionary of the storage box attributes
     """
 
@@ -158,16 +152,13 @@ class StorageBoxConfig(BaseModel, ABC):
     attributes: Optional[Dict[str, str]] = None
 
 
-class StorageConfig(BaseModel):
-    """Default storage box information for MyTardis
-
-    Attributes:
-        active_stores (List(StorageBoxConfig)): The active storage boxes
-        archives (List(StorageBoxConfig)): The archive storage boxes
+class FilesystemStorageBoxConfig(StorageBoxConfig):
+    """Pydantic model for a filesystem-based MyTardis storagebox configuration.
+    This is used primarily to represent the staging storagebox.
     """
 
-    active_stores: List[StorageBoxConfig]
-    archives: List[StorageBoxConfig]
+    storage_class: StorageTypesEnum = StorageTypesEnum.FILE_SYSTEM
+    target_root_dir: Path
 
 
 class IntrospectionConfig(BaseModel):
@@ -216,12 +207,15 @@ class ConfigFromEnv(BaseSettings):
             instance of Pydantic auth model
         connection : ConnectionConfig
             instance of Pydantic connection model
-        storage : StorageConfig
+        storage : StorageBoxConfig
             instance of Pydantic storage model
         default_schema : SchemaConfig
             instance of Pydantic schema model
         archive: TimeOffsetConfig
             instance of Pydantic time offset model
+        source_directory:
+            The root directory to the data source.
+
 
     Properties:
         mytardis_setup : Optional[IntrospectionConfig] (default: None)
@@ -241,10 +235,6 @@ class ConfigFromEnv(BaseSettings):
     CONNECTION__HOSTNAME=https://test-mytardis.nectar.auckland.ac.nz/
     #CONNECTION__PROXY__HTTP=
     #CONNECTION__PROXY__HTTPS=
-    # Storage, prefix with STORAGE__
-    STORAGE__STORAGE_BOX__STORAGE_CLASS=django..core.files.storage.FileSystemStorage
-    STORAGE__STORAGE_BOX__OPTIONS__KEY=value
-    STORAGE__STORAGE_BOX__ATTRIBUTES__KEY=value
     # Schema, prefix with MYTARDIS_SCHEMA__
     # DEFAULT_SCHEMA__PROJECT=https://test.test.com
     # DEFAULT_SCHEMA__EXPERIMENT=
@@ -263,10 +253,9 @@ class ConfigFromEnv(BaseSettings):
     general: GeneralConfig
     auth: AuthConfig
     connection: ConnectionConfig
-    storage: StorageConfig
     default_schema: SchemaConfig
-    # archive: StorageConfig
-    # profile: ProfileConfig
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", env_nested_delimiter="__"
     )
+    storage: FilesystemStorageBoxConfig
+    source_directory: Path

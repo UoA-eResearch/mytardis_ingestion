@@ -6,8 +6,6 @@ import sys
 from pathlib import Path
 
 from src.config.config import ConfigFromEnv
-from src.conveyor.conveyor import Conveyor
-from src.conveyor.transports.rsync import RsyncTransport
 from src.ingestion_factory.factory import IngestionFactory
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
@@ -38,7 +36,7 @@ PROFILE_NAME = "ro_crate"
 profile_loader = ProfileLoader(PROFILE_NAME)
 
 
-def ingest_data(ro_crate_path: Path, rsync_pth: Path) -> None:
+def ingest_data(ro_crate_path: Path) -> None:
     """
     Runs the ingestion pipeline.
     """
@@ -53,7 +51,6 @@ def ingest_data(ro_crate_path: Path, rsync_pth: Path) -> None:
     smelter = Smelter(
         general=config.general,
         default_schema=config.default_schema,
-        storage=config.storage,
         overseer=overseer,
     )
 
@@ -68,14 +65,6 @@ def ingest_data(ro_crate_path: Path, rsync_pth: Path) -> None:
     factory.ingest_experiments(metadata.get_experiments())
     factory.ingest_datasets(metadata.get_datasets())
     factory.ingest_datafiles(metadata.get_datafiles())
-
-    datafiles = metadata.get_datafiles()
-    rsync_transport = RsyncTransport(Path(rsync_pth))
-    conveyor = Conveyor(rsync_transport)
-    conveyor_process = conveyor.initiate_transfer(Path(ro_crate_path).parent, datafiles)
-
-    #    Wait for file transfer to finish.
-    conveyor_process.join()
 
 
 if __name__ == "__main__":
@@ -96,4 +85,4 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(1)
     args = parser.parse_args()
-    ingest_data(args.ro_crate_path, args.rsync_pth)
+    ingest_data(args.ro_crate_path)

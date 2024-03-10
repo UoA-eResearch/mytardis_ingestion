@@ -20,7 +20,7 @@ The workflow for these scripts are as follows:
    of files to transfer into MyTardis, then move them using a configured
    Transport. This happens in a parallel process to the ingestion factory.
 
--Ingestion Factory # Not working as intended yet, currently using the components separately
+Ingestion Factory # Not working as intended yet, currently using the components separately
  -- Smelting: Refines the raw dataclasses into refined dataclasses which closely
     follows the MyTardis's data formats.
  -- Crucible: Swaps out directory paths in the metadata into URI's. Used mainly
@@ -43,9 +43,7 @@ from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
-from src.config.config import ConfigFromEnv
-from src.conveyor.conveyor import Conveyor
-from src.conveyor.transports.rsync import RsyncTransport
+from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
 from src.ingestion_factory.factory import IngestionFactory
 from src.mytardis_client.enumerators import DataStatus
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
@@ -66,7 +64,7 @@ class IDSIngestionScript:
     This script creates objects in MyTardis using the specified workflow.
     """
 
-    def __init__(self, yaml_path: str, rsync_path: str):
+    def __init__(self, yaml_path: str, storage_dir: str, storage_name: str):
         """
         Initialize the IDSIngestionScript instance.
 
@@ -75,8 +73,12 @@ class IDSIngestionScript:
             rsync_path (str): Path to the rsync destination.
         """
         self.yaml_path = Path(yaml_path)
-        self.rsync_path = Path(rsync_path)
-        self.config = ConfigFromEnv()
+        self.config = ConfigFromEnv(
+            source_directory=yaml_path,
+            storage=FilesystemStorageBoxConfig(
+                storage_name=storage_name, target_root_dir=Path(storage_dir)
+            ),
+        )
         self.profile_name = "idw"
         self.profile = load_profile(self.profile_name)
         self.extractor = self.profile.get_extractor()
@@ -95,7 +97,6 @@ class IDSIngestionScript:
         smelter = Smelter(
             general=self.config.general,
             default_schema=self.config.default_schema,
-            storage=self.config.storage,
             overseer=overseer,
         )
         return IngestionFactory(
@@ -130,9 +131,6 @@ class IDSIngestionScript:
         # Write the updated ingestible_dataclasses into a YAML file
         write_to_yaml(self.yaml_path, self.ingestible_dataclass)
 
-        # Initiate Conveyor
-        self.initiate_conveyor()
-
     def check_ingest_and_update_status(
         self,
         data_obj: Union[RawProject, RawExperiment, RawDataset, RawDatafile],
@@ -145,7 +143,6 @@ class IDSIngestionScript:
             data_obj (Union[RawProject, RawExperiment, RawDataset, RawDatafile]):
                 The data object to update.
             obj_type (str): The type of the data object.
-            new_ingested_datafiles (list): List to store newly ingested datafiles.
         """
         if (
             data_obj.data_status is not None
@@ -169,25 +166,6 @@ class IDSIngestionScript:
         else:
             data_obj.data_status = DataStatus.FAILED
 
-    def initiate_conveyor(self) -> None:
-        """
-        Initiate the Conveyor for file transfer.
-
-        Args:
-            new_ingested_datafiles (list): List of newly ingested datafiles.
-        """
-        logger.info("Initiating the Conveyor for file transfer...")
-        rsync_transport = RsyncTransport(self.rsync_path)
-        conveyor = Conveyor(rsync_transport)
-        conveyor_process = conveyor.initiate_transfer(
-            self.yaml_path.parent, self.ingestible_dataclass.get_datafiles()
-        )
-
-        # Wait for file transfer to finish.
-        conveyor_process.join()
-
-        logger.info("Data ingestion process completed successfully.")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -198,15 +176,17 @@ if __name__ == "__main__":
             "python ingestion_biru_example.py "
             '"/path/to/the/yaml/file" '
             '"/path/to/the/rsync/destination"'
+            '"unix_fs"'
         ),
     )
     parser.add_argument("yaml_pth", type=str, help="Path to the yaml file")
-    parser.add_argument("rsync_pth", type=str, help="Path to the rsync destination")
+    parser.add_argument("storage_dir", type=str, help="Path to the storage directory")
+    parser.add_argument("storage_name", type=str, help="Name of staging storagebox")
 
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
     args = parser.parse_args()
 
-    script = IDSIngestionScript(args.yaml_pth, args.rsync_pth)
+    script = IDSIngestionScript(args.yaml_pth, args.storage_dir, args.storage_name)
     script.run_ingestion()

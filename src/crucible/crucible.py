@@ -4,17 +4,12 @@ fields that exist within the MyTardis Database with their equivalent URIs.
 """
 import logging
 from datetime import datetime
-from pathlib import Path
-from typing import List
-
-from slugify import slugify
 
 from src.blueprints.custom_data_types import URI
-from src.blueprints.datafile import Datafile, DatafileReplica, RefinedDatafile
+from src.blueprints.datafile import Datafile, RefinedDatafile
 from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
-from src.config.config import StorageConfig
 from src.mytardis_client.enumerators import ObjectSearchEnum
 from src.overseers import Overseer
 
@@ -28,14 +23,8 @@ class Crucible:
     """The Crucible class reads in a RefinedObject and replaces the identified
     fields with URIs."""
 
-    def __init__(
-        self,
-        overseer: Overseer,
-        storage: StorageConfig,
-    ) -> None:
+    def __init__(self, overseer: Overseer) -> None:
         self.overseer = overseer
-        self.active_stores = storage.active_stores
-        self.archive = storage.archives
 
     def prepare_project(self, refined_project: RefinedProject) -> Project | None:
         """Refine a project by getting the objects that need to exist in
@@ -78,8 +67,6 @@ class Crucible:
                 if isinstance(refined_project.embargo_until, datetime)
                 else refined_project.embargo_until
             ),
-            archives=refined_project.archives,
-            active_stores=refined_project.active_stores,
         )
 
     def prepare_experiment(
@@ -201,35 +188,6 @@ class Crucible:
             ),
         )
 
-    def __create_datafile_replicas(
-        self,
-        dataset: URI,
-        file_path: Path,
-    ) -> List[DatafileReplica]:  # sourcery skip: for-append-to-extend
-        """Use the dataset associated with datafile to construct replicas"""
-        if dataset_obj := self.overseer.get_object_by_uri(dataset):
-            # dataset_obj = response["objects"][0]
-            # Should be handled by API - create setting to prefix
-            # instrument = slugify(dataset_obj["instrument"]["name"])
-            # facility = slugify(dataset_obj["instrument"]["facility"]["name"])
-            # mid_path = Path(facility) / Path(instrument)
-            replicas = []
-            # combine the archives and active stores into one list
-            instrument = slugify(dataset_obj["instrument"]["name"])
-            facility = slugify(dataset_obj["instrument"]["facility"]["name"])
-            stores = [x for store in (self.active_stores, self.archive) for x in store]
-            for store in stores:
-                replicas.append(
-                    DatafileReplica(
-                        uri=f"{facility}/{instrument}/{file_path.as_posix()}",
-                        location=store.storage_name,
-                        protocol="file",
-                    )
-                )
-
-            return replicas
-        raise ValueError(f"Unable to find dataset: {dataset}")
-
     def prepare_datafile(self, refined_datafile: RefinedDatafile) -> Datafile | None:
         """Refine a datafile by finding URIs from MyTardis for the
         relevant fields of interest."""
@@ -252,11 +210,6 @@ class Crucible:
             )
             return None
         dataset = datasets[0]
-        file_path = Path(refined_datafile.directory / refined_datafile.filename)
-        replicas = self.__create_datafile_replicas(
-            dataset,
-            file_path,
-        )
         # TODO revisit the logic here to see if we need to push this out to individual DFOs
         return Datafile(
             filename=refined_datafile.filename,
@@ -268,5 +221,5 @@ class Crucible:
             groups=refined_datafile.groups,
             dataset=dataset,
             parameter_sets=refined_datafile.parameter_sets,
-            replicas=replicas,
+            replicas=[],
         )

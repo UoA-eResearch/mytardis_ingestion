@@ -15,9 +15,8 @@ from src.blueprints.datafile import RawDatafile, RefinedDatafile
 from src.blueprints.dataset import RawDataset, RefinedDataset
 from src.blueprints.experiment import RawExperiment, RefinedExperiment
 from src.blueprints.project import RawProject, RefinedProject
-from src.config.config import GeneralConfig, SchemaConfig, StorageConfig
+from src.config.config import GeneralConfig, SchemaConfig
 from src.overseers.overseer import MYTARDIS_PROJECTS_DISABLED_MESSAGE, Overseer
-from src.smelters.smelt_storage_boxes import create_storage_box
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +33,6 @@ class Smelter:
             information for the ingestion
         default_schema (SchemaConfig): default metadata schema to use in cases where no schema
             is provided - will be deprecated by SSV
-        storage (StorageConfig): ingestion specific storage box information for active and archive
-            stores.
     """
 
     def __init__(
@@ -43,7 +40,6 @@ class Smelter:
         overseer: Overseer,
         general: GeneralConfig,
         default_schema: SchemaConfig,
-        storage: StorageConfig,
     ) -> None:
         """Class initialisation to set options for dictionary processing
         Stores MyTardis set up information from the introspection API to allow the parser
@@ -56,13 +52,11 @@ class Smelter:
                 belong elsewhere
             default_schema (SchemaConfig): The default schema to use as a fallback if one is not
                 provided.
-            storage (StorageConfig):
         """
 
         self.overseer = overseer
         self.default_schema = default_schema
         self.default_institution = general.default_institution
-        self.storage = storage
 
     def extract_parameters(
         self,
@@ -121,24 +115,6 @@ class Smelter:
                 "Unable to find default institution and no institution provided"
             )
             return None
-        active_stores = [
-            create_storage_box(
-                raw_project.name,
-                config,
-                raw_project.delete_in_days,
-                raw_project.archive_in_days,
-            )
-            for config in self.storage.active_stores
-        ]
-        archives = [
-            create_storage_box(
-                raw_project.name,
-                config,
-                raw_project.delete_in_days,
-                raw_project.archive_in_days,
-            )
-            for config in self.storage.archives
-        ]
         try:
             refined_project = RefinedProject(
                 name=raw_project.name,
@@ -154,8 +130,6 @@ class Smelter:
                 start_time=raw_project.start_time,
                 end_time=raw_project.end_time,
                 embargo_until=raw_project.embargo_until,
-                active_stores=active_stores,
-                archives=archives,
             )
         except ValidationError:
             logger.warning(

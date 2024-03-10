@@ -16,7 +16,6 @@ from src.config.config import (
     ProxyConfig,
     SchemaConfig,
     StorageBoxConfig,
-    StorageConfig,
 )
 
 
@@ -118,17 +117,6 @@ def archive_store(
 
 
 @fixture
-def storage(
-    active_store: StorageBoxConfig,
-    archive_store: StorageBoxConfig,
-) -> StorageConfig:
-    return StorageConfig(
-        active_stores=[active_store],
-        archives=[archive_store],
-    )
-
-
-@fixture
 def processed_introspection_response() -> Dict[str, bool | List[str]]:
     return {
         "old_acls": False,
@@ -195,21 +183,13 @@ def archive(
     archive_class: StorageTypesEnum,
     archive_options: Dict[str, Any],
     archive_attributes: Dict[str, Any],
-) -> StorageConfig:
+) -> StorageBoxConfig:
     return StorageBoxConfig(
         storage_name="Test Archive",
         storage_class=archive_class,
         options=archive_options,
         attributes=archive_attributes,
     )
-
-
-@fixture
-def storage(
-    active_stores: StorageBoxConfig,
-    archive: StorageBoxConfig,
-) -> StorageConfig:
-    return StorageConfig(active_stores=[active_stores], archives=[archive])
 
 
 @fixture
@@ -243,13 +223,11 @@ def mytardis_settings(
     general: GeneralConfig,
     auth: AuthConfig,
     connection: ConnectionConfig,
-    active_store: StorageConfig,
     default_schema: SchemaConfig,
 ) -> ConfigFromEnv:
     return ConfigFromEnv(
         general=general,
         auth=auth,
         connection=connection,
-        storage=active_store,
         default_schema=default_schema,
     )

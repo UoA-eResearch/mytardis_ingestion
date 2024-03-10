@@ -3,15 +3,15 @@ CLI frontend for extracting metadata, and ingesting it with the data into MyTard
 """
 
 import logging
+import sys
 from pathlib import Path
 from typing import Optional, TypeAlias
 
 import typer
+from pydantic import ValidationError
 from typing_extensions import Annotated
 
-from src.config.config import ConfigFromEnv
-from src.conveyor.conveyor import Conveyor
-from src.conveyor.transports.rsync import RsyncTransport
+from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
 from src.extraction.manifest import IngestionManifest
 from src.ingestion_factory.factory import IngestionFactory
 from src.profiles.profile_register import load_profile
@@ -20,6 +20,7 @@ from src.utils.filesystem.filesystem_nodes import DirectoryNode
 from src.utils.timing import Timer
 
 app = typer.Typer()
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # SHARED ARGUMENT DEFINITIONS
@@ -99,10 +100,13 @@ def upload(
             help="Directory containing the previously extracted metadata to be ingested"
         ),
     ],
+    storage_name: Annotated[
+        str, typer.Argument(help="Name of the staging storagebox.")
+    ],
     data_dir: SourceDataDirArg,
     storage_dir: Annotated[
         Path,
-        typer.Argument(help="Directory where the extracted data will be stored"),
+        typer.Argument(help="Directory of the staging storagebox"),
     ],
     log_file: LogFileArg = Path("upload.log"),
 ) -> None:
@@ -110,7 +114,24 @@ def upload(
     Submit the extracted metadata to MyTardis, and transfer the data to the storage directory.
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
-    config = ConfigFromEnv()
+    try:
+        config = ConfigFromEnv(
+            # Create storagebox config based on passed in argument.
+            source_directory=data_dir,
+            storage=FilesystemStorageBoxConfig(
+                storage_name=storage_name, target_root_dir=storage_dir
+            ),
+        )
+    except ValidationError as error:
+        logger.error(
+            (
+                "An error occurred while validating the environment "
+                "configuration. Make sure all required variables are set "
+                "or pass your own configuration instance. Error: %s"
+            ),
+            error,
+        )
+        sys.exit(1)
 
     if DirectoryNode(manifest_dir).empty():
         raise ValueError(
@@ -137,14 +158,13 @@ def upload(
     logging.info("Finished submitting dataclasses to MyTardis")
     logging.info("Total time (s): %.2f", elapsed)
 
-    transport = RsyncTransport(Path(storage_dir))
-    conveyor = Conveyor(transport)
-    conveyor.initiate_transfer(data_dir, metadata.get_datafiles()).join()
-
 
 @app.command()
 def ingest(
     data_root: SourceDataDirArg,
+    storage_name: Annotated[
+        str, typer.Argument(help="Name of the staging storagebox.")
+    ],
     storage_dir: Annotated[
         Path,
         typer.Argument(help="Directory where the extracted data will be stored"),
@@ -157,8 +177,24 @@ def ingest(
     Run the full ingestion process, from extracting metadata to ingesting it into MyTardis.
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
-    config = ConfigFromEnv()
-
+    try:
+        config = ConfigFromEnv(
+            # Create storagebox config based on passed in argument.
+            source_directory=data_root,
+            storage=FilesystemStorageBoxConfig(
+                storage_name=storage_name, target_root_dir=storage_dir
+            ),
+        )
+    except ValidationError as error:
+        logger.error(
+            (
+                "An error occurred while validating the environment "
+                "configuration. Make sure all required variables are set "
+                "or pass your own configuration instance. Error: %s"
+            ),
+            error,
+        )
+        sys.exit(1)
     timer = Timer(start=True)
 
     if DirectoryNode(data_root).empty():
@@ -187,12 +223,8 @@ def ingest(
     )
 
     elapsed = timer.stop()
-    logging.info("Finished submitting dataclasses to MyTardis")
-    logging.info("Total time (s): %.2f", elapsed)
-
-    transport = RsyncTransport(Path(storage_dir))
-    conveyor = Conveyor(transport)
-    conveyor.initiate_transfer(data_root, metadata.get_datafiles()).join()
+    logger.info("Finished submitting dataclasses and transferring files to MyTardis")
+    logger.info("Total time (s): %.2f", elapsed)
 
 
 if __name__ == "__main__":

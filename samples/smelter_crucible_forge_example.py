@@ -94,8 +94,6 @@ def create_project_example(smelter: Smelter, crucible: Crucible, forge: Forge) -
         start_time=None,
         end_time=None,
         embargo_until=None,
-        active_stores=None,
-        archives=None,
         delete_in_days=-1,
         archive_in_days=-1,
     )
@@ -275,10 +273,9 @@ if __name__ == "__main__":
         overseer=overseer,
         general=config.general,
         default_schema=config.default_schema,
-        storage=config.storage,
     )
 
-    crucible: Crucible = Crucible(overseer=overseer, storage=config.storage)
+    crucible: Crucible = Crucible(overseer=overseer)
 
     forge: Forge = Forge(rest_factory=rest_client)
 
