@@ -303,21 +303,17 @@ class IngestionFactory:
         datasets: list[RawDataset],
         datafiles: list[RawDatafile],
     ) -> None:
-        if projects is not None:
-            ingested_projects = self.ingest_projects(projects)
-            self.log_results(ingested_projects, "project")
+        ingested_projects = self.ingest_projects(projects)
+        self.log_results(ingested_projects, "project")
 
-        if experiments is not None:
-            ingested_experiments = self.ingest_experiments(experiments)
-            self.log_results(ingested_experiments, "experiment")
+        ingested_experiments = self.ingest_experiments(experiments)
+        self.log_results(ingested_experiments, "experiment")
 
-        if datasets is not None:
-            ingested_datasets = self.ingest_datasets(datasets)
-            self.log_results(ingested_datasets, "dataset")
+        ingested_datasets = self.ingest_datasets(datasets)
+        self.log_results(ingested_datasets, "dataset")
 
-        if datafiles is not None:
-            ingested_datafiles = self.ingest_datafiles(datafiles)
-            self.log_results(ingested_datafiles, "datafile")
+        ingested_datafiles = self.ingest_datafiles(datafiles)
+        self.log_results(ingested_datafiles, "datafile")
 
         self.dump_ingestion_result_json(
             projects_result=ingested_projects,
