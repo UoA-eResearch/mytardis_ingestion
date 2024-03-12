@@ -15,11 +15,10 @@ from src.config.config import ConfigFromEnv
 from src.conveyor.conveyor import Conveyor, FailedTransferException
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
-from src.helpers.dataclass import get_object_name
+from src.mytardis_client.enumerators import ObjectSearchEnum
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
-from src.utils.types.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +27,11 @@ class IngestionResult:  # pylint: disable=missing-class-docstring
     def __init__(
         self,
         success: Optional[list[tuple[str, Optional[URI]]]] = None,
+        skipped: Optional[list[tuple[str, Optional[URI]]]] = None,
         error: Optional[list[str]] = None,
     ) -> None:
         self.success = success or []
+        self.skipped = skipped or []
         self.error = error or []
 
     def __eq__(self, other) -> bool:  # type: ignore
@@ -39,25 +40,18 @@ class IngestionResult:  # pylint: disable=missing-class-docstring
         return NotImplemented
 
 
-class IngestionFactory(metaclass=Singleton):
-    """Ingestion Factory base class to orchestrate the Smelting, and Forging of
-    objects within MyTardis.
+class IngestionFactory:
+    """Orchestrates the ingestion of raw metadata into MyTardis.
 
-    IngestionFactory is an abstract base class from which specific ingestion
-    factories should be subclassed. The Factory classes orchestrate the various
-    classes associated with ingestion in such a way that the Smelter, Overseer and Forge
-    classes are unaware of each other
+    The class runs the smelter-crucible-forge stages of the ingestion process, such that
+    the Smelter, Crucible and Forge classes are unaware of each other.
 
     Attributes:
-        self.overseer: An instance of the Overseer class
-        self.mytardis_setup: The return from the introspection API that specifies how MyTardis is
-            set up.
-        self.forge: An instance of the Forge class
-        self.smelter: An instance of a smelter class that varies for different ingestion approaches
-        self.glob_string: For smelters that use files, what is the extension or similar to search
-            for. See pathlib documentations for glob details.
-        self.default_institution: Either a name, or an identifier for an Institution to use as the
-            default for Project and Experiment creation.
+        mt_rest: client for interacting with MyTardis REST API
+        overseer: An instance of the Overseer class
+        smelter: used to refine the metadata for ingestion
+        crucible: used to prepare the metadata for ingestion
+        forge: used to upload the metadata to MyTardis
     """
 
     def __init__(
@@ -70,229 +64,183 @@ class IngestionFactory(metaclass=Singleton):
         crucible: Optional[Crucible] = None,
         conveyor: Optional[Conveyor] = None,
     ) -> None:
-        """Initialises the Factory with the configuration found in the config_dict.
-
-        Passes the config_dict to the overseer and forge instances to ensure that the
-        specific MyTardis configuration is shared across all classes
-
-        Args:
-            general : GeneralConfig
-                Pydantic config class containing general information
-            auth : AuthConfig
-                Pydantic config class containing information about authenticating with a MyTardis
-                instance
-            connection : ConnectionConfig
-                Pydantic config class containing information about connecting to a MyTardis instance
-            mytardis_setup : IntrospectionConfig
-                Pydantic config class containing information from the introspection API
-            smelter : Smelter
-                class instance of Smelter
-        """
+        """Initialises the IngestionFactory with the given configuration"""
 
         self.config = config
 
         mt_rest = mt_rest or MyTardisRESTFactory(config.auth, config.connection)
-        overseer = overseer or Overseer(mt_rest)
+        self._overseer = overseer or Overseer(mt_rest)
 
         self.forge = forge or Forge(mt_rest)
         self.smelter = smelter or Smelter(
-            overseer=overseer,
+            overseer=self._overseer,
             general=config.general,
             default_schema=config.default_schema,
         )
         self.crucible = crucible or Crucible(
-            overseer=overseer,
+            overseer=self._overseer,
         )
         self.conveyor = conveyor or Conveyor(store=config.storage)
 
     def ingest_projects(
         self,
-        projects: list[RawProject] | None,
-    ) -> IngestionResult | None:  # sourcery skip: class-extract-method
+        projects: list[RawProject],
+    ) -> IngestionResult:  # sourcery skip: class-extract-method
         """Wrapper function to create the projects from input files"""
-        if not projects:
-            return None
 
         result = IngestionResult()
 
-        for project in projects:
-            name = get_object_name(project)
-            if not name:
-                logger.warning(
-                    (
-                        "Unable to find the name of the project, skipping project defined by %s",
-                        project,
-                    )
-                )
-                result.error.append("unknown")
-                continue
-
-            smelted_project = self.smelter.smelt_project(project)
+        for raw_project in projects:
+            smelted_project = self.smelter.smelt_project(raw_project)
             if not smelted_project:
-                result.error.append(name)
+                result.error.append(raw_project.display_name)
                 continue
 
             refined_project, refined_parameters = smelted_project
 
-            prepared_project = self.crucible.prepare_project(refined_project)
-            if not prepared_project:
-                result.error.append(name)
+            project = self.crucible.prepare_project(refined_project)
+            if not project:
+                result.error.append(refined_project.display_name)
                 continue
 
-            project_uri = self.forge.forge_project(prepared_project, refined_parameters)
-            result.success.append((name, project_uri))
-
-        logger.info(
-            "Successfully ingested %d projects: %s", len(result.success), result.success
-        )
-        if result.error:
-            logger.warning(
-                "There were errors ingesting %d projects: %s",
-                len(result.error),
-                result.error,
+            matching_projects = self._overseer.get_objects(
+                ObjectSearchEnum.PROJECT.value, project.name
             )
+            if len(matching_projects) > 0:
+                project_uri = matching_projects[0]["resource_uri"]
+                # Would we ever get multiple matches? If so, what should we do?
+                logging.info(
+                    'Already ingested project "%s" as "%s". Skipping project ingestion.',
+                    project.name,
+                    project_uri,
+                )
+                result.skipped.append((project.display_name, project_uri))
+                continue
+
+            project_uri = self.forge.forge_project(project, refined_parameters)
+            result.success.append((project.display_name, project_uri))
 
         return result
 
     def ingest_experiments(  # pylint: disable=too-many-locals
         self,
-        experiments: list[RawExperiment] | None,
-    ) -> IngestionResult | None:
+        experiments: list[RawExperiment],
+    ) -> IngestionResult:
         """Wrapper function to create the experiments from input files"""
-        if not experiments:
-            return None
 
         result = IngestionResult()
 
-        for experiment in experiments:
-            name = get_object_name(experiment)
-            if not name:
-                logger.warning(
-                    (
-                        "Unable to find the name of the experiment, skipping experiment "
-                        "defined by %s",
-                        experiment,
-                    )
-                )
-                result.error.append("unknown")
-                continue
-
-            smelted_experiment = self.smelter.smelt_experiment(experiment)
+        for raw_experiment in experiments:
+            smelted_experiment = self.smelter.smelt_experiment(raw_experiment)
             if not smelted_experiment:
-                result.error.append(name)
+                result.error.append(raw_experiment.display_name)
                 continue
 
             refined_experiment, refined_parameters = smelted_experiment
 
-            prepared_experiment = self.crucible.prepare_experiment(refined_experiment)
-            if not prepared_experiment:
-                result.error.append(name)
+            experiment = self.crucible.prepare_experiment(refined_experiment)
+            if not experiment:
+                result.error.append(refined_experiment.display_name)
                 continue
 
-            experiment_uri = self.forge.forge_experiment(
-                prepared_experiment, refined_parameters
+            matching_experiments = self._overseer.get_objects(
+                ObjectSearchEnum.EXPERIMENT.value, experiment.title
             )
-            result.success.append((name, experiment_uri))
+            if len(matching_experiments) > 0:
+                experiment_uri = matching_experiments[0]["resource_uri"]
+                logging.info(
+                    'Already ingested experiment "%s" as "%s". Skipping experiment ingestion.',
+                    experiment.title,
+                    experiment_uri,
+                )
+                result.skipped.append((experiment.display_name, experiment_uri))
+                continue
 
-        logger.info(
-            "Successfully ingested %d experiments: %s",
-            len(result.success),
-            result.success,
-        )
-        if result.error:
-            logger.warning(
-                "There were errors ingesting %d experiments: %s",
-                len(result.error),
-                result.error,
-            )
+            experiment_uri = self.forge.forge_experiment(experiment, refined_parameters)
+
+            result.success.append((experiment.display_name, experiment_uri))
 
         return result
 
     def ingest_datasets(  # pylint: disable=too-many-locals
         self,
-        datasets: list[RawDataset] | None,
-    ) -> IngestionResult | None:
+        datasets: list[RawDataset],
+    ) -> IngestionResult:
         """Wrapper function to create the experiments from input files"""
-        if not datasets:
-            return None
 
         result = IngestionResult()
 
-        for dataset in datasets:
-            name = get_object_name(dataset)
-            if not name:
-                logger.warning(
-                    (
-                        "Unable to find the name of the dataset, skipping dataset defined by %s",
-                        dataset,
-                    )
-                )
-                result.error.append("unknown")
-                continue
-
-            smelted_dataset = self.smelter.smelt_dataset(dataset)
+        for raw_dataset in datasets:
+            smelted_dataset = self.smelter.smelt_dataset(raw_dataset)
             if not smelted_dataset:
-                result.error.append(name)
+                result.error.append(raw_dataset.display_name)
                 continue
 
             refined_dataset, refined_parameters = smelted_dataset
-            prepared_dataset = self.crucible.prepare_dataset(refined_dataset)
-            if not prepared_dataset:
-                result.error.append(name)
+            dataset = self.crucible.prepare_dataset(refined_dataset)
+            if not dataset:
+                result.error.append(refined_dataset.display_name)
                 continue
 
-            dataset_uri = self.forge.forge_dataset(prepared_dataset, refined_parameters)
-            result.success.append((name, dataset_uri))
-
-        logger.info(
-            "Successfully ingested %d datasets: %s", len(result.success), result.success
-        )
-        if result.error:
-            logger.warning(
-                "There were errors ingesting %d datasets: %s",
-                len(result.error),
-                result.error,
+            matching_datasets = self._overseer.get_objects(
+                ObjectSearchEnum.DATASET.value, dataset.description
             )
+            if len(matching_datasets) > 0:
+                dataset_uri = matching_datasets[0]["resource_uri"]
+                logging.info(
+                    'Already ingested dataset "%s" as "%s". Skipping dataset ingestion.',
+                    dataset.description,
+                    dataset_uri,
+                )
+                result.skipped.append((dataset.display_name, dataset_uri))
+                continue
+
+            dataset_uri = self.forge.forge_dataset(dataset, refined_parameters)
+            result.success.append((dataset.display_name, dataset_uri))
 
         return result
 
     def ingest_datafiles(
         self,
-        datafiles: list[RawDatafile],
+        raw_datafiles: list[RawDatafile],
     ) -> IngestionResult:
         """Wrapper function to create the experiments from input files"""
         result = IngestionResult()
-        prepared_datafiles: list[Datafile] = []
+        datafiles: list[Datafile] = []
 
-        for datafile in datafiles:
-            name = get_object_name(datafile)
-            if not name:
-                logger.warning(
-                    (
-                        "Unable to find the name of the datafile, skipping datafile defined by %s",
-                        datafile,
-                    )
-                )
-                result.error.append("unknown")
-                continue
-
-            refined_datafile = self.smelter.smelt_datafile(datafile)
+        for raw_datafile in raw_datafiles:
+            refined_datafile = self.smelter.smelt_datafile(raw_datafile)
             if not refined_datafile:
-                result.error.append(name)
+                result.error.append(raw_datafile.display_name)
                 continue
 
-            prepared_datafile = self.crucible.prepare_datafile(refined_datafile)
-            if not prepared_datafile:
-                result.error.append(name)
+            datafile = self.crucible.prepare_datafile(refined_datafile)
+            if not datafile:
+                result.error.append(refined_datafile.display_name)
                 continue
             # Add a replica to represent the copy transferred by the Conveyor.
-            prepared_datafile.replicas.append(
-                self.conveyor.create_replica(prepared_datafile)
-            )
+            datafile.replicas.append(self.conveyor.create_replica(datafile))
 
-            self.forge.forge_datafile(prepared_datafile)
-            prepared_datafiles.append(prepared_datafile)
-            result.success.append((name, None))
+            # Search by filename and parent dataset as filenames alone may not be unique
+            matching_datafiles = self._overseer.get_objects_by_fields(
+                ObjectSearchEnum.DATAFILE.value,
+                {
+                    "filename": datafile.filename,
+                    "directory": datafile.directory.as_posix(),
+                    "dataset": str(Overseer.resource_uri_to_id(datafile.dataset)),
+                },
+            )
+            if len(matching_datafiles) > 0:
+                logging.info(
+                    'Already ingested datafile "%s". Skipping datafile ingestion.',
+                    datafile.directory,
+                )
+                result.skipped.append((datafile.display_name, None))
+                continue
+
+            self.forge.forge_datafile(datafile)
+            datafiles.append(datafile)
+            result.success.append((datafile.display_name, None))
 
         logger.info(
             "Successfully ingested %d datafile metadata: %s",
@@ -309,7 +257,7 @@ class IngestionFactory(metaclass=Singleton):
         # Create a file transfer with the conveyor
         logger.info("Starting transfer of datafiles.")
         try:
-            self.conveyor.transfer(self.config.source_directory, prepared_datafiles)
+            self.conveyor.transfer(self.config.source_directory, datafiles)
             logger.info("Finished transferring datafiles.")
         except FailedTransferException:
             logger.error(
@@ -356,20 +304,16 @@ class IngestionFactory(metaclass=Singleton):
         datafiles: list[RawDatafile],
     ) -> None:
         ingested_projects = self.ingest_projects(projects)
-        if not ingested_projects:
-            logger.error("Fatal error while ingesting projects. Check logs.")
+        self.log_results(ingested_projects, "project")
 
         ingested_experiments = self.ingest_experiments(experiments)
-        if not ingested_experiments:
-            logger.error("Fatal error ingesting experiments. Check logs.")
+        self.log_results(ingested_experiments, "experiment")
 
         ingested_datasets = self.ingest_datasets(datasets)
-        if not ingested_datasets:
-            logger.error("Fatal error ingesting datasets. Check logs.")
+        self.log_results(ingested_datasets, "dataset")
 
         ingested_datafiles = self.ingest_datafiles(datafiles)
-        if not ingested_datafiles:
-            logger.error("Fatal error ingesting datafiles. Check logs.")
+        self.log_results(ingested_datafiles, "datafile")
 
         self.dump_ingestion_result_json(
             projects_result=ingested_projects,
@@ -377,3 +321,19 @@ class IngestionFactory(metaclass=Singleton):
             datasets_result=ingested_datasets,
             datafiles_result=ingested_datafiles,
         )
+
+    def log_results(self, result: IngestionResult, object_type: str) -> None:
+        """Logs the details of an ingestion result"""
+
+        logger.info("Finished ingesting %ss", object_type)
+        logger.info("%d %ss successfully ingested", len(result.success), object_type)
+        logger.info("%d %ss skipped", len(result.skipped), object_type)
+        logger.info("%d %ss failed", len(result.error), object_type)
+
+        if result.error:
+            logger.error(
+                "There were errors ingesting %d %ss: %s",
+                len(result.error),
+                object_type,
+                result.error,
+            )

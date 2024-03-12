@@ -197,6 +197,19 @@ class Overseer(metaclass=Singleton):
                 new_list.append(obj)
         return new_list
 
+    def get_objects_by_fields(
+        self,
+        object_type: ObjectSearchDict,
+        field_values: dict[str, str],
+    ) -> list[dict[str, Any]]:
+        """Retrieve objects from MyTardis with field values matching the ones in "field_values"."""
+        response = self._get_object_from_mytardis(object_type, field_values)
+        if response is None:
+            raise HTTPError("MyTardis object query yielded no response")
+        if objects := response.get("objects"):
+            return [objects]
+        return []
+
     def get_uris(
         self,
         object_type: ObjectSearchDict,

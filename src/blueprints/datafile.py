@@ -5,7 +5,7 @@ from abc import ABC
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import URI, MTUrl
@@ -47,7 +47,7 @@ class BaseDatafile(BaseModel, ABC):
         delete_date: ISODateTime
             the date that the datafile is able to be deleted"""
 
-    filename: str
+    filename: str = Field(min_length=1)
     directory: Path
     md5sum: str
     mimetype: str
@@ -55,6 +55,16 @@ class BaseDatafile(BaseModel, ABC):
     users: Optional[List[UserACL]] = None
     groups: Optional[List[GroupACL]] = None
     data_status: Optional[DataStatus] = None
+
+    @property
+    def display_name(self) -> str:
+        """Display name for a datafile (not necessarily unique)"""
+        return self.filename
+
+    @field_serializer("directory")
+    def dir_as_posix_path(self, directory: Path) -> str:
+        """Ensures the directory is always serialized as a posix path"""
+        return directory.as_posix()
 
 
 class RawDatafile(BaseDatafile):

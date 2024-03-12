@@ -30,21 +30,6 @@ from src.mytardis_client.enumerators import (
 )
 
 
-def get_object_name(
-    object_class: BaseDatafile | BaseDataset | BaseExperiment | BaseProject,
-) -> str:  # sourcery skip: assign-if-exp, reintroduce-else
-    """Generic helper function to get the name from a MyTardis  dataclass object"""
-    if isinstance(object_class, BaseDatafile):
-        return object_class.filename
-    if isinstance(object_class, BaseDataset):
-        return object_class.description
-    if isinstance(object_class, BaseExperiment):
-        return object_class.title
-    if isinstance(object_class, BaseProject):
-        return object_class.name
-    return ""
-
-
 def get_object_type(
     object_class: BaseDatafile | BaseDataset | BaseExperiment | BaseProject,
 ) -> ObjectDict | None:
@@ -61,14 +46,16 @@ def get_object_type(
 
 
 def get_object_parents(
-    object_class: RawDatafile
-    | RefinedDatafile
-    | RawDataset
-    | RefinedDataset
-    | RawExperiment
-    | RefinedExperiment
-    | RawProject
-    | RefinedProject,
+    object_class: (
+        RawDatafile
+        | RefinedDatafile
+        | RawDataset
+        | RefinedDataset
+        | RawExperiment
+        | RefinedExperiment
+        | RawProject
+        | RefinedProject
+    ),
 ) -> List[str] | None:  # sourcery skip: assign-if-exp, reintroduce-else
     """Function to get the parent objects from teh RawObject classes."""
     if isinstance(object_class, BaseDatafile):
@@ -83,13 +70,15 @@ def get_object_parents(
 
 
 def get_object_post_type(  # pylint: disable=too-many-return-statements
-    object_class: BaseDatafile
-    | BaseDataset
-    | BaseExperiment
-    | BaseProject
-    | ProjectParameterSet
-    | ExperimentParameterSet
-    | DatasetParameterSet,
+    object_class: (
+        BaseDatafile
+        | BaseDataset
+        | BaseExperiment
+        | BaseProject
+        | ProjectParameterSet
+        | ExperimentParameterSet
+        | DatasetParameterSet
+    ),
 ) -> ObjectPostDict:
     """Generic helper function to return the parameeters needed to correctly
     POST or PUT/PATCH a MyTardis object."""

@@ -18,7 +18,7 @@ class BaseDataset(BaseModel, ABC):
     validate against different standards, with the Dataset having a more strict
     validation than the RawDataset class."""
 
-    description: str
+    description: str = Field(min_length=1)
     data_classification: Optional[DataClassification] = None
     data_status: Optional[DataStatus] = None
     directory: Optional[Path] = None
@@ -26,6 +26,11 @@ class BaseDataset(BaseModel, ABC):
     groups: Optional[List[GroupACL]] = None
     immutable: bool = False
     identifiers: Optional[List[str]] = None
+
+    @property
+    def display_name(self) -> str:
+        "Display name for a dataset"
+        return self.description
 
 
 class RawDataset(BaseDataset):
