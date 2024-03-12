@@ -29,8 +29,8 @@ class BaseExperiment(BaseModel, ABC):
     identifiers: Optional[List[str]] = None
 
     @property
-    def object_id(self) -> str:
-        """Main ID for an experiment"""
+    def display_name(self) -> str:
+        """Display name for an experiment"""
         return self.title
 
 

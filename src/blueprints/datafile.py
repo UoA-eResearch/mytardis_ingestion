@@ -57,8 +57,8 @@ class BaseDatafile(BaseModel, ABC):
     data_status: Optional[DataStatus] = None
 
     @property
-    def object_id(self) -> str:
-        """Main ID for a datafile"""
+    def display_name(self) -> str:
+        """Display name for a datafile (not necessarily unique)"""
         return self.filename
 
     @field_serializer("directory")

@@ -195,7 +195,7 @@ class Forge:
                 if not uri:
                     message = (
                         "No URI was able to be discerned when creating object: "
-                        f"{refined_object.object_id}. Object may have "
+                        f"{refined_object.display_name}. Object may have "
                         "been successfully created in MyTardis, but needs further "
                         "investigation."
                     )
@@ -204,7 +204,7 @@ class Forge:
 
                 logger.info(
                     (
-                        f"Object: {refined_object.object_id} successfully "
+                        f"Object: {refined_object.display_name} successfully "
                         "created in MyTardis\n"
                         f"Url substring: {object_type['url_substring']}"
                     )

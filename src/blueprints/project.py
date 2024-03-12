@@ -29,8 +29,8 @@ class BaseProject(BaseModel, ABC):
     identifiers: Optional[List[str]] = None
 
     @property
-    def object_id(self) -> str:
-        """Main ID for a project"""
+    def display_name(self) -> str:
+        """Display name for a project"""
         return self.name
 
 

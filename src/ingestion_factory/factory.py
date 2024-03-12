@@ -93,14 +93,14 @@ class IngestionFactory:
         for raw_project in projects:
             smelted_project = self.smelter.smelt_project(raw_project)
             if not smelted_project:
-                result.error.append(raw_project.object_id)
+                result.error.append(raw_project.display_name)
                 continue
 
             refined_project, refined_parameters = smelted_project
 
             project = self.crucible.prepare_project(refined_project)
             if not project:
-                result.error.append(refined_project.object_id)
+                result.error.append(refined_project.display_name)
                 continue
 
             matching_projects = self._overseer.get_objects(
@@ -114,11 +114,11 @@ class IngestionFactory:
                     project.name,
                     project_uri,
                 )
-                result.skipped.append((project.object_id, project_uri))
+                result.skipped.append((project.display_name, project_uri))
                 continue
 
             project_uri = self.forge.forge_project(project, refined_parameters)
-            result.success.append((project.object_id, project_uri))
+            result.success.append((project.display_name, project_uri))
 
         return result
 
@@ -133,14 +133,14 @@ class IngestionFactory:
         for raw_experiment in experiments:
             smelted_experiment = self.smelter.smelt_experiment(raw_experiment)
             if not smelted_experiment:
-                result.error.append(raw_experiment.object_id)
+                result.error.append(raw_experiment.display_name)
                 continue
 
             refined_experiment, refined_parameters = smelted_experiment
 
             experiment = self.crucible.prepare_experiment(refined_experiment)
             if not experiment:
-                result.error.append(refined_experiment.object_id)
+                result.error.append(refined_experiment.display_name)
                 continue
 
             matching_experiments = self._overseer.get_objects(
@@ -153,12 +153,12 @@ class IngestionFactory:
                     experiment.title,
                     experiment_uri,
                 )
-                result.skipped.append((experiment.object_id, experiment_uri))
+                result.skipped.append((experiment.display_name, experiment_uri))
                 continue
 
             experiment_uri = self.forge.forge_experiment(experiment, refined_parameters)
 
-            result.success.append((experiment.object_id, experiment_uri))
+            result.success.append((experiment.display_name, experiment_uri))
 
         return result
 
@@ -173,13 +173,13 @@ class IngestionFactory:
         for raw_dataset in datasets:
             smelted_dataset = self.smelter.smelt_dataset(raw_dataset)
             if not smelted_dataset:
-                result.error.append(raw_dataset.object_id)
+                result.error.append(raw_dataset.display_name)
                 continue
 
             refined_dataset, refined_parameters = smelted_dataset
             dataset = self.crucible.prepare_dataset(refined_dataset)
             if not dataset:
-                result.error.append(refined_dataset.object_id)
+                result.error.append(refined_dataset.display_name)
                 continue
 
             matching_datasets = self._overseer.get_objects(
@@ -192,11 +192,11 @@ class IngestionFactory:
                     dataset.description,
                     dataset_uri,
                 )
-                result.skipped.append((dataset.object_id, dataset_uri))
+                result.skipped.append((dataset.display_name, dataset_uri))
                 continue
 
             dataset_uri = self.forge.forge_dataset(dataset, refined_parameters)
-            result.success.append((dataset.object_id, dataset_uri))
+            result.success.append((dataset.display_name, dataset_uri))
 
         return result
 
@@ -211,12 +211,12 @@ class IngestionFactory:
         for raw_datafile in raw_datafiles:
             refined_datafile = self.smelter.smelt_datafile(raw_datafile)
             if not refined_datafile:
-                result.error.append(raw_datafile.object_id)
+                result.error.append(raw_datafile.display_name)
                 continue
 
             datafile = self.crucible.prepare_datafile(refined_datafile)
             if not datafile:
-                result.error.append(refined_datafile.object_id)
+                result.error.append(refined_datafile.display_name)
                 continue
             # Add a replica to represent the copy transferred by the Conveyor.
             datafile.replicas.append(self.conveyor.create_replica(datafile))
@@ -235,12 +235,12 @@ class IngestionFactory:
                     'Already ingested datafile "%s". Skipping datafile ingestion.',
                     datafile.directory,
                 )
-                result.skipped.append((datafile.object_id, None))
+                result.skipped.append((datafile.display_name, None))
                 continue
 
             self.forge.forge_datafile(datafile)
             datafiles.append(datafile)
-            result.success.append((datafile.object_id, None))
+            result.success.append((datafile.display_name, None))
 
         logger.info(
             "Successfully ingested %d datafile metadata: %s",

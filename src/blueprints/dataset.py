@@ -28,8 +28,8 @@ class BaseDataset(BaseModel, ABC):
     identifiers: Optional[List[str]] = None
 
     @property
-    def object_id(self) -> str:
-        """Main ID for a dataset"""
+    def display_name(self) -> str:
+        "Display name for a dataset"
         return self.description
 
 
