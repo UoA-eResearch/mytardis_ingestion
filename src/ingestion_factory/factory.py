@@ -4,6 +4,7 @@ Ingestion scripts. The base class contains mostly concrete functions but
 needs to determine the Smelter class that is used by the Factory"""
 import json
 import logging
+from pathlib import Path
 from typing import Any, Optional
 
 from src.blueprints.custom_data_types import URI
@@ -14,6 +15,7 @@ from src.blueprints.project import RawProject
 from src.config.config import ConfigFromEnv
 from src.conveyor.conveyor import Conveyor, FailedTransferException
 from src.crucible.crucible import Crucible
+from src.extraction.manifest import IngestionManifest
 from src.forges.forge import Forge
 from src.mytardis_client.enumerators import ObjectSearchEnum
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
@@ -202,6 +204,7 @@ class IngestionFactory:
 
     def ingest_datafiles(
         self,
+        source_data_root: Path,
         raw_datafiles: list[RawDatafile],
     ) -> IngestionResult:
         """Wrapper function to create the experiments from input files"""
@@ -257,7 +260,7 @@ class IngestionFactory:
         # Create a file transfer with the conveyor
         logger.info("Starting transfer of datafiles.")
         try:
-            self.conveyor.transfer(self.config.source_directory, datafiles)
+            self.conveyor.transfer(source_data_root, datafiles)
             logger.info("Finished transferring datafiles.")
         except FailedTransferException:
             logger.error(
@@ -297,22 +300,20 @@ class IngestionFactory:
             )
 
     def ingest(  # pylint: disable=missing-function-docstring
-        self,
-        projects: list[RawProject],
-        experiments: list[RawExperiment],
-        datasets: list[RawDataset],
-        datafiles: list[RawDatafile],
+        self, manifest: IngestionManifest
     ) -> None:
-        ingested_projects = self.ingest_projects(projects)
+        ingested_projects = self.ingest_projects(manifest.get_projects())
         self.log_results(ingested_projects, "project")
 
-        ingested_experiments = self.ingest_experiments(experiments)
+        ingested_experiments = self.ingest_experiments(manifest.get_experiments())
         self.log_results(ingested_experiments, "experiment")
 
-        ingested_datasets = self.ingest_datasets(datasets)
+        ingested_datasets = self.ingest_datasets(manifest.get_datasets())
         self.log_results(ingested_datasets, "dataset")
 
-        ingested_datafiles = self.ingest_datafiles(datafiles)
+        ingested_datafiles = self.ingest_datafiles(
+            manifest.get_data_root(), manifest.get_datafiles()
+        )
         self.log_results(ingested_datafiles, "datafile")
 
         self.dump_ingestion_result_json(

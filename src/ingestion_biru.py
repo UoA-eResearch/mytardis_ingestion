@@ -74,7 +74,6 @@ class IDSIngestionScript:
         """
         self.yaml_path = Path(yaml_path)
         self.config = ConfigFromEnv(
-            source_directory=yaml_path,
             storage=FilesystemStorageBoxConfig(
                 storage_name=storage_name, target_root_dir=Path(storage_dir)
             ),
