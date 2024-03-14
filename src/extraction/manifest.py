@@ -7,9 +7,10 @@ refinery/ingestion. The raw dataclasses are stored in lists.
 from __future__ import annotations
 
 import io
+import json
 import logging
 from pathlib import Path
-from typing import List, Optional, Sequence, TextIO, Type, TypeVar
+from typing import List, Optional, Sequence, Type, TypeVar
 
 from pydantic import BaseModel
 
@@ -30,11 +31,12 @@ ModelT = TypeVar("ModelT", bound=BaseModel)
 # ---Code
 class IngestionManifest:
     """
-    Class to manage and ingestible data classes.
+    Class to record extracted metadata to be ingested.
 
     It provides methods to add and get projects, experiments, datasets and data files.
 
     Attributes:
+        data_root (Path): The root directory of the data files.
         projects (List[RawProject]): List of projects.
         experiments (List[RawExperiment]): List of experiments.
         datasets (List[RawDataset]): List of datasets.
@@ -43,15 +45,21 @@ class IngestionManifest:
 
     def __init__(
         self,
+        source_data_root: Path,
         projects: Optional[list[RawProject]] = None,
         experiments: Optional[list[RawExperiment]] = None,
         datasets: Optional[list[RawDataset]] = None,
         datafiles: Optional[list[RawDatafile]] = None,
     ) -> None:
+        self._source_data_root = source_data_root
         self._projects = projects or []
         self._experiments = experiments or []
         self._datasets = datasets or []
         self._datafiles = datafiles or []
+
+    def get_data_root(self) -> Path:
+        """Return the root directory for the datafiles."""
+        return self._source_data_root
 
     def get_projects(  # pylint: disable=missing-function-docstring
         self,
@@ -124,6 +132,14 @@ class IngestionManifest:
     def serialize(self, root_dir: Path) -> None:
         root_dir.mkdir(parents=True, exist_ok=True)
 
+        source_info = {
+            "source_data_root": self.get_data_root().as_posix(),
+        }
+
+        with (root_dir / "source.json").open("w", encoding="utf-8") as f:
+            json_data = json.dumps(source_info, indent=4)
+            f.write(json_data)
+
         def serialize_objects(objects: Sequence[BaseModel], dir_name: str) -> None:
             objects_dir = root_dir / dir_name
             objects_dir.mkdir()
@@ -146,6 +162,11 @@ class IngestionManifest:
             e.strerror = f"Failed to deserialize ingestion manifest: {e.strerror}"
             raise e
 
+        source_info_file = directory.file("source.json")
+        with source_info_file.path().open("r", encoding="utf-8") as f:
+            source_info = json.load(f)
+            source_data_root = Path(source_info["source_data_root"])
+
         def deserialize_objects(
             obj_dir: DirectoryNode, object_type: Type[ModelT]
         ) -> list[ModelT]:
@@ -167,6 +188,7 @@ class IngestionManifest:
         datafiles = deserialize_objects(directory.dir("datafiles"), RawDatafile)
 
         return IngestionManifest(
+            source_data_root=source_data_root,
             projects=projects,
             experiments=experiments,
             datasets=datasets,
@@ -185,6 +207,9 @@ class IngestionManifest:
             for model in models:
                 stream.write(model.model_dump_json(indent=4))
                 stream.write("\n")
+
+        write_header("Source Data Info")
+        stream.write(f"Data Root: {self.get_data_root().as_posix()}\n")
 
         write_header("Projects")
         write_dataclasses(self.get_projects())
