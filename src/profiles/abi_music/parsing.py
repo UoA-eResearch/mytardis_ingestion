@@ -140,15 +140,14 @@ def parse_raw_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
     json_data = read_json(directory.file(directory.name() + ".json"))
 
     metadata: dict[str, Any] = {
-        "description": json_data["Description"],
-        "sequence-id": json_data["SequenceID"],
+        "full-description": json_data["Description"],
         "sqrt-offset": json_data["Offsets"]["SQRT Offset"],
     }
 
     main_id = "raw-" + json_data["Basename"]["Sequence"]
 
     dataset = RawDataset(
-        description="Raw:" + json_data["Description"],
+        description="Raw:" + directory.name(),
         data_classification=None,
         directory=None,
         users=None,
@@ -187,15 +186,14 @@ def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
     json_data = read_json(json_file)
 
     metadata: dict[str, Any] = {
-        "description": json_data["config"]["Description"],
-        "sequence-id": json_data["config"]["SequenceID"],
+        "full-description": json_data["config"]["Description"],
         "sqrt-offset": json_data["config"]["Offsets"]["SQRT Offset"],
     }
 
     main_id = "zarr-" + json_data["config"]["Basename"]["Sequence"]
 
     dataset = RawDataset(
-        description="Zarr:" + json_data["config"]["Description"],
+        description="Zarr:" + directory.name(),
         data_classification=None,
         directory=None,
         users=None,
