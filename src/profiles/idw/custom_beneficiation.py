@@ -36,9 +36,7 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
     YAML files into appropriate dataclasses.
     """
 
-    def beneficiate(
-        self, fpath: Path, ingestible_dclasses: IngestionManifest
-    ) -> IngestionManifest:
+    def beneficiate(self, yaml_path: Path) -> IngestionManifest:
         """
         Parse a YAML file at the specified path and return a list of loaded objects.
 
@@ -48,10 +46,13 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
         Returns:
             List[Union[RawDatafile, RawDataset, RawExperiment, RawProject]]: A list of loaded objects.
         """
-        ingestible_dclasses = IngestionManifest()
-        logger.info("parsing {0}".format(fpath))
-        ingestion_file_path = fpath / "ingestion.yaml"
-        with open(ingestion_file_path) as f:
+        if not yaml_path.is_file() or yaml_path.suffix != ".yaml":
+            raise ValueError(f"{yaml_path} is not a valid YAML file.")
+
+        ingestible_dclasses = IngestionManifest(source_data_root=yaml_path.parent)
+        logger.info("parsing {0}".format(yaml_path))
+
+        with open(yaml_path) as f:
             data = yaml.safe_load_all(f)
             for obj in data:
                 if isinstance(obj, RawProject):
@@ -61,7 +62,7 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
                 if isinstance(obj, RawDataset):
                     ingestible_dclasses.add_dataset(obj)
                 if isinstance(obj, RawDatafile):
-                    df_path = Path(ingestion_file_path).parent.joinpath(obj.directory)
+                    df_path = yaml_path.parent.joinpath(obj.directory)
                     df_dir = df_path / obj.filename
                     obj.md5sum = datafile_metadata_helpers.calculate_md5sum(df_dir)
                     ingestible_dclasses.add_datafile(obj)

@@ -29,11 +29,7 @@ class AbstractCustomBeneficiation(ABC):
         pass
 
     @abstractmethod
-    def beneficiate(
-        self,
-        beneficiation_data: Any,
-        ingestible_dclasses: IngestionManifest,
-    ) -> IngestionManifest:
+    def beneficiate(self, beneficiation_data: Any) -> IngestionManifest:
         """Parse metadata files of a given file type into raw dataclasses
 
         Args:
