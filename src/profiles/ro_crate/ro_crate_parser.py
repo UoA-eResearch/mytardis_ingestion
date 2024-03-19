@@ -478,5 +478,5 @@ class ROCrateExtractor(IMetadataExtractor):
 
     def extract(self, root_dir: Path) -> IngestionManifest:
         ro_crate_parser = ROCrateParser(root_dir)
-        empty_ingestibleclasses = IngestionManifest()
+        empty_ingestibleclasses = IngestionManifest(source_data_root=root_dir)
         return ro_crate_parser.parse_crate(empty_ingestibleclasses)
