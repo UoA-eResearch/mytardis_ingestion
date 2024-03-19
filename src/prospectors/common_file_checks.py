@@ -11,7 +11,7 @@ from typing import Any, List, Tuple
 
 from src.profiles import profile_consts as pc
 from src.utils.filesystem.filters import (
-    get_excluded_system_extension_prefixes,
+    get_excluded_system_filename_prefixes,
     get_excluded_system_suffixes,
 )
 
@@ -31,7 +31,7 @@ class CommonDirectoryTreeChecks:
     ) -> None:
         """Instantiates look-up tables for common system files."""
         self.common_fnames_lut = dict.fromkeys(get_excluded_system_suffixes())
-        self.reject_prefix_lut = dict.fromkeys(get_excluded_system_extension_prefixes())
+        self.reject_prefix_lut = dict.fromkeys(get_excluded_system_filename_prefixes())
 
     def perform_common_file_checks(
         self,

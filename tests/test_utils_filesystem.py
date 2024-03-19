@@ -2,8 +2,8 @@
 from pathlib import Path
 
 from src.utils.filesystem.filters import (
-    ExtensionPrefixFilter,
     FileExclusionPatterns,
+    NamePrefixFilter,
     NameSuffixFilter,
     PathFilterSet,
     PathPatternFilter,
@@ -23,26 +23,28 @@ def test_name_suffix_filter() -> None:
 
 
 def test_extension_prefix_filter() -> None:
-    filt = ExtensionPrefixFilter(["._", ".bad"])
+    filt = NamePrefixFilter(["._", ".bad"])
 
-    assert filt.exclude(Path("path/to/file._bad"))
-    assert filt.exclude(Path("path/to/file.badfile"))
+    assert filt.exclude(Path("path/to/._badfile.txt"))
+    assert filt.exclude(Path("path/to/._.txt"))
+    assert filt.exclude(Path("path/to/.badfile.txt"))
 
     assert not filt.exclude(Path("path/to/file._.bad.dots."))
-    assert not filt.exclude(Path("path/to/file._bad.double"))
-    assert not filt.exclude(Path("path/to/file.bad.double"))
+    assert not filt.exclude(Path("path/to/file._bad._double"))
+    assert not filt.exclude(Path("path/to/file.bad._double"))
 
 
 def test_path_pattern_filter() -> None:
-    patterns = FileExclusionPatterns(suffixes=[".bad"], extension_prefixes=["._"])
+    patterns = FileExclusionPatterns(suffixes=[".bad"], name_prefixes=["._"])
     filt = PathPatternFilter(patterns)
 
     assert filt.exclude(Path("file.bad"))
     assert filt.exclude(Path("path/to/file.bad"))
-    assert filt.exclude(Path("path/to/file._bad"))
+    assert filt.exclude(Path("path/to/._file.txt"))
 
     assert not filt.exclude(Path("path/to/file.badfile"))
     assert not filt.exclude(Path("path/to/file._.txt"))
+    assert not filt.exclude(Path("path/to/file._txt"))
 
 
 def test_file_system_filter_set() -> None:
