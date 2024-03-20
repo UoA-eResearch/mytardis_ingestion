@@ -144,10 +144,11 @@ def parse_raw_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         "sqrt-offset": json_data["Offsets"]["SQRT Offset"],
     }
 
-    main_id = "raw-" + json_data["Basename"]["Sequence"]
+    sequence_name = json_data["Basename"]["Sequence"]
+    main_id = sequence_name + "-raw"
 
     dataset = RawDataset(
-        description="Raw:" + directory.name(),
+        description=sequence_name + ":raw",
         data_classification=None,
         directory=None,
         users=None,
@@ -155,7 +156,7 @@ def parse_raw_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         immutable=False,
         identifiers=[
             main_id,
-            "raw-" + str(json_data["SequenceID"]),
+            str(json_data["SequenceID"]) + "-raw",
         ],
         experiments=[
             json_data["Basename"]["Sample"],
@@ -190,10 +191,12 @@ def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         "sqrt-offset": json_data["config"]["Offsets"]["SQRT Offset"],
     }
 
-    main_id = "zarr-" + json_data["config"]["Basename"]["Sequence"]
+    sequence_name = json_data["config"]["Basename"]["Sequence"]
+
+    main_id = sequence_name + "-zarr"
 
     dataset = RawDataset(
-        description="Zarr:" + directory.name(),
+        description=sequence_name + ":zarr",
         data_classification=None,
         directory=None,
         users=None,
@@ -201,7 +204,7 @@ def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         immutable=False,
         identifiers=[
             main_id,
-            "zarr-" + str(json_data["config"]["SequenceID"]),
+            str(json_data["config"]["SequenceID"]) + "-zarr",
         ],
         experiments=[
             json_data["config"]["Basename"]["Sample"],
@@ -350,7 +353,7 @@ def link_zarr_to_raw(
         raw_dataset = next(
             ds
             for ds in raw_datasets
-            if ds.description == zarr_dataset.description.replace("Zarr:", "Raw:")
+            if ds.description == zarr_dataset.description.replace(":zarr", ":raw")
         )
         zarr_dataset.metadata = zarr_dataset.metadata or {}
         zarr_dataset.metadata["raw_dataset"] = raw_dataset.description
