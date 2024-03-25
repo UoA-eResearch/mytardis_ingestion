@@ -26,9 +26,14 @@ logger = logging.getLogger(__name__)
 # SHARED ARGUMENT DEFINITIONS
 # =============================================================================
 
-SourceDataDirArg: TypeAlias = Annotated[
+SourceDataPathArg: TypeAlias = Annotated[
     Path,
-    typer.Argument(help="Directory containing the data to be extracted"),
+    typer.Argument(
+        help="Path to the source data (either a directory or file)",
+        exists=True,
+        dir_okay=True,
+        file_okay=True,
+    ),
 ]
 
 ProfileNameArg: TypeAlias = Annotated[
@@ -56,7 +61,7 @@ LogFileArg: TypeAlias = Annotated[
 
 @app.command()
 def extract(
-    data_dir: SourceDataDirArg,
+    source_data_path: SourceDataPathArg,
     output_dir: Annotated[
         Path,
         typer.Argument(
@@ -68,19 +73,19 @@ def extract(
     log_file: LogFileArg = Path("extraction.log"),
 ) -> None:
     """
-    Extract metadata from a directory tree and parse it into a MyTardis PEDD structure.
+    Extract metadata from a directory tree, parse it into a MyTardis PEDD structure,
+    and write it to a directory.
+
+    The 'upload' command be used to ingest this extracted data into MyTardis.
     """
 
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
     timer = Timer(start=True)
 
-    if DirectoryNode(data_dir).empty():
-        raise ValueError("Data root directory is empty. May not be mounted.")
-
     profile = load_profile(profile_name, profile_version)
 
     extractor = profile.get_extractor()
-    metadata = extractor.extract(data_dir)
+    metadata = extractor.extract(source_data_path)
 
     elapsed = timer.stop()
     logging.info("Finished parsing data directory into PEDD hierarchy")
@@ -97,13 +102,15 @@ def upload(
     manifest_dir: Annotated[
         Path,
         typer.Argument(
-            help="Directory containing the previously extracted metadata to be ingested"
+            help="Directory containing the previously extracted metadata to be ingested",
+            exists=True,
+            dir_okay=True,
+            file_okay=False,
         ),
     ],
     storage_name: Annotated[
         str, typer.Argument(help="Name of the staging storagebox.")
     ],
-    data_dir: SourceDataDirArg,
     storage_dir: Annotated[
         Path,
         typer.Argument(help="Directory of the staging storagebox"),
@@ -117,7 +124,6 @@ def upload(
     try:
         config = ConfigFromEnv(
             # Create storagebox config based on passed in argument.
-            source_directory=data_dir,
             storage=FilesystemStorageBoxConfig(
                 storage_name=storage_name, target_root_dir=storage_dir
             ),
@@ -138,7 +144,7 @@ def upload(
             "Manifest directory is empty. Extract data into a manifest using 'extract' command."
         )
 
-    metadata = IngestionManifest.deserialize(manifest_dir)
+    manifest = IngestionManifest.deserialize(manifest_dir)
 
     logging.info("Successfully loaded metadata manifest from %s", manifest_dir)
     logging.info("Submitting metadata to MyTardis")
@@ -147,12 +153,7 @@ def upload(
 
     ingestion_agent = IngestionFactory(config=config)
 
-    ingestion_agent.ingest(
-        metadata.get_projects(),
-        metadata.get_experiments(),
-        metadata.get_datasets(),
-        metadata.get_datafiles(),
-    )
+    ingestion_agent.ingest(manifest)
 
     elapsed = timer.stop()
     logging.info("Finished submitting dataclasses to MyTardis")
@@ -161,7 +162,7 @@ def upload(
 
 @app.command()
 def ingest(
-    data_root: SourceDataDirArg,
+    source_data_path: SourceDataPathArg,
     storage_name: Annotated[
         str, typer.Argument(help="Name of the staging storagebox.")
     ],
@@ -180,7 +181,6 @@ def ingest(
     try:
         config = ConfigFromEnv(
             # Create storagebox config based on passed in argument.
-            source_directory=data_root,
             storage=FilesystemStorageBoxConfig(
                 storage_name=storage_name, target_root_dir=storage_dir
             ),
@@ -197,30 +197,22 @@ def ingest(
         sys.exit(1)
     timer = Timer(start=True)
 
-    if DirectoryNode(data_root).empty():
-        raise ValueError("Data root directory is empty. May not be mounted.")
-
     profile = load_profile(profile_name, profile_version)
 
     extractor = profile.get_extractor()
-    metadata = extractor.extract(data_root)
+    manifest = extractor.extract(source_data_path)
 
     elapsed = timer.stop()
     logging.info("Finished parsing data directory into PEDD hierarchy")
     logging.info("Total time (s): %.2f", elapsed)
-    logging.info(metadata.summarize())
+    logging.info(manifest.summarize())
 
     logging.info("Submitting to MyTardis")
     timer.start()
 
     ingestion_agent = IngestionFactory(config=config)
 
-    ingestion_agent.ingest(
-        metadata.get_projects(),
-        metadata.get_experiments(),
-        metadata.get_datasets(),
-        metadata.get_datafiles(),
-    )
+    ingestion_agent.ingest(manifest)
 
     elapsed = timer.stop()
     logger.info("Finished submitting dataclasses and transferring files to MyTardis")

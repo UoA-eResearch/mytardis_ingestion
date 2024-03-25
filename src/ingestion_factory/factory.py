@@ -1,9 +1,7 @@
-# pylint: disable=R0801, C0123, fixme
-"""IngestionFactory is a base class for specific instances of MyTardis
-Ingestion scripts. The base class contains mostly concrete functions but
-needs to determine the Smelter class that is used by the Factory"""
+"""A collection of classes for ingesting raw metadata into MyTardis."""
 import json
 import logging
+from pathlib import Path
 from typing import Any, Optional
 
 from src.blueprints.custom_data_types import URI
@@ -14,6 +12,7 @@ from src.blueprints.project import RawProject
 from src.config.config import ConfigFromEnv
 from src.conveyor.conveyor import Conveyor, FailedTransferException
 from src.crucible.crucible import Crucible
+from src.extraction.manifest import IngestionManifest
 from src.forges.forge import Forge
 from src.mytardis_client.enumerators import ObjectSearchEnum
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
@@ -23,7 +22,11 @@ from src.smelters.smelter import Smelter
 logger = logging.getLogger(__name__)
 
 
-class IngestionResult:  # pylint: disable=missing-class-docstring
+class IngestionResult:
+    """Container for recording the results of an ingestion of a set of objects
+    into MyTardis
+    """
+
     def __init__(
         self,
         success: Optional[list[tuple[str, Optional[URI]]]] = None,
@@ -43,15 +46,18 @@ class IngestionResult:  # pylint: disable=missing-class-docstring
 class IngestionFactory:
     """Orchestrates the ingestion of raw metadata into MyTardis.
 
-    The class runs the smelter-crucible-forge stages of the ingestion process, such that
-    the Smelter, Crucible and Forge classes are unaware of each other.
+    The class runs the smelter-crucible-forge stages of the ingestion process,
+    first refining the raw metadata (mainly resolving references to existing
+    MyTardis objects), and then submitting it to MyTardis.
 
     Attributes:
+        config: configuration for the IngestionFactory
         mt_rest: client for interacting with MyTardis REST API
         overseer: An instance of the Overseer class
         smelter: used to refine the metadata for ingestion
         crucible: used to prepare the metadata for ingestion
         forge: used to upload the metadata to MyTardis
+        conveyor: used to transfer datafiles to MyTardis storage
     """
 
     def __init__(
@@ -60,8 +66,8 @@ class IngestionFactory:
         mt_rest: Optional[MyTardisRESTFactory] = None,
         overseer: Optional[Overseer] = None,
         smelter: Optional[Smelter] = None,
-        forge: Optional[Forge] = None,
         crucible: Optional[Crucible] = None,
+        forge: Optional[Forge] = None,
         conveyor: Optional[Conveyor] = None,
     ) -> None:
         """Initialises the IngestionFactory with the given configuration"""
@@ -85,8 +91,8 @@ class IngestionFactory:
     def ingest_projects(
         self,
         projects: list[RawProject],
-    ) -> IngestionResult:  # sourcery skip: class-extract-method
-        """Wrapper function to create the projects from input files"""
+    ) -> IngestionResult:
+        """Ingest a set of projects into MyTardis."""
 
         result = IngestionResult()
 
@@ -122,11 +128,11 @@ class IngestionFactory:
 
         return result
 
-    def ingest_experiments(  # pylint: disable=too-many-locals
+    def ingest_experiments(
         self,
         experiments: list[RawExperiment],
     ) -> IngestionResult:
-        """Wrapper function to create the experiments from input files"""
+        """Ingest a set of experiments into MyTardis."""
 
         result = IngestionResult()
 
@@ -162,11 +168,11 @@ class IngestionFactory:
 
         return result
 
-    def ingest_datasets(  # pylint: disable=too-many-locals
+    def ingest_datasets(
         self,
         datasets: list[RawDataset],
     ) -> IngestionResult:
-        """Wrapper function to create the experiments from input files"""
+        """Ingest a set of datasets into MyTardis."""
 
         result = IngestionResult()
 
@@ -202,9 +208,10 @@ class IngestionFactory:
 
     def ingest_datafiles(
         self,
+        source_data_root: Path,
         raw_datafiles: list[RawDatafile],
     ) -> IngestionResult:
-        """Wrapper function to create the experiments from input files"""
+        """Ingest a set of datafiles into MyTardis."""
         result = IngestionResult()
         datafiles: list[Datafile] = []
 
@@ -257,7 +264,7 @@ class IngestionFactory:
         # Create a file transfer with the conveyor
         logger.info("Starting transfer of datafiles.")
         try:
-            self.conveyor.transfer(self.config.source_directory, datafiles)
+            self.conveyor.transfer(source_data_root, datafiles)
             logger.info("Finished transferring datafiles.")
         except FailedTransferException:
             logger.error(
@@ -265,19 +272,20 @@ class IngestionFactory:
             )
         return result
 
-    def dump_ingestion_result_json(  # pylint:disable=missing-function-docstring
+    def dump_ingestion_result_json(
         self,
         projects_result: IngestionResult | None,
         experiments_result: IngestionResult | None,
         datasets_result: IngestionResult | None,
         datafiles_result: IngestionResult | None,
     ) -> None:
-        class IngestionResultEncoder(
-            json.JSONEncoder
-        ):  # pylint: disable=missing-class-docstring
-            def default(
-                self, o: Any
-            ) -> Any:  # pylint:disable=missing-function-docstring
+        """Write the results of the ingestion to a JSON file."""
+
+        class IngestionResultEncoder(json.JSONEncoder):
+            """Custom JSON encoder for IngestionResult."""
+
+            def default(self, o: Any) -> Any:
+                """Encode IngestionResult objects as dictionaries."""
                 if isinstance(o, IngestionResult):
                     return o.__dict__
                 return json.JSONEncoder.default(self, o)
@@ -296,23 +304,21 @@ class IngestionFactory:
                 cls=IngestionResultEncoder,
             )
 
-    def ingest(  # pylint: disable=missing-function-docstring
-        self,
-        projects: list[RawProject],
-        experiments: list[RawExperiment],
-        datasets: list[RawDataset],
-        datafiles: list[RawDatafile],
-    ) -> None:
-        ingested_projects = self.ingest_projects(projects)
+    def ingest(self, manifest: IngestionManifest) -> None:
+        """Ingest the data described by the input `manifest` into MyTardis."""
+
+        ingested_projects = self.ingest_projects(manifest.get_projects())
         self.log_results(ingested_projects, "project")
 
-        ingested_experiments = self.ingest_experiments(experiments)
+        ingested_experiments = self.ingest_experiments(manifest.get_experiments())
         self.log_results(ingested_experiments, "experiment")
 
-        ingested_datasets = self.ingest_datasets(datasets)
+        ingested_datasets = self.ingest_datasets(manifest.get_datasets())
         self.log_results(ingested_datasets, "dataset")
 
-        ingested_datafiles = self.ingest_datafiles(datafiles)
+        ingested_datafiles = self.ingest_datafiles(
+            manifest.get_data_root(), manifest.get_datafiles()
+        )
         self.log_results(ingested_datafiles, "datafile")
 
         self.dump_ingestion_result_json(

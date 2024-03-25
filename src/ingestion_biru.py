@@ -74,7 +74,6 @@ class IDSIngestionScript:
         """
         self.yaml_path = Path(yaml_path)
         self.config = ConfigFromEnv(
-            source_directory=yaml_path,
             storage=FilesystemStorageBoxConfig(
                 storage_name=storage_name, target_root_dir=Path(storage_dir)
             ),
@@ -155,7 +154,14 @@ class IDSIngestionScript:
         # Ingest the data object
         obj_name_attr = obj_type.lower()
         logger.info("Ingesting %s: %s", obj_type.lower(), obj_name_attr)
-        result = getattr(self.factory, f"ingest_{obj_type}s")([data_obj])
+
+        if isinstance(data_obj, RawDatafile):
+            result = self.factory.ingest_datafiles(
+                self.ingestible_dataclass.get_data_root(), [data_obj]
+            )
+        else:
+            # Ingest project, experiment, or dataset
+            result = getattr(self.factory, f"ingest_{obj_type}s")([data_obj])
 
         # Update the data status
         if result.success is not None:

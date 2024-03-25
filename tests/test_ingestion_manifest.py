@@ -240,6 +240,7 @@ def _() -> IngestionManifest:
     ]
 
     manifest = IngestionManifest(
+        source_data_root=Path("/data/root/dir"),
         projects=raw_projects,
         experiments=raw_experiments,
         datasets=raw_datasets,
@@ -258,6 +259,12 @@ def test_serialize(ingestion_manifest: IngestionManifest, tmp_path: Path) -> Non
     output_dir.mkdir()
 
     ingestion_manifest.serialize(output_dir)
+
+    source_info_file = output_dir / "source.json"
+    assert source_info_file.is_file(), "Source info file should be created"
+
+    source_info = json.loads(source_info_file.read_text(encoding="utf-8"))
+    assert source_info["source_data_root"] == "/data/root/dir"
 
     projects_dir = DirectoryNode(output_dir / "projects")
     experiments_dir = DirectoryNode(output_dir / "experiments")
@@ -298,6 +305,7 @@ def test_serialize_deserialize_cycle(
 
     reloaded_manifest = IngestionManifest.deserialize(directory)
 
+    assert ingestion_manifest.get_data_root() == reloaded_manifest.get_data_root()
     assert ingestion_manifest.get_projects() == reloaded_manifest.get_projects()
     assert ingestion_manifest.get_experiments() == reloaded_manifest.get_experiments()
     assert ingestion_manifest.get_datasets() == reloaded_manifest.get_datasets()

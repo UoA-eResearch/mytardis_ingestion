@@ -41,5 +41,5 @@ def write_to_yaml(fpath: Path, ingestible: IngestionManifest) -> None:
     for datafile in ingestible.get_datafiles():
         data_list.append(datafile)
 
-    with open(fpath / "ingestion.yaml", "w", encoding="utf-8") as f:
+    with open(fpath, "w", encoding="utf-8") as f:
         yaml.dump_all(data_list, f)

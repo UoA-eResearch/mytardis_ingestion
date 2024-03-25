@@ -251,7 +251,7 @@ def parse_raw_data(
     Parse the directory containing the raw data
     """
 
-    pedd_builder = IngestionManifest()
+    pedd_builder = IngestionManifest(source_data_root=root_dir)
 
     project_dirs = [
         d for d in raw_dir.iter_dirs(recursive=True) if d.has_file("project.json")
@@ -310,7 +310,7 @@ def parse_zarr_data(
     """
     Parse the directory containing the derived/post-processed Zarr data
     """
-    pedd_builder = IngestionManifest()
+    pedd_builder = IngestionManifest(source_data_root=root_dir)
 
     for directory in zarr_root.iter_dirs(recursive=True):
         zarr_dirs = directory.find_dirs(
@@ -375,6 +375,7 @@ def parse_data(root: DirectoryNode) -> IngestionManifest:
 
     # Note: maybe we should just directly append to the object inside the parsing functions
     return IngestionManifest(
+        source_data_root=root.path(),
         projects=dc_raw.get_projects() + dc_zarr.get_projects(),
         experiments=dc_raw.get_experiments() + dc_zarr.get_experiments(),
         datasets=dc_raw.get_datasets() + dc_zarr.get_datasets(),

@@ -56,7 +56,8 @@ def test_read_crate_dataobjects(
     Also confirms that datasets haved been parsed correctly.
     """
     ingestible_dfs: IngestionManifest = fixture_rocrate_parser.process_datasets(
-        IngestionManifest(), filters.PathFilterSet(filter_system_files=True)
+        IngestionManifest(Path("/dummy/path")),
+        filters.PathFilterSet(filter_system_files=True),
     )
     assert len(ingestible_dfs.get_datasets()) == 2
     assert (
@@ -109,7 +110,7 @@ def test_parse_crate_project(
     fixture_rocrate_project: RawProject,
 ) -> None:
     ingestible_projects: IngestionManifest = fixture_rocrate_parser.process_projects(
-        IngestionManifest()
+        IngestionManifest(Path("/dummy/path"))
     )
     assert len(ingestible_projects.get_projects()) == 1
     testing_project = ingestible_projects.get_projects()[0]
@@ -126,7 +127,7 @@ def test_parse_crate_experiment(
     fixture_rocrate_experiment: RawExperiment,
 ) -> None:
     ingestible_projects: IngestionManifest = fixture_rocrate_parser.process_experiments(
-        IngestionManifest()
+        IngestionManifest(Path("/dummy/path"))
     )
     experiments = ingestible_projects.get_experiments()
     assert len(experiments) == 1

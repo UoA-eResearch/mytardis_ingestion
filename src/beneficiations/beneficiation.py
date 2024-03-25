@@ -33,11 +33,7 @@ class Beneficiation:
     ) -> None:
         self.beneficiation = beneficiation
 
-    def beneficiate(
-        self,
-        beneficiation_data: Dict[str, Any],
-        ingestible_dataclasses: IngestionManifest,
-    ) -> IngestionManifest:
+    def beneficiate(self, beneficiation_data: Dict[str, Any]) -> IngestionManifest:
         """Parse metadata files of a given file type into raw dataclasses
 
         Args:
@@ -50,8 +46,7 @@ class Beneficiation:
         logger.info("beneficiating")
 
         ing_dclasses_out = self.beneficiation.beneficiate(
-            beneficiation_data=beneficiation_data,
-            ingestible_dclasses=ingestible_dataclasses,
+            beneficiation_data=beneficiation_data
         )
 
         logger.info(f"ingestible projects = {ing_dclasses_out.get_projects()}")

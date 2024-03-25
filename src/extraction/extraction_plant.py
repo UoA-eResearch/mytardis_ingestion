@@ -74,7 +74,6 @@ class ExtractionPlant(IMetadataExtractor):
             Exception: If profile for extraction is not set.
         """
         out_man = OutputManager()
-        ing_dclasses = IngestionManifest()
 
         if self.prospector and self.prospector.custom_prospector:
             out_man = self._prospect(root_dir, out_man)
@@ -82,7 +81,7 @@ class ExtractionPlant(IMetadataExtractor):
         if self.miner and self.miner.custom_miner:
             out_man = self._mine(root_dir, out_man)
 
-        ingestible_dataclasses_out = self._beneficiate(root_dir, ing_dclasses)
+        ingestible_dataclasses_out = self._beneficiate(root_dir)
         return ingestible_dataclasses_out
 
     def _prospect(
@@ -120,13 +119,7 @@ class ExtractionPlant(IMetadataExtractor):
     #        return ingestible_dataclasses
 
     # Libby: changes to IDW _beneficiate - need to test with ABI-music
-    def _beneficiate(
-        self,
-        pth: Path,
-        ing_dclasses: IngestionManifest,
-    ) -> IngestionManifest:
+    def _beneficiate(self, pth: Path) -> IngestionManifest:
         logger.info("beneficiating")
-        ingestible_dataclasses = self.beneficiation.beneficiation.beneficiate(
-            pth, ing_dclasses
-        )
+        ingestible_dataclasses = self.beneficiation.beneficiation.beneficiate(pth)
         return ingestible_dataclasses
