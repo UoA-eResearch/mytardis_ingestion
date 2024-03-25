@@ -1,4 +1,3 @@
-# pylint: disable=R0801
 """A collection of classes for ingesting raw metadata into MyTardis."""
 import json
 import logging
@@ -92,7 +91,7 @@ class IngestionFactory:
     def ingest_projects(
         self,
         projects: list[RawProject],
-    ) -> IngestionResult:  # sourcery skip: class-extract-method
+    ) -> IngestionResult:
         """Ingest a set of projects into MyTardis."""
 
         result = IngestionResult()
@@ -129,7 +128,7 @@ class IngestionFactory:
 
         return result
 
-    def ingest_experiments(  # pylint: disable=too-many-locals
+    def ingest_experiments(
         self,
         experiments: list[RawExperiment],
     ) -> IngestionResult:
@@ -169,7 +168,7 @@ class IngestionFactory:
 
         return result
 
-    def ingest_datasets(  # pylint: disable=too-many-locals
+    def ingest_datasets(
         self,
         datasets: list[RawDataset],
     ) -> IngestionResult:
