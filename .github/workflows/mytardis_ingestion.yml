@@ -37,6 +37,13 @@ jobs:
     - name: Black - check code formatting
       run: PYTHONPATH=src/ poetry run python -m black --check --diff src
 
+    - name: pylint - static code analysis
+      run: PYTHONPATH=src/ poetry run python -m pylint src/ --rcfile .pylintrc
+
+    - name: mypy - static type checking
+      # Takes configuration from pyproject.toml
+      run: PYTHONPATH=src/ poetry run python -m mypy
+
     - name: pytest - run the tests
       run: PYTHONPATH=src/ poetry run python -m pytest -v --cov=src/ tests/
 
@@ -50,10 +57,3 @@ jobs:
       uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-
-    - name: pylint - static code analysis
-      run: PYTHONPATH=src/ poetry run python -m pylint src/ --rcfile .pylintrc
-
-    - name: mypy - static type checking
-      # Takes configuration from pyproject.toml
-      run: PYTHONPATH=src/ poetry run python -m mypy
