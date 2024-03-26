@@ -271,7 +271,7 @@ def clean(
 
     profile = load_profile(profile_name, profile_version)
     extractor = profile.get_extractor()
-    metadata = extractor.extract(source_data_path)
+    manifest = extractor.extract(source_data_path)
     mt_rest = MyTardisRESTFactory(config.auth, config.connection)
     overseer = Overseer(mt_rest)
     smelter = Smelter(
@@ -279,7 +279,7 @@ def clean(
     )
     crucible = Crucible(overseer)
     reclaimer = Reclaimer(storage_name, overseer, smelter, crucible)
-    raw_dfs = metadata.get_datafiles()
+    raw_dfs = manifest.get_datafiles()
     datafiles = reclaimer.prepare_datafiles(raw_dfs)
     verified_dfs: list[Datafile] = []
     for datafile in datafiles:
@@ -293,7 +293,7 @@ def clean(
     if delete_verified:
         logger.info("delete_verified argument is passed - deleting verified files.")
         for df in verified_dfs:
-            pth = source_data_path / df.directory / df.filename
+            pth = manifest.get_data_root() / df.directory / df.filename
             if pth.is_file():
                 logger.info("Deleting %s", pth)
                 pth.unlink()
