@@ -11,10 +11,16 @@ import typer
 from pydantic import ValidationError
 from typing_extensions import Annotated
 
+from src.blueprints.datafile import Datafile
 from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
+from src.crucible.crucible import Crucible
 from src.extraction.manifest import IngestionManifest
 from src.ingestion_factory.factory import IngestionFactory
+from src.mytardis_client.mt_rest import MyTardisRESTFactory
+from src.overseers.overseer import Overseer
 from src.profiles.profile_register import load_profile
+from src.reclaimer.reclaimer import Reclaimer
+from src.smelters.smelter import Smelter
 from src.utils import log_utils
 from src.utils.filesystem.filesystem_nodes import DirectoryNode
 from src.utils.timing import Timer
@@ -124,6 +130,7 @@ def upload(
     try:
         config = ConfigFromEnv(
             # Create storagebox config based on passed in argument.
+            source_directory=data_dir,
             storage=FilesystemStorageBoxConfig(
                 storage_name=storage_name, target_root_dir=storage_dir
             ),
@@ -217,6 +224,80 @@ def ingest(
     elapsed = timer.stop()
     logger.info("Finished submitting dataclasses and transferring files to MyTardis")
     logger.info("Total time (s): %.2f", elapsed)
+
+
+@app.command()
+def clean(
+    source_data_path: SourceDataPathArg,
+    storage_name: Annotated[
+        str, typer.Argument(help="Name of the staging storagebox.")
+    ],
+    storage_dir: Annotated[
+        Path,
+        typer.Argument(help="Directory where the extracted data will be stored"),
+    ],
+    profile_name: ProfileNameArg,
+    profile_version: ProfileVersionArg = None,
+    delete_verified: Optional[bool] = typer.Argument(
+        default=False, help="Delete files which have been verified on MyTardis."
+    ),
+    log_file: LogFileArg = Path("filestatus.log"),
+):
+
+    log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
+    timer = Timer(start=True)
+
+    try:
+        config = ConfigFromEnv(
+            # Create storagebox config based on passed in argument.
+            source_directory=source_data_path,
+            storage=FilesystemStorageBoxConfig(
+                storage_name=storage_name, target_root_dir=storage_dir
+            ),
+        )
+    except ValidationError as error:
+        logger.error(
+            (
+                "An error occurred while validating the environment "
+                "configuration. Make sure all required variables are set "
+                "or pass your own configuration instance. Error: %s"
+            ),
+            error,
+        )
+        sys.exit(1)
+
+    if DirectoryNode(source_data_path).empty():
+        raise ValueError("Data root directory is empty. May not be mounted.")
+
+    profile = load_profile(profile_name, profile_version)
+    extractor = profile.get_extractor()
+    metadata = extractor.extract(source_data_path)
+    mt_rest = MyTardisRESTFactory(config.auth, config.connection)
+    overseer = Overseer(mt_rest)
+    smelter = Smelter(
+        overseer=overseer, general=config.general, default_schema=config.default_schema
+    )
+    crucible = Crucible(overseer)
+    reclaimer = Reclaimer(storage_name, overseer, smelter, crucible)
+    raw_dfs = metadata.get_datafiles()
+    datafiles = reclaimer.prepare_datafiles(raw_dfs)
+    verified_dfs: list[Datafile] = []
+    for datafile in datafiles:
+        is_verified = reclaimer.is_file_verified(datafile)
+        print(
+            f"{datafile.directory / datafile.filename} \t {'verified' if is_verified else 'unverified'}"
+        )
+        if is_verified:
+            verified_dfs.append(datafile)
+    logger.info("Retrieved file status in %f seconds.", timer.stop())
+    if delete_verified:
+        logger.info("delete_verified argument is passed - deleting verified files.")
+        for df in verified_dfs:
+            pth = source_data_path / df.directory / df.filename
+            if pth.is_file():
+                logger.info("Deleting %s", pth)
+                pth.unlink()
+        logger.info("Finished deleting files.")
 
 
 if __name__ == "__main__":
