@@ -207,7 +207,7 @@ class Overseer(metaclass=Singleton):
         if response is None:
             raise HTTPError("MyTardis object query yielded no response")
         if objects := response.get("objects"):
-            return [objects]
+            return objects
         return []
 
     def get_uris(

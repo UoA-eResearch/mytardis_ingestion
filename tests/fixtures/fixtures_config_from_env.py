@@ -135,7 +135,6 @@ def processed_introspection_response() -> Dict[str, bool | List[str]]:
 @fixture
 def general(
     default_institution: str,
-    source_dir: Path,
 ) -> GeneralConfig:
     return GeneralConfig(
         default_institution=default_institution,
