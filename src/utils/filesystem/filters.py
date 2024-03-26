@@ -15,7 +15,7 @@ class FileExclusionPatterns:
     """
 
     suffixes: Optional[list[str]]
-    extension_prefixes: Optional[list[str]]
+    name_prefixes: Optional[list[str]]
 
 
 MACOS_EXCLUSION_PATTERNS = FileExclusionPatterns(
@@ -32,11 +32,11 @@ MACOS_EXCLUSION_PATTERNS = FileExclusionPatterns(
         ".FileSync-lock",
         ".AppleDB",
     ],
-    extension_prefixes=["._"],
+    name_prefixes=["._"],
 )
 
 WINDOWS_EXCLUSION_PATTERNS = FileExclusionPatterns(
-    suffixes=["thumbs.db"], extension_prefixes=None
+    suffixes=["thumbs.db"], name_prefixes=None
 )
 
 
@@ -50,13 +50,13 @@ def get_excluded_system_suffixes() -> list[str]:
     return suffixes
 
 
-def get_excluded_system_extension_prefixes() -> list[str]:
+def get_excluded_system_filename_prefixes() -> list[str]:
     """
     Get a list of common system file path suffixes
     """
     prefixes: list[str] = []
-    prefixes.extend(MACOS_EXCLUSION_PATTERNS.extension_prefixes or [])
-    prefixes.extend(WINDOWS_EXCLUSION_PATTERNS.extension_prefixes or [])
+    prefixes.extend(MACOS_EXCLUSION_PATTERNS.name_prefixes or [])
+    prefixes.extend(WINDOWS_EXCLUSION_PATTERNS.name_prefixes or [])
     return prefixes
 
 
@@ -95,7 +95,7 @@ class NameSuffixFilter(PathFilterBase):
         return any(path.name.endswith(suffix) for suffix in self._suffixes)
 
 
-class ExtensionPrefixFilter(PathFilterBase):
+class NamePrefixFilter(PathFilterBase):
     """
     Filter paths by matching their extensions against disallowed prefixes.
     """
@@ -105,7 +105,7 @@ class ExtensionPrefixFilter(PathFilterBase):
         super().__init__()
 
     def exclude(self, path: Path) -> bool:
-        return any(path.suffix.startswith(prefix) for prefix in self._prefixes)
+        return any(path.name.startswith(prefix) for prefix in self._prefixes)
 
 
 class PathPatternFilter(PathFilterBase):
@@ -121,8 +121,8 @@ class PathPatternFilter(PathFilterBase):
 
         if patterns.suffixes is not None:
             self._filters.append(NameSuffixFilter(patterns.suffixes))
-        if patterns.extension_prefixes is not None:
-            self._filters.append(ExtensionPrefixFilter(patterns.extension_prefixes))
+        if patterns.name_prefixes is not None:
+            self._filters.append(NamePrefixFilter(patterns.name_prefixes))
 
         super().__init__()
 
