@@ -213,8 +213,6 @@ class ConfigFromEnv(BaseSettings):
             instance of Pydantic schema model
         archive: TimeOffsetConfig
             instance of Pydantic time offset model
-        source_directory:
-            The root directory to the data source.
 
 
     Properties:

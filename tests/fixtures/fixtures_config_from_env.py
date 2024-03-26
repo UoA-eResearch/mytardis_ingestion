@@ -139,7 +139,6 @@ def general(
 ) -> GeneralConfig:
     return GeneralConfig(
         default_institution=default_institution,
-        source_directory=source_dir,
     )
 
 
