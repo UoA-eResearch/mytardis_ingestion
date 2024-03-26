@@ -264,9 +264,6 @@ def clean(
         )
         sys.exit(1)
 
-    if DirectoryNode(source_data_path).empty():
-        raise ValueError("Data root directory is empty. May not be mounted.")
-
     profile = load_profile(profile_name, profile_version)
     extractor = profile.get_extractor()
     manifest = extractor.extract(source_data_path)
