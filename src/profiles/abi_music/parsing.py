@@ -246,22 +246,22 @@ def collate_datafile_info(
 
 
 def parse_raw_data(
-    raw_dir: DirectoryNode, root_dir: Path, file_filter: filters.PathFilterSet
+    root: DirectoryNode, file_filter: filters.PathFilterSet
 ) -> IngestionManifest:
     """
     Parse the directory containing the raw data
     """
 
-    pedd_builder = IngestionManifest(source_data_root=root_dir)
+    manifest = IngestionManifest(source_data_root=root.path())
 
     project_dirs = [
-        d for d in raw_dir.iter_dirs(recursive=True) if d.has_file("project.json")
+        d for d in root.iter_dirs(recursive=True) if d.has_file("project.json")
     ]
 
     for project_dir in project_dirs:
         logging.info("Project directory: %s", project_dir.name())
 
-        pedd_builder.add_project(parse_project_info(project_dir))
+        manifest.add_project(parse_project_info(project_dir))
 
         experiment_dirs = [
             d
@@ -272,7 +272,7 @@ def parse_raw_data(
         for experiment_dir in experiment_dirs:
             logging.info("Experiment directory: %s", experiment_dir.name())
 
-            pedd_builder.add_experiment(parse_experiment_info(experiment_dir))
+            manifest.add_experiment(parse_experiment_info(experiment_dir))
 
             dataset_dirs = [
                 d
@@ -293,27 +293,27 @@ def parse_raw_data(
 
                 dataset.created_time = parse_timestamp(data_dir.name())
 
-                pedd_builder.add_dataset(dataset)
+                manifest.add_dataset(dataset)
 
                 for file in dataset_dir.iter_files(recursive=True):
                     if file_filter.exclude(file.path()):
                         continue
 
-                    datafile = collate_datafile_info(file, root_dir, dataset_id)
-                    pedd_builder.add_datafile(datafile)
+                    datafile = collate_datafile_info(file, root.path(), dataset_id)
+                    manifest.add_datafile(datafile)
 
-    return pedd_builder
+    return manifest
 
 
 def parse_zarr_data(
-    zarr_root: DirectoryNode, root_dir: Path, file_filter: filters.PathFilterSet
+    root: DirectoryNode, file_filter: filters.PathFilterSet
 ) -> IngestionManifest:
     """
     Parse the directory containing the derived/post-processed Zarr data
     """
-    pedd_builder = IngestionManifest(source_data_root=root_dir)
+    manifest = IngestionManifest(source_data_root=root.path())
 
-    for directory in zarr_root.iter_dirs(recursive=True):
+    for directory in root.iter_dirs(recursive=True):
         zarr_dirs = directory.find_dirs(
             lambda d: d.name().endswith(".zarr"), recursive=True
         )
@@ -327,17 +327,17 @@ def parse_zarr_data(
             # Note: the parent directory name is expected to be in the format
             # <Project>-<Experiment>-<Dataset>. Should we cross-check against these?
 
-            pedd_builder.add_dataset(dataset)
+            manifest.add_dataset(dataset)
 
             for file in zarr_dir.iter_files(recursive=True):
                 if file_filter.exclude(file.path()):
                     continue
 
-                datafile = collate_datafile_info(file, root_dir, dataset_id)
+                datafile = collate_datafile_info(file, root.path(), dataset_id)
 
-                pedd_builder.add_datafile(datafile)
+                manifest.add_datafile(datafile)
 
-    return pedd_builder
+    return manifest
 
 
 def link_zarr_to_raw(
@@ -364,13 +364,10 @@ def parse_data(root: DirectoryNode) -> IngestionManifest:
     Parse/validate the data directory to extract the files to be ingested
     """
 
-    raw_dir = root.dir("Vault").dir("Raw")
-    zarr_dir = root.dir("Zarr")
-
     file_filter = filters.PathFilterSet(filter_system_files=True)
 
-    dc_raw = parse_raw_data(raw_dir, root.path(), file_filter)
-    dc_zarr = parse_zarr_data(zarr_dir, root.path(), file_filter)
+    dc_raw = parse_raw_data(root, file_filter)
+    dc_zarr = parse_zarr_data(root, file_filter)
 
     link_zarr_to_raw(dc_zarr.get_datasets(), dc_raw.get_datasets())
 
