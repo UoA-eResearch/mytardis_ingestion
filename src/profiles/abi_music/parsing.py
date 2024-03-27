@@ -257,9 +257,14 @@ def parse_raw_data(
 
     manifest = IngestionManifest(source_data_root=root.path())
 
-    project_dirs = [
-        d for d in root.iter_dirs(recursive=True) if d.has_file("project.json")
-    ]
+    project_dirs: list[DirectoryNode] = []
+
+    if root.has_file("project.json"):
+        project_dirs.append(root)
+
+    project_dirs.extend(
+        [d for d in root.iter_dirs(recursive=True) if d.has_file("project.json")]
+    )
 
     for project_dir in project_dirs:
         logging.info("Project directory: %s", project_dir.name())
