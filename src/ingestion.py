@@ -225,6 +225,14 @@ def ingest(
     logger.info("Total time (s): %.2f", elapsed)
 
 
+CleanVerifiedFilesOpt = Annotated[
+    Optional[bool],
+    typer.Option(
+        help="Delete files which have been verified in MyTardis.",
+    ),
+]
+
+
 @app.command()
 def clean(
     source_data_path: SourceDataPathArg,
@@ -237,9 +245,7 @@ def clean(
     ],
     profile_name: ProfileNameArg,
     profile_version: ProfileVersionArg = None,
-    delete_verified: Optional[bool] = typer.Argument(
-        default=False, help="Delete files which have been verified on MyTardis."
-    ),
+    clean_verified_files: CleanVerifiedFilesOpt = False,
     log_file: LogFileArg = Path("filestatus.log"),
 ):
 
@@ -285,8 +291,10 @@ def clean(
         if is_verified:
             verified_dfs.append(datafile)
     logger.info("Retrieved file status in %f seconds.", timer.stop())
-    if delete_verified:
-        logger.info("delete_verified argument is passed - deleting verified files.")
+    if clean_verified_files:
+        logger.info(
+            "clean_verified_files argument is passed - deleting verified files."
+        )
         for df in verified_dfs:
             pth = manifest.get_data_root() / df.directory / df.filename
             if pth.is_file():
