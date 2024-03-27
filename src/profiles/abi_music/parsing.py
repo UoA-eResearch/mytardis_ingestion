@@ -108,6 +108,9 @@ def parse_experiment_info(directory: DirectoryNode) -> RawExperiment:
 
     json_data = read_json(directory.file("experiment.json"))
 
+    # The data features both "project" and "projects" keys, so we need to handle both
+    projects: list[str] = json_data.get("projects") or [json_data["project"]]
+
     raw_experiment = RawExperiment(
         title=json_data["experiment_name"],
         description=json_data["experiment_description"],
@@ -118,7 +121,7 @@ def parse_experiment_info(directory: DirectoryNode) -> RawExperiment:
         users=None,
         groups=None,
         identifiers=json_data["experiment_ids"],
-        projects=[json_data["project"]],
+        projects=projects,
         institution_name=None,
         metadata=None,
         schema=None,
