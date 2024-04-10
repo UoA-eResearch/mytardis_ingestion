@@ -23,7 +23,7 @@ app = typer.Typer()
 logger = logging.getLogger(__name__)
 
 # =============================================================================
-# SHARED ARGUMENT DEFINITIONS
+# SHARED PARAMETER DEFINITIONS
 # =============================================================================
 
 SourceDataPathArg: TypeAlias = Annotated[
@@ -36,21 +36,25 @@ SourceDataPathArg: TypeAlias = Annotated[
     ),
 ]
 
-ProfileNameArg: TypeAlias = Annotated[
+ProfileNameOption: TypeAlias = Annotated[
     str,
-    typer.Argument(help="Name of the ingestion profile to be used to extract the data"),
-]
-
-ProfileVersionArg = Annotated[
-    Optional[str],
-    typer.Argument(
-        help="Version of the profile to be used. If left unspecified, the latest will be used"
+    typer.Option(
+        "--profile",
+        "-p",
+        help="Name of the ingestion profile to be used to extract the data",
     ),
 ]
 
-LogFileArg: TypeAlias = Annotated[
-    Optional[Path],
-    typer.Argument(help="Path to be used for the log file"),
+ProfileVersionOption = Annotated[
+    Optional[str],
+    typer.Option(
+        help="Version of the profile to be used. If left unspecified, the latest will be used",
+    ),
+]
+
+LogFileOption: TypeAlias = Annotated[
+    Path,
+    typer.Option(help="Path to be used for the log file"),
 ]
 
 
@@ -68,9 +72,9 @@ def extract(
             help="Directory where the extracted metadata will be stored before ingestion"
         ),
     ],
-    profile_name: ProfileNameArg,
-    profile_version: ProfileVersionArg = None,
-    log_file: LogFileArg = Path("extraction.log"),
+    profile_name: ProfileNameOption,
+    profile_version: ProfileVersionOption = None,
+    log_file: LogFileOption = Path("extraction.log"),
 ) -> None:
     """
     Extract metadata from a directory tree, parse it into a MyTardis PEDD structure,
@@ -115,7 +119,7 @@ def upload(
         Path,
         typer.Argument(help="Directory of the staging storagebox"),
     ],
-    log_file: LogFileArg = Path("upload.log"),
+    log_file: LogFileOption = Path("upload.log"),
 ) -> None:
     """
     Submit the extracted metadata to MyTardis, and transfer the data to the storage directory.
@@ -170,9 +174,9 @@ def ingest(
         Path,
         typer.Argument(help="Directory where the extracted data will be stored"),
     ],
-    profile_name: ProfileNameArg,
-    profile_version: ProfileVersionArg = None,
-    log_file: LogFileArg = Path("ingestion.log"),
+    profile_name: ProfileNameOption,
+    profile_version: ProfileVersionOption = None,
+    log_file: LogFileOption = Path("ingestion.log"),
 ) -> None:
     """
     Run the full ingestion process, from extracting metadata to ingesting it into MyTardis.
