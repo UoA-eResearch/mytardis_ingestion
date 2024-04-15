@@ -285,17 +285,22 @@ def clean(
     reclaimer = Reclaimer(storage_name, overseer, smelter, crucible)
     result = reclaimer.get_ingestion_status(manifest.get_datafiles())
     logger.info("Retrieved file status in %f seconds.", timer.stop())
-    if len(result.unverified_files) > 0:
+    num_verified = len(result.verified_files)
+    num_unverified = len(result.unverified_files)
+    num_dfs_is_same_as_raw = (num_verified + num_unverified) == len(
+        manifest.get_datafiles()
+    )
+    if num_unverified > 0:
         logger.info("Datafiles pending verification:")
         for df in result.unverified_files:
             logger.info(df.directory / df.filename)
-    if clean_verified_files:
-        num_verified = len(result.verified_files)
-        num_unverified = len(result.unverified_files)
-        num_dfs_is_same_as_raw = (num_verified + num_unverified) == len(
-            manifest.get_datafiles()
+    elif not clean_verified_files:
+        logger.info(
+            "All datafiles verified. Re-run this command with --clean-verified-files "
+            + "to delete verified files."
         )
-        if num_unverified > 0 or not num_dfs_is_same_as_raw:
+    else:
+        if not num_dfs_is_same_as_raw:
             logger.error(
                 "Could not delete datafiles in this data root,"
                 + "not all files could be verified."
