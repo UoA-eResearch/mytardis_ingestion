@@ -315,6 +315,8 @@ def clean(
                     pth.unlink()
                 except OSError:
                     logger.exception("File could not be deleted: %s", pth)
+                    logger.error("Deleting verified files could not finish, exiting.")
+                    sys.exit(1)
             else:
                 logger.warning(
                     "File does not exist or isn't a file, skipping: %s",

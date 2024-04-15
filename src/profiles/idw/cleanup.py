@@ -11,10 +11,10 @@ class IDWDataDirectoryCleaner(IDataRootCleaner):
     def cleanup(self, source_data_path: Path) -> None:
         # Delete ingestion file so scanning no longer picks up this data directory.
         logger.info("Removing ingestion file")
-        ingestion_file_path = source_data_path / "ingestion.yaml"
-        if not ingestion_file_path.exists() or not ingestion_file_path.is_file():
+        if not source_data_path.exists() or not source_data_path.is_file():
             logger.warning(
-                "Speciified path is not a file, or ingestion file does not exist in this data root."
+                "Specified path is not a file, or ingestion file does not exist in this data root: %s",
+                source_data_path,
             )
             return
         unlink(source_data_path)
