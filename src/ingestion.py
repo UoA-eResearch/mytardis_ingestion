@@ -273,34 +273,46 @@ def clean(
     profile = load_profile(profile_name, profile_version)
     extractor = profile.get_extractor()
     manifest = extractor.extract(source_data_path)
+    # Create ingestion machinery to prepare datafiles so we can check
+    # verification status.
     mt_rest = MyTardisRESTFactory(config.auth, config.connection)
     overseer = Overseer(mt_rest)
     smelter = Smelter(
         overseer=overseer, general=config.general, default_schema=config.default_schema
     )
     crucible = Crucible(overseer)
+    # Check ingestion status for each file.
     reclaimer = Reclaimer(storage_name, overseer, smelter, crucible)
-    raw_dfs = manifest.get_datafiles()
-    datafiles = reclaimer.prepare_datafiles(raw_dfs)
-    verified_dfs: list[Datafile] = []
-    for datafile in datafiles:
-        is_verified = reclaimer.is_file_verified(datafile)
-        print(
-            f"{datafile.directory / datafile.filename} \t {'verified' if is_verified else 'unverified'}"
-        )
-        if is_verified:
-            verified_dfs.append(datafile)
+    result = reclaimer.get_ingestion_status(manifest.get_datafiles())
     logger.info("Retrieved file status in %f seconds.", timer.stop())
+    if len(result.unverified_files) > 0:
+        logger.info("Datafiles pending verification:")
+        for df in result.unverified_files:
+            logger.info(df.directory / df.filename)
     if clean_verified_files:
-        logger.info(
-            "clean_verified_files argument is passed - deleting verified files."
+        num_verified = len(result.verified_files)
+        num_unverified = len(result.unverified_files)
+        num_dfs_is_same_as_raw = (num_verified + num_unverified) == len(
+            manifest.get_datafiles()
         )
-        for df in verified_dfs:
+        if num_verified > 0 or not num_dfs_is_same_as_raw:
+            logger.warning(
+                "Could not delete datafiles in this data root,"
+                + "not all files could be verified."
+            )
+            sys.exit(1)
+        logger.info("Deleting verified files.")
+        for df in result.verified_files:
             pth = manifest.get_data_root() / df.directory / df.filename
-            if pth.is_file():
+            if pth.exists() and pth.is_file():
                 logger.info("Deleting %s", pth)
                 pth.unlink()
-        logger.info("Finished deleting files.")
+            else:
+                logger.warning(
+                    "File does not exist or isn't a file, skipping: %s",
+                    pth,
+                )
+        logger.info("Finished deleting verified files.")
 
 
 if __name__ == "__main__":

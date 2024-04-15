@@ -3,6 +3,7 @@ in MyTardis.
 """
 
 import logging
+from dataclasses import dataclass
 from typing import Any
 
 from src.blueprints.datafile import Datafile, RawDatafile
@@ -12,6 +13,15 @@ from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class IngestionStatusResult:
+    """Dataclass for ingestion status, separating files that are verified in MyTardis
+    and files that are not yet verified."""
+
+    verified_files: list[Datafile] = []
+    unverified_files: list[Datafile] = []
 
 
 class Reclaimer:
@@ -31,6 +41,16 @@ class Reclaimer:
         self._overseer = overseer
         self._smelter = smelter
         self._crucible = crucible
+
+    def get_ingestion_status(self, raw_dfs: list[RawDatafile]) -> IngestionStatusResult:
+        datafiles = self.prepare_datafiles(raw_dfs)
+        result = IngestionStatusResult()
+        for datafile in datafiles:
+            if self.is_file_verified(datafile):
+                result.verified_files.append(datafile)
+            else:
+                result.unverified_files.append(datafile)
+        return result
 
     def prepare_datafiles(self, raw_dfs: list[RawDatafile]) -> list[Datafile]:
         datafiles = []
