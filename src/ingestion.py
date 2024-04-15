@@ -296,7 +296,7 @@ def clean(
             manifest.get_datafiles()
         )
         if num_verified > 0 or not num_dfs_is_same_as_raw:
-            logger.warning(
+            logger.error(
                 "Could not delete datafiles in this data root,"
                 + "not all files could be verified."
             )
@@ -312,6 +312,10 @@ def clean(
                     "File does not exist or isn't a file, skipping: %s",
                     pth,
                 )
+        # Call profile-specific cleanup code.
+        logger.info("Running profile-specific cleanup code.")
+        cleaner = profile.get_cleanup()
+        cleaner.cleanup(source_data_path)
         logger.info("Finished deleting verified files.")
 
 

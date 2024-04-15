@@ -7,8 +7,10 @@ from typing import Optional
 from src.beneficiations.beneficiation import Beneficiation
 from src.extraction.extraction_plant import ExtractionPlant
 from src.extraction.metadata_extractor import IMetadataExtractor
+from src.profiles.idw.cleanup import IDWDataDirectoryCleaner
 from src.profiles.idw.custom_beneficiation import CustomBeneficiation  # type: ignore
 from src.profiles.profile_base import IProfile
+from src.reclaimer.data_directory_cleaner import IDataRootCleaner
 
 
 class IDWProfile(IProfile):
@@ -27,6 +29,9 @@ class IDWProfile(IProfile):
             miner=None,
             beneficiation=Beneficiation(beneficiation=CustomBeneficiation()),
         )
+
+    def get_cleanup(self) -> IDataRootCleaner:
+        return IDWDataDirectoryCleaner()
 
 
 def get_profile(version: Optional[str]) -> IProfile:

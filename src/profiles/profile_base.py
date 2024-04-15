@@ -6,6 +6,7 @@ different groups and/or instruments.
 from abc import ABC, abstractmethod
 
 from src.extraction.metadata_extractor import IMetadataExtractor
+from src.reclaimer.data_directory_cleaner import IDataRootCleaner, NoopCleaner
 
 
 class IProfile(ABC):
@@ -21,3 +22,9 @@ class IProfile(ABC):
     def get_extractor(self) -> IMetadataExtractor:
         """Get the metadata extractor associated with this profile"""
         raise NotImplementedError("No metadata extractor has been implemented")
+
+    def get_cleanup(self) -> IDataRootCleaner:
+        """
+        Perform profile-specific cleanup task, after a data directory has been fully ingested.
+        """
+        return NoopCleaner()
