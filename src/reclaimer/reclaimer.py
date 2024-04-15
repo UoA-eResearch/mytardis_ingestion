@@ -3,7 +3,7 @@ in MyTardis.
 """
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from src.blueprints.datafile import Datafile, RawDatafile
@@ -20,8 +20,8 @@ class IngestionStatusResult:
     """Dataclass for ingestion status, separating files that are verified in MyTardis
     and files that are not yet verified."""
 
-    verified_files: list[Datafile] = []
-    unverified_files: list[Datafile] = []
+    verified_files: list[Datafile] = field(default_factory=list)
+    unverified_files: list[Datafile] = field(default_factory=list)
 
 
 class Reclaimer:

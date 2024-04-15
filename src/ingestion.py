@@ -295,7 +295,7 @@ def clean(
         num_dfs_is_same_as_raw = (num_verified + num_unverified) == len(
             manifest.get_datafiles()
         )
-        if num_verified > 0 or not num_dfs_is_same_as_raw:
+        if num_unverified > 0 or not num_dfs_is_same_as_raw:
             logger.error(
                 "Could not delete datafiles in this data root,"
                 + "not all files could be verified."
