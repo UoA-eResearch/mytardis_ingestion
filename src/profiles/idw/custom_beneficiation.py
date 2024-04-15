@@ -64,6 +64,11 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
                 if isinstance(obj, RawDatafile):
                     df_path = yaml_path.parent.joinpath(obj.directory)
                     df_dir = df_path / obj.filename
-                    obj.md5sum = datafile_metadata_helpers.calculate_md5sum(df_dir)
+                    try:
+                        obj.md5sum = datafile_metadata_helpers.calculate_md5sum(df_dir)
+                    except FileNotFoundError:
+                        logger.warning(
+                            "Datafile could not be found on filesystem: %s", df_dir
+                        )
                     ingestible_dclasses.add_datafile(obj)
         return ingestible_dclasses

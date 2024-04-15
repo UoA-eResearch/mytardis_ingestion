@@ -1,4 +1,5 @@
 """Helpers to determine required metadata fields for datafiles"""
+
 import hashlib
 from pathlib import Path
 from typing import Any, Dict, List, Union
@@ -14,6 +15,9 @@ def calculate_md5sum(
 
     Returns:
         str: The MD5 checksum as a hexadecimal string.
+
+    Raises:
+        FileNotFoundError: if the specified path is not found.
     """
     with open(fp, mode="rb") as f:
         d = hashlib.md5()
@@ -50,12 +54,14 @@ def replace_micrometer_values(
             )
     elif isinstance(data, list):
         return [
-            replace_micrometer_values(item, replacement)
-            if isinstance(item, (dict, list))
-            else (
-                item[:-2] + replacement
-                if isinstance(item, str) and item.endswith("µm")
-                else item
+            (
+                replace_micrometer_values(item, replacement)
+                if isinstance(item, (dict, list))
+                else (
+                    item[:-2] + replacement
+                    if isinstance(item, str) and item.endswith("µm")
+                    else item
+                )
             )
             for item in data
         ]
