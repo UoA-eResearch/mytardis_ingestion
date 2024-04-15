@@ -311,7 +311,10 @@ def clean(
             pth = manifest.get_data_root() / df.directory / df.filename
             if pth.exists() and pth.is_file():
                 logger.info("Deleting %s", pth)
-                pth.unlink()
+                try:
+                    pth.unlink()
+                except OSError:
+                    logger.exception("File could not be deleted: %s", pth)
             else:
                 logger.warning(
                     "File does not exist or isn't a file, skipping: %s",
