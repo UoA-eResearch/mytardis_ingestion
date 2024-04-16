@@ -234,6 +234,19 @@ CleanVerifiedFilesOpt = Annotated[
 
 
 @app.command()
+def status(
+    source_data_path: SourceDataPathArg,
+    storage_name: Annotated[
+        str, typer.Argument(help="Name of the staging storagebox.")
+    ],
+    profile_name: ProfileNameArg,
+    profile_version: ProfileVersionArg = None,
+    log_file: LogFileArg = Path("filestatus.log"),
+):
+    pass
+
+
+@app.command()
 def clean(
     source_data_path: SourceDataPathArg,
     storage_name: Annotated[
@@ -246,7 +259,7 @@ def clean(
     profile_name: ProfileNameArg,
     profile_version: ProfileVersionArg = None,
     clean_verified_files: CleanVerifiedFilesOpt = False,
-    log_file: LogFileArg = Path("filestatus.log"),
+    log_file: LogFileArg = Path("clean.log"),
 ):
 
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
@@ -283,16 +296,22 @@ def clean(
     crucible = Crucible(overseer)
     # Check ingestion status for each file.
     reclaimer = Reclaimer(storage_name, overseer, smelter, crucible)
-    result = reclaimer.get_ingestion_status(manifest.get_datafiles())
-    logger.info("Retrieved file status in %f seconds.", timer.stop())
-    num_verified = len(result.verified_files)
-    num_unverified = len(result.unverified_files)
+    result = reclaimer.get_ingestion_status(manifest)
+    logger.info("Retrieved status in %f seconds.", timer.stop())
+    unverified_dfs = [
+        df_result.object
+        for df_result in result.datafiles
+        # If the datafile is not yet ingested or is not verified.
+        if df_result.result is None or not reclaimer.is_file_verified(df_result.result)
+    ]
+    num_unverified = len(unverified_dfs)
+    num_verified = len(result.datafiles) - num_unverified
     num_dfs_is_same_as_raw = (num_verified + num_unverified) == len(
         manifest.get_datafiles()
     )
     if num_unverified > 0:
         logger.info("Datafiles pending verification:")
-        for df in result.unverified_files:
+        for df in unverified_dfs:
             logger.info(df.directory / df.filename)
     elif not clean_verified_files:
         logger.info(
@@ -307,7 +326,7 @@ def clean(
             )
             sys.exit(1)
         logger.info("Deleting verified files.")
-        for df in result.verified_files:
+        for df in manifest.get_datafiles():
             pth = manifest.get_data_root() / df.directory / df.filename
             if pth.exists() and pth.is_file():
                 logger.info("Deleting %s", pth)
