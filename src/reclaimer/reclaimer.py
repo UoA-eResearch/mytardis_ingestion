@@ -37,6 +37,25 @@ class IngestionStatusResult:
     datasets: list[QueryResult[RawDataset]]
     datafiles: list[QueryResult[RawDatafile]]
 
+    def is_complete(self) -> bool:
+        """Returns whether this set of ingestion is complete.
+
+        Returns:
+            bool: True if all projects, experiments, datasets and datafiles are
+        ingested, and all datafiles are verified. False if not.
+        """
+        return all(
+            queryres.result is not None
+            for queryres in self.projects
+            + self.experiments
+            + self.datasets
+            + self.datafiles
+        ) and all(
+            Reclaimer.is_file_verified(datafile.result)
+            for datafile in self.datafiles
+            if datafile.result is not None
+        )
+
 
 class Reclaimer:
     """Class for checking through files."""
@@ -195,7 +214,8 @@ class Reclaimer:
             datafiles.append(df)
         return datafiles
 
-    def is_file_verified(self, query_result: dict[str, Any]) -> bool:
+    @staticmethod
+    def is_file_verified(query_result: dict[str, Any]) -> bool:
         """Method that filters through a set of Datafiles, returning
         files that are verified on MyTardis.
 
@@ -208,7 +228,6 @@ class Reclaimer:
         """
         replicas: list[dict[str, Any]] = query_result["replicas"]
         for replica in replicas:
-            if replica["location"] != self._storage_box_name:
-                continue
-            return replica["verified"]
+            if replica["verified"]:
+                return True
         return False
