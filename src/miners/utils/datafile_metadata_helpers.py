@@ -1,4 +1,5 @@
 """Helpers to determine required metadata fields for datafiles"""
+
 import hashlib
 from pathlib import Path
 from typing import Any, Dict, List, Union
@@ -50,12 +51,14 @@ def replace_micrometer_values(
             )
     elif isinstance(data, list):
         return [
-            replace_micrometer_values(item, replacement)
-            if isinstance(item, (dict, list))
-            else (
-                item[:-2] + replacement
-                if isinstance(item, str) and item.endswith("µm")
-                else item
+            (
+                replace_micrometer_values(item, replacement)
+                if isinstance(item, (dict, list))
+                else (
+                    item[:-2] + replacement
+                    if isinstance(item, str) and item.endswith("µm")
+                    else item
+                )
             )
             for item in data
         ]

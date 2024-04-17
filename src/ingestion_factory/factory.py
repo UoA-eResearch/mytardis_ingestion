@@ -1,4 +1,5 @@
 """A collection of classes for ingesting raw metadata into MyTardis."""
+
 import json
 import logging
 from pathlib import Path
