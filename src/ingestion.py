@@ -182,7 +182,6 @@ def ingest(
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
     try:
-        # print("Hello", storage)
         if storage is not None:
             store = FilesystemStorageBoxConfig(
                 storage_name=storage[0], target_root_dir=storage[1]
