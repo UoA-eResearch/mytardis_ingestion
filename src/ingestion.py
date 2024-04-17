@@ -243,7 +243,60 @@ def status(
     profile_version: ProfileVersionArg = None,
     log_file: LogFileArg = Path("filestatus.log"),
 ):
-    pass
+    log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
+    timer = Timer(start=True)
+
+    try:
+        config = ConfigFromEnv(
+            # Create storagebox config based on passed in argument.
+            storage=FilesystemStorageBoxConfig(
+                storage_name=storage_name, target_root_dir=storage_dir
+            ),
+        )
+    except ValidationError as error:
+        logger.error(
+            (
+                "An error occurred while validating the environment "
+                "configuration. Make sure all required variables are set "
+                "or pass your own configuration instance. Error: %s"
+            ),
+            error,
+        )
+        sys.exit(1)
+
+    profile = load_profile(profile_name, profile_version)
+    extractor = profile.get_extractor()
+    manifest = extractor.extract(source_data_path)
+    # Create ingestion machinery to prepare datafiles so we can check
+    # verification status.
+    mt_rest = MyTardisRESTFactory(config.auth, config.connection)
+    overseer = Overseer(mt_rest)
+    smelter = Smelter(
+        overseer=overseer, general=config.general, default_schema=config.default_schema
+    )
+    crucible = Crucible(overseer)
+    # Check ingestion status for each file.
+    reclaimer = Reclaimer(storage_name, overseer, smelter, crucible)
+    result = reclaimer.get_ingestion_status(manifest)
+    logger.info("Retrieved status in %f seconds.", timer.stop())
+    if result.is_complete():
+        logger.info("Ingestion for this data root is complete. Run ids clean to delete the files.")
+    unverified_dfs = [
+        df_result.object
+        for df_result in result.datafiles
+        # If the datafile is not yet ingested or is not verified.
+        if df_result.result is None or not reclaimer.is_file_verified(df_result.result)
+    ]
+    num_unverified = len(unverified_dfs)
+    num_verified = len(result.datafiles) - num_unverified
+    num_dfs_is_same_as_raw = (num_verified + num_unverified) == len(
+        manifest.get_datafiles()
+    )
+    if num_unverified > 0:
+        logger.info("Datafiles pending verification:")
+        for df in unverified_dfs:
+            logger.info(df.directory / df.filename)
+
 
 
 @app.command()
@@ -258,7 +311,9 @@ def clean(
     ],
     profile_name: ProfileNameArg,
     profile_version: ProfileVersionArg = None,
-    clean_verified_files: CleanVerifiedFilesOpt = False,
+    really_delete_files: CleanVerifiedFilesOpt = False,
+    check_before_delete 
+    # days_before_deleting:
     log_file: LogFileArg = Path("clean.log"),
 ):
 
@@ -313,7 +368,7 @@ def clean(
         logger.info("Datafiles pending verification:")
         for df in unverified_dfs:
             logger.info(df.directory / df.filename)
-    elif not clean_verified_files:
+    elif not delete_verified_files:
         logger.info(
             "All datafiles verified. Re-run this command with --clean-verified-files "
             + "to delete verified files."
