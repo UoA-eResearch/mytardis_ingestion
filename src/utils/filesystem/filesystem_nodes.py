@@ -193,8 +193,7 @@ class DirectoryNode:
         """Get an iterator for all files under this directory.
 
         If recursive=True, it will yield files in subdirectories too"""
-        for file in self.files():
-            yield file
+        yield from self.files()
 
         if recursive:
             for directory in self.directories():
@@ -204,8 +203,7 @@ class DirectoryNode:
         """Get an iterator for all directories under this directory.
 
         If recursive=True, it will yield subdirectories too"""
-        for directory in self.directories():
-            yield directory
+        yield from self.directories()
 
         if recursive:
             for directory in self.directories():

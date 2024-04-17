@@ -4,6 +4,7 @@ matching existing objects in MyTardis.
 
 In addition to splitting the raw dataclasses up it also injects some default values
 where appropriate"""
+
 import logging
 from typing import Optional, Tuple
 
