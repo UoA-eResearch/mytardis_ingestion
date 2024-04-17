@@ -11,7 +11,6 @@ import typer
 from pydantic import ValidationError
 from typing_extensions import Annotated
 
-from src.blueprints.storage_boxes import StorageBox
 from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
 from src.extraction.manifest import IngestionManifest
 from src.ingestion_factory.factory import IngestionFactory
