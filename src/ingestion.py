@@ -126,16 +126,13 @@ def upload(
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
     try:
+        config = ConfigFromEnv()
         if storage is not None:
+            # Create storagebox config based on passed in argument.
             store = FilesystemStorageBoxConfig(
                 storage_name=storage[0], target_root_dir=storage[1]
             )
-            config = ConfigFromEnv(
-                # Create storagebox config based on passed in argument.
-                storage=store
-            )
-        else:
-            config = ConfigFromEnv()
+            config.storage = store
     except ValidationError as error:
         logger.error(
             (
@@ -181,16 +178,13 @@ def ingest(
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
     try:
+        config = ConfigFromEnv()
         if storage is not None:
+            # Create storagebox config based on passed in argument.
             store = FilesystemStorageBoxConfig(
                 storage_name=storage[0], target_root_dir=storage[1]
             )
-            config = ConfigFromEnv(
-                # Create storagebox config based on passed in argument.
-                storage=store
-            )
-        else:
-            config = ConfigFromEnv()
+            config.storage = store
     except ValidationError as error:
         logger.error(
             (
