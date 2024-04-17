@@ -1,7 +1,6 @@
 """Defines the abstract interface to inspect metadata and perform related checks on a path.
 """
 
-
 # ---Imports
 import logging
 from abc import ABC, abstractmethod

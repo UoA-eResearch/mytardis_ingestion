@@ -57,6 +57,12 @@ LogFileOption: TypeAlias = Annotated[
     typer.Option(help="Path to be used for the log file"),
 ]
 
+StorageBoxOption: TypeAlias = Annotated[
+    Optional[tuple[str, Path]],
+    typer.Option(
+        help="Name and filesystem directory of staging StorageBox to transfer datafiles into."
+    ),
+]
 
 # =============================================================================
 # COMMANDS
@@ -112,13 +118,7 @@ def upload(
             file_okay=False,
         ),
     ],
-    storage_name: Annotated[
-        str, typer.Argument(help="Name of the staging storagebox.")
-    ],
-    storage_dir: Annotated[
-        Path,
-        typer.Argument(help="Directory of the staging storagebox"),
-    ],
+    storage: StorageBoxOption = None,
     log_file: LogFileOption = Path("upload.log"),
 ) -> None:
     """
@@ -126,12 +126,13 @@ def upload(
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
     try:
-        config = ConfigFromEnv(
+        config = ConfigFromEnv()
+        if storage is not None:
             # Create storagebox config based on passed in argument.
-            storage=FilesystemStorageBoxConfig(
-                storage_name=storage_name, target_root_dir=storage_dir
-            ),
-        )
+            store = FilesystemStorageBoxConfig(
+                storage_name=storage[0], target_root_dir=storage[1]
+            )
+            config.storage = store
     except ValidationError as error:
         logger.error(
             (
@@ -167,14 +168,8 @@ def upload(
 @app.command()
 def ingest(
     source_data_path: SourceDataPathArg,
-    storage_name: Annotated[
-        str, typer.Argument(help="Name of the staging storagebox.")
-    ],
-    storage_dir: Annotated[
-        Path,
-        typer.Argument(help="Directory where the extracted data will be stored"),
-    ],
     profile_name: ProfileNameOption,
+    storage: StorageBoxOption = None,
     profile_version: ProfileVersionOption = None,
     log_file: LogFileOption = Path("ingestion.log"),
 ) -> None:
@@ -183,12 +178,13 @@ def ingest(
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
     try:
-        config = ConfigFromEnv(
+        config = ConfigFromEnv()
+        if storage is not None:
             # Create storagebox config based on passed in argument.
-            storage=FilesystemStorageBoxConfig(
-                storage_name=storage_name, target_root_dir=storage_dir
-            ),
-        )
+            store = FilesystemStorageBoxConfig(
+                storage_name=storage[0], target_root_dir=storage[1]
+            )
+            config.storage = store
     except ValidationError as error:
         logger.error(
             (

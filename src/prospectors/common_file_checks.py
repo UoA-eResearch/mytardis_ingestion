@@ -3,7 +3,6 @@ Provides common checks or filters for prospecting a directory tree to determine
 whether the files and directory structure can be used for ingestion.
 """
 
-
 # ---Imports
 import logging
 import os
