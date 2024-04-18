@@ -16,10 +16,10 @@ from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
 from src.crucible.crucible import Crucible
 from src.extraction.manifest import IngestionManifest
 from src.ingestion_factory.factory import IngestionFactory
+from src.inspector.inspector import Inspector
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.profiles.profile_register import load_profile
-from src.reclaimer.reclaimer import Reclaimer
 from src.smelters.smelter import Smelter
 from src.utils import log_utils
 from src.utils.filesystem.ctime import max_ctime
@@ -245,36 +245,31 @@ def clean(
 ):
     """Delete datafiles in source data root after ingestion is complete."""
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
-    timer = Timer(start=True)
 
-    config = get_config(storage)
-
+    logger.info("Extracting list of datafiles using %s profile", profile_name)
     profile = load_profile(profile_name, profile_version)
     extractor = profile.get_extractor()
     manifest = extractor.extract(source_data_path)
     # Print out all files
+    datafiles = manifest.get_datafiles()
     df_paths = [
-        manifest.get_data_root() / df.directory / df.filename
-        for df in manifest.get_datafiles()
+        manifest.get_data_root() / df.directory / df.filename for df in datafiles
     ]
     logger.info("The following datafiles are found in this data root.")
     for file in df_paths:
         logger.info(file)
 
-    # Create ingestion machinery to prepare datafiles so we can check
-    # verification status.
-    mt_rest = MyTardisRESTFactory(config.auth, config.connection)
-    overseer = Overseer(mt_rest)
-    smelter = Smelter(
-        overseer=overseer, general=config.general, default_schema=config.default_schema
-    )
-    crucible = Crucible(overseer)
-    # Check ingestion status for each file.
     logger.info("Retrieving status...")
-    reclaimer = Reclaimer(overseer, smelter, crucible)
-    results = reclaimer.fetch_datafiles_status(manifest.get_datafiles())
+    # Check ingestion status for each file.
+    timer = Timer(start=True)
+    config = get_config(storage)
+    insepctor = Inspector(config)
+    results = [insepctor.is_datafile_verified(raw_df) for raw_df in datafiles]
     logger.info("Retrieved datafile status in %f seconds.", timer.stop())
-    unverified_dfs = [result.file for result in results if not result.is_verified]
+    # Get unverified files by the index of the verification results list.
+    unverified_dfs = [
+        datafiles[ind] for ind, is_verified in enumerate(results) if not is_verified
+    ]
 
     if len(unverified_dfs) > 0:
         logger.info("Datafiles pending ingestion or verification:")
@@ -331,8 +326,7 @@ def clean(
             )
     # Call profile-specific cleanup code.
     logger.info("Running profile-specific cleanup code.")
-    cleaner = profile.get_cleanup()
-    cleaner.cleanup(source_data_path)
+    profile.cleanup(source_data_path)
     logger.info("Finished deleting verified files.")
 
 
