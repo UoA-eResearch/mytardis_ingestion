@@ -22,6 +22,7 @@ from src.profiles.profile_register import load_profile
 from src.reclaimer.reclaimer import Reclaimer
 from src.smelters.smelter import Smelter
 from src.utils import log_utils
+from src.utils.filesystem.ctime import max_ctime
 from src.utils.filesystem.filesystem_nodes import DirectoryNode
 from src.utils.timing import Timer
 
@@ -252,10 +253,13 @@ def clean(
     extractor = profile.get_extractor()
     manifest = extractor.extract(source_data_path)
     # Print out all files
-    files_found = manifest.get_datafiles()
+    df_paths = [
+        manifest.get_data_root() / df.directory / df.filename
+        for df in manifest.get_datafiles()
+    ]
     logger.info("The following datafiles are found in this data root.")
-    for file in files_found:
-        logger.info(manifest.get_data_root() / file.directory / file.filename)
+    for file in df_paths:
+        logger.info(file)
 
     # Create ingestion machinery to prepare datafiles so we can check
     # verification status.
@@ -287,14 +291,7 @@ def clean(
 
     if min_file_age is not None:
         logger.info("Checking file age...")
-        newest_ctime = 0
-        for df in manifest.get_datafiles():
-            pth = manifest.get_data_root() / df.directory / df.filename
-            if pth.exists() and pth.is_file():
-                # Find the newest file's age.
-                ctime = pth.lstat().st_ctime
-                if ctime > newest_ctime:
-                    newest_ctime = ctime
+        newest_ctime = max_ctime(df_paths)
         days_since_ctime = (datetime.now() - datetime.fromtimestamp(newest_ctime)).days
         if not days_since_ctime >= min_file_age:
             logger.error(
@@ -306,7 +303,7 @@ def clean(
             sys.exit(1)
         else:
             logger.info(
-                "File age is %i days, which exceeds min_file_age %i days.",
+                "File age is %i days, which meets min_file_age of %i days.",
                 days_since_ctime,
                 min_file_age,
             )
@@ -317,9 +314,8 @@ def clean(
         if not should_delete:
             sys.exit()
     # Delete all datafiles.
-    logger.info("Deleting verified files.")
-    for df in manifest.get_datafiles():
-        pth = manifest.get_data_root() / df.directory / df.filename
+    logger.info("Deleting datafiles.")
+    for pth in df_paths:
         if pth.exists() and pth.is_file():
             logger.info("Deleting %s", pth)
             try:

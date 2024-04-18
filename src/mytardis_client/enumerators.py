@@ -207,8 +207,7 @@ class DataStatus(Enum):
     """An enumerator for data status.
 
     Gaps have been left deliberately in the enumeration to allow for intermediate
-    classifications of data that may arise. The larger the integer that the classification
-    resolves to, the less sensitive the data is.
+    classifications of data that may arise.
     """
 
     READY_FOR_INGESTION = 1

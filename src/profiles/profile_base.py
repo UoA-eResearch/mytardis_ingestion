@@ -4,9 +4,9 @@ different groups and/or instruments.
 """
 
 from abc import ABC, abstractmethod
+from pathlib import Path
 
 from src.extraction.metadata_extractor import IMetadataExtractor
-from src.reclaimer.data_directory_cleaner import IDataRootCleaner, NoopCleaner
 
 
 class IProfile(ABC):
@@ -23,8 +23,7 @@ class IProfile(ABC):
         """Get the metadata extractor associated with this profile"""
         raise NotImplementedError("No metadata extractor has been implemented")
 
-    def get_cleanup(self) -> IDataRootCleaner:
-        """
-        Perform profile-specific cleanup task, after a data directory has been fully ingested.
-        """
-        return NoopCleaner()
+    def cleanup(self, source_data_path: Path) -> None:
+        """Optional method for performing profile-specific cleanup steps in the
+        source_data_path. This method is called after datafiles are deleted by
+        the clean command."""
