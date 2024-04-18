@@ -4,6 +4,7 @@ CLI frontend for extracting metadata, and ingesting it with the data into MyTard
 
 import logging
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, TypeAlias
 
@@ -11,7 +12,6 @@ import typer
 from pydantic import ValidationError
 from typing_extensions import Annotated
 
-from src.blueprints.datafile import Datafile
 from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
 from src.crucible.crucible import Crucible
 from src.extraction.manifest import IngestionManifest
@@ -69,6 +69,32 @@ StorageBoxOption: TypeAlias = Annotated[
         help="Name and filesystem directory of staging StorageBox to transfer datafiles into."
     ),
 ]
+
+
+# ==============================================================================
+# SHARED FUNCTIONS
+# ==============================================================================
+def get_config(storage: StorageBoxOption) -> ConfigFromEnv:
+    try:
+        config = ConfigFromEnv()
+        if storage is not None:
+            # Create storagebox config based on passed in argument.
+            store = FilesystemStorageBoxConfig(
+                storage_name=storage[0], target_root_dir=storage[1]
+            )
+            config.storage = store
+        return config
+    except ValidationError as error:
+        logger.error(
+            (
+                "An error occurred while validating the environment "
+                "configuration. Make sure all required variables are set "
+                "or pass your own configuration instance. Error: %s"
+            ),
+            error,
+        )
+        sys.exit(1)
+
 
 # =============================================================================
 # COMMANDS
@@ -131,25 +157,7 @@ def upload(
     Submit the extracted metadata to MyTardis, and transfer the data to the storage directory.
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
-    try:
-        config = ConfigFromEnv()
-        if storage is not None:
-            # Create storagebox config based on passed in argument.
-            store = FilesystemStorageBoxConfig(
-                storage_name=storage[0], target_root_dir=storage[1]
-            )
-            config.storage = store
-    except ValidationError as error:
-        logger.error(
-            (
-                "An error occurred while validating the environment "
-                "configuration. Make sure all required variables are set "
-                "or pass your own configuration instance. Error: %s"
-            ),
-            error,
-        )
-        sys.exit(1)
-
+    config = get_config(storage)
     if DirectoryNode(manifest_dir).empty():
         raise ValueError(
             "Manifest directory is empty. Extract data into a manifest using 'extract' command."
@@ -183,24 +191,7 @@ def ingest(
     Run the full ingestion process, from extracting metadata to ingesting it into MyTardis.
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
-    try:
-        config = ConfigFromEnv()
-        if storage is not None:
-            # Create storagebox config based on passed in argument.
-            store = FilesystemStorageBoxConfig(
-                storage_name=storage[0], target_root_dir=storage[1]
-            )
-            config.storage = store
-    except ValidationError as error:
-        logger.error(
-            (
-                "An error occurred while validating the environment "
-                "configuration. Make sure all required variables are set "
-                "or pass your own configuration instance. Error: %s"
-            ),
-            error,
-        )
-        sys.exit(1)
+    config = get_config(storage)
     timer = Timer(start=True)
 
     profile = load_profile(profile_name, profile_version)
@@ -225,122 +216,47 @@ def ingest(
     logger.info("Total time (s): %.2f", elapsed)
 
 
-CleanVerifiedFilesOpt = Annotated[
-    Optional[bool],
-    typer.Option(
-        help="Delete files which have been verified in MyTardis.",
-    ),
-]
-
-
-@app.command()
-def status(
-    source_data_path: SourceDataPathArg,
-    storage_name: Annotated[
-        str, typer.Argument(help="Name of the staging storagebox.")
-    ],
-    profile_name: ProfileNameArg,
-    profile_version: ProfileVersionArg = None,
-    log_file: LogFileArg = Path("filestatus.log"),
-):
-    log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
-    timer = Timer(start=True)
-
-    try:
-        config = ConfigFromEnv(
-            # Create storagebox config based on passed in argument.
-            storage=FilesystemStorageBoxConfig(
-                storage_name=storage_name, target_root_dir=storage_dir
-            ),
-        )
-    except ValidationError as error:
-        logger.error(
-            (
-                "An error occurred while validating the environment "
-                "configuration. Make sure all required variables are set "
-                "or pass your own configuration instance. Error: %s"
-            ),
-            error,
-        )
-        sys.exit(1)
-
-    profile = load_profile(profile_name, profile_version)
-    extractor = profile.get_extractor()
-    manifest = extractor.extract(source_data_path)
-    # Create ingestion machinery to prepare datafiles so we can check
-    # verification status.
-    mt_rest = MyTardisRESTFactory(config.auth, config.connection)
-    overseer = Overseer(mt_rest)
-    smelter = Smelter(
-        overseer=overseer, general=config.general, default_schema=config.default_schema
-    )
-    crucible = Crucible(overseer)
-    # Check ingestion status for each file.
-    reclaimer = Reclaimer(storage_name, overseer, smelter, crucible)
-    result = reclaimer.get_ingestion_status(manifest)
-    logger.info("Retrieved status in %f seconds.", timer.stop())
-    if result.is_complete():
-        logger.info("Ingestion for this data root is complete. Run ids clean to delete the files.")
-    unverified_dfs = [
-        df_result.object
-        for df_result in result.datafiles
-        # If the datafile is not yet ingested or is not verified.
-        if df_result.result is None or not reclaimer.is_file_verified(df_result.result)
-    ]
-    num_unverified = len(unverified_dfs)
-    num_verified = len(result.datafiles) - num_unverified
-    num_dfs_is_same_as_raw = (num_verified + num_unverified) == len(
-        manifest.get_datafiles()
-    )
-    if num_unverified > 0:
-        logger.info("Datafiles pending verification:")
-        for df in unverified_dfs:
-            logger.info(df.directory / df.filename)
-
-
-
 @app.command()
 def clean(
     source_data_path: SourceDataPathArg,
-    storage_name: Annotated[
-        str, typer.Argument(help="Name of the staging storagebox.")
-    ],
-    storage_dir: Annotated[
-        Path,
-        typer.Argument(help="Directory where the extracted data will be stored"),
-    ],
-    profile_name: ProfileNameArg,
-    profile_version: ProfileVersionArg = None,
-    really_delete_files: CleanVerifiedFilesOpt = False,
-    check_before_delete 
-    # days_before_deleting:
-    log_file: LogFileArg = Path("clean.log"),
+    profile_name: ProfileNameOption,
+    storage: StorageBoxOption = None,
+    profile_version: ProfileVersionOption = None,
+    ask_first: Annotated[
+        Optional[bool],
+        typer.Option(
+            help=(
+                "Ask whether the datafiles should be deleted, before attempting"
+                " to delete the whole data root. Defaults to yes."
+            ),
+        ),
+    ] = True,
+    min_file_age: Annotated[
+        Optional[int],
+        typer.Option(
+            help=(
+                "Minimum age of files, in days, before we try to delete the data"
+                " root. Defaults to no minimum age."
+            )
+        ),
+    ] = None,
+    log_file: LogFileOption = Path("clean.log"),
 ):
-
+    """Delete datafiles in source data root after ingestion is complete."""
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
     timer = Timer(start=True)
 
-    try:
-        config = ConfigFromEnv(
-            # Create storagebox config based on passed in argument.
-            storage=FilesystemStorageBoxConfig(
-                storage_name=storage_name, target_root_dir=storage_dir
-            ),
-        )
-    except ValidationError as error:
-        logger.error(
-            (
-                "An error occurred while validating the environment "
-                "configuration. Make sure all required variables are set "
-                "or pass your own configuration instance. Error: %s"
-            ),
-            error,
-        )
-        sys.exit(1)
+    config = get_config(storage)
 
     profile = load_profile(profile_name, profile_version)
     extractor = profile.get_extractor()
     manifest = extractor.extract(source_data_path)
+    # Print out all files
+    files_found = manifest.get_datafiles()
+    logger.info("The following datafiles are found in this data root.")
+    for file in files_found:
+        logger.info(manifest.get_data_root() / file.directory / file.filename)
+
     # Create ingestion machinery to prepare datafiles so we can check
     # verification status.
     mt_rest = MyTardisRESTFactory(config.auth, config.connection)
@@ -350,57 +266,78 @@ def clean(
     )
     crucible = Crucible(overseer)
     # Check ingestion status for each file.
-    reclaimer = Reclaimer(storage_name, overseer, smelter, crucible)
-    result = reclaimer.get_ingestion_status(manifest)
-    logger.info("Retrieved status in %f seconds.", timer.stop())
-    unverified_dfs = [
-        df_result.object
-        for df_result in result.datafiles
-        # If the datafile is not yet ingested or is not verified.
-        if df_result.result is None or not reclaimer.is_file_verified(df_result.result)
-    ]
-    num_unverified = len(unverified_dfs)
-    num_verified = len(result.datafiles) - num_unverified
-    num_dfs_is_same_as_raw = (num_verified + num_unverified) == len(
-        manifest.get_datafiles()
-    )
-    if num_unverified > 0:
-        logger.info("Datafiles pending verification:")
-        for df in unverified_dfs:
-            logger.info(df.directory / df.filename)
-    elif not delete_verified_files:
-        logger.info(
-            "All datafiles verified. Re-run this command with --clean-verified-files "
-            + "to delete verified files."
-        )
-    else:
-        if not num_dfs_is_same_as_raw:
-            logger.error(
-                "Could not delete datafiles in this data root,"
-                + "not all files could be verified."
+    logger.info("Retrieving status...")
+    reclaimer = Reclaimer(overseer, smelter, crucible)
+    results = reclaimer.fetch_datafiles_status(manifest.get_datafiles())
+    logger.info("Retrieved datafile status in %f seconds.", timer.stop())
+    unverified_dfs = [result.file for result in results if not result.is_verified]
+
+    if len(unverified_dfs) > 0:
+        logger.info("Datafiles pending ingestion or verification:")
+        for datafile in unverified_dfs:
+            logger.info(
+                manifest.get_data_root() / datafile.directory / datafile.filename
             )
-            sys.exit(1)
-        logger.info("Deleting verified files.")
+        logger.error(
+            "Could not proceed with deleting this data root. Ingestion is not complete."
+        )
+        sys.exit(1)
+    else:
+        logger.info("Ingestion for this data root is complete.")
+
+    if min_file_age is not None:
+        logger.info("Checking file age...")
+        newest_ctime = 0
         for df in manifest.get_datafiles():
             pth = manifest.get_data_root() / df.directory / df.filename
             if pth.exists() and pth.is_file():
-                logger.info("Deleting %s", pth)
-                try:
-                    pth.unlink()
-                except OSError:
-                    logger.exception("File could not be deleted: %s", pth)
-                    logger.error("Deleting verified files could not finish, exiting.")
-                    sys.exit(1)
-            else:
-                logger.warning(
-                    "File does not exist or isn't a file, skipping: %s",
-                    pth,
-                )
-        # Call profile-specific cleanup code.
-        logger.info("Running profile-specific cleanup code.")
-        cleaner = profile.get_cleanup()
-        cleaner.cleanup(source_data_path)
-        logger.info("Finished deleting verified files.")
+                # Find the newest file's age.
+                ctime = pth.lstat().st_ctime
+                if ctime > newest_ctime:
+                    newest_ctime = ctime
+        days_since_ctime = (datetime.now() - datetime.fromtimestamp(newest_ctime)).days
+        if not days_since_ctime >= min_file_age:
+            logger.error(
+                "Could not proceed with deleting this data root. Files were created %i days ago"
+                + ", but min_file_age is %i days.",
+                days_since_ctime,
+                min_file_age,
+            )
+            sys.exit(1)
+        else:
+            logger.info(
+                "File age is %i days, which exceeds min_file_age %i days.",
+                days_since_ctime,
+                min_file_age,
+            )
+    if ask_first:
+        should_delete = typer.confirm(
+            "Do you want to delete all datafiles in this data root?"
+        )
+        if not should_delete:
+            sys.exit()
+    # Delete all datafiles.
+    logger.info("Deleting verified files.")
+    for df in manifest.get_datafiles():
+        pth = manifest.get_data_root() / df.directory / df.filename
+        if pth.exists() and pth.is_file():
+            logger.info("Deleting %s", pth)
+            try:
+                pth.unlink()
+            except OSError:
+                logger.exception("File could not be deleted: %s", pth)
+                logger.error("Deleting verified files could not finish, exiting.")
+                sys.exit(1)
+        else:
+            logger.warning(
+                "File does not exist or isn't a file, skipping: %s",
+                pth,
+            )
+    # Call profile-specific cleanup code.
+    logger.info("Running profile-specific cleanup code.")
+    cleaner = profile.get_cleanup()
+    cleaner.cleanup(source_data_path)
+    logger.info("Finished deleting verified files.")
 
 
 if __name__ == "__main__":
