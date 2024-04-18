@@ -13,14 +13,10 @@ from pydantic import ValidationError
 from typing_extensions import Annotated
 
 from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
-from src.crucible.crucible import Crucible
 from src.extraction.manifest import IngestionManifest
 from src.ingestion_factory.factory import IngestionFactory
 from src.inspector.inspector import Inspector
-from src.mytardis_client.mt_rest import MyTardisRESTFactory
-from src.overseers.overseer import Overseer
 from src.profiles.profile_register import load_profile
-from src.smelters.smelter import Smelter
 from src.utils import log_utils
 from src.utils.filesystem.ctime import max_ctime
 from src.utils.filesystem.filesystem_nodes import DirectoryNode
