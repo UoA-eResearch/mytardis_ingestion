@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 """insepctor.py - Inspector queries MyTardis to check the status of ingestion.  
 """
 

@@ -1,3 +1,5 @@
+"""Creation time-related utilities."""
+
 from pathlib import Path
 
 
@@ -16,6 +18,5 @@ def max_ctime(pths: list[Path]) -> float:
         if pth.exists() and pth.is_file():
             # Find the newest file's age.
             ctime = pth.stat().st_ctime
-            if ctime > ret_ctime:
-                ret_ctime = ctime
+            ret_ctime = max(ctime, ret_ctime)
     return ret_ctime
