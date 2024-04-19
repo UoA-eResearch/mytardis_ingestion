@@ -13,7 +13,7 @@ def max_ctime(pths: list[Path]) -> float:
     Returns:
         float: The newest creation time from the files.
     """
-    ret_ctime = 0
+    ret_ctime: float = 0
     for pth in pths:
         if pth.exists() and pth.is_file():
             # Find the newest file's age.

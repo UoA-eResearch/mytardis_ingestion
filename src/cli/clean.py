@@ -28,7 +28,7 @@ from src.utils.timing import Timer
 logger = logging.getLogger(__name__)
 
 
-def _check_verified_status(config: ConfigFromEnv, datafiles: list[RawDatafile]):
+def _check_verified_status(config: ConfigFromEnv, datafiles: list[RawDatafile]) -> None:
     logger.info("Retrieving status...")
     # Check ingestion status for each file.
     timer = Timer(start=True)
@@ -52,7 +52,7 @@ def _check_verified_status(config: ConfigFromEnv, datafiles: list[RawDatafile]):
         logger.info("Ingestion for this data root is complete.")
 
 
-def _check_file_age(df_paths: list[Path], min_file_age: int):
+def _check_file_age(df_paths: list[Path], min_file_age: int) -> None:
     logger.info("Checking file age...")
     newest_ctime = max_ctime(df_paths)
     days_since_ctime = (datetime.now() - datetime.fromtimestamp(newest_ctime)).days
@@ -72,7 +72,7 @@ def _check_file_age(df_paths: list[Path], min_file_age: int):
         )
 
 
-def _delete_datafiles(df_paths: list[Path]):
+def _delete_datafiles(df_paths: list[Path]) -> None:
     logger.info("Deleting datafiles.")
     for pth in df_paths:
         if pth.exists() and pth.is_file():
@@ -114,7 +114,7 @@ def clean(
         ),
     ] = None,
     log_file: LogFileOption = Path("clean.log"),
-):
+) -> None:
     """Delete datafiles in source data root after ingestion is complete."""
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
 
