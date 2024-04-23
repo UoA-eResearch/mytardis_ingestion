@@ -19,6 +19,7 @@ from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
 from src.utils.filesystem.filesystem_nodes import DirectoryNode
+from src.utils.notifiers import ProgressUpdater
 
 # ---Constants
 logger = logging.getLogger(__name__)
@@ -155,7 +156,9 @@ class IngestionManifest:
         serialize_objects(self.get_datafiles(), "datafiles")
 
     @staticmethod
-    def deserialize(root_dir: Path) -> IngestionManifest:
+    def deserialize(
+        root_dir: Path, notifier: Optional[ProgressUpdater]
+    ) -> IngestionManifest:
         try:
             directory = DirectoryNode(root_dir)
         except NotADirectoryError as e:
@@ -168,24 +171,30 @@ class IngestionManifest:
             source_data_root = Path(source_info["source_data_root"])
 
         def deserialize_objects(
-            obj_dir: DirectoryNode, object_type: Type[ModelT]
+            root_dir: DirectoryNode, object_type: Type[ModelT], pedd_type: str
         ) -> list[ModelT]:
             objects = []
 
+            obj_dir = root_dir.dir(pedd_type)
             json_files = obj_dir.find_files(lambda p: p.extension() == ".json")
+
+            if notifier:
+                notifier.init(f"{pedd_type}", len(json_files))
 
             for file in json_files:
                 with file.path().open("r", encoding="utf-8") as f:
                     json_data = f.read()
                     obj = object_type.model_validate_json(json_data)
                     objects.append(obj)
+                    if notifier:
+                        notifier.update(f"{pedd_type}", 1)
 
             return objects
 
-        projects = deserialize_objects(directory.dir("projects"), RawProject)
-        experiments = deserialize_objects(directory.dir("experiments"), RawExperiment)
-        datasets = deserialize_objects(directory.dir("datasets"), RawDataset)
-        datafiles = deserialize_objects(directory.dir("datafiles"), RawDatafile)
+        projects = deserialize_objects(directory, RawProject, "projects")
+        experiments = deserialize_objects(directory, RawExperiment, "experiments")
+        datasets = deserialize_objects(directory, RawDataset, "datasets")
+        datafiles = deserialize_objects(directory, RawDatafile, "datafiles")
 
         return IngestionManifest(
             source_data_root=source_data_root,

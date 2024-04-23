@@ -7,15 +7,17 @@ import sys
 from pathlib import Path
 from typing import Optional, TypeAlias
 
+import rich.progress
 import typer
 from pydantic import ValidationError
+from rich.progress import Progress
 from typing_extensions import Annotated
 
 from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
 from src.extraction.manifest import IngestionManifest
 from src.ingestion_factory.factory import IngestionFactory
 from src.profiles.profile_register import load_profile
-from src.utils import log_utils
+from src.utils import log_utils, notifiers
 from src.utils.filesystem.filesystem_nodes import DirectoryNode
 from src.utils.timing import Timer
 
@@ -107,6 +109,27 @@ def extract(
     logging.info("Extraction complete. Ingestion manifest written to %s.", output_dir)
 
 
+class RichProgressAdapter:
+    """Displays progress updates from a notifier in a rich progress bar."""
+
+    def __init__(
+        self, notifier: notifiers.ProgressUpdater, progress_bar: rich.progress.Progress
+    ):
+        self._task_ids: dict[str, rich.progress.TaskID] = {}
+        self._notifier = notifier
+        self._progress_bar = progress_bar
+
+        def do_init(name: str, total: Optional[int] = None) -> None:
+            self._task_ids[name] = self._progress_bar.add_task(name, total=total)
+
+        self._notifier.on_init(do_init)
+
+        def handle_update(name: str, increment: int) -> None:
+            self._progress_bar.update(self._task_ids[name], advance=increment)
+
+        self._notifier.on_update(handle_update)
+
+
 @app.command()
 def upload(
     manifest_dir: Annotated[
@@ -149,7 +172,12 @@ def upload(
             "Manifest directory is empty. Extract data into a manifest using 'extract' command."
         )
 
-    manifest = IngestionManifest.deserialize(manifest_dir)
+    logging.info("Loading pre-extracted metadata from %s", manifest_dir)
+
+    with Progress() as progress:
+        notifier = notifiers.ProgressUpdater()
+        progress_displayer = RichProgressAdapter(notifier, progress)
+        manifest = IngestionManifest.deserialize(manifest_dir, notifier=notifier)
 
     logging.info("Successfully loaded metadata manifest from %s", manifest_dir)
     logging.info("Submitting metadata to MyTardis")
