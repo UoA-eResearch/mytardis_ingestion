@@ -10,7 +10,8 @@ from typing import Optional, TypeAlias
 import rich.progress
 import typer
 from pydantic import ValidationError
-from rich.progress import Progress
+
+# from rich.progress import Progress
 from typing_extensions import Annotated
 
 from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
@@ -174,10 +175,10 @@ def upload(
 
     logging.info("Loading pre-extracted metadata from %s", manifest_dir)
 
-    with Progress() as progress:
-        notifier = notifiers.ProgressUpdater()
-        progress_displayer = RichProgressAdapter(notifier, progress)
-        manifest = IngestionManifest.deserialize(manifest_dir, notifier=notifier)
+    # with Progress() as progress:
+    # notifier = notifiers.ProgressUpdater()
+    # progress_displayer = RichProgressAdapter(notifier, progress)
+    manifest = IngestionManifest.deserialize(manifest_dir, notifier=None)
 
     logging.info("Successfully loaded metadata manifest from %s", manifest_dir)
     logging.info("Submitting metadata to MyTardis")

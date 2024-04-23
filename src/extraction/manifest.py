@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import List, Optional, Sequence, Type, TypeVar
 
 from pydantic import BaseModel
+from rich.progress import Progress
 
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
@@ -175,19 +176,27 @@ class IngestionManifest:
         ) -> list[ModelT]:
             objects = []
 
-            obj_dir = root_dir.dir(pedd_type)
-            json_files = obj_dir.find_files(lambda p: p.extension() == ".json")
+            with Progress() as progress:
+                task_id = progress.add_task(f"Discovering {pedd_type}", total=None)
 
-            if notifier:
-                notifier.init(f"{pedd_type}", len(json_files))
+                obj_dir = root_dir.dir(pedd_type)
+                json_files = obj_dir.find_files(lambda p: p.extension() == ".json")
 
-            for file in json_files:
-                with file.path().open("r", encoding="utf-8") as f:
-                    json_data = f.read()
-                    obj = object_type.model_validate_json(json_data)
-                    objects.append(obj)
-                    if notifier:
-                        notifier.update(f"{pedd_type}", 1)
+                progress.update(
+                    task_id, description=f"Loading {pedd_type}", total=len(json_files)
+                )
+
+                # if notifier:
+                #     notifier.init(f"{pedd_type}", len(json_files))
+
+                for file in json_files:
+                    with file.path().open("r", encoding="utf-8") as f:
+                        json_data = f.read()
+                        obj = object_type.model_validate_json(json_data)
+                        objects.append(obj)
+                        progress.update(task_id, advance=1)
+                        # if notifier:
+                        #     notifier.update(f"{pedd_type}", 1)
 
             return objects
 
