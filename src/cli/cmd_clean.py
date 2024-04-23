@@ -10,13 +10,13 @@ from typing import Annotated, Optional
 import typer
 
 from src.blueprints.datafile import RawDatafile
-from src.cli.common import get_config
-from src.cli.parameters import (
+from src.cli.common import (
     LogFileOption,
     ProfileNameOption,
     ProfileVersionOption,
     SourceDataPathArg,
     StorageBoxOption,
+    get_config,
 )
 from src.config.config import ConfigFromEnv
 from src.inspector.inspector import Inspector

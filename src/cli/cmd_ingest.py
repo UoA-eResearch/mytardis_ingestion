@@ -1,21 +1,18 @@
-"""
-CLI frontend for extracting metadata, and ingesting it with the data into MyTardis.
-"""
+"""Module for commands related to ingestion."""
 
 import logging
 from pathlib import Path
+from typing import Annotated
 
 import typer
-from typing_extensions import Annotated
 
-from src.cli.clean import clean
-from src.cli.common import get_config
-from src.cli.parameters import (
+from src.cli.common import (
     LogFileOption,
     ProfileNameOption,
     ProfileVersionOption,
     SourceDataPathArg,
     StorageBoxOption,
+    get_config,
 )
 from src.extraction.manifest import IngestionManifest
 from src.ingestion_factory.factory import IngestionFactory
@@ -24,15 +21,9 @@ from src.utils import log_utils
 from src.utils.filesystem.filesystem_nodes import DirectoryNode
 from src.utils.timing import Timer
 
-app = typer.Typer()
 logger = logging.getLogger(__name__)
 
-# =============================================================================
-# COMMANDS
-# =============================================================================
 
-
-@app.command()
 def extract(
     source_data_path: SourceDataPathArg,
     output_dir: Annotated[
@@ -70,7 +61,6 @@ def extract(
     logging.info("Extraction complete. Ingestion manifest written to %s.", output_dir)
 
 
-@app.command()
 def upload(
     manifest_dir: Annotated[
         Path,
@@ -110,7 +100,6 @@ def upload(
     logging.info("Total time (s): %.2f", elapsed)
 
 
-@app.command()
 def ingest(
     source_data_path: SourceDataPathArg,
     profile_name: ProfileNameOption,
@@ -145,9 +134,3 @@ def ingest(
     elapsed = timer.stop()
     logger.info("Finished submitting dataclasses and transferring files to MyTardis")
     logger.info("Total time (s): %.2f", elapsed)
-
-
-app.command()(clean)
-
-if __name__ == "__main__":
-    app()
