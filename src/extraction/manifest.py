@@ -176,27 +176,29 @@ class IngestionManifest:
         ) -> list[ModelT]:
             objects = []
 
-            with Progress() as progress:
-                task_id = progress.add_task(f"Discovering {pedd_type}", total=None)
+            # with Progress() as progress:
+            # task_id = progress.add_task(f"Discovering {pedd_type}", total=None)
 
-                obj_dir = root_dir.dir(pedd_type)
-                json_files = obj_dir.find_files(lambda p: p.extension() == ".json")
+            obj_dir = root_dir.dir(pedd_type)
+            json_files = obj_dir.find_files(lambda p: p.extension() == ".json")
 
-                progress.update(
-                    task_id, description=f"Loading {pedd_type}", total=len(json_files)
-                )
+            # progress.update(
+            # task_id, description=f"Loading {pedd_type}", total=len(json_files)
+            # )
 
-                # if notifier:
-                #     notifier.init(f"{pedd_type}", len(json_files))
+            # if notifier:
+            #     notifier.init(f"{pedd_type}", len(json_files))
 
-                for file in json_files:
-                    with file.path().open("r", encoding="utf-8") as f:
-                        json_data = f.read()
-                        obj = object_type.model_validate_json(json_data)
-                        objects.append(obj)
-                        progress.update(task_id, advance=1)
-                        # if notifier:
-                        #     notifier.update(f"{pedd_type}", 1)
+            for i, file in enumerate(json_files):
+                with file.path().open("r", encoding="utf-8") as f:
+                    json_data = f.read()
+                    obj = object_type.model_validate_json(json_data)
+                    objects.append(obj)
+                    # progress.update(task_id, advance=1)
+                    # if notifier:
+                    #     notifier.update(f"{pedd_type}", 1)
+                    if len(json_files) % 100 == 0:
+                        logger.info(f"Loaded {i}/{len(json_files)} {pedd_type}")
 
             return objects
 
