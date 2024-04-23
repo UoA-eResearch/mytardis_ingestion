@@ -1,6 +1,5 @@
 # pylint: disable=duplicate-code
 """Module for the cleaning command."""
-
 import logging
 import sys
 from datetime import datetime

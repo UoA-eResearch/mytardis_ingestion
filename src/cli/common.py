@@ -5,13 +5,12 @@ import sys
 from pathlib import Path
 from typing import Annotated, Optional, TypeAlias
 
+import typer
 from pydantic import ValidationError
 
 from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
 
 logger = logging.getLogger(__name__)
-
-import typer
 
 SourceDataPathArg: TypeAlias = Annotated[
     Path,
