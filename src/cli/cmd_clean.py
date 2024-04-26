@@ -4,7 +4,7 @@ import logging
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional
 
 import typer
 
@@ -27,48 +27,82 @@ from src.utils.timing import Timer
 logger = logging.getLogger(__name__)
 
 
-def _check_verified_status(config: ConfigFromEnv, datafiles: list[RawDatafile]) -> None:
+def get_verified_replica(queried_df: dict[str, Any]) -> Optional[dict[str, Any]]:
+    """Given query result for a
+
+    Args:
+        raw_df (RawDatafile): The raw datafile to check.
+
+    Returns:
+        Optional[dict[str, Any]]: Returns a replica is verified, False if not.
+    """
+    if not queried_df["replicas"]:
+        return
+    replicas: list[dict[str, Any]] = queried_df["replicas"]
+    # Iterate through all replicas. If one replica is verified, then
+    # return it.
+    for replica in replicas:
+        if replica["verified"]:
+            return replica
+    return
+
+
+def is_completed_df(
+    df: RawDatafile,
+    query_result: Optional[list[dict[str, Any]]],
+    min_file_age: Optional[int],
+) -> bool:
+    pth = df.directory / df.filename
+    if query_result is None or len(query_result) == 0:
+        return False
+    if len(query_result) > 1:
+        logger.warning(
+            "More than one datafile in MyTardis matched file, using the first match: %s",
+            df.directory / df.filename,
+        )
+    replica = get_verified_replica(query_result[0])
+    if replica is None:
+        # No verified replica yet created.
+        return False
+    if min_file_age:
+        # Check file age for the replica.
+        vtime = datetime.fromisoformat(replica["last_verified_time"])
+        days_from_vtime = (datetime.now() - vtime).days
+        logger.info("%s was last verified %i days ago.", pth, days_from_vtime)
+        if days_from_vtime < min_file_age:
+            # If file is not old enough, consider the datafile not complete.
+            return False
+    # This datafile has completed ingestion. Add to list.
+    return True
+
+
+def filter_completed_dfs(
+    config: ConfigFromEnv, datafiles: list[RawDatafile], min_file_age: Optional[int]
+) -> list[dict[str, Any]]:
     logger.info("Retrieving status...")
     # Check ingestion status for each file.
     timer = Timer(start=True)
     insepctor = Inspector(config)
-    results = [insepctor.is_datafile_verified(raw_df) for raw_df in datafiles]
+    results = [insepctor.query_datafile(raw_df) for raw_df in datafiles]
+    unverified_dfs = []
+    verified_dfs = []
+    for ind, query_result in enumerate(results):
+        df = datafiles[ind]
+        if is_completed_df(df, query_result, min_file_age):
+            verified_dfs.append(df)
+        else:
+            unverified_dfs.append(df)
     logger.info("Retrieved datafile status in %f seconds.", timer.stop())
-    # Get unverified files by the index of the verification results list.
-    unverified_dfs = [
-        datafiles[ind] for ind, is_verified in enumerate(results) if not is_verified
-    ]
-
     if len(unverified_dfs) > 0:
-        logger.info("Datafiles pending ingestion or verification:")
+        logger.info(
+            "Datafiles pending ingestion, verification or do not meet minimum file age:"
+        )
         for datafile in unverified_dfs:
             logger.info(datafile.directory / datafile.filename)
-        logger.error(
-            "Could not proceed with deleting this data root. Ingestion is not complete."
-        )
-        sys.exit(1)
+        return verified_dfs
     else:
         logger.info("Ingestion for this data root is complete.")
-
-
-def _check_file_age(df_paths: list[Path], min_file_age: int) -> None:
-    logger.info("Checking file age...")
-    newest_ctime = max_ctime(df_paths)
-    days_since_ctime = (datetime.now() - datetime.fromtimestamp(newest_ctime)).days
-    if not days_since_ctime >= min_file_age:
-        logger.error(
-            "Could not proceed with deleting this data root. Files were created %i days ago"
-            + ", but min_file_age is %i days.",
-            days_since_ctime,
-            min_file_age,
-        )
-        sys.exit(1)
-    else:
-        logger.info(
-            "File age is %i days, which meets min_file_age of %i days.",
-            days_since_ctime,
-            min_file_age,
-        )
+        return verified_dfs
 
 
 def _delete_datafiles(df_paths: list[Path]) -> None:
@@ -132,10 +166,12 @@ def clean(
 
     config = get_config(storage)
     # Check verification status.
-    _check_verified_status(config, datafiles)
-
-    if min_file_age is not None:
-        _check_file_age(df_paths, min_file_age)
+    verified_dfs = filter_completed_dfs(config, datafiles, min_file_age)
+    if len(verified_dfs) != len(datafiles):
+        logger.error(
+            "Could not proceed with deleting this data root. Ingestion is not complete."
+        )
+        sys.exit(1)
     if ask_first:
         should_delete = typer.confirm(
             "Do you want to delete all datafiles in this data root?"

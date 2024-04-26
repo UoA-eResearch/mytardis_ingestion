@@ -3,7 +3,7 @@
 """
 
 import logging
-from typing import Any
+from typing import Any, Optional
 
 from src.blueprints.datafile import RawDatafile
 from src.config.config import ConfigFromEnv
@@ -32,23 +32,24 @@ class Inspector:
         self._smelter = smelter
         self._crucible = crucible
 
-    def is_datafile_verified(self, raw_df: RawDatafile) -> bool:
-        """Queries MyTardis for the verification status of the given raw datafile.
+    def query_datafile(self, raw_df: RawDatafile) -> Optional[list[dict[str, Any]]]:
+        """Partially ingests raw datafile and queries MyTardis for matching instances.
 
         Args:
-            raw_df (RawDatafile): The raw datafile to check.
+            raw_df (RawDatafile): The raw datafile to query.
 
         Returns:
-            bool: True if the datafile is verified, False if not.
+            Optional[list[dict[str, Any]]]: A list of matching datafiles, or None if the raw
+            datafile is unable to be smelted or prepared.
         """
         smelted_df = self._smelter.smelt_datafile(raw_df)
         if not smelted_df:
-            return False
+            return None
         df = self._crucible.prepare_datafile(smelted_df)
         if not df:
-            return False
+            return None
         # Look up the datafile in MyTardis to check if it's ingested.
-        matching_df = self._overseer.get_objects_by_fields(
+        return self._overseer.get_objects_by_fields(
             ObjectSearchEnum.DATAFILE.value,
             {
                 "filename": df.filename,
@@ -56,14 +57,3 @@ class Inspector:
                 "dataset": str(Overseer.resource_uri_to_id(df.dataset)),
             },
         )
-        if len(matching_df) == 0:
-            return False
-        if not matching_df[0]["replicas"]:
-            return False
-        replicas: list[dict[str, Any]] = matching_df[0]["replicas"]
-        # Iterate through all replicas. If one replica is verified, then
-        # return True.
-        for replica in replicas:
-            if replica["verified"]:
-                return True
-        return False
