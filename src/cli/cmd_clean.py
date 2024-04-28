@@ -4,7 +4,7 @@ import logging
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any, Optional, TypedDict
 
 import typer
 
@@ -21,23 +21,13 @@ from src.config.config import ConfigFromEnv
 from src.inspector.inspector import Inspector
 from src.profiles.profile_register import load_profile
 from src.utils import log_utils
-from src.utils.filesystem.ctime import max_ctime
 from src.utils.timing import Timer
 
 logger = logging.getLogger(__name__)
 
 
-def get_verified_replica(queried_df: dict[str, Any]) -> Optional[dict[str, Any]]:
-    """Given query result for a
-
-    Args:
-        raw_df (RawDatafile): The raw datafile to check.
-
-    Returns:
-        Optional[dict[str, Any]]: Returns a replica is verified, False if not.
-    """
-    if not queried_df["replicas"]:
-        return
+def _get_verified_replica(queried_df: dict[str, Any]) -> Optional[dict[str, Any]]:
+    """Returns the first Replica that is verified, or None if there isn't any."""
     replicas: list[dict[str, Any]] = queried_df["replicas"]
     # Iterate through all replicas. If one replica is verified, then
     # return it.
@@ -47,11 +37,12 @@ def get_verified_replica(queried_df: dict[str, Any]) -> Optional[dict[str, Any]]
     return
 
 
-def is_completed_df(
+def _is_completed_df(
     df: RawDatafile,
     query_result: Optional[list[dict[str, Any]]],
     min_file_age: Optional[int],
 ) -> bool:
+    """Checks if a datafile has been ingested, verified, and its age is higher than the minimum age."""
     pth = df.directory / df.filename
     if query_result is None or len(query_result) == 0:
         return False
@@ -60,7 +51,7 @@ def is_completed_df(
             "More than one datafile in MyTardis matched file, using the first match: %s",
             df.directory / df.filename,
         )
-    replica = get_verified_replica(query_result[0])
+    replica = _get_verified_replica(query_result[0])
     if replica is None:
         # No verified replica yet created.
         return False
@@ -76,24 +67,28 @@ def is_completed_df(
     return True
 
 
-def filter_completed_dfs(
+def _filter_completed_dfs(
     config: ConfigFromEnv, datafiles: list[RawDatafile], min_file_age: Optional[int]
 ) -> list[dict[str, Any]]:
+    """Inspects through a list of datafiles, return datafiles which have completed ingestion."""
     logger.info("Retrieving status...")
     # Check ingestion status for each file.
     timer = Timer(start=True)
+    # Query the API about the datafiles.
     insepctor = Inspector(config)
     results = [insepctor.query_datafile(raw_df) for raw_df in datafiles]
     unverified_dfs = []
     verified_dfs = []
     for ind, query_result in enumerate(results):
+        # Checks whether the datafile has completed ingestion, and group into two lists.
         df = datafiles[ind]
-        if is_completed_df(df, query_result, min_file_age):
+        if _is_completed_df(df, query_result, min_file_age):
             verified_dfs.append(df)
         else:
             unverified_dfs.append(df)
     logger.info("Retrieved datafile status in %f seconds.", timer.stop())
     if len(unverified_dfs) > 0:
+        # If there were unverified datafiles, print them out.
         logger.info(
             "Datafiles pending ingestion, verification or do not meet minimum file age:"
         )
@@ -106,6 +101,7 @@ def filter_completed_dfs(
 
 
 def _delete_datafiles(df_paths: list[Path]) -> None:
+    """Delete a list of files."""
     logger.info("Deleting datafiles.")
     for pth in df_paths:
         if pth.exists() and pth.is_file():
@@ -166,7 +162,7 @@ def clean(
 
     config = get_config(storage)
     # Check verification status.
-    verified_dfs = filter_completed_dfs(config, datafiles, min_file_age)
+    verified_dfs = _filter_completed_dfs(config, datafiles, min_file_age)
     if len(verified_dfs) != len(datafiles):
         logger.error(
             "Could not proceed with deleting this data root. Ingestion is not complete."
