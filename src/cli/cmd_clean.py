@@ -145,7 +145,7 @@ def clean(
     log_file: LogFileOption = Path("clean.log"),
 ) -> None:
     """Delete datafiles in source data source after ingestion is complete."""
-    log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
+    log_utils.init_logging(file_name=str(log_file))
 
     logger.info("Extracting list of datafiles using %s profile", profile_name)
     profile = load_profile(profile_name, profile_version)
