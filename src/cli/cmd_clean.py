@@ -70,7 +70,7 @@ def _is_completed_df(
 
 def _filter_completed_dfs(
     config: ConfigFromEnv, datafiles: list[RawDatafile], min_file_age: Optional[int]
-) -> list[dict[str, Any]]:
+) -> list[RawDatafile]:
     """Inspects through a list of datafiles, return datafiles which have completed ingestion."""
     logger.info("Retrieving status...")
     # Check ingestion status for each file.
