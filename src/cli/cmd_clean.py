@@ -151,9 +151,9 @@ def clean(
     profile = load_profile(profile_name, profile_version)
     manifest = profile.get_extractor().extract(source_data_path)
     # Print out all files
-    datafiles = manifest.get_datafiles()
     df_paths = [
-        manifest.get_data_root() / df.directory / df.filename for df in datafiles
+        manifest.get_data_root() / df.directory / df.filename
+        for df in manifest.get_datafiles()
     ]
     logger.info("The following datafiles are found in this data source.")
     for file in df_paths:
@@ -161,8 +161,11 @@ def clean(
 
     config = get_config(storage)
     # Check verification status.
-    verified_dfs = _filter_completed_dfs(config, datafiles, min_file_age)
-    if len(verified_dfs) != len(datafiles):
+    verified_dfs = _filter_completed_dfs(config, manifest.get_datafiles(), min_file_age)
+    verified_df_paths = [
+        manifest.get_data_root() / df.directory / df.filename for df in verified_dfs
+    ]
+    if len(verified_dfs) != len(manifest.get_datafiles()):
         logger.error(
             "Could not proceed with deleting this data source. Ingestion is not complete."
         )
@@ -174,7 +177,7 @@ def clean(
         if not should_delete:
             sys.exit()
     # Delete all datafiles.
-    _delete_datafiles(df_paths)
+    _delete_datafiles(verified_df_paths)
     # Call profile-specific cleanup code.
     logger.info("Running profile-specific cleanup code.")
     profile.cleanup(source_data_path)
