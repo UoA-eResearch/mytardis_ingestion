@@ -4,7 +4,7 @@ import logging
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Any, Optional, TypedDict
+from typing import Annotated, Any, Optional
 
 import typer
 
@@ -34,7 +34,7 @@ def _get_verified_replica(queried_df: dict[str, Any]) -> Optional[dict[str, Any]
     for replica in replicas:
         if replica["verified"]:
             return replica
-    return
+    return None
 
 
 def _is_completed_df(
@@ -42,7 +42,8 @@ def _is_completed_df(
     query_result: Optional[list[dict[str, Any]]],
     min_file_age: Optional[int],
 ) -> bool:
-    """Checks if a datafile has been ingested, verified, and its age is higher than the minimum age."""
+    """Checks if a datafile has been ingested, verified, and its age is higher
+    than the minimum age."""
     pth = df.directory / df.filename
     if query_result is None or len(query_result) == 0:
         return False
@@ -95,9 +96,8 @@ def _filter_completed_dfs(
         for datafile in unverified_dfs:
             logger.info(datafile.directory / datafile.filename)
         return verified_dfs
-    else:
-        logger.info("Ingestion for this data root is complete.")
-        return verified_dfs
+    logger.info("Ingestion for this data source is complete.")
+    return verified_dfs
 
 
 def _delete_datafiles(df_paths: list[Path]) -> None:
@@ -129,7 +129,7 @@ def clean(
         typer.Option(
             help=(
                 "Ask whether the datafiles should be deleted, before attempting"
-                " to delete the whole data root. Defaults to yes."
+                " to delete the whole data source. Defaults to yes."
             ),
         ),
     ] = True,
@@ -144,19 +144,18 @@ def clean(
     ] = None,
     log_file: LogFileOption = Path("clean.log"),
 ) -> None:
-    """Delete datafiles in source data root after ingestion is complete."""
+    """Delete datafiles in source data source after ingestion is complete."""
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
 
     logger.info("Extracting list of datafiles using %s profile", profile_name)
     profile = load_profile(profile_name, profile_version)
-    extractor = profile.get_extractor()
-    manifest = extractor.extract(source_data_path)
+    manifest = profile.get_extractor().extract(source_data_path)
     # Print out all files
     datafiles = manifest.get_datafiles()
     df_paths = [
         manifest.get_data_root() / df.directory / df.filename for df in datafiles
     ]
-    logger.info("The following datafiles are found in this data root.")
+    logger.info("The following datafiles are found in this data source.")
     for file in df_paths:
         logger.info(file)
 
@@ -165,12 +164,12 @@ def clean(
     verified_dfs = _filter_completed_dfs(config, datafiles, min_file_age)
     if len(verified_dfs) != len(datafiles):
         logger.error(
-            "Could not proceed with deleting this data root. Ingestion is not complete."
+            "Could not proceed with deleting this data source. Ingestion is not complete."
         )
         sys.exit(1)
     if ask_first:
         should_delete = typer.confirm(
-            "Do you want to delete all datafiles in this data root?"
+            "Do you want to delete all datafiles in this data source?"
         )
         if not should_delete:
             sys.exit()

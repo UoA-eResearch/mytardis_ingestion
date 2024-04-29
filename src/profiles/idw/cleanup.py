@@ -17,7 +17,10 @@ def idw_cleanup(source_data_path: Path) -> None:
     logger.info("Removing ingestion file %s", source_data_path)
     if not source_data_path.exists() or not source_data_path.is_file():
         logger.warning(
-            "Specified path is not a file, or ingestion file does not exist in this data root: %s",
+            (
+                "Specified path is not a file, or ingestion file does not"
+                " exist in this data source: %s"
+            ),
             source_data_path,
         )
         return
