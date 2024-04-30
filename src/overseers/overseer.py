@@ -10,9 +10,8 @@ from pydantic import ValidationError
 from requests.exceptions import HTTPError
 
 from src.blueprints.custom_data_types import URI
-from src.blueprints.storage_boxes import StorageBox
 from src.config.config import IntrospectionConfig
-from src.mytardis_client.enumerators import ObjectSearchDict, ObjectSearchEnum
+from src.mytardis_client.enumerators import ObjectSearchDict
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.utils.types.singleton import Singleton
 
@@ -258,88 +257,6 @@ class Overseer(metaclass=Singleton):
             return_list.append(uri)
         return return_list
 
-    def get_storage_box(  # pylint: disable=too-many-return-statements
-        self,
-        storage_box_name: str,
-    ) -> StorageBox | None:
-        """Helper function to get a storage box from MyTardis and to verify that there
-        is a location associated with it.
-
-        Args:
-            storage_box_name: The human readable name that defines the storage box
-
-        Returns:
-            A StorageBox dataclass if the name is found in MyTardis and the storage
-                box is completely defined, or None if this is not the case.
-        """
-
-        storage_box_list = self.get_objects(
-            ObjectSearchEnum.STORAGE_BOX.value, storage_box_name
-        )
-        if storage_box_list and len(storage_box_list) > 1:
-            logger.warning(
-                "Unable to uniquely identify the storage box based on the "
-                f"name provided ({storage_box_name}). Please check with your "
-                "system administrator to identify the source of the issue."
-            )
-            return None
-        if not storage_box_list:
-            logger.warning(f"Unable to locate storage box called {storage_box_name}")
-            return None
-        storage_box = storage_box_list[0]  # Unpack from the list
-        location = None
-        for option in storage_box["options"]:
-            try:
-                key = option["key"]
-            except KeyError:
-                continue
-            if key == "location":
-                try:
-                    location = option["value"]
-                except KeyError:
-                    logger.warning(
-                        f"Storage box, {storage_box_name} is misconfigured. Missing location"
-                    )
-                    return None
-        if location:
-            try:
-                name = storage_box["name"]
-                uri = URI(storage_box["resource_uri"])
-            except KeyError:
-                logger.warning(
-                    f"Storage box, {storage_box_name} is misconfigured. Storage box "
-                    f"gathered from MyTardis: {storage_box}"
-                )
-                return None
-            try:
-                description = storage_box["description"]
-            except KeyError:
-                logger.warning(
-                    f"No description given for Storage Box, {storage_box_name}"
-                )
-                description = "No description"
-            try:
-                ret_storage_box = StorageBox(
-                    name=name,
-                    description=description,
-                    uri=uri,
-                    location=location,
-                )
-            except ValidationError:
-                logger.warning(
-                    (
-                        f"Poorly defined Storage Box, {storage_box_name}. Please "
-                        "check configuration in MyTardis"
-                    ),
-                    exc_info=True,
-                )
-                return None
-            return ret_storage_box
-        logger.warning(
-            f"Storage box, {storage_box_name} is misconfigured. Missing location"
-        )
-        return None
-
     def get_mytardis_setup(self) -> IntrospectionConfig:
         """Query introspection API
 
@@ -386,47 +303,3 @@ class Overseer(metaclass=Singleton):
         )
         self._mytardis_setup = mytardis_setup
         return mytardis_setup
-
-
-# Future functionality
-'''    def validate_schema(self, schema: str, object_type: str) -> Union[bool, str]:
-        """Validates that a schema with the name 'schema' exists and that it
-        is the right type for the object passed.
-
-        This function calls the schema model in MyTardis by the full
-        name (a URL defined when the schema is defined). If the schema is found
-        then it's type is compared against the object_type requesting the
-        schema and if it passes, the URI to the schema is returned, else False is returned
-
-        Args:
-            schema: The string representing the URL of the schema
-            object_type: the string representing the MyTardis Object that the
-                schema is going to be applied to.
-
-        Returns:
-            Either the URI of the schema as string or False
-
-        Raises:
-            Exceptions from the API call for logging and further exception handling
-        """
-        try:
-            object_type_int = SCHEMA_TYPES[object_type] # Should be an Enum
-        except KeyError:
-            logger.warning(f"Schema for {object_type} are not defined in MyTardis")
-            return False
-        except Exception as error:
-            raise error
-        try:
-            objects = self.get_objects("schema", "namespace", schema)
-        except Exception as error:
-            raise error
-        if objects and len(objects) == 1:
-            schema_type = int(objects[0]["schema_type"])
-            if schema_type == object_type_int:
-                try:
-                    return objects[0]["resource_uri"]
-                except KeyError:
-                    return False
-                except Exception as error:
-                    raise error
-        return False'''
