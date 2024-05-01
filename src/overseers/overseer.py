@@ -10,9 +10,16 @@ from pydantic import ValidationError
 from requests.exceptions import HTTPError
 
 from src.blueprints.custom_data_types import URI
+
+# from src.blueprints.project import Project
 from src.config.config import IntrospectionConfig
-from src.mytardis_client.enumerators import ObjectSearchDict
+from src.mytardis_client.enumerators import (
+    MyTardisObjectType,
+    ObjectSearchDict,
+    get_endpoint,
+)
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
+from src.overseers.object_matchers import create_matchers
 from src.utils.types.singleton import Singleton
 
 logger = logging.getLogger(__name__)
@@ -23,6 +30,22 @@ MYTARDIS_PROJECTS_DISABLED_MESSAGE = (
     "and ensure that the 'projects' app is enabled. This may require rerunning "
     "migrations."
 )
+
+
+def resource_uri_to_id(uri: URI) -> int:
+    """Gets the id from a resource URI
+
+    Takes resource URI like: http://example.org/api/v1/experiment/998
+    and returns just the id value (998).
+
+    Args:
+        uri: str - the URI from MyTardis
+
+    Returns:
+        The integer id that maps to the URI
+    """
+    uri_sep: str = "/"
+    return int(urlparse(uri).path.rstrip(uri_sep).split(uri_sep).pop())
 
 
 class Overseer(metaclass=Singleton):
@@ -79,8 +102,7 @@ class Overseer(metaclass=Singleton):
         Returns:
             The integer id that maps to the URI
         """
-        uri_sep: str = "/"
-        return int(urlparse(uri).path.rstrip(uri_sep).split(uri_sep).pop())
+        return resource_uri_to_id(uri)
 
     def _get_object_from_mytardis(
         self,
@@ -209,6 +231,59 @@ class Overseer(metaclass=Singleton):
         if objects is None:
             return []
         return objects
+
+    def _get_matches_from_mytardis(
+        self,
+        object_type: MyTardisObjectType,
+        query_params: Dict[str, str],
+    ) -> Any | None:
+        endpoint = get_endpoint(object_type)
+        url = urljoin(self.rest_factory.api_template, endpoint.url_suffix)
+        try:
+            response = self.rest_factory.mytardis_api_request(
+                "GET", url, params=query_params
+            )
+        except HTTPError:
+            logger.warning(
+                (
+                    "Failed HTTP request from Overseer.get_objects call\n"
+                    f"object_type = {object_type}\n"
+                    f"query_params = {query_params}"
+                ),
+                exc_info=True,
+            )
+            return None
+        except Exception as error:
+            logger.error(
+                (
+                    "Non-HTTP exception in Overseer.get_objects call\n"
+                    f"object_type = {object_type}\n"
+                    f"search_target = {query_params}"
+                ),
+                exc_info=True,
+            )
+            raise error
+        return response.json()
+
+    def get_matching_objects(
+        self,
+        object_type: MyTardisObjectType,
+        field_values: dict[str, str],
+    ) -> list[dict[str, Any]]:
+        """Retrieve objects from MyTardis with field values matching the ones in "field_values"."""
+
+        objects_with_ids = list(
+            map(MyTardisObjectType, self.mytardis_setup.objects_with_ids or [])
+        )
+
+        matchers = create_matchers(object_type, field_values, objects_with_ids)
+
+        for match_key in matchers:
+            response_dict = self._get_matches_from_mytardis(object_type, match_key)
+            if response_dict and "objects" in response_dict.keys():
+                return list(response_dict["objects"])
+
+        return []
 
     def get_uris(
         self,

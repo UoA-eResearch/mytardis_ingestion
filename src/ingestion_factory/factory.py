@@ -15,7 +15,7 @@ from src.conveyor.conveyor import Conveyor, FailedTransferException
 from src.crucible.crucible import Crucible
 from src.extraction.manifest import IngestionManifest
 from src.forges.forge import Forge
-from src.mytardis_client.enumerators import ObjectSearchEnum
+from src.mytardis_client.enumerators import MyTardisObjectType, ObjectSearchEnum
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
@@ -110,8 +110,8 @@ class IngestionFactory:
                 result.error.append(refined_project.display_name)
                 continue
 
-            matching_projects = self._overseer.get_objects(
-                ObjectSearchEnum.PROJECT.value, project.name
+            matching_projects = self._overseer.get_matching_objects(
+                MyTardisObjectType.PROJECT, project.model_dump()
             )
             if len(matching_projects) > 0:
                 project_uri = matching_projects[0]["resource_uri"]
@@ -150,8 +150,8 @@ class IngestionFactory:
                 result.error.append(refined_experiment.display_name)
                 continue
 
-            matching_experiments = self._overseer.get_objects(
-                ObjectSearchEnum.EXPERIMENT.value, experiment.title
+            matching_experiments = self._overseer.get_matching_objects(
+                MyTardisObjectType.EXPERIMENT, experiment.model_dump()
             )
             if len(matching_experiments) > 0:
                 experiment_uri = matching_experiments[0]["resource_uri"]
@@ -189,8 +189,8 @@ class IngestionFactory:
                 result.error.append(refined_dataset.display_name)
                 continue
 
-            matching_datasets = self._overseer.get_objects(
-                ObjectSearchEnum.DATASET.value, dataset.description
+            matching_datasets = self._overseer.get_matching_objects(
+                MyTardisObjectType.DATASET, dataset.model_dump()
             )
             if len(matching_datasets) > 0:
                 dataset_uri = matching_datasets[0]["resource_uri"]
@@ -237,6 +237,9 @@ class IngestionFactory:
                     "directory": datafile.directory.as_posix(),
                     "dataset": str(Overseer.resource_uri_to_id(datafile.dataset)),
                 },
+            )
+            matching_datafiles = self._overseer.get_matching_objects(
+                MyTardisObjectType.DATAFILE, datafile.model_dump()
             )
             if len(matching_datafiles) > 0:
                 logging.info(
