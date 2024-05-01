@@ -1,9 +1,4 @@
-# Provide generic version where we check if the object supports IDs, and if so, provide a match_key using identifiers, otherwise use the match keys
-
-# Specialise it (using singledispatch?) for the objects where transformations on fields are needed
-
-
-# Each thing should provide a generator of match_keys, which first uses the identifiers if available, then tries the match keys
+"""Definitions of attributes used to match different MyTardis object types."""
 
 from typing import Any
 
