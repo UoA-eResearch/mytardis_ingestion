@@ -11,7 +11,7 @@ from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
 from src.mytardis_client.enumerators import MyTardisObjectType
-from src.overseers import Overseer
+from src.overseers.overseer import Overseer
 
 logger = logging.getLogger(__name__)
 

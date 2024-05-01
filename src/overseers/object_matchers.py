@@ -3,7 +3,7 @@
 from typing import Any
 
 from src.mytardis_client.enumerators import MyTardisObjectType
-from src.overseers import resource_uri_to_id
+from src.overseers.helpers import resource_uri_to_id
 
 MatchKeys = dict[str, Any]
 

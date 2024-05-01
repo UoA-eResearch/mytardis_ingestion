@@ -4,7 +4,7 @@ for the Forge class."""
 
 import logging
 from typing import Any, Dict, List, Optional
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 from pydantic import ValidationError
 from requests.exceptions import HTTPError
@@ -31,22 +31,6 @@ MYTARDIS_PROJECTS_DISABLED_MESSAGE = (
     "and ensure that the 'projects' app is enabled. This may require rerunning "
     "migrations."
 )
-
-
-def resource_uri_to_id(uri: URI) -> int:
-    """Gets the id from a resource URI
-
-    Takes resource URI like: http://example.org/api/v1/experiment/998
-    and returns just the id value (998).
-
-    Args:
-        uri: str - the URI from MyTardis
-
-    Returns:
-        The integer id that maps to the URI
-    """
-    uri_sep: str = "/"
-    return int(urlparse(uri).path.rstrip(uri_sep).split(uri_sep).pop())
 
 
 class Overseer(metaclass=Singleton):
@@ -89,21 +73,6 @@ class Overseer(metaclass=Singleton):
     def mytardis_setup(self) -> IntrospectionConfig:
         """Getter for mytardis_setup. Sends API request if self._mytardis_setup is None"""
         return self._mytardis_setup or self.get_mytardis_setup()
-
-    @staticmethod
-    def resource_uri_to_id(uri: URI) -> int:
-        """Gets the id from a resource URI
-
-        Takes resource URI like: http://example.org/api/v1/experiment/998
-        and returns just the id value (998).
-
-        Args:
-            uri: str - the URI from MyTardis
-
-        Returns:
-            The integer id that maps to the URI
-        """
-        return resource_uri_to_id(uri)
 
     def _get_matches_from_mytardis(
         self,
@@ -234,6 +203,7 @@ class Overseer(metaclass=Singleton):
             raise ValueError(
                 "MyTardis instance does not support identifier search for any object types"
             )
+        # pylint: disable=unsupported-membership-test
         if MyTardisObject(object_type) not in self.mytardis_setup.objects_with_ids:
             raise ValueError(
                 f"Object type {object_type} does not support identifier search"
