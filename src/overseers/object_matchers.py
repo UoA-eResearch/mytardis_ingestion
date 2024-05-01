@@ -74,11 +74,11 @@ def extract_match_keys(
 
     if object_type == MyTardisObjectType.PROJECT:
         return project_match_key(object_data)
-    elif object_type == MyTardisObjectType.EXPERIMENT:
+    if object_type == MyTardisObjectType.EXPERIMENT:
         return experiment_match_key(object_data)
-    elif object_type == MyTardisObjectType.DATASET:
+    if object_type == MyTardisObjectType.DATASET:
         return dataset_match_key(object_data)
-    elif object_type == MyTardisObjectType.DATAFILE:
+    if object_type == MyTardisObjectType.DATAFILE:
         return datafile_match_key(object_data)
-    else:
-        return name_match_key(object_data)
+
+    return name_match_key(object_data)
