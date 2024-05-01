@@ -19,7 +19,7 @@ from src.mytardis_client.enumerators import (
     get_endpoint,
 )
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
-from src.overseers.object_matchers import create_matchers
+from src.overseers.object_matchers import extract_match_keys, identifier_match_keys
 from src.utils.types.singleton import Singleton
 
 logger = logging.getLogger(__name__)
@@ -225,49 +225,58 @@ class Overseer(metaclass=Singleton):
                 new_list.append(obj)
         return new_list
 
-    def get_objects_by_fields(
-        self,
-        object_type: ObjectSearchDict,
-        field_values: dict[str, str],
-    ) -> list[dict[str, Any]]:
-        """Retrieve objects from MyTardis with field values matching the ones in "field_values"."""
-        mt_object_type = MyTardisObjectType(object_type["type"])
-
-        response = self._get_matches_from_mytardis(mt_object_type, field_values)
-        if response is None:
-            raise HTTPError("MyTardis object query yielded no response")
-
-        objects: list[dict[str, Any]] | None = response.get("objects")
-        if objects is None:
-            return []
-
-        return objects
-
     def get_matching_objects(
         self,
         object_type: MyTardisObjectType,
-        field_values: dict[str, str],
+        object_data: dict[str, str],
     ) -> list[dict[str, Any]]:
-        """Retrieve objects from MyTardis with field values matching the ones in "field_values"."""
+        """Retrieve objects from MyTardis with field values matching the ones in "field_values"
 
+        The function extracts the type-dependent match keys from 'object_data' and uses them to
+        query MyTardis for objects whose attributes match the match keys.
+        """
+
+        def get_by_keys(keys: dict[str, Any]) -> list[dict[str, Any]]:
+            response = self._get_matches_from_mytardis(object_type, keys)
+            if response is None:
+                raise HTTPError("MyTardis object query yielded no response")
+
+            if objects := response.get("objects"):
+                return list(objects)
+
+            return []
+
+        # Temporary conversion until we can unify MyTardisObjectType and MyTardisObject
         objects_with_ids = list(
             map(MyTardisObjectType, self.mytardis_setup.objects_with_ids or [])
         )
 
-        matchers = create_matchers(object_type, field_values, objects_with_ids)
+        if object_type in objects_with_ids:
+            for match_keys in identifier_match_keys(object_data):
+                if objects := get_by_keys(match_keys):
+                    return list(objects)
 
-        for match_key in matchers:
-            response_dict = self._get_matches_from_mytardis(object_type, match_key)
-            if response_dict and "objects" in response_dict.keys():
-                return list(response_dict["objects"])
+        if objects := get_by_keys(extract_match_keys(object_type, object_data)):
+            return list(objects)
 
         return []
+
+    def get_objects_by_name(
+        self, object_type: MyTardisObjectType, name: str
+    ) -> list[dict[str, Any]]:
+        """Retrieve objects from MyTardis of the given type whose name matches 'name'.
+
+        NOTE: for some objects, the name field is not guaranteed to be unique. In such cases, this
+        function could return incorrect matches
+        """
+
+        return self.get_matching_objects(object_type, {"name": name})
 
     def get_uris(
         self,
         object_type: ObjectSearchDict,
         search_string: str,
-    ) -> List[URI]:
+    ) -> list[URI]:
         """Calls self.get_objects() to get a list of objects matching search then extracts URIs
 
         This function calls the get_objects function with the parameters passed. It then takes

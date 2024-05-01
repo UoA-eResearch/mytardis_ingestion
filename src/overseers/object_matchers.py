@@ -1,87 +1,89 @@
-# Provide generic version where we check if the object supports IDs, and if so, provide a matcher using identifiers, otherwise use the match keys
+# Provide generic version where we check if the object supports IDs, and if so, provide a match_key using identifiers, otherwise use the match keys
 
 # Specialise it (using singledispatch?) for the objects where transformations on fields are needed
 
 
-# Each thing should provide a generator of matchers, which first uses the identifiers if available, then tries the match keys
+# Each thing should provide a generator of match_keys, which first uses the identifiers if available, then tries the match keys
 
-from itertools import chain
-from typing import Any, Callable, Generator, Iterable
+from typing import Any
 
 from src.mytardis_client.enumerators import MyTardisObjectType
 from src.overseers import resource_uri_to_id
 
 DataBundle = dict[str, Any]
-MatchKey = dict[str, Any]
-Matcher = Callable[[DataBundle], MatchKey]
+MatchKeys = dict[str, Any]
 
 
-def identifier_matcher(object_data: dict[str, Any]) -> Generator[MatchKey, None, None]:
-    """Create a matcher that uses the identifiers field to match objects"""
+def identifier_match_keys(object_data: dict[str, Any]) -> list[MatchKeys]:
+    """Create match keys for objects which support identifiers.
+
+    As a fallback, it looks for a name field to use as an identifier.
+    """
     if identifiers := object_data.get("identifiers"):
-        for identifier in identifiers:
-            yield {"identifier": identifier}
-    else:
-        yield from ()
+        return [{"identifier": identifier} for identifier in identifiers]
+    if name := object_data.get("name"):
+        return [{"identifier": name}]
+
+    raise ValueError("No identifiers or name found in object data")
 
 
-def project_matcher(object_data: dict[str, Any]) -> Generator[MatchKey, None, None]:
-    """Matcher which defines the project-specific match keys"""
-
-    yield {
+def name_match_key(object_data: dict[str, Any]) -> MatchKeys:
+    """Create a match_key that uses the name field to match objects"""
+    return {
         "name": object_data["name"],
     }
 
 
-def experiment_matcher(object_data: dict[str, Any]) -> Generator[MatchKey, None, None]:
+def project_match_key(object_data: dict[str, Any]) -> MatchKeys:
+    """Matcher which defines the project-specific match keys"""
+
+    return {
+        "name": object_data["name"],
+    }
+
+
+def experiment_match_key(object_data: dict[str, Any]) -> MatchKeys:
     """Matcher which defines the experiment-specific match keys"""
 
-    yield {
+    return {
         "title": object_data["title"],
     }
 
 
-def dataset_matcher(object_data: dict[str, Any]) -> Generator[MatchKey, None, None]:
+def dataset_match_key(object_data: dict[str, Any]) -> MatchKeys:
     """Matcher which defines the dataset-specific match keys"""
 
-    yield {
+    return {
         "description": object_data["description"],
     }
 
 
-def datafile_matcher(object_data: dict[str, Any]) -> Generator[MatchKey, None, None]:
+def datafile_match_key(object_data: dict[str, Any]) -> MatchKeys:
     """Matcher which defines the datafile-specific match keys"""
 
-    yield {
+    return {
         "filename": object_data["filename"],
         "directory": object_data["directory"].as_posix(),
         "dataset": str(resource_uri_to_id(object_data["dataset"])),
     }
 
 
-def create_matchers(
+def extract_match_keys(
     object_type: MyTardisObjectType,
     object_data: DataBundle,
-    objects_with_ids: list[MyTardisObjectType],
-) -> Iterable[MatchKey]:
-    """Create matchers for the given object type and data
+) -> MatchKeys:
+    """Extract a match key for the given object type and data.
 
-    The collection starts with a matcher for each identifier, if the
-    object type supports identifiers, and the data includes identifiers.
-    The last matcher uses fields specific to the object type."""
-
-    matchers: list[Generator[MatchKey, None, None]] = []
-
-    if object_type in objects_with_ids:
-        matchers.append(identifier_matcher(object_data))
+    The match key is a composite of one or more fields that are used to
+    match against existing objects in MyTardis."""
 
     if object_type == MyTardisObjectType.PROJECT:
-        matchers.append(project_matcher(object_data))
+        return project_match_key(object_data)
     elif object_type == MyTardisObjectType.EXPERIMENT:
-        matchers.append(experiment_matcher(object_data))
+        return experiment_match_key(object_data)
     elif object_type == MyTardisObjectType.DATASET:
-        matchers.append(dataset_matcher(object_data))
+        return dataset_match_key(object_data)
     elif object_type == MyTardisObjectType.DATAFILE:
-        matchers.append(datafile_matcher(object_data))
-
-    return chain.from_iterable(matchers)
+        return datafile_match_key(object_data)
+    else:
+        return name_match_key(object_data)
