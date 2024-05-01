@@ -5,7 +5,6 @@ from typing import Any
 from src.mytardis_client.enumerators import MyTardisObjectType
 from src.overseers import resource_uri_to_id
 
-DataBundle = dict[str, Any]
 MatchKeys = dict[str, Any]
 
 
@@ -50,6 +49,7 @@ def dataset_match_key(object_data: dict[str, Any]) -> MatchKeys:
 
     return {
         "description": object_data["description"],
+        "instrument": object_data["instrument"],
     }
 
 
@@ -65,7 +65,7 @@ def datafile_match_key(object_data: dict[str, Any]) -> MatchKeys:
 
 def extract_match_keys(
     object_type: MyTardisObjectType,
-    object_data: DataBundle,
+    object_data: dict[str, Any],
 ) -> MatchKeys:
     """Extract a match key for the given object type and data.
 
