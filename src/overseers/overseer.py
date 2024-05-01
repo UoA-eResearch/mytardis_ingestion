@@ -14,6 +14,7 @@ from src.blueprints.custom_data_types import URI
 # from src.blueprints.project import Project
 from src.config.config import IntrospectionConfig
 from src.mytardis_client.enumerators import (
+    MyTardisObject,
     MyTardisObjectType,
     ObjectSearchDict,
     get_endpoint,
@@ -107,7 +108,7 @@ class Overseer(metaclass=Singleton):
     def _get_matches_from_mytardis(
         self,
         object_type: MyTardisObjectType,
-        query_params: Dict[str, str],
+        query_params: dict[str, str],
     ) -> Any | None:
         endpoint = get_endpoint(object_type)
         url = urljoin(self.rest_factory.api_template, endpoint.url_suffix)
@@ -225,6 +226,25 @@ class Overseer(metaclass=Singleton):
                 new_list.append(obj)
         return new_list
 
+    def get_objects_by_identifier(
+        self, object_type: MyTardisObjectType, identifier: str
+    ) -> list[dict[str, Any]]:
+        """Retrieve objects from MyTardis of the given type with the given identifier"""
+        if self.mytardis_setup.objects_with_ids is None:
+            raise ValueError(
+                "MyTardis instance does not support identifier search for any object types"
+            )
+        if MyTardisObject(object_type) not in self.mytardis_setup.objects_with_ids:
+            raise ValueError(
+                f"Object type {object_type} does not support identifier search"
+            )
+
+        if objects := self._get_matches_from_mytardis(
+            object_type, {"identifier": identifier}
+        ):
+            return list(objects)
+        return []
+
     def get_matching_objects(
         self,
         object_type: MyTardisObjectType,
@@ -236,16 +256,6 @@ class Overseer(metaclass=Singleton):
         query MyTardis for objects whose attributes match the match keys.
         """
 
-        def get_by_keys(keys: dict[str, Any]) -> list[dict[str, Any]]:
-            response = self._get_matches_from_mytardis(object_type, keys)
-            if response is None:
-                raise HTTPError("MyTardis object query yielded no response")
-
-            if objects := response.get("objects"):
-                return list(objects)
-
-            return []
-
         # Temporary conversion until we can unify MyTardisObjectType and MyTardisObject
         objects_with_ids = list(
             map(MyTardisObjectType, self.mytardis_setup.objects_with_ids or [])
@@ -253,10 +263,11 @@ class Overseer(metaclass=Singleton):
 
         if object_type in objects_with_ids:
             for match_keys in identifier_match_keys(object_data):
-                if objects := get_by_keys(match_keys):
+                if objects := self._get_matches_from_mytardis(object_type, match_keys):
                     return list(objects)
 
-        if objects := get_by_keys(extract_match_keys(object_type, object_data)):
+        match_keys_for_type = extract_match_keys(object_type, object_data)
+        if objects := self._get_matches_from_mytardis(object_type, match_keys_for_type):
             return list(objects)
 
         return []
@@ -274,8 +285,8 @@ class Overseer(metaclass=Singleton):
 
     def get_uris(
         self,
-        object_type: ObjectSearchDict,
-        search_string: str,
+        object_type: MyTardisObjectType,
+        match_keys: dict[str, Any],
     ) -> list[URI]:
         """Calls self.get_objects() to get a list of objects matching search then extracts URIs
 
@@ -290,10 +301,12 @@ class Overseer(metaclass=Singleton):
         Returns:
             A list of object URIs from the search request made.
         """
-        return_list: list[URI] = []
-        objects = self.get_objects(object_type, search_string)
+        objects = self._get_matches_from_mytardis(object_type, match_keys)
         if not objects:
             return []
+
+        return_list: list[URI] = []
+
         for obj in objects:
             try:
                 uri = URI(obj["resource_uri"])
@@ -301,7 +314,7 @@ class Overseer(metaclass=Singleton):
                 logger.error(
                     (
                         "Malformed return from MyTardis. No resource_uri found for "
-                        f"{object_type} searching with {search_string}. Object in "
+                        f"{object_type} searching with {match_keys}. Object in "
                         f"question is {obj}."
                     ),
                     exc_info=True,
@@ -318,6 +331,21 @@ class Overseer(metaclass=Singleton):
                 raise error
             return_list.append(uri)
         return return_list
+
+    def get_uris_by_identifier(
+        self, object_type: MyTardisObjectType, identifier: str
+    ) -> list[URI]:
+        """Get URIs for objects of the given type with the given identifier"""
+        if self.mytardis_setup.objects_with_ids is None:
+            raise ValueError(
+                "MyTardis instance does not support identifier search for any object types"
+            )
+        # pylint: disable=unsupported-membership-test
+        if MyTardisObject(object_type) not in self.mytardis_setup.objects_with_ids:
+            raise ValueError(
+                f"Object type {object_type} does not support identifier search"
+            )
+        return self.get_uris(object_type, {"identifier": identifier})
 
     def get_mytardis_setup(self) -> IntrospectionConfig:
         """Query introspection API
