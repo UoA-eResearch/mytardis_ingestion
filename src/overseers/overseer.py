@@ -104,12 +104,13 @@ class Overseer(metaclass=Singleton):
         """
         return resource_uri_to_id(uri)
 
-    def _get_object_from_mytardis(
+    def _get_matches_from_mytardis(
         self,
-        object_type: ObjectSearchDict,
+        object_type: MyTardisObjectType,
         query_params: Dict[str, str],
     ) -> Any | None:
-        url = urljoin(self.rest_factory.api_template, object_type["url_substring"])
+        endpoint = get_endpoint(object_type)
+        url = urljoin(self.rest_factory.api_template, endpoint.url_suffix)
         try:
             response = self.rest_factory.mytardis_api_request(
                 "GET", url, params=query_params
@@ -198,6 +199,8 @@ class Overseer(metaclass=Singleton):
         Raises:
             HTTPError: The GET request failed for some reason
         """
+        mt_object_type = MyTardisObjectType(object_type["type"])
+
         return_list = []
         response_dict = None
         if (  # pylint: disable=unsupported-membership-test
@@ -205,13 +208,17 @@ class Overseer(metaclass=Singleton):
             and object_type["type"] in self.mytardis_setup.objects_with_ids
         ):
             query_params = {"identifier": search_string}
-            response_dict = self._get_object_from_mytardis(object_type, query_params)
+            response_dict = self._get_matches_from_mytardis(
+                mt_object_type, query_params
+            )
             if response_dict and "objects" in response_dict.keys():
                 return_list.extend(iter(response_dict["objects"]))
+
         query_params = {object_type["target"]: search_string}
-        response_dict = self._get_object_from_mytardis(object_type, query_params)
+        response_dict = self._get_matches_from_mytardis(mt_object_type, query_params)
         if response_dict and "objects" in response_dict.keys():
             return_list.extend(iter(response_dict["objects"]))
+
         new_list = []
         for obj in return_list:
             if obj not in new_list:
@@ -224,46 +231,17 @@ class Overseer(metaclass=Singleton):
         field_values: dict[str, str],
     ) -> list[dict[str, Any]]:
         """Retrieve objects from MyTardis with field values matching the ones in "field_values"."""
-        response = self._get_object_from_mytardis(object_type, field_values)
+        mt_object_type = MyTardisObjectType(object_type["type"])
+
+        response = self._get_matches_from_mytardis(mt_object_type, field_values)
         if response is None:
             raise HTTPError("MyTardis object query yielded no response")
+
         objects: list[dict[str, Any]] | None = response.get("objects")
         if objects is None:
             return []
-        return objects
 
-    def _get_matches_from_mytardis(
-        self,
-        object_type: MyTardisObjectType,
-        query_params: Dict[str, str],
-    ) -> Any | None:
-        endpoint = get_endpoint(object_type)
-        url = urljoin(self.rest_factory.api_template, endpoint.url_suffix)
-        try:
-            response = self.rest_factory.mytardis_api_request(
-                "GET", url, params=query_params
-            )
-        except HTTPError:
-            logger.warning(
-                (
-                    "Failed HTTP request from Overseer.get_objects call\n"
-                    f"object_type = {object_type}\n"
-                    f"query_params = {query_params}"
-                ),
-                exc_info=True,
-            )
-            return None
-        except Exception as error:
-            logger.error(
-                (
-                    "Non-HTTP exception in Overseer.get_objects call\n"
-                    f"object_type = {object_type}\n"
-                    f"search_target = {query_params}"
-                ),
-                exc_info=True,
-            )
-            raise error
-        return response.json()
+        return objects
 
     def get_matching_objects(
         self,
