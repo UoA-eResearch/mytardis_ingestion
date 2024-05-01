@@ -16,7 +16,7 @@ from responses import matchers
 
 from src.blueprints.custom_data_types import URI
 from src.config.config import ConnectionConfig, IntrospectionConfig
-from src.mytardis_client.enumerators import ObjectSearchEnum
+from src.mytardis_client.enumerators import MyTardisObjectType, ObjectSearchEnum
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.helpers import resource_uri_to_id
 from src.overseers.overseer import Overseer
@@ -221,8 +221,8 @@ def test_get_uris(
         ],
         status=200,
     )
-    assert overseer.get_uris(
-        object_type,
+    assert overseer.get_uris_by_identifier(
+        MyTardisObjectType.PROJECT,
         search_string,
     ) == [URI("/api/v1/project/1/")]
     Overseer.clear()
@@ -259,8 +259,8 @@ def test_get_uris_no_objects(
         status=200,
     )
     assert (
-        overseer.get_uris(
-            object_type,
+        overseer.get_uris_by_identifier(
+            MyTardisObjectType.PROJECT,
             search_string,
         )
         == []
@@ -308,8 +308,8 @@ def test_get_uris_malformed_return_dict(
         f"{object_type} searching with {search_string}"
     )
     with pytest.raises(KeyError):
-        _ = overseer.get_uris(
-            object_type,
+        _ = overseer.get_uris_by_identifier(
+            MyTardisObjectType.PROJECT,
             search_string,
         )
         assert error_str in caplog.text
@@ -351,8 +351,8 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
         "query_params"
     )
     assert (
-        overseer.get_uris(
-            object_type,
+        overseer.get_uris_by_identifier(
+            MyTardisObjectType.PROJECT,
             search_string,
         )
         == []
@@ -367,10 +367,10 @@ def test_get_uris_general_error(
     overseer: Overseer,
 ) -> None:
     mock_mytardis_api_request.side_effect = IOError()
-    object_type = ObjectSearchEnum.PROJECT.value
+    object_type = MyTardisObjectType.PROJECT
     search_string = "Project_1"
     with pytest.raises(IOError):
-        _ = overseer.get_uris(
+        _ = overseer.get_uris_by_identifier(
             object_type,
             search_string,
         )
