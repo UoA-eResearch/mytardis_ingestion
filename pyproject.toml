@@ -55,7 +55,7 @@ pyproject-pre-commit = "^0.1.4"
 pyfakefs = "^5.3.1"
 
 [tool.poetry.scripts]
-ids = 'src.ingestion:app'
+ids = 'src.ids:app'
 
 [tool.isort]
 profile = "black"

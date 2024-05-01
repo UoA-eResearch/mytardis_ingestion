@@ -4,6 +4,7 @@ different groups and/or instruments.
 """
 
 from abc import ABC, abstractmethod
+from pathlib import Path
 
 from src.extraction.metadata_extractor import IMetadataExtractor
 
@@ -21,3 +22,8 @@ class IProfile(ABC):
     def get_extractor(self) -> IMetadataExtractor:
         """Get the metadata extractor associated with this profile"""
         raise NotImplementedError("No metadata extractor has been implemented")
+
+    def cleanup(self, source_data_path: Path) -> None:
+        """Optional method for performing profile-specific cleanup steps in the
+        source_data_path. This method is called after datafiles are deleted by
+        the clean command."""

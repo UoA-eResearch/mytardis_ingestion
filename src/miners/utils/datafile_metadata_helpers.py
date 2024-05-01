@@ -15,6 +15,9 @@ def calculate_md5sum(
 
     Returns:
         str: The MD5 checksum as a hexadecimal string.
+
+    Raises:
+        FileNotFoundError: if the specified path is not found.
     """
     with open(fp, mode="rb") as f:
         d = hashlib.md5()

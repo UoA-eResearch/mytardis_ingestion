@@ -1,17 +1,19 @@
-"""
-CLI frontend for extracting metadata, and ingesting it with the data into MyTardis.
-"""
+"""Module for commands related to ingestion."""
 
 import logging
-import sys
 from pathlib import Path
-from typing import Optional, TypeAlias
+from typing import Annotated
 
 import typer
-from pydantic import ValidationError
-from typing_extensions import Annotated
 
-from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
+from src.cli.common import (
+    LogFileOption,
+    ProfileNameOption,
+    ProfileVersionOption,
+    SourceDataPathArg,
+    StorageBoxOption,
+    get_config,
+)
 from src.extraction.manifest import IngestionManifest
 from src.ingestion_factory.factory import IngestionFactory
 from src.profiles.profile_register import load_profile
@@ -19,57 +21,9 @@ from src.utils import log_utils
 from src.utils.filesystem.filesystem_nodes import DirectoryNode
 from src.utils.timing import Timer
 
-app = typer.Typer()
 logger = logging.getLogger(__name__)
 
-# =============================================================================
-# SHARED PARAMETER DEFINITIONS
-# =============================================================================
 
-SourceDataPathArg: TypeAlias = Annotated[
-    Path,
-    typer.Argument(
-        help="Path to the source data (either a directory or file)",
-        exists=True,
-        dir_okay=True,
-        file_okay=True,
-    ),
-]
-
-ProfileNameOption: TypeAlias = Annotated[
-    str,
-    typer.Option(
-        "--profile",
-        "-p",
-        help="Name of the ingestion profile to be used to extract the data",
-    ),
-]
-
-ProfileVersionOption = Annotated[
-    Optional[str],
-    typer.Option(
-        help="Version of the profile to be used. If left unspecified, the latest will be used",
-    ),
-]
-
-LogFileOption: TypeAlias = Annotated[
-    Path,
-    typer.Option(help="Path to be used for the log file"),
-]
-
-StorageBoxOption: TypeAlias = Annotated[
-    Optional[tuple[str, Path]],
-    typer.Option(
-        help="Name and filesystem directory of staging StorageBox to transfer datafiles into."
-    ),
-]
-
-# =============================================================================
-# COMMANDS
-# =============================================================================
-
-
-@app.command()
 def extract(
     source_data_path: SourceDataPathArg,
     output_dir: Annotated[
@@ -107,7 +61,6 @@ def extract(
     logging.info("Extraction complete. Ingestion manifest written to %s.", output_dir)
 
 
-@app.command()
 def upload(
     manifest_dir: Annotated[
         Path,
@@ -125,25 +78,7 @@ def upload(
     Submit the extracted metadata to MyTardis, and transfer the data to the storage directory.
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
-    try:
-        config = ConfigFromEnv()
-        if storage is not None:
-            # Create storagebox config based on passed in argument.
-            store = FilesystemStorageBoxConfig(
-                storage_name=storage[0], target_root_dir=storage[1]
-            )
-            config.storage = store
-    except ValidationError as error:
-        logger.error(
-            (
-                "An error occurred while validating the environment "
-                "configuration. Make sure all required variables are set "
-                "or pass your own configuration instance. Error: %s"
-            ),
-            error,
-        )
-        sys.exit(1)
-
+    config = get_config(storage)
     if DirectoryNode(manifest_dir).empty():
         raise ValueError(
             "Manifest directory is empty. Extract data into a manifest using 'extract' command."
@@ -165,7 +100,6 @@ def upload(
     logging.info("Total time (s): %.2f", elapsed)
 
 
-@app.command()
 def ingest(
     source_data_path: SourceDataPathArg,
     profile_name: ProfileNameOption,
@@ -177,24 +111,7 @@ def ingest(
     Run the full ingestion process, from extracting metadata to ingesting it into MyTardis.
     """
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
-    try:
-        config = ConfigFromEnv()
-        if storage is not None:
-            # Create storagebox config based on passed in argument.
-            store = FilesystemStorageBoxConfig(
-                storage_name=storage[0], target_root_dir=storage[1]
-            )
-            config.storage = store
-    except ValidationError as error:
-        logger.error(
-            (
-                "An error occurred while validating the environment "
-                "configuration. Make sure all required variables are set "
-                "or pass your own configuration instance. Error: %s"
-            ),
-            error,
-        )
-        sys.exit(1)
+    config = get_config(storage)
     timer = Timer(start=True)
 
     profile = load_profile(profile_name, profile_version)
@@ -217,7 +134,3 @@ def ingest(
     elapsed = timer.stop()
     logger.info("Finished submitting dataclasses and transferring files to MyTardis")
     logger.info("Total time (s): %.2f", elapsed)
-
-
-if __name__ == "__main__":
-    app()
