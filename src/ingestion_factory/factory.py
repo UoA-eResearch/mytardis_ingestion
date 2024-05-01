@@ -15,7 +15,7 @@ from src.conveyor.conveyor import Conveyor, FailedTransferException
 from src.crucible.crucible import Crucible
 from src.extraction.manifest import IngestionManifest
 from src.forges.forge import Forge
-from src.mytardis_client.enumerators import MyTardisObjectType, ObjectSearchEnum
+from src.mytardis_client.enumerators import MyTardisObjectType
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
@@ -229,15 +229,6 @@ class IngestionFactory:
             # Add a replica to represent the copy transferred by the Conveyor.
             datafile.replicas.append(self.conveyor.create_replica(datafile))
 
-            # Search by filename and parent dataset as filenames alone may not be unique
-            matching_datafiles = self._overseer.get_objects_by_fields(
-                ObjectSearchEnum.DATAFILE.value,
-                {
-                    "filename": datafile.filename,
-                    "directory": datafile.directory.as_posix(),
-                    "dataset": str(Overseer.resource_uri_to_id(datafile.dataset)),
-                },
-            )
             matching_datafiles = self._overseer.get_matching_objects(
                 MyTardisObjectType.DATAFILE, datafile.model_dump()
             )
