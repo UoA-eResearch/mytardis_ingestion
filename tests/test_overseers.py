@@ -4,7 +4,7 @@
 
 """Tests of the Overseer class and its functions"""
 import logging
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import urljoin
 
 import mock
@@ -15,11 +15,11 @@ from requests import HTTPError
 from responses import matchers
 
 from src.blueprints.custom_data_types import URI
-from src.blueprints.storage_boxes import StorageBox
 from src.config.config import ConnectionConfig, IntrospectionConfig
 from src.mytardis_client.enumerators import ObjectSearchEnum
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
-from src.overseers import Overseer
+from src.overseers.helpers import resource_uri_to_id
+from src.overseers.overseer import Overseer
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -34,10 +34,10 @@ def fixture_overseer_plain(
 
 def test_staticmethod_resource_uri_to_id() -> None:
     test_uri = URI("/v1/user/10")
-    assert Overseer.resource_uri_to_id(test_uri) == 10
+    assert resource_uri_to_id(test_uri) == 10
 
     test_uri = URI("/v1/user/10/")
-    assert Overseer.resource_uri_to_id(test_uri) == 10
+    assert resource_uri_to_id(test_uri) == 10
 
 
 @pytest.mark.xfail
