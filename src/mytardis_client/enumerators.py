@@ -134,61 +134,6 @@ class ObjectSearchEnum(Enum):
     }
 
 
-class ObjectDict(TypedDict):
-    type: MyTardisObject
-    name: str
-    match_keys: list[str]
-    parent: MyTardisObject | None
-    search_type: ObjectSearchDict
-
-
-# TODO do we need more match_keys like pid?
-class ObjectEnum(Enum):
-    """An enumerator for hierarchy objects in MyTardis"""
-
-    PROJECT: ObjectDict = {
-        "type": MyTardisObject.PROJECT,
-        "name": "name",
-        "match_keys": [
-            "name",
-            "description",
-            "principal_investigator",
-        ],
-        "parent": None,
-        "search_type": ObjectSearchEnum.PROJECT.value,
-    }
-    EXPERIMENT: ObjectDict = {
-        "type": MyTardisObject.EXPERIMENT,
-        "name": "title",
-        "match_keys": [
-            "title",
-            "description",
-        ],
-        "parent": MyTardisObject.PROJECT,
-        "search_type": ObjectSearchEnum.EXPERIMENT.value,
-    }
-    DATASET: ObjectDict = {
-        "type": MyTardisObject.DATASET,
-        "name": "description",
-        "match_keys": [
-            "description",
-        ],
-        "parent": MyTardisObject.EXPERIMENT,
-        "search_type": ObjectSearchEnum.DATASET.value,
-    }
-    DATAFILE: ObjectDict = {
-        "type": MyTardisObject.DATAFILE,
-        "name": "filename",
-        "match_keys": [
-            "filename",
-            "size",
-            "md5sum",
-        ],
-        "parent": MyTardisObject.DATASET,
-        "search_type": ObjectSearchEnum.DATAFILE.value,
-    }
-
-
 class DataClassification(Enum):
     """An enumerator for data classification.
 
