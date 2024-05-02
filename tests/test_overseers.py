@@ -16,11 +16,7 @@ from responses import matchers
 
 from src.blueprints.custom_data_types import URI
 from src.config.config import ConnectionConfig, IntrospectionConfig
-from src.mytardis_client.enumerators import (
-    MyTardisObjectType,
-    ObjectSearchEnum,
-    get_endpoint,
-)
+from src.mytardis_client.enumerators import MyTardisObjectType, get_endpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.helpers import resource_uri_to_id
 from src.overseers.overseer import Overseer
@@ -202,22 +198,13 @@ def test_get_uris(
     overseer: Overseer,
     project_response_dict: dict[str, Any],
 ) -> None:
-    object_type = ObjectSearchEnum.PROJECT.value
+    object_type = MyTardisObjectType.PROJECT
+    endpoint = get_endpoint(object_type)
     search_string = "Project_1"
+
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
-        json=(project_response_dict),
-        match=[
-            matchers.query_param_matcher(
-                {object_type["target"]: search_string},
-            ),
-        ],
-        status=200,
-    )
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(project_response_dict),
         match=[
             matchers.query_param_matcher(
@@ -226,10 +213,12 @@ def test_get_uris(
         ],
         status=200,
     )
+
     assert overseer.get_uris_by_identifier(
         MyTardisObjectType.PROJECT,
         search_string,
     ) == [URI("/api/v1/project/1/")]
+
     Overseer.clear()
 
 
@@ -239,22 +228,23 @@ def test_get_uris_no_objects(
     overseer: Overseer,
     response_dict_not_found: dict[str, Any],
 ) -> None:
-    object_type = ObjectSearchEnum.PROJECT.value
+    object_type = MyTardisObjectType.PROJECT
+    endpoint = get_endpoint(object_type)
     search_string = "Project_1"
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(response_dict_not_found),
         match=[
             matchers.query_param_matcher(
-                {object_type["target"]: search_string},
+                {"name": search_string},
             ),
         ],
         status=200,
     )
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(response_dict_not_found),
         match=[
             matchers.query_param_matcher(
@@ -284,22 +274,23 @@ def test_get_uris_malformed_return_dict(
     caplog.set_level(logging.ERROR)
     test_dict = project_response_dict
     test_dict["objects"][0].pop("resource_uri")
-    object_type = ObjectSearchEnum.PROJECT.value
+    object_type = MyTardisObjectType.PROJECT
+    endpoint = get_endpoint(object_type)
     search_string = "Project_1"
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(test_dict),
         match=[
             matchers.query_param_matcher(
-                {object_type["target"]: search_string},
+                {"name": search_string},
             ),
         ],
         status=200,
     )
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(test_dict),
         match=[
             matchers.query_param_matcher(

@@ -150,64 +150,6 @@ class ObjectPostEnum(Enum):
     }
 
 
-class ObjectSearchDict(TypedDict):
-    type: MyTardisObject
-    target: str
-    url_substring: URLSubstring
-
-
-# FIXME there is quite a substantial problem with how we search for potential
-# matches; whatever we search on must be unique, e.g. 2 files have the same
-# name, but are part of different datasets with our current matching logic the 2
-# files will be partial matches and therefore the new file won't be ingested.
-# This is not a problem now as we have removed the functionality to match
-# existing objects in MyTardis, but it might be relevant in the future.
-class ObjectSearchEnum(Enum):
-    """An enumerator for objects that can be searched for in
-    MyTardis via the API"""
-
-    PROJECT: ObjectSearchDict = {
-        "type": MyTardisObject.PROJECT,
-        "target": "name",
-        "url_substring": URLSubstring.PROJECT,
-    }
-    EXPERIMENT: ObjectSearchDict = {
-        "type": MyTardisObject.EXPERIMENT,
-        "target": "title",
-        "url_substring": URLSubstring.EXPERIMENT,
-    }
-    DATASET: ObjectSearchDict = {
-        "type": MyTardisObject.DATASET,
-        "target": "description",
-        "url_substring": URLSubstring.DATASET,
-    }
-    DATAFILE: ObjectSearchDict = {
-        "type": MyTardisObject.DATAFILE,
-        "target": "filename",
-        "url_substring": URLSubstring.DATAFILE,
-    }
-    INSTITUTION: ObjectSearchDict = {
-        "type": MyTardisObject.INSTITUTION,
-        "target": "name",
-        "url_substring": URLSubstring.INSTITUTION,
-    }
-    INSTRUMENT: ObjectSearchDict = {
-        "type": MyTardisObject.INSTRUMENT,
-        "target": "name",
-        "url_substring": URLSubstring.INSTRUMENT,
-    }
-    FACILITY: ObjectSearchDict = {
-        "type": MyTardisObject.FACILITY,
-        "target": "name",
-        "url_substring": URLSubstring.FACILITY,
-    }
-    STORAGE_BOX: ObjectSearchDict = {
-        "type": MyTardisObject.STORAGE_BOX,
-        "target": "name",
-        "url_substring": URLSubstring.STORAGE_BOX,
-    }
-
-
 class DataClassification(Enum):
     """An enumerator for data classification.
 
