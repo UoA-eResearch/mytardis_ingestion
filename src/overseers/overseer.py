@@ -78,7 +78,7 @@ class Overseer(metaclass=Singleton):
         self,
         object_type: MyTardisObjectType,
         query_params: dict[str, str],
-    ) -> Any | None:
+    ) -> list[dict[str, Any]]:
         endpoint = get_endpoint(object_type)
         url = urljoin(self.rest_factory.api_template, endpoint.url_suffix)
         try:
@@ -105,7 +105,9 @@ class Overseer(metaclass=Singleton):
                 exc_info=True,
             )
             raise error
-        return response.json()
+
+        response_json: dict[str, Any] = response.json()
+        return list(response_json["objects"])
 
     def get_object_by_uri(
         self,
@@ -171,23 +173,19 @@ class Overseer(metaclass=Singleton):
         """
         mt_object_type = MyTardisObjectType(object_type["type"])
 
-        return_list = []
-        response_dict = None
+        return_list: list[dict[str, Any]] = []
+
         if (  # pylint: disable=unsupported-membership-test
             self.mytardis_setup.objects_with_ids
             and object_type["type"] in self.mytardis_setup.objects_with_ids
         ):
             query_params = {"identifier": search_string}
-            response_dict = self._get_matches_from_mytardis(
-                mt_object_type, query_params
-            )
-            if response_dict and "objects" in response_dict.keys():
-                return_list.extend(iter(response_dict["objects"]))
+            objects = self._get_matches_from_mytardis(mt_object_type, query_params)
+            return_list.extend(iter(objects))
 
         query_params = {object_type["target"]: search_string}
-        response_dict = self._get_matches_from_mytardis(mt_object_type, query_params)
-        if response_dict and "objects" in response_dict.keys():
-            return_list.extend(iter(response_dict["objects"]))
+        objects = self._get_matches_from_mytardis(mt_object_type, query_params)
+        return_list.extend(iter(objects))
 
         new_list = []
         for obj in return_list:
@@ -204,7 +202,10 @@ class Overseer(metaclass=Singleton):
                 "MyTardis instance does not support identifier search for any object types"
             )
         # pylint: disable=unsupported-membership-test
-        if MyTardisObject(object_type) not in self.mytardis_setup.objects_with_ids:
+        if (
+            MyTardisObject(object_type.value)
+            not in self.mytardis_setup.objects_with_ids
+        ):
             raise ValueError(
                 f"Object type {object_type} does not support identifier search"
             )
@@ -311,7 +312,10 @@ class Overseer(metaclass=Singleton):
                 "MyTardis instance does not support identifier search for any object types"
             )
         # pylint: disable=unsupported-membership-test
-        if MyTardisObject(object_type) not in self.mytardis_setup.objects_with_ids:
+        if (
+            MyTardisObject(object_type.value)
+            not in self.mytardis_setup.objects_with_ids
+        ):
             raise ValueError(
                 f"Object type {object_type} does not support identifier search"
             )

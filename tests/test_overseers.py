@@ -16,7 +16,11 @@ from responses import matchers
 
 from src.blueprints.custom_data_types import URI
 from src.config.config import ConnectionConfig, IntrospectionConfig
-from src.mytardis_client.enumerators import MyTardisObjectType, ObjectSearchEnum
+from src.mytardis_client.enumerators import (
+    MyTardisObjectType,
+    ObjectSearchEnum,
+    get_endpoint,
+)
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.helpers import resource_uri_to_id
 from src.overseers.overseer import Overseer
@@ -87,21 +91,22 @@ def test_get_objects_http_error(
     connection: ConnectionConfig,
     overseer: Overseer,
 ) -> None:
-    object_type = ObjectSearchEnum.PROJECT.value
+    object_type = MyTardisObjectType.PROJECT
     search_string = "Project_1"
+    url_suffix = get_endpoint(object_type).url_suffix
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, url_suffix),
         match=[
             matchers.query_param_matcher(
-                {object_type["target"]: search_string},
+                {"name": search_string},
             ),
         ],
         status=504,
     )
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, url_suffix),
         match=[
             matchers.query_param_matcher(
                 {"identifier": search_string},
@@ -110,19 +115,19 @@ def test_get_objects_http_error(
         status=504,
     )
     caplog.set_level(logging.WARNING)
-    warning_str = (
-        "Failed HTTP request from Overseer.get_objects call\n"
-        f"object_type = {object_type}\n"
-        "query_params"
-    )
+
     assert (
-        overseer.get_objects(
+        overseer.get_objects_by_name(
             object_type,
             search_string,
         )
         == []
     )
-    assert warning_str in caplog.text
+
+    assert "Failed HTTP request" in caplog.text
+    assert "Overseer" in caplog.text
+    assert f"{object_type}" in caplog.text
+
     Overseer.clear()
 
 
@@ -323,21 +328,22 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
     overseer: Overseer,
 ) -> None:
     caplog.set_level(logging.WARNING)
-    object_type = ObjectSearchEnum.PROJECT.value
+    object_type = MyTardisObjectType.PROJECT
     search_string = "Project_1"
+    endpoint = get_endpoint(object_type)
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         match=[
             matchers.query_param_matcher(
-                {object_type["target"]: search_string},
+                {"name": search_string},
             ),
         ],
         status=504,
     )
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         match=[
             matchers.query_param_matcher(
                 {"identifier": search_string},
@@ -345,11 +351,7 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
         ],
         status=504,
     )
-    warning_str = (
-        "Failed HTTP request from Overseer.get_objects call\n"
-        f"object_type = {object_type}\n"
-        "query_params"
-    )
+
     assert (
         overseer.get_uris_by_identifier(
             MyTardisObjectType.PROJECT,
@@ -357,7 +359,10 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
         )
         == []
     )
-    assert warning_str in caplog.text
+
+    assert "Failed HTTP request from Overseer" in caplog.text
+    assert f"{object_type}" in caplog.text
+
     Overseer.clear()
 
 
