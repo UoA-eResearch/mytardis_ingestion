@@ -3,7 +3,7 @@
 for the Forge class."""
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from urllib.parse import urljoin
 
 from pydantic import ValidationError
@@ -16,7 +16,6 @@ from src.config.config import IntrospectionConfig
 from src.mytardis_client.enumerators import (
     MyTardisObject,
     MyTardisObjectType,
-    ObjectSearchDict,
     get_endpoint,
 )
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
