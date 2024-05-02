@@ -3,7 +3,7 @@ A helper for mapping fields from an RO-Crate to MyTardis object name
 """
 
 # pylint: disable=missing-function-docstring
-from src.mytardis_client.types import MyTardisObject
+from src.mytardis_client.types import MyTardisObjectType
 
 
 class CrateToTardisMapper:
@@ -27,11 +27,15 @@ class CrateToTardisMapper:
             for object_key, object_dict in self.schema.items()
         }
 
-    def get_mt_field(self, tardis_type: MyTardisObject, field_name: str) -> str | None:
-        return self.schema[tardis_type].get(field_name)
+    def get_mt_field(
+        self, tardis_type: MyTardisObjectType, field_name: str
+    ) -> str | None:
+        return self.schema[tardis_type.name.lower()].get(field_name)
 
-    def get_roc_field(self, tardis_type: MyTardisObject, field_name: str) -> str | None:
-        return self.reverse_schema[tardis_type].get(field_name)
+    def get_roc_field(
+        self, tardis_type: MyTardisObjectType, field_name: str
+    ) -> str | None:
+        return self.reverse_schema[tardis_type.name.lower()].get(field_name)
 
     def deref_object_id(self, crate_type: str) -> str | None:
         return self.reverse_schema["derefIdentifier"].get(crate_type)

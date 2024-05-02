@@ -26,7 +26,7 @@ from src.extraction.manifest import IngestionManifest
 from src.extraction.metadata_extractor import (  # pylint: disable=duplicate-code
     IMetadataExtractor,
 )
-from src.mytardis_client.types import MyTardisObject
+from src.mytardis_client.types import MyTardisObjectType
 from src.profiles.ro_crate._consts import (
     CRATE_TO_TARDIS_PROFILE,
     RO_CRATE_DATAFILE_SCHEMA,
@@ -184,7 +184,9 @@ class ROCrateParser:
         datafile_dict["size"] = str(filepath.stat().st_size)
         if rocrate_entity:
             rocrate_dict: dict[str, Any] = {
-                (self.mapper.get_mt_field(MyTardisObject.DATAFILE, key) or key): value
+                (
+                    self.mapper.get_mt_field(MyTardisObjectType.DATAFILE, key) or key
+                ): value
                 for key, value in rocrate_entity.as_jsonld().items()
             }
             datafile_dict.update(rocrate_dict)
@@ -212,7 +214,7 @@ class ROCrateParser:
             the dataclasses object updated with this dataset and all of it's datafile children
         """
         dataset_dict = {
-            (self.mapper.get_mt_field(MyTardisObject.DATASET, key) or key): value
+            (self.mapper.get_mt_field(MyTardisObjectType.DATASET, key) or key): value
             for key, value in crate_dataset.as_jsonld().items()
         }
 
@@ -253,7 +255,7 @@ class ROCrateParser:
             RawProject: The MyTardis ingestible project
         """
         project_dict = {
-            (self.mapper.get_mt_field(MyTardisObject.PROJECT, key) or key): value
+            (self.mapper.get_mt_field(MyTardisObjectType.PROJECT, key) or key): value
             for key, value in crate_project.as_jsonld().items()
         }
         project_dict["identifiers"] = get_norm_value(
@@ -286,7 +288,7 @@ class ROCrateParser:
             RawExperiment: The resulting raw ingestible experiment
         """
         experiment_dict = {
-            (self.mapper.get_mt_field(MyTardisObject.EXPERIMENT, key) or key): value
+            (self.mapper.get_mt_field(MyTardisObjectType.EXPERIMENT, key) or key): value
             for key, value in crate_catalog.as_jsonld().items()
         }
         experiment_dict["identifiers"] = get_norm_value(

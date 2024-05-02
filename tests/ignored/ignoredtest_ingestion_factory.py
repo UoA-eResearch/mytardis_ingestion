@@ -37,8 +37,8 @@ from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
 from src.ingestion_factory import IngestionFactory
 from src.ingestion_factory.factory import IngestionResult
-from src.mytardis_client.enumerators import MyTardisObject
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
+from src.mytardis_client.types import MyTardisObjectType
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 
@@ -59,10 +59,10 @@ def fixture_mock_ingestion_factory(
 ) -> Callable[
     [
         Literal[
-            MyTardisObject.PROJECT,
-            MyTardisObject.EXPERIMENT,
-            MyTardisObject.DATASET,
-            MyTardisObject.DATAFILE,
+            MyTardisObjectType.PROJECT,
+            MyTardisObjectType.EXPERIMENT,
+            MyTardisObjectType.DATASET,
+            MyTardisObjectType.DATAFILE,
         ],
         Mock,
         Mock,
@@ -72,29 +72,29 @@ def fixture_mock_ingestion_factory(
 ]:
     def _get_mock_ingestion_factory(
         object_type: Literal[
-            MyTardisObject.PROJECT,
-            MyTardisObject.EXPERIMENT,
-            MyTardisObject.DATASET,
-            MyTardisObject.DATAFILE,
+            MyTardisObjectType.PROJECT,
+            MyTardisObjectType.EXPERIMENT,
+            MyTardisObjectType.DATASET,
+            MyTardisObjectType.DATAFILE,
         ],
         smelter_method_mock: Mock = MagicMock(return_value=None),
         crucible_method_mock: Mock = MagicMock(return_value=None),
         forge_method_mock: Mock = MagicMock(return_value=None),
     ) -> IngestionFactory:
         match object_type:
-            case MyTardisObject.PROJECT:
+            case MyTardisObjectType.PROJECT:
                 smelter.smelt_project = smelter_method_mock  # type: ignore[method-assign]
                 crucible.prepare_project = crucible_method_mock  # type: ignore[method-assign]
                 forge.forge_project = forge_method_mock  # type: ignore[method-assign]
-            case MyTardisObject.EXPERIMENT:
+            case MyTardisObjectType.EXPERIMENT:
                 smelter.smelt_experiment = smelter_method_mock  # type: ignore[method-assign]
                 crucible.prepare_experiment = crucible_method_mock  # type: ignore[method-assign]
                 forge.forge_experiment = forge_method_mock  # type: ignore[method-assign]
-            case MyTardisObject.DATASET:
+            case MyTardisObjectType.DATASET:
                 smelter.smelt_dataset = smelter_method_mock  # type: ignore[method-assign]
                 crucible.prepare_dataset = crucible_method_mock  # type: ignore[method-assign]
                 forge.forge_dataset = forge_method_mock  # type: ignore[method-assign]
-            case MyTardisObject.DATAFILE:
+            case MyTardisObjectType.DATAFILE:
                 smelter.smelt_datafile = smelter_method_mock  # type: ignore[method-assign]
                 crucible.prepare_datafile = crucible_method_mock  # type: ignore[method-assign]
                 forge.forge_datafile = forge_method_mock  # type: ignore[method-assign]
@@ -122,7 +122,7 @@ def test_ingest_project(
     project_uri: URI,
 ):
     ingestion_factory: IngestionFactory = mock_ingestion_factory(
-        MyTardisObject.PROJECT,
+        MyTardisObjectType.PROJECT,
         smelter_method_mock=MagicMock(
             return_value=(refined_project, raw_project_parameterset)
         ),
@@ -173,7 +173,7 @@ def test_ingest_experiment(
     experiment_uri: URI,
 ):
     ingestion_factory: IngestionFactory = mock_ingestion_factory(
-        MyTardisObject.EXPERIMENT,
+        MyTardisObjectType.EXPERIMENT,
         smelter_method_mock=MagicMock(
             return_value=(refined_experiment, raw_experiment_parameterset)
         ),
@@ -224,7 +224,7 @@ def test_ingest_dataset(
     dataset_uri: URI,
 ):
     ingestion_factory: IngestionFactory = mock_ingestion_factory(
-        MyTardisObject.DATASET,
+        MyTardisObjectType.DATASET,
         smelter_method_mock=MagicMock(
             return_value=(refined_dataset, raw_dataset_parameterset)
         ),
@@ -274,7 +274,7 @@ def test_ingest_datafile(
     datafile_uri: URI,
 ):
     ingestion_factory: IngestionFactory = mock_ingestion_factory(
-        MyTardisObject.DATAFILE,
+        MyTardisObjectType.DATAFILE,
         smelter_method_mock=MagicMock(return_value=refined_datafile),
         crucible_method_mock=MagicMock(return_value=datafile),
         forge_method_mock=MagicMock(return_value=datafile_uri),

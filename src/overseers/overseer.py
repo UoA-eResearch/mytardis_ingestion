@@ -15,7 +15,7 @@ from src.blueprints.custom_data_types import URI
 from src.config.config import IntrospectionConfig
 from src.mytardis_client.endpoints import get_endpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
-from src.mytardis_client.types import MyTardisObject, MyTardisObjectType
+from src.mytardis_client.types import MyTardisObjectType, get_type_info
 from src.overseers.object_matchers import extract_match_keys, identifier_match_keys
 from src.utils.types.singleton import Singleton
 
@@ -149,10 +149,7 @@ class Overseer(metaclass=Singleton):
                 "MyTardis instance does not support identifier search for any object types"
             )
         # pylint: disable=unsupported-membership-test
-        if (
-            MyTardisObject(object_type.value)
-            not in self.mytardis_setup.objects_with_ids
-        ):
+        if object_type not in self.mytardis_setup.objects_with_ids:
             raise ValueError(
                 f"Object type {object_type} does not support identifier search"
             )
@@ -259,10 +256,7 @@ class Overseer(metaclass=Singleton):
                 "MyTardis instance does not support identifier search for any object types"
             )
         # pylint: disable=unsupported-membership-test
-        if (
-            MyTardisObject(object_type.value)
-            not in self.mytardis_setup.objects_with_ids
-        ):
+        if object_type not in self.mytardis_setup.objects_with_ids:
             raise ValueError(
                 f"Object type {object_type} does not support identifier search"
             )
@@ -306,11 +300,22 @@ class Overseer(metaclass=Singleton):
                 )
             )
         response_dict = response_dict["objects"][0]
+
+        def response_str_to_types(
+            strings: list[str] | None,
+        ) -> list[MyTardisObjectType] | None:
+            if strings is None:
+                return None
+            return [MyTardisObjectType[string.upper()] for string in strings]
+
+        objects_with_ids = response_str_to_types(response_dict["identified_objects"])
+        objects_with_profiles = response_str_to_types(response_dict["profiled_objects"])
+
         mytardis_setup = IntrospectionConfig(
             old_acls=response_dict["experiment_only_acls"],
             projects_enabled=response_dict["projects_enabled"],
-            objects_with_ids=response_dict["identified_objects"] or None,
-            objects_with_profiles=response_dict["profiled_objects"] or None,
+            objects_with_ids=objects_with_ids,
+            objects_with_profiles=objects_with_profiles,
         )
         self._mytardis_setup = mytardis_setup
         return mytardis_setup
