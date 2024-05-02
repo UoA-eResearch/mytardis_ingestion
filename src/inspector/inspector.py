@@ -1,5 +1,5 @@
 # pylint: disable=duplicate-code
-"""insepctor.py - Inspector queries MyTardis to check the status of ingestion.  
+"""insepctor.py - Inspector queries MyTardis to check the status of ingestion.
 """
 
 import logging
@@ -8,7 +8,7 @@ from typing import Any, Optional
 from src.blueprints.datafile import RawDatafile
 from src.config.config import ConfigFromEnv
 from src.crucible.crucible import Crucible
-from src.mytardis_client.enumerators import ObjectSearchEnum
+from src.mytardis_client.enumerators import MyTardisObjectType
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
@@ -48,12 +48,8 @@ class Inspector:
         df = self._crucible.prepare_datafile(smelted_df)
         if not df:
             return None
+
         # Look up the datafile in MyTardis to check if it's ingested.
-        return self._overseer.get_objects_by_fields(
-            ObjectSearchEnum.DATAFILE.value,
-            {
-                "filename": df.filename,
-                "directory": df.directory.as_posix(),
-                "dataset": str(Overseer.resource_uri_to_id(df.dataset)),
-            },
+        return self._overseer.get_matching_objects(
+            MyTardisObjectType.DATAFILE, df.model_dump()
         )
