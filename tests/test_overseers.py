@@ -117,13 +117,11 @@ def test_get_objects_http_error(
     )
     caplog.set_level(logging.WARNING)
 
-    assert (
+    with pytest.raises(HTTPError):
         overseer.get_objects_by_name(
             object_type,
             search_string,
         )
-        == []
-    )
 
     assert "Failed HTTP request" in caplog.text
     assert "Overseer" in caplog.text
@@ -354,13 +352,11 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
         status=504,
     )
 
-    assert (
+    with pytest.raises(HTTPError):
         overseer.get_uris_by_identifier(
             MyTardisObjectType.PROJECT,
             search_string,
         )
-        == []
-    )
 
     assert "Failed HTTP request from Overseer" in caplog.text
     assert f"{object_type}" in caplog.text

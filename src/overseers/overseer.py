@@ -84,7 +84,7 @@ class Overseer(metaclass=Singleton):
             response = self.rest_factory.mytardis_api_request(
                 "GET", url, params=query_params
             )
-        except HTTPError:
+        except HTTPError as error:
             logger.warning(
                 (
                     "Failed HTTP request from Overseer.get_objects call\n"
@@ -93,7 +93,7 @@ class Overseer(metaclass=Singleton):
                 ),
                 exc_info=True,
             )
-            return None
+            raise error
         except Exception as error:
             logger.error(
                 (
