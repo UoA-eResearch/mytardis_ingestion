@@ -15,8 +15,8 @@ from src.conveyor.conveyor import Conveyor, FailedTransferException
 from src.crucible.crucible import Crucible
 from src.extraction.manifest import IngestionManifest
 from src.forges.forge import Forge
-from src.mytardis_client.enumerators import MyTardisObjectType
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
+from src.mytardis_client.types import MyTardisObjectType
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 

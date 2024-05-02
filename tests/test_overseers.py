@@ -16,9 +16,10 @@ from responses import matchers
 
 from src.blueprints.custom_data_types import URI
 from src.config.config import ConnectionConfig, IntrospectionConfig
-from src.mytardis_client.enumerators import MyTardisObjectType, get_endpoint
+from src.mytardis_client.endpoints import get_endpoint
+from src.mytardis_client.helpers import resource_uri_to_id
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
-from src.overseers.helpers import resource_uri_to_id
+from src.mytardis_client.types import MyTardisObjectType
 from src.overseers.overseer import Overseer
 
 logger = logging.getLogger(__name__)

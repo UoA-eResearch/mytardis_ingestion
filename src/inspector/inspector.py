@@ -8,8 +8,8 @@ from typing import Any, Optional
 from src.blueprints.datafile import RawDatafile
 from src.config.config import ConfigFromEnv
 from src.crucible.crucible import Crucible
-from src.mytardis_client.enumerators import MyTardisObjectType
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
+from src.mytardis_client.types import MyTardisObjectType
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 

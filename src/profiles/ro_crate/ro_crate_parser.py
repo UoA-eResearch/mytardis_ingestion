@@ -26,7 +26,7 @@ from src.extraction.manifest import IngestionManifest
 from src.extraction.metadata_extractor import (  # pylint: disable=duplicate-code
     IMetadataExtractor,
 )
-from src.mytardis_client.enumerators import MyTardisObject
+from src.mytardis_client.types import MyTardisObject
 from src.profiles.ro_crate._consts import (
     CRATE_TO_TARDIS_PROFILE,
     RO_CRATE_DATAFILE_SCHEMA,

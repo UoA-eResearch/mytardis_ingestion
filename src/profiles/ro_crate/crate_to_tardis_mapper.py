@@ -3,7 +3,7 @@ A helper for mapping fields from an RO-Crate to MyTardis object name
 """
 
 # pylint: disable=missing-function-docstring
-from src.mytardis_client.enumerators import MyTardisObject
+from src.mytardis_client.types import MyTardisObject
 
 
 class CrateToTardisMapper:

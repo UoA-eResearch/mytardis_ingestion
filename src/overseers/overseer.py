@@ -13,12 +13,9 @@ from src.blueprints.custom_data_types import URI
 
 # from src.blueprints.project import Project
 from src.config.config import IntrospectionConfig
-from src.mytardis_client.enumerators import (
-    MyTardisObject,
-    MyTardisObjectType,
-    get_endpoint,
-)
+from src.mytardis_client.endpoints import get_endpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
+from src.mytardis_client.types import MyTardisObject, MyTardisObjectType
 from src.overseers.object_matchers import extract_match_keys, identifier_match_keys
 from src.utils.types.singleton import Singleton
 
