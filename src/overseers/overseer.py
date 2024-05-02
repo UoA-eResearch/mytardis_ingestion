@@ -3,6 +3,7 @@
 for the Forge class."""
 
 import logging
+from collections.abc import Generator
 from typing import Any, Optional
 from urllib.parse import urljoin
 
@@ -16,7 +17,6 @@ from src.config.config import IntrospectionConfig
 from src.mytardis_client.endpoints import get_endpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.types import MyTardisObjectType, get_type_info
-from src.overseers.object_matchers import extract_match_keys, identifier_match_keys
 from src.utils.types.singleton import Singleton
 
 logger = logging.getLogger(__name__)
@@ -27,6 +27,23 @@ MYTARDIS_PROJECTS_DISABLED_MESSAGE = (
     "and ensure that the 'projects' app is enabled. This may require rerunning "
     "migrations."
 )
+
+
+def extract_values_for_matching(
+    object_type: MyTardisObjectType, object_data: dict[str, Any]
+) -> dict[str, Any]:
+    """Extracts the values from the object_data that are used for matching the
+    specified type of object in MyTardis
+    """
+
+    type_info = get_type_info(object_type)
+
+    match_keys = {}
+
+    for key in type_info.match_fields:
+        match_keys[key] = object_data[key]
+
+    return match_keys
 
 
 class Overseer(metaclass=Singleton):
@@ -69,6 +86,43 @@ class Overseer(metaclass=Singleton):
     def mytardis_setup(self) -> IntrospectionConfig:
         """Getter for mytardis_setup. Sends API request if self._mytardis_setup is None"""
         return self._mytardis_setup or self.get_mytardis_setup()
+
+    def type_supports_identifiers(self, object_type: MyTardisObjectType) -> bool:
+        """Check if the given object type supports identifiers"""
+        if self.mytardis_setup.objects_with_ids is None:
+            return False
+        # pylint: disable=unsupported-membership-test
+        return object_type in self.mytardis_setup.objects_with_ids
+
+    def generate_identifier_matchers(
+        self, object_type: MyTardisObjectType, object_data: dict[str, Any]
+    ) -> Generator[dict[str, Any], None, None]:
+        """Generate object matchers for identifiers"""
+
+        if self.mytardis_setup.objects_with_ids is None:
+            raise ValueError("The MyTardis instance does not support identifier search")
+
+        # pylint: disable=unsupported-membership-test
+        if object_type not in self.mytardis_setup.objects_with_ids:
+            raise ValueError(
+                f"MyTardis object type '{object_type}' does not support identifier search"
+            )
+
+        if identifiers := object_data.get("identifiers"):
+            for identifier in identifiers:
+                yield {"identifier": identifier}
+
+        # NOTE: if there are no identifiers, we'll yield nothing - is that an error case?
+
+    def generate_object_matchers(
+        self, object_type: MyTardisObjectType, object_data: dict[str, Any]
+    ) -> Generator[dict[str, Any], None, None]:
+        """Generate object matchers for the given object type and data"""
+
+        if self.type_supports_identifiers(object_type):
+            yield from self.generate_identifier_matchers(object_type, object_data)
+
+        yield extract_values_for_matching(object_type, object_data)
 
     def _get_matches_from_mytardis(
         self,
@@ -144,14 +198,10 @@ class Overseer(metaclass=Singleton):
         self, object_type: MyTardisObjectType, identifier: str
     ) -> list[dict[str, Any]]:
         """Retrieve objects from MyTardis of the given type with the given identifier"""
-        if self.mytardis_setup.objects_with_ids is None:
+
+        if not self.type_supports_identifiers(object_type):
             raise ValueError(
-                "MyTardis instance does not support identifier search for any object types"
-            )
-        # pylint: disable=unsupported-membership-test
-        if object_type not in self.mytardis_setup.objects_with_ids:
-            raise ValueError(
-                f"Object type {object_type} does not support identifier search"
+                f"MyTardis object type '{object_type}' does not support identifier search"
             )
 
         if objects := self._get_matches_from_mytardis(
@@ -171,22 +221,15 @@ class Overseer(metaclass=Singleton):
         query MyTardis for objects whose attributes match the match keys.
         """
 
-        # Temporary conversion until we can unify MyTardisObjectType and MyTardisObject
-        objects_with_ids = list(
-            map(MyTardisObjectType, self.mytardis_setup.objects_with_ids or [])
-        )
+        matchers = self.generate_object_matchers(object_type, object_data)
 
-        if object_type in objects_with_ids:
-            for match_keys in identifier_match_keys(object_data):
-                if objects := self._get_matches_from_mytardis(object_type, match_keys):
-                    return list(objects)
-
-        match_keys_for_type = extract_match_keys(object_type, object_data)
-        if objects := self._get_matches_from_mytardis(object_type, match_keys_for_type):
-            return list(objects)
+        for match_keys in matchers:
+            if objects := self._get_matches_from_mytardis(object_type, match_keys):
+                return list(objects)
 
         return []
 
+    # Note: is this unused except for the tests?
     def get_objects_by_name(
         self, object_type: MyTardisObjectType, name: str
     ) -> list[dict[str, Any]]:
@@ -196,7 +239,7 @@ class Overseer(metaclass=Singleton):
         function could return incorrect matches
         """
 
-        return self.get_matching_objects(object_type, {"name": name})
+        return self._get_matches_from_mytardis(object_type, {"name": name})
 
     def get_uris(
         self,
@@ -251,15 +294,12 @@ class Overseer(metaclass=Singleton):
         self, object_type: MyTardisObjectType, identifier: str
     ) -> list[URI]:
         """Get URIs for objects of the given type with the given identifier"""
-        if self.mytardis_setup.objects_with_ids is None:
-            raise ValueError(
-                "MyTardis instance does not support identifier search for any object types"
-            )
-        # pylint: disable=unsupported-membership-test
-        if object_type not in self.mytardis_setup.objects_with_ids:
+
+        if not self.type_supports_identifiers(object_type):
             raise ValueError(
                 f"Object type {object_type} does not support identifier search"
             )
+
         return self.get_uris(object_type, {"identifier": identifier})
 
     def get_mytardis_setup(self) -> IntrospectionConfig:
