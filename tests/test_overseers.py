@@ -46,27 +46,28 @@ def test_staticmethod_resource_uri_to_id() -> None:
 
 @pytest.mark.xfail
 @responses.activate
-def test_get_objects(
+def test_get_objects_by_name(
     overseer: Overseer,
     connection: ConnectionConfig,
     project_response_dict: dict[str, Any],
 ) -> None:
-    object_type = ObjectSearchEnum.PROJECT.value
+    object_type = MyTardisObjectType.PROJECT
     search_string = "Project_1"
+    endpoint = get_endpoint(object_type)
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(project_response_dict),
         match=[
             matchers.query_param_matcher(
-                {object_type["target"]: search_string},
+                {"name": search_string},
             ),
         ],
         status=200,
     )
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(project_response_dict),
         match=[
             matchers.query_param_matcher(
@@ -76,7 +77,7 @@ def test_get_objects(
         status=200,
     )
     assert (
-        overseer.get_objects(
+        overseer.get_objects_by_name(
             object_type,
             search_string,
         )
@@ -138,7 +139,7 @@ def test_get_objects_general_error(
     overseer: Overseer,
 ) -> None:
     mock_mytardis_api_request.side_effect = IOError()
-    object_type = ObjectSearchEnum.PROJECT.value
+    object_type = MyTardisObjectType.PROJECT
     search_string = "Project_1"
     error_str = (
         "Non-HTTP exception in Overseer.get_objects call\n"
@@ -146,7 +147,7 @@ def test_get_objects_general_error(
         "query_params"
     )
     with pytest.raises(IOError):
-        _ = overseer.get_objects(
+        _ = overseer.get_objects_by_name(
             object_type,
             search_string,
         )
@@ -160,22 +161,23 @@ def test_get_objects_no_objects(
     connection: ConnectionConfig,
     response_dict_not_found: dict[str, Any],
 ) -> None:
-    object_type = ObjectSearchEnum.PROJECT.value
+    object_type = MyTardisObjectType.PROJECT
+    endpoint = get_endpoint(object_type)
     search_string = "Project_1"
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(response_dict_not_found),
         match=[
             matchers.query_param_matcher(
-                {object_type["target"]: search_string},
+                {"name": search_string},
             ),
         ],
         status=200,
     )
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(response_dict_not_found),
         match=[
             matchers.query_param_matcher(
@@ -186,7 +188,7 @@ def test_get_objects_no_objects(
     )
 
     assert (
-        overseer.get_objects(
+        overseer.get_objects_by_name(
             object_type,
             search_string,
         )

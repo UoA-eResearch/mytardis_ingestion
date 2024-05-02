@@ -144,55 +144,6 @@ class Overseer(metaclass=Singleton):
             raise error
         return response.json()
 
-    # TODO pylint:disable=fixme
-    # we might want to add a get_objects function that let's you search for
-    # specific query param combinations. Right now it checks if the search
-    # string is in any of the object_type["target"] and "identifier" fields but often
-    # we know where those should be found, i.e. when we pass in a search_string
-    # we know it's either a pid, alternative_id or name
-    def get_objects(
-        self,
-        object_type: ObjectSearchDict,
-        search_string: str,
-    ) -> List[Dict[str, Any]]:
-        """Gets a list of objects matching the search parameters passed
-
-        This function prepares a GET request via the MyTardisRESTFactory instance and returns
-        a list of objects that match the search request.
-
-        Args:
-            object_type: A string representing the different object types that can be searched for
-            search_target: The field that is being searched on (varies from object to object)
-            search_string: The string that the search_target is being searched for.
-
-        Returns:
-            A list of objects from the search request made.
-
-        Raises:
-            HTTPError: The GET request failed for some reason
-        """
-        mt_object_type = MyTardisObjectType(object_type["type"])
-
-        return_list: list[dict[str, Any]] = []
-
-        if (  # pylint: disable=unsupported-membership-test
-            self.mytardis_setup.objects_with_ids
-            and object_type["type"] in self.mytardis_setup.objects_with_ids
-        ):
-            query_params = {"identifier": search_string}
-            objects = self._get_matches_from_mytardis(mt_object_type, query_params)
-            return_list.extend(iter(objects))
-
-        query_params = {object_type["target"]: search_string}
-        objects = self._get_matches_from_mytardis(mt_object_type, query_params)
-        return_list.extend(iter(objects))
-
-        new_list = []
-        for obj in return_list:
-            if obj not in new_list:
-                new_list.append(obj)
-        return new_list
-
     def get_objects_by_identifier(
         self, object_type: MyTardisObjectType, identifier: str
     ) -> list[dict[str, Any]]:
