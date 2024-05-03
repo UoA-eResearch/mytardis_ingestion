@@ -5,23 +5,30 @@ from enum import Enum
 from pydantic import BaseModel
 
 
-# NOTE: we should move away from using strings as the values for the enum,
-#       as this encourages "stringly-typed" interfaces. Too much change for now.
-class MyTardisObjectType(Enum):
-    """Enum for possible MyTardis object types"""
+class MyTardisObjectType(str, Enum):
+    """
+    Definition of the MyTardis object types.
 
-    PROJECT = 0
-    EXPERIMENT = 1
-    DATASET = 2
-    DATAFILE = 3
-    INSTRUMENT = 4
-    INSTITUTION = 5
-    FACILITY = 6
-    STORAGE_BOX = 7
-    USER = 8
-    PROJECT_PARAMETER_SET = 9
-    EXPERIMENT_PARAMETER_SET = 10
-    DATASET_PARAMETER_SET = 11
+    The underlying string values are intended to exactly match the names of the
+    MyTardis objects, as used by the MyTardis API in its responses.
+    (Note that this may differ from the endpoint names used in the API URLs.)
+
+    The enum type should be used wherever possible, with the string values only
+    used at the boundaries of the application, when communicating with MyTardis.
+    """
+
+    PROJECT = "project"
+    EXPERIMENT = "experiment"
+    DATASET = "dataset"
+    DATAFILE = "datafile"
+    INSTRUMENT = "instrument"
+    INSTITUTION = "institution"
+    FACILITY = "facility"
+    STORAGE_BOX = "storagebox"
+    USER = "user"
+    PROJECT_PARAMETER_SET = "projectparameterset"
+    EXPERIMENT_PARAMETER_SET = "experimentparameterset"
+    DATASET_PARAMETER_SET = "datasetparameterset"
 
 
 class MyTardisTypeInfo(BaseModel):

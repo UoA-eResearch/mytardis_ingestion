@@ -176,11 +176,12 @@ class IntrospectionConfig(BaseModel):
         objects_with_ids : Optional[list[MyTardisObject]]
     """
 
+    model_config = ConfigDict(use_enum_values=False)
+
     old_acls: bool
     projects_enabled: bool
     objects_with_ids: Optional[list[MyTardisObjectType]] = None
     objects_with_profiles: Optional[list[MyTardisObjectType]] = None
-    model_config = ConfigDict(use_enum_values=True)
 
 
 class ProfileConfig(BaseModel):
