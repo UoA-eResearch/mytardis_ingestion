@@ -230,18 +230,6 @@ class Overseer(metaclass=Singleton):
 
         return []
 
-    # Note: is this unused except for the tests?
-    def get_objects_by_name(
-        self, object_type: MyTardisObjectType, name: str
-    ) -> list[dict[str, Any]]:
-        """Retrieve objects from MyTardis of the given type whose name matches 'name'.
-
-        NOTE: for some objects, the name field is not guaranteed to be unique. In such cases, this
-        function could return incorrect matches
-        """
-
-        return self._get_matches_from_mytardis(object_type, {"name": name})
-
     def get_uris(
         self,
         object_type: MyTardisObjectType,

@@ -128,10 +128,7 @@ def test_get_objects_http_error(
     caplog.set_level(logging.WARNING)
 
     with pytest.raises(HTTPError):
-        overseer.get_objects_by_name(
-            object_type,
-            search_string,
-        )
+        overseer.get_matching_objects(object_type, {"name": search_string})
 
     assert "Failed HTTP request" in caplog.text
     assert "Overseer" in caplog.text
@@ -155,11 +152,9 @@ def test_get_objects_general_error(
         "query_params"
     )
     with pytest.raises(IOError):
-        _ = overseer.get_objects_by_name(
-            object_type,
-            search_string,
-        )
+        _ = overseer.get_matching_objects(object_type, {"name": search_string})
         assert error_str in caplog.text
+
     Overseer.clear()
 
 
@@ -195,13 +190,9 @@ def test_get_objects_no_objects(
         status=200,
     )
 
-    assert (
-        overseer.get_objects_by_name(
-            object_type,
-            search_string,
-        )
-        == []
-    )
+    assert overseer.get_matching_objects(object_type, {"name": search_string}) == []
+    assert overseer.get_objects_by_identifier(object_type, search_string) == []
+
     Overseer.clear()
 
 
