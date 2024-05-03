@@ -41,15 +41,16 @@ def test_staticmethod_resource_uri_to_id() -> None:
     assert resource_uri_to_id(test_uri) == 10
 
 
-@pytest.mark.xfail
 @responses.activate
-def test_get_objects_by_name(
+def test_get_matches_from_mytardis(
     overseer: Overseer,
     connection: ConnectionConfig,
     project_response_dict: dict[str, Any],
 ) -> None:
     object_type = MyTardisObjectType.PROJECT
-    search_string = "Project_1"
+    project_name = project_response_dict["objects"][0]["name"]
+    project_identifiers = project_response_dict["objects"][0]["identifiers"]
+
     endpoint = get_endpoint(object_type)
     responses.add(
         responses.GET,
@@ -57,7 +58,7 @@ def test_get_objects_by_name(
         json=(project_response_dict),
         match=[
             matchers.query_param_matcher(
-                {"name": search_string},
+                {"name": project_name},
             ),
         ],
         status=200,
@@ -68,18 +69,30 @@ def test_get_objects_by_name(
         json=(project_response_dict),
         match=[
             matchers.query_param_matcher(
-                {"identifier": search_string},
+                {"identifier": project_identifiers[0]},
             ),
         ],
         status=200,
     )
+
+    # pylint: disable=protected-access
     assert (
-        overseer.get_objects_by_name(
+        overseer._get_matches_from_mytardis(
             object_type,
-            search_string,
+            {"name": project_name},
         )
         == project_response_dict["objects"]
     )
+
+    # pylint: disable=protected-access
+    assert (
+        overseer._get_matches_from_mytardis(
+            object_type,
+            {"identifier": project_identifiers[0]},
+        )
+        == project_response_dict["objects"]
+    )
+
     Overseer.clear()
 
 

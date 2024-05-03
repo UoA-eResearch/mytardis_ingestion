@@ -156,7 +156,6 @@ def datadir(tmpdir: str, request: FixtureRequest) -> Path:
 # ==============================
 
 storage_box = dcls.storage_box
-# archive_box = dcls.archive_box
 datafile_replica = dcls.datafile_replica
 archive_replica = dcls.archive_replica
 raw_project_parameterset = dcls.raw_project_parameterset
@@ -549,7 +548,7 @@ project_creation_response_dict = rsps.project_creation_response_dict
 response_by_substring = rsps.response_by_substring
 get_experiment_details = rsps.get_experiment_details
 get_project_details = rsps.get_project_details
-# autoarchive_details = rsps.autoarchive_details
+
 # =========================================
 #
 # config from env classes
