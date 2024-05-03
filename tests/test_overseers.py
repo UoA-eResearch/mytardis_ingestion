@@ -196,7 +196,6 @@ def test_get_objects_no_objects(
     Overseer.clear()
 
 
-@pytest.mark.xfail
 @responses.activate
 def test_get_uris(
     connection: ConnectionConfig,
@@ -268,7 +267,6 @@ def test_get_uris_no_objects(
     Overseer.clear()
 
 
-@pytest.mark.xfail
 @responses.activate
 def test_get_uris_malformed_return_dict(
     caplog: LogCaptureFixture,
