@@ -341,15 +341,16 @@ class Overseer(metaclass=Singleton):
             )
         response_dict = response_dict["objects"][0]
 
-        def response_str_to_types(
-            strings: list[str] | None,
-        ) -> list[MyTardisObjectType] | None:
-            if strings is None:
-                return None
-            return [MyTardisObjectType[string.upper()] for string in strings]
-
-        objects_with_ids = response_str_to_types(response_dict["identified_objects"])
-        objects_with_profiles = response_str_to_types(response_dict["profiled_objects"])
+        objects_with_ids = (
+            [MyTardisObjectType(obj) for obj in response_dict["identified_objects"]]
+            if response_dict["identified_objects"] is not None
+            else None
+        )
+        objects_with_profiles = (
+            [MyTardisObjectType(obj) for obj in response_dict["profiled_objects"]]
+            if response_dict["profiled_objects"] is not None
+            else None
+        )
 
         mytardis_setup = IntrospectionConfig(
             old_acls=response_dict["experiment_only_acls"],
