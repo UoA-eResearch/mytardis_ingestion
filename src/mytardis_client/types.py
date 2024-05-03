@@ -34,6 +34,8 @@ class MyTardisObjectType(str, Enum):
 class MyTardisTypeInfo(BaseModel):
     """Properties of a MyTardis object type"""
 
+    # Note that the match field here is type-specific. Some types may also support
+    # general identifier-based matching.
     match_fields: list[str]
 
 
@@ -51,6 +53,7 @@ _MYTARDIS_TYPE_INFO: dict[MyTardisObjectType, MyTardisTypeInfo] = {
     MyTardisObjectType.DATASET: MyTardisTypeInfo(
         match_fields=[
             "description",
+            "experiments",
             "instrument",
         ],
     ),
