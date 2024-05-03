@@ -16,7 +16,7 @@ from src.blueprints.custom_data_types import URI
 from src.config.config import IntrospectionConfig
 from src.mytardis_client.endpoints import get_endpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
-from src.mytardis_client.types import MyTardisObjectType, get_type_info
+from src.mytardis_client.types import MyTardisObject, get_type_info
 from src.utils.functional import map_optional
 from src.utils.types.singleton import Singleton
 
@@ -31,7 +31,7 @@ MYTARDIS_PROJECTS_DISABLED_MESSAGE = (
 
 
 def extract_values_for_matching(
-    object_type: MyTardisObjectType, object_data: dict[str, Any]
+    object_type: MyTardisObject, object_data: dict[str, Any]
 ) -> dict[str, Any]:
     """Extracts the values from the object_data that are used for matching the
     specified type of object in MyTardis
@@ -88,7 +88,7 @@ class Overseer(metaclass=Singleton):
         """Getter for mytardis_setup. Sends API request if self._mytardis_setup is None"""
         return self._mytardis_setup or self.get_mytardis_setup()
 
-    def type_supports_identifiers(self, object_type: MyTardisObjectType) -> bool:
+    def type_supports_identifiers(self, object_type: MyTardisObject) -> bool:
         """Check if the given object type supports identifiers"""
         if self.mytardis_setup.objects_with_ids is None:
             return False
@@ -96,7 +96,7 @@ class Overseer(metaclass=Singleton):
         return object_type in self.mytardis_setup.objects_with_ids
 
     def generate_identifier_matchers(
-        self, object_type: MyTardisObjectType, object_data: dict[str, Any]
+        self, object_type: MyTardisObject, object_data: dict[str, Any]
     ) -> Generator[dict[str, Any], None, None]:
         """Generate object matchers for identifiers"""
 
@@ -116,7 +116,7 @@ class Overseer(metaclass=Singleton):
         # NOTE: if there are no identifiers, we'll yield nothing - is that an error case?
 
     def generate_object_matchers(
-        self, object_type: MyTardisObjectType, object_data: dict[str, Any]
+        self, object_type: MyTardisObject, object_data: dict[str, Any]
     ) -> Generator[dict[str, Any], None, None]:
         """Generate object matchers for the given object type and data"""
 
@@ -127,7 +127,7 @@ class Overseer(metaclass=Singleton):
 
     def _get_matches_from_mytardis(
         self,
-        object_type: MyTardisObjectType,
+        object_type: MyTardisObject,
         query_params: dict[str, str],
     ) -> list[dict[str, Any]]:
         endpoint = get_endpoint(object_type)
@@ -196,7 +196,7 @@ class Overseer(metaclass=Singleton):
         return response.json()
 
     def get_objects_by_identifier(
-        self, object_type: MyTardisObjectType, identifier: str
+        self, object_type: MyTardisObject, identifier: str
     ) -> list[dict[str, Any]]:
         """Retrieve objects from MyTardis of the given type with the given identifier"""
 
@@ -213,7 +213,7 @@ class Overseer(metaclass=Singleton):
 
     def get_matching_objects(
         self,
-        object_type: MyTardisObjectType,
+        object_type: MyTardisObject,
         object_data: dict[str, str],
     ) -> list[dict[str, Any]]:
         """Retrieve objects from MyTardis with field values matching the ones in "field_values"
@@ -232,7 +232,7 @@ class Overseer(metaclass=Singleton):
 
     def get_uris(
         self,
-        object_type: MyTardisObjectType,
+        object_type: MyTardisObject,
         match_keys: dict[str, Any],
     ) -> list[URI]:
         """Calls self.get_objects() to get a list of objects matching search then extracts URIs
@@ -280,7 +280,7 @@ class Overseer(metaclass=Singleton):
         return return_list
 
     def get_uris_by_identifier(
-        self, object_type: MyTardisObjectType, identifier: str
+        self, object_type: MyTardisObject, identifier: str
     ) -> list[URI]:
         """Get URIs for objects of the given type with the given identifier"""
 
@@ -331,10 +331,10 @@ class Overseer(metaclass=Singleton):
         response_dict = response_dict["objects"][0]
 
         objects_with_ids = map_optional(
-            MyTardisObjectType, response_dict["identified_objects"]
+            MyTardisObject, response_dict["identified_objects"]
         )
         objects_with_profiles = map_optional(
-            MyTardisObjectType, response_dict["profiled_objects"]
+            MyTardisObject, response_dict["profiled_objects"]
         )
 
         mytardis_setup = IntrospectionConfig(

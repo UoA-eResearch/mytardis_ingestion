@@ -23,7 +23,7 @@ from requests.auth import AuthBase
 
 from src.blueprints.custom_data_types import MTUrl
 from src.blueprints.storage_boxes import StorageTypesEnum
-from src.mytardis_client.types import MyTardisObjectType
+from src.mytardis_client.types import MyTardisObject
 
 logger = logging.getLogger(__name__)
 
@@ -180,8 +180,8 @@ class IntrospectionConfig(BaseModel):
 
     old_acls: bool
     projects_enabled: bool
-    objects_with_ids: Optional[list[MyTardisObjectType]] = None
-    objects_with_profiles: Optional[list[MyTardisObjectType]] = None
+    objects_with_ids: Optional[list[MyTardisObject]] = None
+    objects_with_profiles: Optional[list[MyTardisObject]] = None
 
 
 class ProfileConfig(BaseModel):

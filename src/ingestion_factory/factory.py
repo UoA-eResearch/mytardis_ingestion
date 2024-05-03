@@ -16,7 +16,7 @@ from src.crucible.crucible import Crucible
 from src.extraction.manifest import IngestionManifest
 from src.forges.forge import Forge
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
-from src.mytardis_client.types import MyTardisObjectType
+from src.mytardis_client.types import MyTardisObject
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 
@@ -111,7 +111,7 @@ class IngestionFactory:
                 continue
 
             matching_projects = self._overseer.get_matching_objects(
-                MyTardisObjectType.PROJECT, project.model_dump()
+                MyTardisObject.PROJECT, project.model_dump()
             )
             if len(matching_projects) > 0:
                 project_uri = matching_projects[0]["resource_uri"]
@@ -151,7 +151,7 @@ class IngestionFactory:
                 continue
 
             matching_experiments = self._overseer.get_matching_objects(
-                MyTardisObjectType.EXPERIMENT, experiment.model_dump()
+                MyTardisObject.EXPERIMENT, experiment.model_dump()
             )
             if len(matching_experiments) > 0:
                 experiment_uri = matching_experiments[0]["resource_uri"]
@@ -190,7 +190,7 @@ class IngestionFactory:
                 continue
 
             matching_datasets = self._overseer.get_matching_objects(
-                MyTardisObjectType.DATASET, dataset.model_dump()
+                MyTardisObject.DATASET, dataset.model_dump()
             )
             if len(matching_datasets) > 0:
                 dataset_uri = matching_datasets[0]["resource_uri"]
@@ -230,7 +230,7 @@ class IngestionFactory:
             datafile.replicas.append(self.conveyor.create_replica(datafile))
 
             matching_datafiles = self._overseer.get_matching_objects(
-                MyTardisObjectType.DATAFILE, datafile.model_dump()
+                MyTardisObject.DATAFILE, datafile.model_dump()
             )
             if len(matching_datafiles) > 0:
                 logging.info(

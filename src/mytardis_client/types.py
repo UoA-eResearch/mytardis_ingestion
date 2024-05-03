@@ -5,7 +5,7 @@ from enum import Enum
 from pydantic import BaseModel
 
 
-class MyTardisObjectType(str, Enum):
+class MyTardisObject(str, Enum):
     """
     Definition of the MyTardis object types.
 
@@ -39,52 +39,52 @@ class MyTardisTypeInfo(BaseModel):
     match_fields: list[str]
 
 
-_MYTARDIS_TYPE_INFO: dict[MyTardisObjectType, MyTardisTypeInfo] = {
-    MyTardisObjectType.PROJECT: MyTardisTypeInfo(
+_MYTARDIS_TYPE_INFO: dict[MyTardisObject, MyTardisTypeInfo] = {
+    MyTardisObject.PROJECT: MyTardisTypeInfo(
         match_fields=[
             "name",
         ],
     ),
-    MyTardisObjectType.EXPERIMENT: MyTardisTypeInfo(
+    MyTardisObject.EXPERIMENT: MyTardisTypeInfo(
         match_fields=[
             "title",
         ],
     ),
-    MyTardisObjectType.DATASET: MyTardisTypeInfo(
+    MyTardisObject.DATASET: MyTardisTypeInfo(
         match_fields=[
             "description",
             "experiments",
             "instrument",
         ],
     ),
-    MyTardisObjectType.DATAFILE: MyTardisTypeInfo(
+    MyTardisObject.DATAFILE: MyTardisTypeInfo(
         match_fields=[
             "filename",
             "directory",
             "dataset",
         ],
     ),
-    MyTardisObjectType.INSTRUMENT: MyTardisTypeInfo(
+    MyTardisObject.INSTRUMENT: MyTardisTypeInfo(
         match_fields=[
             "name",
         ],
     ),
-    MyTardisObjectType.INSTITUTION: MyTardisTypeInfo(
+    MyTardisObject.INSTITUTION: MyTardisTypeInfo(
         match_fields=[
             "name",
         ],
     ),
-    MyTardisObjectType.FACILITY: MyTardisTypeInfo(
+    MyTardisObject.FACILITY: MyTardisTypeInfo(
         match_fields=[
             "name",
         ],
     ),
-    MyTardisObjectType.STORAGE_BOX: MyTardisTypeInfo(
+    MyTardisObject.STORAGE_BOX: MyTardisTypeInfo(
         match_fields=[
             "name",
         ],
     ),
-    MyTardisObjectType.USER: MyTardisTypeInfo(
+    MyTardisObject.USER: MyTardisTypeInfo(
         match_fields=[
             "username",
         ],
@@ -92,7 +92,7 @@ _MYTARDIS_TYPE_INFO: dict[MyTardisObjectType, MyTardisTypeInfo] = {
 }
 
 
-def get_type_info(object_type: MyTardisObjectType) -> MyTardisTypeInfo:
+def get_type_info(object_type: MyTardisObject) -> MyTardisTypeInfo:
     """Get the type info for a given MyTardis object type"""
     type_info = _MYTARDIS_TYPE_INFO.get(object_type)
 

@@ -19,7 +19,7 @@ from src.config.config import ConnectionConfig, IntrospectionConfig
 from src.mytardis_client.endpoints import get_endpoint
 from src.mytardis_client.helpers import resource_uri_to_id
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
-from src.mytardis_client.types import MyTardisObjectType
+from src.mytardis_client.types import MyTardisObject
 from src.overseers.overseer import Overseer
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ def test_get_matches_from_mytardis(
     connection: ConnectionConfig,
     project_response_dict: dict[str, Any],
 ) -> None:
-    object_type = MyTardisObjectType.PROJECT
+    object_type = MyTardisObject.PROJECT
     project_name = project_response_dict["objects"][0]["name"]
     project_identifiers = project_response_dict["objects"][0]["identifiers"]
 
@@ -102,7 +102,7 @@ def test_get_objects_http_error(
     connection: ConnectionConfig,
     overseer: Overseer,
 ) -> None:
-    object_type = MyTardisObjectType.PROJECT
+    object_type = MyTardisObject.PROJECT
     search_string = "Project_1"
     url_suffix = get_endpoint(object_type).url_suffix
     responses.add(
@@ -144,7 +144,7 @@ def test_get_objects_general_error(
     overseer: Overseer,
 ) -> None:
     mock_mytardis_api_request.side_effect = IOError()
-    object_type = MyTardisObjectType.PROJECT
+    object_type = MyTardisObject.PROJECT
     search_string = "Project_1"
     error_str = (
         "Non-HTTP exception in Overseer.get_objects call\n"
@@ -164,7 +164,7 @@ def test_get_objects_no_objects(
     connection: ConnectionConfig,
     response_dict_not_found: dict[str, Any],
 ) -> None:
-    object_type = MyTardisObjectType.PROJECT
+    object_type = MyTardisObject.PROJECT
     endpoint = get_endpoint(object_type)
     search_string = "Project_1"
     responses.add(
@@ -202,7 +202,7 @@ def test_get_uris(
     overseer: Overseer,
     project_response_dict: dict[str, Any],
 ) -> None:
-    object_type = MyTardisObjectType.PROJECT
+    object_type = MyTardisObject.PROJECT
     endpoint = get_endpoint(object_type)
     search_string = "Project_1"
 
@@ -219,7 +219,7 @@ def test_get_uris(
     )
 
     assert overseer.get_uris_by_identifier(
-        MyTardisObjectType.PROJECT,
+        MyTardisObject.PROJECT,
         search_string,
     ) == [URI("/api/v1/project/1/")]
 
@@ -232,7 +232,7 @@ def test_get_uris_no_objects(
     overseer: Overseer,
     response_dict_not_found: dict[str, Any],
 ) -> None:
-    object_type = MyTardisObjectType.PROJECT
+    object_type = MyTardisObject.PROJECT
     endpoint = get_endpoint(object_type)
     search_string = "Project_1"
     responses.add(
@@ -259,7 +259,7 @@ def test_get_uris_no_objects(
     )
     assert (
         overseer.get_uris_by_identifier(
-            MyTardisObjectType.PROJECT,
+            MyTardisObject.PROJECT,
             search_string,
         )
         == []
@@ -277,7 +277,7 @@ def test_get_uris_malformed_return_dict(
     caplog.set_level(logging.ERROR)
     test_dict = project_response_dict
     test_dict["objects"][0].pop("resource_uri")
-    object_type = MyTardisObjectType.PROJECT
+    object_type = MyTardisObject.PROJECT
     endpoint = get_endpoint(object_type)
     search_string = "Project_1"
     responses.add(
@@ -308,7 +308,7 @@ def test_get_uris_malformed_return_dict(
     )
     with pytest.raises(KeyError):
         _ = overseer.get_uris_by_identifier(
-            MyTardisObjectType.PROJECT,
+            MyTardisObject.PROJECT,
             search_string,
         )
         assert error_str in caplog.text
@@ -322,7 +322,7 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
     overseer: Overseer,
 ) -> None:
     caplog.set_level(logging.WARNING)
-    object_type = MyTardisObjectType.PROJECT
+    object_type = MyTardisObject.PROJECT
     search_string = "Project_1"
     endpoint = get_endpoint(object_type)
     responses.add(
@@ -348,7 +348,7 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
 
     with pytest.raises(HTTPError):
         overseer.get_uris_by_identifier(
-            MyTardisObjectType.PROJECT,
+            MyTardisObject.PROJECT,
             search_string,
         )
 
@@ -364,7 +364,7 @@ def test_get_uris_general_error(
     overseer: Overseer,
 ) -> None:
     mock_mytardis_api_request.side_effect = IOError()
-    object_type = MyTardisObjectType.PROJECT
+    object_type = MyTardisObject.PROJECT
     search_string = "Project_1"
     with pytest.raises(IOError):
         _ = overseer.get_uris_by_identifier(

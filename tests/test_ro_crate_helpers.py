@@ -6,7 +6,7 @@ import pytest
 import rocrate
 
 import src.profiles.ro_crate._consts as RO_CrateConsts
-from src.mytardis_client.types import MyTardisObjectType
+from src.mytardis_client.types import MyTardisObject
 from src.profiles.ro_crate.crate_to_tardis_mapper import CrateToTardisMapper
 from tests.fixtures.fixtures_ro_crate import rocrate_profile_json
 
@@ -39,7 +39,7 @@ def test_load_rocrate_profile(
 def test_profile_mapping_functionality(
     testing_rocrate_mapper: CrateToTardisMapper,
 ) -> None:
-    obj = MyTardisObjectType.PROJECT
+    obj = MyTardisObject.PROJECT
     mt_field = "name"
     ro_crate_field = "@id"
     assert testing_rocrate_mapper.get_mt_field(obj, ro_crate_field) == mt_field

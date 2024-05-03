@@ -16,7 +16,7 @@ from src.config.config import (
     SchemaConfig,
     StorageBoxConfig,
 )
-from src.mytardis_client.types import MyTardisObjectType
+from src.mytardis_client.types import MyTardisObject
 
 
 @fixture
@@ -212,11 +212,11 @@ def mytardis_setup(
 ) -> IntrospectionConfig:
 
     objects_with_ids = [
-        MyTardisObjectType(obj)
+        MyTardisObject(obj)
         for obj in processed_introspection_response["objects_with_ids"]
     ]
     objects_with_profiles = [
-        MyTardisObjectType(obj)
+        MyTardisObject(obj)
         for obj in processed_introspection_response["objects_with_profiles"]
     ]
 

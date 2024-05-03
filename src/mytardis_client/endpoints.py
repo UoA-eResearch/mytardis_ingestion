@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 
-from src.mytardis_client.types import MyTardisObjectType
+from src.mytardis_client.types import MyTardisObject
 
 
 class MyTardisEndpoint(BaseModel):
@@ -13,44 +13,44 @@ class MyTardisEndpoint(BaseModel):
 
 # Mapping from MyTardis object to the corresponding API endpoint. Assumes the
 # object corresponds to a single endpoint, which may not always hold(?), but is ok for now.
-_MYTARDIS_OBJECT_ENDPOINTS: dict[MyTardisObjectType, MyTardisEndpoint] = {
-    MyTardisObjectType.PROJECT: MyTardisEndpoint(
+_MYTARDIS_OBJECT_ENDPOINTS: dict[MyTardisObject, MyTardisEndpoint] = {
+    MyTardisObject.PROJECT: MyTardisEndpoint(
         url_suffix="project",
     ),
-    MyTardisObjectType.EXPERIMENT: MyTardisEndpoint(
+    MyTardisObject.EXPERIMENT: MyTardisEndpoint(
         url_suffix="experiment",
     ),
-    MyTardisObjectType.DATASET: MyTardisEndpoint(
+    MyTardisObject.DATASET: MyTardisEndpoint(
         url_suffix="dataset",
     ),
-    MyTardisObjectType.DATAFILE: MyTardisEndpoint(
+    MyTardisObject.DATAFILE: MyTardisEndpoint(
         url_suffix="dataset_file",
     ),
-    MyTardisObjectType.INSTITUTION: MyTardisEndpoint(
+    MyTardisObject.INSTITUTION: MyTardisEndpoint(
         url_suffix="institution",
     ),
-    MyTardisObjectType.INSTRUMENT: MyTardisEndpoint(
+    MyTardisObject.INSTRUMENT: MyTardisEndpoint(
         url_suffix="instrument",
     ),
-    MyTardisObjectType.FACILITY: MyTardisEndpoint(
+    MyTardisObject.FACILITY: MyTardisEndpoint(
         url_suffix="facility",
     ),
-    MyTardisObjectType.STORAGE_BOX: MyTardisEndpoint(
+    MyTardisObject.STORAGE_BOX: MyTardisEndpoint(
         url_suffix="storagebox",
     ),
-    MyTardisObjectType.PROJECT_PARAMETER_SET: MyTardisEndpoint(
+    MyTardisObject.PROJECT_PARAMETER_SET: MyTardisEndpoint(
         url_suffix="projectparameterset",
     ),
-    MyTardisObjectType.EXPERIMENT_PARAMETER_SET: MyTardisEndpoint(
+    MyTardisObject.EXPERIMENT_PARAMETER_SET: MyTardisEndpoint(
         url_suffix="experimentparameterset"
     ),
-    MyTardisObjectType.DATASET_PARAMETER_SET: MyTardisEndpoint(
+    MyTardisObject.DATASET_PARAMETER_SET: MyTardisEndpoint(
         url_suffix="datasetparameterset",
     ),
 }
 
 
-def get_endpoint(object_type: MyTardisObjectType) -> MyTardisEndpoint:
+def get_endpoint(object_type: MyTardisObject) -> MyTardisEndpoint:
     """Get the endpoint for a given MyTardis object type"""
     endpoint = _MYTARDIS_OBJECT_ENDPOINTS.get(object_type)
 
