@@ -17,6 +17,7 @@ from src.config.config import IntrospectionConfig
 from src.mytardis_client.endpoints import get_endpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.types import MyTardisObjectType, get_type_info
+from src.utils.functional import map_optional
 from src.utils.types.singleton import Singleton
 
 logger = logging.getLogger(__name__)
@@ -341,15 +342,11 @@ class Overseer(metaclass=Singleton):
             )
         response_dict = response_dict["objects"][0]
 
-        objects_with_ids = (
-            [MyTardisObjectType(obj) for obj in response_dict["identified_objects"]]
-            if response_dict["identified_objects"] is not None
-            else None
+        objects_with_ids = map_optional(
+            MyTardisObjectType, response_dict["identified_objects"]
         )
-        objects_with_profiles = (
-            [MyTardisObjectType(obj) for obj in response_dict["profiled_objects"]]
-            if response_dict["profiled_objects"] is not None
-            else None
+        objects_with_profiles = map_optional(
+            MyTardisObjectType, response_dict["profiled_objects"]
         )
 
         mytardis_setup = IntrospectionConfig(
