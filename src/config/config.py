@@ -180,8 +180,10 @@ class IntrospectionConfig(BaseModel):
 
     old_acls: bool
     projects_enabled: bool
-    objects_with_ids: Optional[list[MyTardisObject]] = None
-    objects_with_profiles: Optional[list[MyTardisObject]] = None
+    identifiers_enabled: bool
+    profiles_enabled: bool
+    objects_with_ids: list[MyTardisObject]
+    objects_with_profiles: list[MyTardisObject]
 
 
 class ProfileConfig(BaseModel):
