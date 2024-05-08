@@ -274,6 +274,7 @@ def collate_datafile_info(
     )
 
 
+# pylint: disable=too-many-locals
 def parse_raw_data(
     root: DirectoryNode, file_filter: filters.PathFilterSet
 ) -> IngestionManifest:
