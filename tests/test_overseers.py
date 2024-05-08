@@ -191,7 +191,6 @@ def test_get_objects_no_objects(
     )
 
     assert overseer.get_matching_objects(object_type, {"name": search_string}) == []
-    assert overseer.get_objects_by_identifier(object_type, search_string) == []
 
     Overseer.clear()
 

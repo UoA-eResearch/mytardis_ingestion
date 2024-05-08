@@ -190,19 +190,6 @@ class Overseer(metaclass=Singleton):
             raise error
         return response.json()
 
-    def get_objects_by_identifier(
-        self, object_type: MyTardisObject, identifier: str
-    ) -> list[dict[str, Any]]:
-        """Retrieve objects from MyTardis of the given type with the given identifier"""
-
-        self.check_identifiers_enabled_for_type(object_type)
-
-        if objects := self._get_matches_from_mytardis(
-            object_type, {"identifier": identifier}
-        ):
-            return list(objects)
-        return []
-
     def get_matching_objects(
         self,
         object_type: MyTardisObject,
