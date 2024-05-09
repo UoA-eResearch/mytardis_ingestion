@@ -104,11 +104,9 @@ def get_project_details(
     project_name: str,
     project_principal_investigator: str,
     project_url: str,
-    autoarchive_details: Dict[str, Any],
 ) -> List[Dict[str, Any]]:
     return [
         {
-            "autoarchive": autoarchive_details,
             "created_by": "api/v1/user/1/",
             "datafile_count": 2,
             "dataset_count": 1,

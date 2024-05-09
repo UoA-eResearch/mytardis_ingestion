@@ -4,7 +4,7 @@
 
 """Tests of the Overseer class and its functions"""
 import logging
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import urljoin
 
 import mock
@@ -15,11 +15,12 @@ from requests import HTTPError
 from responses import matchers
 
 from src.blueprints.custom_data_types import URI
-from src.blueprints.storage_boxes import StorageBox
 from src.config.config import ConnectionConfig, IntrospectionConfig
-from src.mytardis_client.enumerators import ObjectSearchEnum
+from src.mytardis_client.endpoints import get_endpoint
+from src.mytardis_client.helpers import resource_uri_to_id
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
-from src.overseers import Overseer
+from src.mytardis_client.types import MyTardisObject
+from src.overseers.overseer import Overseer
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -34,50 +35,64 @@ def fixture_overseer_plain(
 
 def test_staticmethod_resource_uri_to_id() -> None:
     test_uri = URI("/v1/user/10")
-    assert Overseer.resource_uri_to_id(test_uri) == 10
+    assert resource_uri_to_id(test_uri) == 10
 
     test_uri = URI("/v1/user/10/")
-    assert Overseer.resource_uri_to_id(test_uri) == 10
+    assert resource_uri_to_id(test_uri) == 10
 
 
-@pytest.mark.xfail
 @responses.activate
-def test_get_objects(
+def test_get_matches_from_mytardis(
     overseer: Overseer,
     connection: ConnectionConfig,
     project_response_dict: dict[str, Any],
 ) -> None:
-    object_type = ObjectSearchEnum.PROJECT.value
-    search_string = "Project_1"
+    object_type = MyTardisObject.PROJECT
+    project_name = project_response_dict["objects"][0]["name"]
+    project_identifiers = project_response_dict["objects"][0]["identifiers"]
+
+    endpoint = get_endpoint(object_type)
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(project_response_dict),
         match=[
             matchers.query_param_matcher(
-                {object_type["target"]: search_string},
+                {"name": project_name},
             ),
         ],
         status=200,
     )
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(project_response_dict),
         match=[
             matchers.query_param_matcher(
-                {"identifier": search_string},
+                {"identifier": project_identifiers[0]},
             ),
         ],
         status=200,
     )
+
+    # pylint: disable=protected-access
     assert (
-        overseer.get_objects(
+        overseer._get_matches_from_mytardis(
             object_type,
-            search_string,
+            {"name": project_name},
         )
         == project_response_dict["objects"]
     )
+
+    # pylint: disable=protected-access
+    assert (
+        overseer._get_matches_from_mytardis(
+            object_type,
+            {"identifier": project_identifiers[0]},
+        )
+        == project_response_dict["objects"]
+    )
+
     Overseer.clear()
 
 
@@ -87,21 +102,22 @@ def test_get_objects_http_error(
     connection: ConnectionConfig,
     overseer: Overseer,
 ) -> None:
-    object_type = ObjectSearchEnum.PROJECT.value
+    object_type = MyTardisObject.PROJECT
     search_string = "Project_1"
+    url_suffix = get_endpoint(object_type).url_suffix
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, url_suffix),
         match=[
             matchers.query_param_matcher(
-                {object_type["target"]: search_string},
+                {"name": search_string},
             ),
         ],
         status=504,
     )
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, url_suffix),
         match=[
             matchers.query_param_matcher(
                 {"identifier": search_string},
@@ -110,19 +126,14 @@ def test_get_objects_http_error(
         status=504,
     )
     caplog.set_level(logging.WARNING)
-    warning_str = (
-        "Failed HTTP request from Overseer.get_objects call\n"
-        f"object_type = {object_type}\n"
-        "query_params"
-    )
-    assert (
-        overseer.get_objects(
-            object_type,
-            search_string,
-        )
-        == []
-    )
-    assert warning_str in caplog.text
+
+    with pytest.raises(HTTPError):
+        overseer.get_matching_objects(object_type, {"name": search_string})
+
+    assert "Failed HTTP request" in caplog.text
+    assert "Overseer" in caplog.text
+    assert f"{object_type}" in caplog.text
+
     Overseer.clear()
 
 
@@ -133,7 +144,7 @@ def test_get_objects_general_error(
     overseer: Overseer,
 ) -> None:
     mock_mytardis_api_request.side_effect = IOError()
-    object_type = ObjectSearchEnum.PROJECT.value
+    object_type = MyTardisObject.PROJECT
     search_string = "Project_1"
     error_str = (
         "Non-HTTP exception in Overseer.get_objects call\n"
@@ -141,11 +152,9 @@ def test_get_objects_general_error(
         "query_params"
     )
     with pytest.raises(IOError):
-        _ = overseer.get_objects(
-            object_type,
-            search_string,
-        )
+        _ = overseer.get_matching_objects(object_type, {"name": search_string})
         assert error_str in caplog.text
+
     Overseer.clear()
 
 
@@ -155,22 +164,23 @@ def test_get_objects_no_objects(
     connection: ConnectionConfig,
     response_dict_not_found: dict[str, Any],
 ) -> None:
-    object_type = ObjectSearchEnum.PROJECT.value
+    object_type = MyTardisObject.PROJECT
+    endpoint = get_endpoint(object_type)
     search_string = "Project_1"
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(response_dict_not_found),
         match=[
             matchers.query_param_matcher(
-                {object_type["target"]: search_string},
+                {"name": search_string},
             ),
         ],
         status=200,
     )
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(response_dict_not_found),
         match=[
             matchers.query_param_matcher(
@@ -180,39 +190,24 @@ def test_get_objects_no_objects(
         status=200,
     )
 
-    assert (
-        overseer.get_objects(
-            object_type,
-            search_string,
-        )
-        == []
-    )
+    assert overseer.get_matching_objects(object_type, {"name": search_string}) == []
+
     Overseer.clear()
 
 
-@pytest.mark.xfail
 @responses.activate
 def test_get_uris(
     connection: ConnectionConfig,
     overseer: Overseer,
     project_response_dict: dict[str, Any],
 ) -> None:
-    object_type = ObjectSearchEnum.PROJECT.value
+    object_type = MyTardisObject.PROJECT
+    endpoint = get_endpoint(object_type)
     search_string = "Project_1"
+
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
-        json=(project_response_dict),
-        match=[
-            matchers.query_param_matcher(
-                {object_type["target"]: search_string},
-            ),
-        ],
-        status=200,
-    )
-    responses.add(
-        responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(project_response_dict),
         match=[
             matchers.query_param_matcher(
@@ -221,10 +216,12 @@ def test_get_uris(
         ],
         status=200,
     )
-    assert overseer.get_uris(
-        object_type,
+
+    assert overseer.get_uris_by_identifier(
+        MyTardisObject.PROJECT,
         search_string,
     ) == [URI("/api/v1/project/1/")]
+
     Overseer.clear()
 
 
@@ -234,22 +231,23 @@ def test_get_uris_no_objects(
     overseer: Overseer,
     response_dict_not_found: dict[str, Any],
 ) -> None:
-    object_type = ObjectSearchEnum.PROJECT.value
+    object_type = MyTardisObject.PROJECT
+    endpoint = get_endpoint(object_type)
     search_string = "Project_1"
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(response_dict_not_found),
         match=[
             matchers.query_param_matcher(
-                {object_type["target"]: search_string},
+                {"name": search_string},
             ),
         ],
         status=200,
     )
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(response_dict_not_found),
         match=[
             matchers.query_param_matcher(
@@ -259,8 +257,8 @@ def test_get_uris_no_objects(
         status=200,
     )
     assert (
-        overseer.get_uris(
-            object_type,
+        overseer.get_uris_by_identifier(
+            MyTardisObject.PROJECT,
             search_string,
         )
         == []
@@ -268,7 +266,6 @@ def test_get_uris_no_objects(
     Overseer.clear()
 
 
-@pytest.mark.xfail
 @responses.activate
 def test_get_uris_malformed_return_dict(
     caplog: LogCaptureFixture,
@@ -279,22 +276,23 @@ def test_get_uris_malformed_return_dict(
     caplog.set_level(logging.ERROR)
     test_dict = project_response_dict
     test_dict["objects"][0].pop("resource_uri")
-    object_type = ObjectSearchEnum.PROJECT.value
+    object_type = MyTardisObject.PROJECT
+    endpoint = get_endpoint(object_type)
     search_string = "Project_1"
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(test_dict),
         match=[
             matchers.query_param_matcher(
-                {object_type["target"]: search_string},
+                {"name": search_string},
             ),
         ],
         status=200,
     )
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         json=(test_dict),
         match=[
             matchers.query_param_matcher(
@@ -308,8 +306,8 @@ def test_get_uris_malformed_return_dict(
         f"{object_type} searching with {search_string}"
     )
     with pytest.raises(KeyError):
-        _ = overseer.get_uris(
-            object_type,
+        _ = overseer.get_uris_by_identifier(
+            MyTardisObject.PROJECT,
             search_string,
         )
         assert error_str in caplog.text
@@ -323,21 +321,22 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
     overseer: Overseer,
 ) -> None:
     caplog.set_level(logging.WARNING)
-    object_type = ObjectSearchEnum.PROJECT.value
+    object_type = MyTardisObject.PROJECT
     search_string = "Project_1"
+    endpoint = get_endpoint(object_type)
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         match=[
             matchers.query_param_matcher(
-                {object_type["target"]: search_string},
+                {"name": search_string},
             ),
         ],
         status=504,
     )
     responses.add(
         responses.GET,
-        urljoin(connection.api_template, object_type["type"]),
+        urljoin(connection.api_template, endpoint.url_suffix),
         match=[
             matchers.query_param_matcher(
                 {"identifier": search_string},
@@ -345,19 +344,16 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
         ],
         status=504,
     )
-    warning_str = (
-        "Failed HTTP request from Overseer.get_objects call\n"
-        f"object_type = {object_type}\n"
-        "query_params"
-    )
-    assert (
-        overseer.get_uris(
-            object_type,
+
+    with pytest.raises(HTTPError):
+        overseer.get_uris_by_identifier(
+            MyTardisObject.PROJECT,
             search_string,
         )
-        == []
-    )
-    assert warning_str in caplog.text
+
+    assert "Failed HTTP request from Overseer" in caplog.text
+    assert f"{object_type}" in caplog.text
+
     Overseer.clear()
 
 
@@ -367,10 +363,10 @@ def test_get_uris_general_error(
     overseer: Overseer,
 ) -> None:
     mock_mytardis_api_request.side_effect = IOError()
-    object_type = ObjectSearchEnum.PROJECT.value
+    object_type = MyTardisObject.PROJECT
     search_string = "Project_1"
     with pytest.raises(IOError):
-        _ = overseer.get_uris(
+        _ = overseer.get_uris_by_identifier(
             object_type,
             search_string,
         )

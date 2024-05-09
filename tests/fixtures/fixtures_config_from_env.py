@@ -1,7 +1,6 @@
 # pylint: disable=missing-function-docstring,redefined-outer-name
 # pylint: disable=missing-module-docstring
 
-from pathlib import Path
 from typing import Any, Dict, List
 
 from pytest import fixture
@@ -17,6 +16,7 @@ from src.config.config import (
     SchemaConfig,
     StorageBoxConfig,
 )
+from src.mytardis_client.types import MyTardisObject
 
 
 @fixture
@@ -121,6 +121,7 @@ def processed_introspection_response() -> Dict[str, bool | List[str]]:
     return {
         "old_acls": False,
         "projects_enabled": True,
+        "identifiers_enabled": True,
         "objects_with_ids": [
             "dataset",
             "experiment",
@@ -129,6 +130,8 @@ def processed_introspection_response() -> Dict[str, bool | List[str]]:
             "project",
             "institution",
         ],
+        "profiles_enabled": False,
+        "objects_with_profiles": [],
     }
 
 
@@ -207,12 +210,25 @@ def default_schema(
 
 @fixture
 def mytardis_setup(
-    processed_introspection_response: Dict[str, bool | List[str]],
+    processed_introspection_response: dict[str, Any],
 ) -> IntrospectionConfig:
+
+    objects_with_ids = [
+        MyTardisObject(obj)
+        for obj in processed_introspection_response["objects_with_ids"]
+    ]
+    objects_with_profiles = [
+        MyTardisObject(obj)
+        for obj in processed_introspection_response["objects_with_profiles"]
+    ]
+
     return IntrospectionConfig(
         old_acls=processed_introspection_response["old_acls"],
         projects_enabled=processed_introspection_response["projects_enabled"],
-        objects_with_ids=processed_introspection_response["objects_with_ids"],
+        identifiers_enabled=processed_introspection_response["identifiers_enabled"],
+        profiles_enabled=processed_introspection_response["profiles_enabled"],
+        objects_with_ids=objects_with_ids,
+        objects_with_profiles=objects_with_profiles,
     )
 
 

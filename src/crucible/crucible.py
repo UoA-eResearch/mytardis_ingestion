@@ -10,13 +10,10 @@ from src.blueprints.datafile import Datafile, RefinedDatafile
 from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
-from src.mytardis_client.enumerators import ObjectSearchEnum
-from src.overseers import Overseer
+from src.mytardis_client.types import MyTardisObject
+from src.overseers.overseer import Overseer
 
 logger = logging.getLogger(__name__)
-
-
-### PASTED CODE
 
 
 class Crucible:
@@ -31,8 +28,8 @@ class Crucible:
         MyTardis and finding their URIs"""
         institutions: list[URI] = []
         for institution in refined_project.institution:
-            if institution_uri := self.overseer.get_uris(
-                ObjectSearchEnum.INSTITUTION.value, institution
+            if institution_uri := self.overseer.get_uris_by_identifier(
+                MyTardisObject.INSTITUTION, institution
             ):
                 institutions.append(*institution_uri)
         institutions = list(set(institutions))
@@ -79,9 +76,9 @@ class Crucible:
             refined_experiment.projects
             and self.overseer.mytardis_setup.projects_enabled
         ):
-            for project in refined_experiment.projects:
-                if project_uri := self.overseer.get_uris(
-                    ObjectSearchEnum.PROJECT.value, project
+            for project_identifier in refined_experiment.projects:
+                if project_uri := self.overseer.get_uris_by_identifier(
+                    MyTardisObject.PROJECT, project_identifier
                 ):
                     projects.append(*project_uri)
             projects = list(set(projects))
@@ -133,20 +130,20 @@ class Crucible:
         """Refine a dataset by finding URIs from MyTardis for the
         relevant fields of interest"""
         experiment_uris: list[URI] = []
-        for experiment in refined_dataset.experiments:
-            if uris := self.overseer.get_uris(
-                ObjectSearchEnum.EXPERIMENT.value, experiment
+        for experiment_identifier in refined_dataset.experiments:
+            if uris := self.overseer.get_uris_by_identifier(
+                MyTardisObject.EXPERIMENT, experiment_identifier
             ):
                 experiment_uris.extend(uris)
             else:
-                logger.warning("No URI found for experiment %s.", experiment)
+                logger.warning("No URI found for experiment %s.", experiment_identifier)
 
         experiment_uris = list(set(experiment_uris))
         if not experiment_uris:
             logger.warning("Unable to find experiments associated with this dataset.")
             return None
-        instruments = self.overseer.get_uris(
-            ObjectSearchEnum.INSTRUMENT.value, refined_dataset.instrument
+        instruments = self.overseer.get_uris_by_identifier(
+            MyTardisObject.INSTRUMENT, refined_dataset.instrument
         )
         if instruments:
             instruments = list(set(instruments))
@@ -191,8 +188,8 @@ class Crucible:
     def prepare_datafile(self, refined_datafile: RefinedDatafile) -> Datafile | None:
         """Refine a datafile by finding URIs from MyTardis for the
         relevant fields of interest."""
-        datasets = self.overseer.get_uris(
-            ObjectSearchEnum.DATASET.value, refined_datafile.dataset
+        datasets = self.overseer.get_uris_by_identifier(
+            MyTardisObject.DATASET, refined_datafile.dataset
         )
         if not datasets:
             logger.warning(

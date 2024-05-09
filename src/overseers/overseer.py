@@ -3,16 +3,18 @@
 for the Forge class."""
 
 import logging
-from typing import Any, Dict, List, Optional
-from urllib.parse import urljoin, urlparse
+from collections.abc import Generator
+from typing import Any
+from urllib.parse import urljoin
 
 from pydantic import ValidationError
 from requests.exceptions import HTTPError
 
 from src.blueprints.custom_data_types import URI
 from src.config.config import IntrospectionConfig
-from src.mytardis_client.enumerators import ObjectSearchDict
+from src.mytardis_client.endpoints import get_endpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
+from src.mytardis_client.types import MyTardisObject, get_type_info
 from src.utils.types.singleton import Singleton
 
 logger = logging.getLogger(__name__)
@@ -23,6 +25,23 @@ MYTARDIS_PROJECTS_DISABLED_MESSAGE = (
     "and ensure that the 'projects' app is enabled. This may require rerunning "
     "migrations."
 )
+
+
+def extract_values_for_matching(
+    object_type: MyTardisObject, object_data: dict[str, Any]
+) -> dict[str, Any]:
+    """Extracts the values from the object_data that are used for matching the
+    specified type of object in MyTardis
+    """
+
+    type_info = get_type_info(object_type)
+
+    match_keys = {}
+
+    for key in type_info.match_fields:
+        match_keys[key] = object_data[key]
+
+    return match_keys
 
 
 class Overseer(metaclass=Singleton):
@@ -66,33 +85,54 @@ class Overseer(metaclass=Singleton):
         """Getter for mytardis_setup. Sends API request if self._mytardis_setup is None"""
         return self._mytardis_setup or self.get_mytardis_setup()
 
-    @staticmethod
-    def resource_uri_to_id(uri: URI) -> int:
-        """Gets the id from a resource URI
+    def check_identifiers_enabled_for_type(self, object_type: MyTardisObject) -> None:
+        """Check if identifiers are enabled for the given object type.
 
-        Takes resource URI like: http://example.org/api/v1/experiment/998
-        and returns just the id value (998).
-
-        Args:
-            uri: str - the URI from MyTardis
-
-        Returns:
-            The integer id that maps to the URI
+        Raises RuntimeError if the MyTardis instance doesn't have identifiers enabled.
+        Raises TypeError if identifiers are not enabled for the given object type.
         """
-        uri_sep: str = "/"
-        return int(urlparse(uri).path.rstrip(uri_sep).split(uri_sep).pop())
 
-    def _get_object_from_mytardis(
+        if not self.mytardis_setup.identifiers_enabled:
+            raise RuntimeError("Identifiers are not enabled in MyTardis")
+
+        if object_type not in self.mytardis_setup.objects_with_ids:
+            raise TypeError(
+                f"MyTardis does not support identifiers for object_type {object_type}"
+            )
+
+    def generate_identifier_matchers(
+        self, object_type: MyTardisObject, object_data: dict[str, Any]
+    ) -> Generator[dict[str, Any], None, None]:
+        """Generate object matchers for identifiers"""
+
+        self.check_identifiers_enabled_for_type(object_type)
+
+        if identifiers := object_data.get("identifiers"):
+            for identifier in identifiers:
+                yield {"identifier": identifier}
+
+    def generate_object_matchers(
+        self, object_type: MyTardisObject, object_data: dict[str, Any]
+    ) -> Generator[dict[str, Any], None, None]:
+        """Generate object matchers for the given object type and data"""
+
+        if object_type in self.mytardis_setup.objects_with_ids:
+            yield from self.generate_identifier_matchers(object_type, object_data)
+
+        yield extract_values_for_matching(object_type, object_data)
+
+    def _get_matches_from_mytardis(
         self,
-        object_type: ObjectSearchDict,
-        query_params: Dict[str, str],
-    ) -> Any | None:
-        url = urljoin(self.rest_factory.api_template, object_type["url_substring"])
+        object_type: MyTardisObject,
+        query_params: dict[str, str],
+    ) -> list[dict[str, Any]]:
+        endpoint = get_endpoint(object_type)
+        url = urljoin(self.rest_factory.api_template, endpoint.url_suffix)
         try:
             response = self.rest_factory.mytardis_api_request(
                 "GET", url, params=query_params
             )
-        except HTTPError:
+        except HTTPError as error:
             logger.warning(
                 (
                     "Failed HTTP request from Overseer.get_objects call\n"
@@ -101,7 +141,7 @@ class Overseer(metaclass=Singleton):
                 ),
                 exc_info=True,
             )
-            return None
+            raise error
         except Exception as error:
             logger.error(
                 (
@@ -112,109 +152,34 @@ class Overseer(metaclass=Singleton):
                 exc_info=True,
             )
             raise error
-        return response.json()
 
-    def get_object_by_uri(
+        response_json: dict[str, Any] = response.json()
+        return list(response_json["objects"])
+
+    def get_matching_objects(
         self,
-        uri: URI,
-    ) -> Optional[Any]:
-        """GET an object from MyTardis using the URI
-
-        Args:
-            uri (URI): The URI of the object to GET
-
-        Raises:
-            error: _description_
-            error: _description_
-            ValueError: _description_
-            ValueError: _description_
-
-        Returns:
-            Dict[str,Any]: The object retrieved and deserialised from JSON
-        """
-        url = urljoin(self.rest_factory.hostname, uri)
-        try:
-            response = self.rest_factory.mytardis_api_request("GET", url)
-        except HTTPError:
-            logger.warning(
-                ("Failed HTTP request from Overseer.get_objects call\n" f"URI = {uri}"),
-                exc_info=True,
-            )
-            return None
-        except Exception as error:
-            logger.error(
-                ("Non-HTTP exception in Overseer.get_objects call\n" f"URI = {uri}"),
-                exc_info=True,
-            )
-            raise error
-        return response.json()
-
-    # TODO pylint:disable=fixme
-    # we might want to add a get_objects function that let's you search for
-    # specific query param combinations. Right now it checks if the search
-    # string is in any of the object_type["target"] and "identifier" fields but often
-    # we know where those should be found, i.e. when we pass in a search_string
-    # we know it's either a pid, alternative_id or name
-    def get_objects(
-        self,
-        object_type: ObjectSearchDict,
-        search_string: str,
-    ) -> List[Dict[str, Any]]:
-        """Gets a list of objects matching the search parameters passed
-
-        This function prepares a GET request via the MyTardisRESTFactory instance and returns
-        a list of objects that match the search request.
-
-        Args:
-            object_type: A string representing the different object types that can be searched for
-            search_target: The field that is being searched on (varies from object to object)
-            search_string: The string that the search_target is being searched for.
-
-        Returns:
-            A list of objects from the search request made.
-
-        Raises:
-            HTTPError: The GET request failed for some reason
-        """
-        return_list = []
-        response_dict = None
-        if (  # pylint: disable=unsupported-membership-test
-            self.mytardis_setup.objects_with_ids
-            and object_type["type"] in self.mytardis_setup.objects_with_ids
-        ):
-            query_params = {"identifier": search_string}
-            response_dict = self._get_object_from_mytardis(object_type, query_params)
-            if response_dict and "objects" in response_dict.keys():
-                return_list.extend(iter(response_dict["objects"]))
-        query_params = {object_type["target"]: search_string}
-        response_dict = self._get_object_from_mytardis(object_type, query_params)
-        if response_dict and "objects" in response_dict.keys():
-            return_list.extend(iter(response_dict["objects"]))
-        new_list = []
-        for obj in return_list:
-            if obj not in new_list:
-                new_list.append(obj)
-        return new_list
-
-    def get_objects_by_fields(
-        self,
-        object_type: ObjectSearchDict,
-        field_values: dict[str, str],
+        object_type: MyTardisObject,
+        object_data: dict[str, str],
     ) -> list[dict[str, Any]]:
-        """Retrieve objects from MyTardis with field values matching the ones in "field_values"."""
-        response = self._get_object_from_mytardis(object_type, field_values)
-        if response is None:
-            raise HTTPError("MyTardis object query yielded no response")
-        objects: list[dict[str, Any]] | None = response.get("objects")
-        if objects is None:
-            return []
-        return objects
+        """Retrieve objects from MyTardis with field values matching the ones in "field_values"
+
+        The function extracts the type-dependent match keys from 'object_data' and uses them to
+        query MyTardis for objects whose attributes match the match keys.
+        """
+
+        matchers = self.generate_object_matchers(object_type, object_data)
+
+        for match_keys in matchers:
+            if objects := self._get_matches_from_mytardis(object_type, match_keys):
+                return list(objects)
+
+        return []
 
     def get_uris(
         self,
-        object_type: ObjectSearchDict,
-        search_string: str,
-    ) -> List[URI]:
+        object_type: MyTardisObject,
+        match_keys: dict[str, Any],
+    ) -> list[URI]:
         """Calls self.get_objects() to get a list of objects matching search then extracts URIs
 
         This function calls the get_objects function with the parameters passed. It then takes
@@ -228,10 +193,12 @@ class Overseer(metaclass=Singleton):
         Returns:
             A list of object URIs from the search request made.
         """
-        return_list: list[URI] = []
-        objects = self.get_objects(object_type, search_string)
+        objects = self._get_matches_from_mytardis(object_type, match_keys)
         if not objects:
             return []
+
+        return_list: list[URI] = []
+
         for obj in objects:
             try:
                 uri = URI(obj["resource_uri"])
@@ -239,7 +206,7 @@ class Overseer(metaclass=Singleton):
                 logger.error(
                     (
                         "Malformed return from MyTardis. No resource_uri found for "
-                        f"{object_type} searching with {search_string}. Object in "
+                        f"{object_type} searching with {match_keys}. Object in "
                         f"question is {obj}."
                     ),
                     exc_info=True,
@@ -256,6 +223,15 @@ class Overseer(metaclass=Singleton):
                 raise error
             return_list.append(uri)
         return return_list
+
+    def get_uris_by_identifier(
+        self, object_type: MyTardisObject, identifier: str
+    ) -> list[URI]:
+        """Get URIs for objects of the given type with the given identifier"""
+
+        self.check_identifiers_enabled_for_type(object_type)
+
+        return self.get_uris(object_type, {"identifier": identifier})
 
     def get_mytardis_setup(self) -> IntrospectionConfig:
         """Query introspection API
@@ -295,11 +271,32 @@ class Overseer(metaclass=Singleton):
                 )
             )
         response_dict = response_dict["objects"][0]
+
+        identifiers_enabled: bool = response_dict["identifiers_enabled"]
+        objects_with_ids = [
+            MyTardisObject(obj) for obj in response_dict["identified_objects"]
+        ]
+        if not identifiers_enabled and len(objects_with_ids) > 0:
+            raise ValueError(
+                "Identifiers are disabled in MyTardis but it reports identifiable types"
+            )
+
+        profiles_enabled: bool = response_dict["profiles_enabled"]
+        objects_with_profiles = [
+            MyTardisObject(obj) for obj in response_dict["profiled_objects"]
+        ]
+        if not profiles_enabled and len(objects_with_profiles) > 0:
+            raise ValueError(
+                "Profiles are disabled in MyTardis but it reports profiled types"
+            )
+
         mytardis_setup = IntrospectionConfig(
             old_acls=response_dict["experiment_only_acls"],
             projects_enabled=response_dict["projects_enabled"],
-            objects_with_ids=response_dict["identified_objects"] or None,
-            objects_with_profiles=response_dict["profiled_objects"] or None,
+            identifiers_enabled=identifiers_enabled,
+            profiles_enabled=profiles_enabled,
+            objects_with_ids=objects_with_ids,
+            objects_with_profiles=objects_with_profiles,
         )
         self._mytardis_setup = mytardis_setup
         return mytardis_setup
