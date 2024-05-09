@@ -88,16 +88,17 @@ class Overseer(metaclass=Singleton):
     def check_identifiers_enabled_for_type(self, object_type: MyTardisObject) -> None:
         """Check if identifiers are enabled for the given object type.
 
-        Raises AssertionError if identifiers are not enabled for the given object type.
+        Raises RuntimeError if the MyTardis instance doesn't have identifiers enabled.
+        Raises TypeError if identifiers are not enabled for the given object type.
         """
 
-        assert (
-            self.mytardis_setup.identifiers_enabled
-        ), "Identifiers are not enabled in MyTardis"
+        if not self.mytardis_setup.identifiers_enabled:
+            raise RuntimeError("Identifiers are not enabled in MyTardis")
 
-        assert (
-            object_type in self.mytardis_setup.objects_with_ids
-        ), f"MyTardis does not support identifiers for object_type {object_type}"
+        if object_type not in self.mytardis_setup.objects_with_ids:
+            raise TypeError(
+                f"MyTardis does not support identifiers for object_type {object_type}"
+            )
 
     def generate_identifier_matchers(
         self, object_type: MyTardisObject, object_data: dict[str, Any]
