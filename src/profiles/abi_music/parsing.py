@@ -10,6 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping
 
+from slugify import slugify
+
 from src.blueprints.common_models import GroupACL, UserACL
 from src.blueprints.custom_data_types import MTUrl
 from src.blueprints.datafile import RawDatafile
@@ -31,6 +33,11 @@ from src.utils.filesystem.filesystem_nodes import DirectoryNode, FileNode
 
 # Expected datetime format is "yymmdd-DDMMSS"
 datetime_pattern = re.compile("^[0-9]{6}-[0-9]{6}$")
+
+
+def join_ids(*args: str) -> str:
+    """Join a list of identifier components into a single (slugified) string"""
+    return slugify("-".join(args))
 
 
 def parse_timestamp(timestamp: str) -> datetime:
@@ -101,18 +108,29 @@ def parse_project_info(directory: DirectoryNode) -> RawProject:
     return raw_project
 
 
-def parse_experiment_info(directory: DirectoryNode) -> RawExperiment:
+def parse_experiment_info(directory: DirectoryNode) -> tuple[RawExperiment, str]:
     """
     Extract experiment metadata from JSON content
     """
 
     json_data = read_json(directory.file("experiment.json"))
 
+    experiment_name: str = json_data["experiment_name"]
+
     # The data features both "project" and "projects" keys, so we need to handle both
     projects: list[str] = json_data.get("projects") or [json_data["project"]]
 
+    identifiers = [
+        join_ids(projects[0], exp_id) for exp_id in json_data["experiment_ids"]
+    ]
+
+    if len(identifiers) == 0:
+        raise ValueError(
+            f"No identifiers specified in JSON for experiment {experiment_name}"
+        )
+
     raw_experiment = RawExperiment(
-        title=json_data["experiment_name"],
+        title=experiment_name,
         description=json_data["experiment_description"],
         data_classification=None,
         created_by=None,
@@ -120,7 +138,7 @@ def parse_experiment_info(directory: DirectoryNode) -> RawExperiment:
         locked=False,
         users=None,
         groups=None,
-        identifiers=json_data["experiment_ids"],
+        identifiers=identifiers,
         projects=projects,
         institution_name=None,
         metadata=None,
@@ -132,10 +150,12 @@ def parse_experiment_info(directory: DirectoryNode) -> RawExperiment:
         embargo_until=None,
     )
 
-    return raw_experiment
+    return (raw_experiment, identifiers[0])
 
 
-def parse_raw_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
+def parse_raw_dataset(
+    directory: DirectoryNode, experiment_identifier: str
+) -> tuple[RawDataset, str]:
     """
     Extract Raw dataset metadata from JSON content
     """
@@ -148,7 +168,8 @@ def parse_raw_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
     }
 
     sequence_name = json_data["Basename"]["Sequence"]
-    main_id = sequence_name + "-raw"
+
+    identifier = join_ids(experiment_identifier, sequence_name, "raw")
 
     dataset = RawDataset(
         description=sequence_name + ":raw",
@@ -158,11 +179,10 @@ def parse_raw_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         groups=None,
         immutable=False,
         identifiers=[
-            main_id,
-            str(json_data["SequenceID"]) + "-raw",
+            identifier,
         ],
         experiments=[
-            json_data["Basename"]["Sample"],
+            experiment_identifier,
         ],
         instrument=ABI_MUSIC_MICROSCOPE_INSTRUMENT,
         metadata=metadata,
@@ -171,7 +191,7 @@ def parse_raw_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         modified_time=None,
     )
 
-    return (dataset, main_id)
+    return (dataset, identifier)
 
 
 def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
@@ -194,21 +214,27 @@ def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         "sqrt-offset": json_data["config"]["Offsets"]["SQRT Offset"],
     }
 
-    sequence_name = json_data["config"]["Basename"]["Sequence"]
+    # NOTE: from observation, the project names (and maybe the sample name?) do not exactly
+    #       match the identifiers we use to create the project, so this will not match to the
+    #       right experiment. Need to find a robust way to associate these, but Zarr ingestion
+    #       is not a priority yet.
+    project_name = json_data["config"]["Basename"]["Project"]
+    experiment_name = json_data["config"]["Basename"]["Sample"]
+    dataset_name = json_data["config"]["Basename"]["Sequence"]
 
-    main_id = sequence_name + "-zarr"
+    identifier = join_ids(project_name, experiment_name, dataset_name, "zarr")
 
     dataset = RawDataset(
-        description=sequence_name + ":zarr",
+        description=dataset_name + ":zarr",
         data_classification=None,
         directory=None,
         users=None,
         groups=None,
         immutable=False,
         identifiers=[
-            main_id,
-            str(json_data["config"]["SequenceID"]) + "-zarr",
+            identifier,
         ],
+        # NOTE: Need to update this to be a unique experiment identifier
         experiments=[
             json_data["config"]["Basename"]["Sample"],
         ],
@@ -219,11 +245,11 @@ def parse_zarr_dataset(directory: DirectoryNode) -> tuple[RawDataset, str]:
         modified_time=None,
     )
 
-    return (dataset, main_id)
+    return (dataset, identifier)
 
 
 def collate_datafile_info(
-    file: FileNode, root_dir: Path, dataset_name: str
+    file: FileNode, root_dir: Path, dataset_identifier: str
 ) -> RawDatafile:
     """
     Collect and collate all the information needed to define a datafile dataclass
@@ -242,12 +268,13 @@ def collate_datafile_info(
         size=file.stat().st_size,
         users=None,
         groups=None,
-        dataset=dataset_name,
+        dataset=dataset_identifier,
         metadata=None,
         schema=None,
     )
 
 
+# pylint: disable=too-many-locals
 def parse_raw_data(
     root: DirectoryNode, file_filter: filters.PathFilterSet
 ) -> IngestionManifest:
@@ -280,7 +307,8 @@ def parse_raw_data(
         for experiment_dir in experiment_dirs:
             logging.info("Experiment directory: %s", experiment_dir.name())
 
-            manifest.add_experiment(parse_experiment_info(experiment_dir))
+            experiment, experiment_id = parse_experiment_info(experiment_dir)
+            manifest.add_experiment(experiment)
 
             dataset_dirs = [
                 d
@@ -291,7 +319,7 @@ def parse_raw_data(
             for dataset_dir in dataset_dirs:
                 logging.info("Dataset directory: %s", dataset_dir.name())
 
-                dataset, dataset_id = parse_raw_dataset(dataset_dir)
+                dataset, dataset_id = parse_raw_dataset(dataset_dir, experiment_id)
 
                 data_dir = next(
                     d
@@ -327,7 +355,7 @@ def parse_zarr_data(
         )
 
         for zarr_dir in zarr_dirs:
-            dataset, dataset_id = parse_zarr_dataset(zarr_dir)
+            dataset, dataset_identifier = parse_zarr_dataset(zarr_dir)
 
             name_stem = zarr_dir.name().removesuffix(".zarr")
             dataset.created_time = parse_timestamp(name_stem)
@@ -341,7 +369,7 @@ def parse_zarr_data(
                 if file_filter.exclude(file.path()):
                     continue
 
-                datafile = collate_datafile_info(file, root.path(), dataset_id)
+                datafile = collate_datafile_info(file, root.path(), dataset_identifier)
 
                 manifest.add_datafile(datafile)
 
