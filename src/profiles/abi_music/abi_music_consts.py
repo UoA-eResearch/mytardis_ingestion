@@ -1,8 +1,6 @@
 """Add profile-specific constants in this module
 """
 
-DEFAULT_INSTITUTION = "University of Auckland"
-
 ABI_MUSIC_MICROSCOPE_INSTRUMENT = "abi-music-microscope-v1"
 ABI_MUSIC_POSTPROCESSING_INSTRUMENT = "abi-music-post-processing-v1"
 

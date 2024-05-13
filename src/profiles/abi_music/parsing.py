@@ -26,7 +26,6 @@ from src.profiles.abi_music.abi_music_consts import (
     ABI_MUSIC_DATASET_ZARR_SCHEMA,
     ABI_MUSIC_MICROSCOPE_INSTRUMENT,
     ABI_MUSIC_POSTPROCESSING_INSTRUMENT,
-    DEFAULT_INSTITUTION,
 )
 from src.utils.filesystem import checksums, filters
 from src.utils.filesystem.filesystem_nodes import DirectoryNode, FileNode
@@ -95,7 +94,7 @@ def parse_project_info(directory: DirectoryNode) -> RawProject:
         users=users or None,
         groups=groups or None,
         identifiers=json_data["project_ids"],
-        institution=[DEFAULT_INSTITUTION],
+        institution=None,
         metadata=None,
         schema=None,
         start_time=None,
