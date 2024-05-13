@@ -28,8 +28,8 @@ class Crucible:
         MyTardis and finding their URIs"""
         institutions: list[URI] = []
         for institution in refined_project.institution:
-            if institution_uri := self.overseer.get_uris(
-                MyTardisObject.INSTITUTION, {"name": institution}
+            if institution_uri := self.overseer.get_uris_by_identifier(
+                MyTardisObject.INSTITUTION, institution
             ):
                 institutions.append(*institution_uri)
         institutions = list(set(institutions))
@@ -142,8 +142,8 @@ class Crucible:
         if not experiment_uris:
             logger.warning("Unable to find experiments associated with this dataset.")
             return None
-        instruments = self.overseer.get_uris(
-            MyTardisObject.INSTRUMENT, {"name": refined_dataset.instrument}
+        instruments = self.overseer.get_uris_by_identifier(
+            MyTardisObject.INSTRUMENT, refined_dataset.instrument
         )
         if instruments:
             instruments = list(set(instruments))
