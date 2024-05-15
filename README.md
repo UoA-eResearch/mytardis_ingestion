@@ -122,11 +122,6 @@ Recommended metadata fields include:
    - **Relation Type**: Description of the relationship
  - **Alternate Identifier**: Other Identifiers that the instrument has
    - **Alternate Identifier Type**: The type of identifier used as an alternate
-### Roadmap
-
- - Migrate the API keys out of an **env** file and into a more secure information repository
- - Maintain parity with UoA MyTardis development to ensure that the ingestion scripts continue to function as expected
-  - As part of ongoing MyTardis development an assessment of the cost/benefit of using GraphQL as an API in place of Tastypie will be made. Based on the outcome of that decision modifications to the ingestion scripts may be necessary.
 
 ## Setup
 
