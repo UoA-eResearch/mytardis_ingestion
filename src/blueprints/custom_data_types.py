@@ -10,29 +10,7 @@ from typing import Annotated, Any
 from pydantic import AfterValidator, PlainSerializer, WithJsonSchema
 from validators import url
 
-KNOWN_MYTARDIS_OBJECTS = [
-    "datafileparameterset",
-    "datafileparameter",
-    "dataset",
-    "dataset_file",
-    "datasetparameter",
-    "datasetparameterset",
-    "experiment",
-    "experimentparameter",
-    "experimentparameterset",
-    "facility",
-    "group",
-    "institution",
-    "instrument",
-    "parametername",
-    "project",
-    "projectparameter",
-    "projectparameterset",
-    "replica",
-    "schema",
-    "storagebox",
-    "user",
-]
+from src.mytardis_client.objects import KNOWN_MYTARDIS_OBJECTS
 
 user_regex = re.compile(
     r"^[a-z]{2,4}[0-9]{3}$"  # Define as a constant in case of future change
@@ -44,29 +22,6 @@ iso_time_regex = re.compile(
 iso_date_regex = re.compile(
     r"^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])"
 )
-
-
-def validate_uri(value: Any) -> str:
-    """Validator for a URI string to ensure that it matches the expected form of a URI"""
-    if not isinstance(value, str):
-        raise TypeError(f'Unexpected type for URI: "{type(value)}"')
-    object_type = uri_regex.search(value.lower())
-    if not object_type:
-        raise ValueError(
-            f'Passed string value "{value}" is not a well formatted MyTardis URI'
-        )
-    object_type_str = object_type.group(1)
-    if object_type_str.lower() not in KNOWN_MYTARDIS_OBJECTS:
-        raise ValueError(f'Unknown object type: "{object_type_str}"')
-    return value
-
-
-URI = Annotated[
-    str,
-    AfterValidator(validate_uri),
-    PlainSerializer(lambda x: str(x), return_type=str),
-    WithJsonSchema({"type": "string"}, mode="serialization"),
-]
 
 
 def validate_username(value: Any) -> str:

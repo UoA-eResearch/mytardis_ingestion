@@ -14,8 +14,8 @@ from pytest import LogCaptureFixture
 from requests import HTTPError
 from responses import matchers
 
-from src.blueprints.custom_data_types import URI
 from src.config.config import ConnectionConfig, IntrospectionConfig
+from src.mytardis_client.data_types import URI
 from src.mytardis_client.endpoints import get_endpoint
 from src.mytardis_client.helpers import resource_uri_to_id
 from src.mytardis_client.mt_rest import MyTardisRESTFactory

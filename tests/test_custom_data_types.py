@@ -8,14 +8,11 @@ from typing import List
 
 import pytest
 from dateutil import tz
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
-from src.blueprints.custom_data_types import (
-    KNOWN_MYTARDIS_OBJECTS,
-    URI,
-    ISODateTime,
-    Username,
-)
+from src.blueprints.custom_data_types import ISODateTime, Username
+from src.mytardis_client.data_types import URI
+from src.mytardis_client.objects import KNOWN_MYTARDIS_OBJECTS
 
 NZT = tz.gettz("Pacific/Auckland")
 
