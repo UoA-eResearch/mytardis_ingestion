@@ -11,12 +11,13 @@ from typing import Optional, Tuple
 from pydantic import ValidationError
 
 from src.blueprints.common_models import Parameter, ParameterSet
-from src.blueprints.custom_data_types import URI, MTUrl
+from src.blueprints.custom_data_types import MTUrl
 from src.blueprints.datafile import RawDatafile, RefinedDatafile
 from src.blueprints.dataset import RawDataset, RefinedDataset
 from src.blueprints.experiment import RawExperiment, RefinedExperiment
 from src.blueprints.project import RawProject, RefinedProject
 from src.config.config import GeneralConfig, SchemaConfig
+from src.mytardis_client.data_types import URI
 from src.overseers.overseer import MYTARDIS_PROJECTS_DISABLED_MESSAGE, Overseer
 
 logger = logging.getLogger(__name__)
