@@ -14,7 +14,7 @@ from src.conveyor.conveyor import Conveyor, FailedTransferException
 from src.crucible.crucible import Crucible
 from src.extraction.manifest import IngestionManifest
 from src.forges.forge import Forge
-from src.mytardis_client.data_types import URI
+from src.mytardis_client.data_types import CONTEXT_USE_URI_ID_ONLY, URI
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject
 from src.overseers.overseer import Overseer
@@ -190,7 +190,8 @@ class IngestionFactory:
                 continue
 
             matching_datasets = self._overseer.get_matching_objects(
-                MyTardisObject.DATASET, dataset.model_dump()
+                MyTardisObject.DATASET,
+                dataset.model_dump(context=CONTEXT_USE_URI_ID_ONLY),
             )
             if len(matching_datasets) > 0:
                 dataset_uri = matching_datasets[0]["resource_uri"]
