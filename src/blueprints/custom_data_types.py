@@ -46,12 +46,6 @@ iso_date_regex = re.compile(
 )
 
 
-def gen_uri_regex(  # pylint: disable=missing-function-docstring
-    object_type: str,
-) -> str:
-    return f"^/api/v1/{object_type}/[0-9]{{1,}}/"
-
-
 def validate_uri(value: Any) -> str:
     """Validator for a URI string to ensure that it matches the expected form of a URI"""
     if not isinstance(value, str):
@@ -157,47 +151,3 @@ def validate_schema(value: Any) -> str:
     if not valid_flag:
         raise ValueError(f'Passed string "{value}" is not a valid URI or URL')
     return value
-
-
-# pylint: disable=pointless-string-statement
-'''class BaseObjectType(str):
-    """Class method that defines a validated string which includes the four object types
-    found in MyTardis when projects are activated.This Type class is intended to be
-    called by an Inner class defined in the Smelter/Crucible/Overseer and
-    IngestionFactory classes to reduce the number of verifications of project activation
-    needed since the "project" key value will fail validation unless projects are
-    active."""
-
-    BASE_OBJECTS = [
-        "experiment",
-        "dataset",
-        "datafile",
-        "project",
-    ]
-
-    @classmethod
-    def __get_validators__(  # type: ignore[return]
-        cls,
-    ) -> Generator[Callable[[str], str], str, str]:
-        """One or more validators may be yielded which will be called in order to validate the
-        input. Each validator will receive as an input the value returned from the previous
-        validator. (As per the Pydantic help manual).
-        """
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: Any) -> str:
-        """Custom validator to ensure that the string is one of the known objects in
-        MyTardis."""
-        if not isinstance(value, str):
-            raise TypeError(f'Unexpected type for BaseObjectType "{type(value)}"')
-        if value not in cls.BASE_OBJECTS:
-            raise ValueError(
-                'Passed string value "%s" is not a recognised MyTardis '
-                "object." % (value)
-            )
-        return cls(f"{value}")
-
-    def __repr__(self) -> str:
-        """Indicate that it is a formatted BaseObjectType string via __repr__"""
-        return f"BaseObjectType({super().__repr__()})"'''
