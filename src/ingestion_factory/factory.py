@@ -231,7 +231,8 @@ class IngestionFactory:
             datafile.replicas.append(self.conveyor.create_replica(datafile))
 
             matching_datafiles = self._overseer.get_matching_objects(
-                MyTardisObject.DATAFILE, datafile.model_dump()
+                MyTardisObject.DATAFILE,
+                datafile.model_dump(context=CONTEXT_USE_URI_ID_ONLY),
             )
             if len(matching_datafiles) > 0:
                 logging.info(
