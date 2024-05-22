@@ -23,7 +23,7 @@ from requests.auth import AuthBase
 
 from src.blueprints.custom_data_types import MTUrl
 from src.blueprints.storage_boxes import StorageTypesEnum
-from src.mytardis_client.types import MyTardisObject
+from src.mytardis_client.objects import MyTardisObject
 
 logger = logging.getLogger(__name__)
 

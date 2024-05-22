@@ -6,7 +6,7 @@ import pytest
 import rocrate
 
 import src.profiles.ro_crate._consts as RO_CrateConsts
-from src.mytardis_client.types import MyTardisObject
+from src.mytardis_client.objects import MyTardisObject
 from src.profiles.ro_crate.crate_to_tardis_mapper import CrateToTardisMapper
 from tests.fixtures.fixtures_ro_crate import rocrate_profile_json
 

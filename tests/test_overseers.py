@@ -19,7 +19,7 @@ from src.config.config import ConnectionConfig, IntrospectionConfig
 from src.mytardis_client.endpoints import get_endpoint
 from src.mytardis_client.helpers import resource_uri_to_id
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
-from src.mytardis_client.types import MyTardisObject
+from src.mytardis_client.objects import MyTardisObject
 from src.overseers.overseer import Overseer
 
 logger = logging.getLogger(__name__)
