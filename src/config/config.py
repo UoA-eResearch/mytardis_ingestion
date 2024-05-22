@@ -186,16 +186,6 @@ class IntrospectionConfig(BaseModel):
     objects_with_profiles: list[MyTardisObject]
 
 
-class ProfileConfig(BaseModel):
-    """Profile data for extraction plant.
-
-    Pydantic model for the extraction plant profile. This profile is used to
-    determine how the prospecting and mining processes are performed.
-    """
-
-    profile_name: str
-
-
 class ConfigFromEnv(BaseSettings):
     """Full MyTardis settings model.
 
