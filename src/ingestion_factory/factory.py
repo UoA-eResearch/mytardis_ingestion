@@ -160,7 +160,7 @@ class IngestionFactory:
                 MyTardisObject.EXPERIMENT, experiment.model_dump()
             )
             if len(matching_experiments) > 0:
-                experiment_uri = matching_experiments[0]["resource_uri"]
+                experiment_uri = URI(matching_experiments[0]["resource_uri"])
                 logging.info(
                     'Already ingested experiment "%s" as "%s". Skipping experiment ingestion.',
                     experiment.title,
@@ -200,7 +200,7 @@ class IngestionFactory:
                 dataset.model_dump(context=CONTEXT_USE_URI_ID_ONLY),
             )
             if len(matching_datasets) > 0:
-                dataset_uri = matching_datasets[0]["resource_uri"]
+                dataset_uri = URI(matching_datasets[0]["resource_uri"])
                 logging.info(
                     'Already ingested dataset "%s" as "%s". Skipping dataset ingestion.',
                     dataset.description,
