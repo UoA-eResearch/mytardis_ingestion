@@ -6,7 +6,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from src.blueprints.custom_data_types import URI
+from src.mytardis_client.data_types import URI
 
 
 class StorageTypesEnum(Enum):
