@@ -3,7 +3,9 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
+
+from pydantic import BaseModel
 
 from src.blueprints.datafile import Datafile, RawDatafile
 from src.blueprints.dataset import RawDataset
@@ -23,25 +25,29 @@ from src.smelters.smelter import Smelter
 logger = logging.getLogger(__name__)
 
 
-class IngestionResult:
+class IngestionResult(BaseModel):
     """Container for recording the results of an ingestion of a set of objects
     into MyTardis
     """
 
-    def __init__(
-        self,
-        success: Optional[list[tuple[str, Optional[URI]]]] = None,
-        skipped: Optional[list[tuple[str, Optional[URI]]]] = None,
-        error: Optional[list[str]] = None,
-    ) -> None:
-        self.success = success or []
-        self.skipped = skipped or []
-        self.error = error or []
+    success: list[tuple[str, Optional[URI]]] = []
+    skipped: list[tuple[str, Optional[URI]]] = []
+    error: list[str] = []
 
-    def __eq__(self, other) -> bool:  # type: ignore
-        if isinstance(other, IngestionResult):
-            return self.success == other.success and self.error == other.error
-        return NotImplemented
+    # def __init__(
+    #     self,
+    #     success: Optional[list[tuple[str, Optional[URI]]]] = None,
+    #     skipped: Optional[list[tuple[str, Optional[URI]]]] = None,
+    #     error: Optional[list[str]] = None,
+    # ) -> None:
+    #     self.success = success or []
+    #     self.skipped = skipped or []
+    #     self.error = error or []
+
+    # def __eq__(self, other) -> bool:  # type: ignore
+    #     if isinstance(other, IngestionResult):
+    #         return self.success == other.success and self.error == other.error
+    #     return NotImplemented
 
 
 class IngestionFactory:
@@ -271,34 +277,34 @@ class IngestionFactory:
 
     def dump_ingestion_result_json(
         self,
-        projects_result: IngestionResult | None,
-        experiments_result: IngestionResult | None,
-        datasets_result: IngestionResult | None,
-        datafiles_result: IngestionResult | None,
+        projects_result: IngestionResult,
+        experiments_result: IngestionResult,
+        datasets_result: IngestionResult,
+        datafiles_result: IngestionResult,
     ) -> None:
         """Write the results of the ingestion to a JSON file."""
 
-        class IngestionResultEncoder(json.JSONEncoder):
-            """Custom JSON encoder for IngestionResult."""
+        # class IngestionResultEncoder(json.JSONEncoder):
+        #     """Custom JSON encoder for IngestionResult."""
 
-            def default(self, o: Any) -> Any:
-                """Encode IngestionResult objects as dictionaries."""
-                if isinstance(o, IngestionResult):
-                    return o.__dict__
-                return json.JSONEncoder.default(self, o)
+        #     def default(self, o: Any) -> Any:
+        #         """Encode IngestionResult objects as dictionaries."""
+        #         if isinstance(o, IngestionResult):
+        #             return o.__dict__
+        #         return json.JSONEncoder.default(self, o)
 
         with open("ingestion_result.json", "w", encoding="utf-8") as file:
             json.dump(
                 {
-                    "projects": projects_result,
-                    "experiments": experiments_result,
-                    "datasets": datasets_result,
-                    "datafiles": datafiles_result,
+                    "projects": projects_result.model_dump_json(),
+                    "experiments": experiments_result.model_dump_json(),
+                    "datasets": datasets_result.model_dump_json(),
+                    "datafiles": datafiles_result.model_dump_json(),
                 },
                 file,
                 ensure_ascii=False,
                 indent=4,
-                cls=IngestionResultEncoder,
+                # cls=IngestionResultEncoder,
             )
 
     def ingest(self, manifest: IngestionManifest) -> None:
