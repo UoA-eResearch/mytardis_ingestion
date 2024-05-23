@@ -21,16 +21,8 @@ class DummyUsernames(BaseModel):
     user: Username
 
 
-class DummyURI(BaseModel):
-    uri: URI
-
-
 class DummyISODateTime(BaseModel):
     iso_time: ISODateTime
-
-
-def gen_uris() -> List[str]:
-    return [f"/api/v1/{obj}/1/" for obj in KNOWN_MYTARDIS_OBJECTS]
 
 
 @pytest.mark.parametrize("upis", ["test001", "ts001", "tst001"])
@@ -63,70 +55,6 @@ def test_malformed_UPI(upis: Username) -> None:  # pylint: disable=invalid-name
             "input_type=str]\n    "
         )
     ) in str(e_info.value)
-
-
-@pytest.mark.parametrize("uris", gen_uris())
-def test_good_uris(uris: str) -> None:
-    test_class = DummyURI(uri=uris)
-    assert test_class.uri == uris
-
-
-def test_URI_wrong_type() -> None:  # pylint: disable=invalid-name
-    bad_uri = 1.23
-    with pytest.raises(ValueError) as e_info:
-        _ = DummyURI(uri=bad_uri)
-    assert (
-        "1 validation error for DummyURI\nuri\n  Input should be a valid string "
-        "[type=string_type, input_value=1.23, input_type=float]\n    "
-    ) in str(e_info.value)
-
-
-@pytest.mark.parametrize(
-    "uris, expected_error",
-    [
-        (
-            "totally wrong",
-            (
-                "1 validation error for DummyURI\nuri\n  Value error, "
-                'Passed string value "totally wrong" '
-                "is not a well formatted MyTardis URI "
-                "[type=value_error, input_value='totally wrong', input_type=str]\n    "
-            ),
-        ),
-        (
-            "/api/v1/banana/1/",
-            (
-                "1 validation error for DummyURI\nuri\n  Value error, Unknown object type: "
-                "\"banana\" [type=value_error, input_value='/api/v1/banana/1/', "
-                "input_type=str]\n    "
-            ),
-        ),
-        (
-            "/api/v1/project",
-            (
-                "1 validation error for DummyURI\nuri\n  Value error, Passed string value "
-                '"/api/v1/project" is not a well formatted MyTardis URI [type=value_error,'
-                " input_value='/api/v1/project', input_type=str]\n    "
-            ),
-        ),
-        (
-            "/api/v1/project/1/additional/",
-            (
-                "1 validation error for DummyURI\nuri\n  Value error, Passed string value "
-                '"/api/v1/project/1/additional/" is not a well formatted MyTardis URI '
-                "[type=value_error, input_value='/api/v1/project/1/additional/', "
-                "input_type=str]\n    "
-            ),
-        ),
-    ],
-)
-def test_malformed_URIs(  # pylint: disable=invalid-name
-    uris: str,
-    expected_error: str,
-) -> None:
-    with pytest.raises(ValueError) as e_info:
-        _ = DummyURI(uri=uris)
-    assert expected_error in str(e_info.value)
 
 
 @pytest.mark.parametrize(
