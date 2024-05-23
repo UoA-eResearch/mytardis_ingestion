@@ -47,7 +47,7 @@ def test_create_parameter_set_with_uri(
     parameter_4: Parameter,
 ) -> None:
     parameterset = ParameterSet(
-        schema=schema_uri,
+        schema=schema_uri.root,
         parameters=[
             parameter_1,
             parameter_2,
@@ -55,7 +55,7 @@ def test_create_parameter_set_with_uri(
             parameter_4,
         ],
     )
-    assert parameterset.parameter_schema == schema_uri
+    assert parameterset.parameter_schema == schema_uri.root
 
 
 def test_create_parameter_set_with_url(
