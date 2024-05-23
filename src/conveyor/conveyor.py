@@ -8,7 +8,6 @@ from tempfile import NamedTemporaryFile
 
 from src.blueprints.datafile import Datafile, DatafileReplica
 from src.config.config import FilesystemStorageBoxConfig
-from src.mytardis_client.data_types import resource_uri_to_id
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +55,7 @@ class Conveyor:
             DatafileReplica: The Replica representing the copied file.
         """
         file_path = file.directory / file.filename
-        dataset_id = resource_uri_to_id(file.dataset)
+        dataset_id = file.dataset.id
         return DatafileReplica(
             protocol="file",
             location=self._store.storage_name,
@@ -116,7 +115,7 @@ class Conveyor:
         files_by_dataset: dict[int, list[Datafile]] = {}
         for df in dfs:
             # Group datafiles by the dataset they are in.
-            dataset_id = resource_uri_to_id(df.dataset)
+            dataset_id = df.dataset.id
             if dataset_id not in files_by_dataset:
                 files_by_dataset[dataset_id] = []
             files_by_dataset[dataset_id].append(df)
