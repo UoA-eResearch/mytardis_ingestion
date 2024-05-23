@@ -34,21 +34,6 @@ class IngestionResult(BaseModel):
     skipped: list[tuple[str, Optional[URI]]] = []
     error: list[str] = []
 
-    # def __init__(
-    #     self,
-    #     success: Optional[list[tuple[str, Optional[URI]]]] = None,
-    #     skipped: Optional[list[tuple[str, Optional[URI]]]] = None,
-    #     error: Optional[list[str]] = None,
-    # ) -> None:
-    #     self.success = success or []
-    #     self.skipped = skipped or []
-    #     self.error = error or []
-
-    # def __eq__(self, other) -> bool:  # type: ignore
-    #     if isinstance(other, IngestionResult):
-    #         return self.success == other.success and self.error == other.error
-    #     return NotImplemented
-
 
 class IngestionFactory:
     """Orchestrates the ingestion of raw metadata into MyTardis.
@@ -284,15 +269,6 @@ class IngestionFactory:
     ) -> None:
         """Write the results of the ingestion to a JSON file."""
 
-        # class IngestionResultEncoder(json.JSONEncoder):
-        #     """Custom JSON encoder for IngestionResult."""
-
-        #     def default(self, o: Any) -> Any:
-        #         """Encode IngestionResult objects as dictionaries."""
-        #         if isinstance(o, IngestionResult):
-        #             return o.__dict__
-        #         return json.JSONEncoder.default(self, o)
-
         with open("ingestion_result.json", "w", encoding="utf-8") as file:
             json.dump(
                 {
@@ -304,7 +280,6 @@ class IngestionFactory:
                 file,
                 ensure_ascii=False,
                 indent=4,
-                # cls=IngestionResultEncoder,
             )
 
     def ingest(self, manifest: IngestionManifest) -> None:
