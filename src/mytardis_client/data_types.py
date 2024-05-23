@@ -49,7 +49,7 @@ _KEY_USE_ID_ONLY_FROM_URI = "use_only_id_from_uri"
 CONTEXT_USE_URI_ID_ONLY = {_KEY_USE_ID_ONLY_FROM_URI: True}
 
 
-class URI(RootModel[str]):
+class URI(RootModel[str], frozen=True):
     """A MyTardis URI string, with validation and serialization logic."""
 
     root: str
