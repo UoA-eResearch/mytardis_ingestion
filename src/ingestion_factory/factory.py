@@ -120,7 +120,7 @@ class IngestionFactory:
                 MyTardisObject.PROJECT, project.model_dump()
             )
             if len(matching_projects) > 0:
-                project_uri = matching_projects[0]["resource_uri"]
+                project_uri = URI(matching_projects[0]["resource_uri"])
                 # Would we ever get multiple matches? If so, what should we do?
                 logging.info(
                     'Already ingested project "%s" as "%s". Skipping project ingestion.',
