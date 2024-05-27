@@ -52,72 +52,7 @@ This process may include analysis of one or more run-file formats that are creat
 
 The data ingestion part of the ingestion process takes the prepared metadata dictionaries and calls the MyTardis API to create the objects in MyTardis. The **forge_object()** and **reforge_object()** functions allow the **_IngestionFactory_** to create the objects in MyTardis this way. Basic sanity checking is done on the input dictionaries to ensure that the minimum metadata required to create the appropriate object in MyTardis is present in the input dictionaries. We have also included functionality to mint and update RAiDs as identifiers for the different objects within MyTardis.
 
-**Minimum metadata requirements:**
-
- - Project Object.
-   - **name**: The project name
-   - **description**: A short project description
-   - **raid**: A unique project identifier, RAiD for UoA project
-   - **lead_researcher**: A username for the lead researcher in the project. This user will get admin access at all levels of the project and it's child objects. It should be noted that the UoA version of MyTardis authenticates against Active Directory and the API may need reworking for OAuth authentication.
-   - **schema**: A schema name as defined within MyTardis for the Project level schema. This will include the metadata fields and short names associated with them.
-   - Any additional keys in the project dictionary (with a couple of exceptions) will be added as metadata fields. If a match can be found in the schema, then this will be available for indexing for search. If not then the metadata will be added but may not be indexed.
- - Experiment Object.
-   - **title**: The experiment name (*NB*: there are differences in the naming schemes between objects that may need tidying up - a legacy of the length of MyTardis development)
-   - **raid**: A unique experiment identifier, RAiD for UoA experiments
-   - **description**: A short description of the experiment
-   - **project**: A project identifier (i.e. the **raid** field from the project object in question) for the parent project.
-   - **schema**: A schema name as defined within MyTardis for the Experiment level schema. This will include the metadata fields and short names associated with them.
-   - As with the project any additional keys will be added as metadata fields
- - Dataset Object.
-   - **description**: The dataset name (see experiment **title** above)
-   - **dataset_id**: A unique dataset identifier, RAiD for UoA datasets, could also be Dataset DOIs
-   - **experiments**: A **list** of experiment identifiers associated with the experiment **raid**. We have assumed a one-to-many relationship between experiments and datasets, rather than the many-to-many relationship that is default in MyTardis. As such the scripts only get the first item in the list and would need refactoring to accommodate a many-to-many relationship.
-   - [**instrument_identifier**](#instrument-metadata): A unique identifier to the instrument that the data was generated on. Currently there is no standard persistent identifier that has widespread community adoption (DOIs are the most likely candidate).
-   - **schema**: A schema name as defined within MyTardis for the Dataset level schema. This will include the metadata fields and short names associated with them.
-   - As with the project any additional keys will be added as metadata fields
- - Datafile Object. (*NB*: Given the limitations associated with transferring data through the *html* interface of MyTardis, we are streaming the data directly into our object store, using the **boto3** python library, and the **filehandler.py** script provides wrapper functions to do this. We then create a **replica** in MyTardis that points to the file location.
-   - **filename**: The file name of the data file to be ingested
-   - **dataset**: A dataset identifier (i.e. the **raid** field from the dataset object in question) for the parent dataset.
-   - **md5sum**: The MD5 checksum of the original data file
-   - **storage_box**: The MyTardis storage box defined for the facility
-   - **local_path**: The full path to the local instance of the data file to be ingested
-   _ **remote_path**: The relative path to the remote instance of the data file for the purposes of maintaining the local directory structure. This is in place to accommodate analysis packages that expect a specific directory structure.
-   - **full_path**: The full path to the remote instance of the data file (normally constructed from the **remote_path** by the parser.
-   - **schema**: A schema name as defined within MyTardis for the Datafile level schema. This will include the metadata fields and short names associated with them.
-   - As with the project any additional keys will be added as metadata fields
-
-### Instrument Metadata
-
-Development of instrument persistent identifiers (PIDInst) has reached a point where we are comfortable beginning to use these in MyTardis. Instruments add to MyTardis from 2021 onward will have a PIDInst minted for them and this requires minimum metadata as described below.
- - **Landing Page**: A URL that the identifier resolves to.
- - **Name**: The instrument name
- - **Owner**: The institution(s) responsible for the management of the instrument
-   - **Owner Name**: The full name of the owner
- - **Manufacturer**: The manufacturer or developer of the instrument
-   - **Manufacturer Name**: The full name of the manufacturer
-
-Recommended metadata fields include:
- - **Owner**:
-   - **Owner Contact**: Contact email for the instrument owner
-   - **Owner Identifier**: Persistent identifier (PID) for the instrument owner
-   - **Owner Identifier Type**: The type of PID included.
- - **Manufacturer**:
-   - **Manufacturer Identifier** PID for the manufacturer
-   - **Manufacturer Identifier Type**: The type of PID included
- - **Model**: Name or model of the instrument as attributed by the manufacturer
-   - **Model Name**: Full name of the Model
-   - **Model Identifier**: PID for the model
-   - **Model Identifier Type**: The type of PID included
- - **Description**: Technical description of the instrument and its capabilities
- - **Instrument Type**: Classification of the type of instrument
- - **Measured Variable**: What the instrument measures or observes
- - **Date**: Key dates include commissioning/decommissioning, calibration etc.
-   -**Date Type**: What the date represents
- - **Related Identifier**: PIDs that are related to the instrument. For example a complex instrument might contain sensors that can be considered to be instruments in their own right. These could have PIDInst minted for them and they would list the other sensors in the instrument as related identifiers
-   - **Related Identifier Type**: The type of PID included.
-   - **Relation Type**: Description of the relationship
- - **Alternate Identifier**: Other Identifiers that the instrument has
-   - **Alternate Identifier Type**: The type of identifier used as an alternate
+More information is available in the wiki for this repository.
 
 ## Setup
 
