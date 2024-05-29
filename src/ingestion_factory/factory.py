@@ -272,10 +272,10 @@ class IngestionFactory:
         with open("ingestion_result.json", "w", encoding="utf-8") as file:
             json.dump(
                 {
-                    "projects": projects_result.model_dump_json(),
-                    "experiments": experiments_result.model_dump_json(),
-                    "datasets": datasets_result.model_dump_json(),
-                    "datafiles": datafiles_result.model_dump_json(),
+                    "projects": projects_result.model_dump(),
+                    "experiments": experiments_result.model_dump(),
+                    "datasets": datasets_result.model_dump(),
+                    "datafiles": datafiles_result.model_dump(),
                 },
                 file,
                 ensure_ascii=False,
