@@ -54,6 +54,9 @@ class URI(RootModel[str], frozen=True):
 
     root: str
 
+    def __str__(self) -> str:
+        return self.root
+
     @property
     def id(self) -> int:
         """Get the ID from the URI"""

@@ -35,7 +35,7 @@ def gen_valid_uri_ids() -> list[str]:
 def test_good_uris(uri_data: str, uri_id: int) -> None:
     uri = URI(uri_data)
 
-    assert uri.root == uri_data
+    assert str(uri) == uri_data
     assert uri.id == uri_id
 
 
