@@ -3,9 +3,10 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
-from src.blueprints.custom_data_types import URI
+from pydantic import BaseModel
+
 from src.blueprints.datafile import Datafile, RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
@@ -15,33 +16,23 @@ from src.conveyor.conveyor import Conveyor, FailedTransferException
 from src.crucible.crucible import Crucible
 from src.extraction.manifest import IngestionManifest
 from src.forges.forge import Forge
+from src.mytardis_client.data_types import CONTEXT_USE_URI_ID_ONLY, URI
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
-from src.mytardis_client.types import MyTardisObject
+from src.mytardis_client.objects import MyTardisObject
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 
 logger = logging.getLogger(__name__)
 
 
-class IngestionResult:
+class IngestionResult(BaseModel):
     """Container for recording the results of an ingestion of a set of objects
     into MyTardis
     """
 
-    def __init__(
-        self,
-        success: Optional[list[tuple[str, Optional[URI]]]] = None,
-        skipped: Optional[list[tuple[str, Optional[URI]]]] = None,
-        error: Optional[list[str]] = None,
-    ) -> None:
-        self.success = success or []
-        self.skipped = skipped or []
-        self.error = error or []
-
-    def __eq__(self, other) -> bool:  # type: ignore
-        if isinstance(other, IngestionResult):
-            return self.success == other.success and self.error == other.error
-        return NotImplemented
+    success: list[tuple[str, Optional[URI]]] = []
+    skipped: list[tuple[str, Optional[URI]]] = []
+    error: list[str] = []
 
 
 class IngestionFactory:
@@ -114,7 +105,7 @@ class IngestionFactory:
                 MyTardisObject.PROJECT, project.model_dump()
             )
             if len(matching_projects) > 0:
-                project_uri = matching_projects[0]["resource_uri"]
+                project_uri = URI(matching_projects[0]["resource_uri"])
                 # Would we ever get multiple matches? If so, what should we do?
                 logging.info(
                     'Already ingested project "%s" as "%s". Skipping project ingestion.',
@@ -154,7 +145,7 @@ class IngestionFactory:
                 MyTardisObject.EXPERIMENT, experiment.model_dump()
             )
             if len(matching_experiments) > 0:
-                experiment_uri = matching_experiments[0]["resource_uri"]
+                experiment_uri = URI(matching_experiments[0]["resource_uri"])
                 logging.info(
                     'Already ingested experiment "%s" as "%s". Skipping experiment ingestion.',
                     experiment.title,
@@ -190,10 +181,11 @@ class IngestionFactory:
                 continue
 
             matching_datasets = self._overseer.get_matching_objects(
-                MyTardisObject.DATASET, dataset.model_dump()
+                MyTardisObject.DATASET,
+                dataset.model_dump(context=CONTEXT_USE_URI_ID_ONLY),
             )
             if len(matching_datasets) > 0:
-                dataset_uri = matching_datasets[0]["resource_uri"]
+                dataset_uri = URI(matching_datasets[0]["resource_uri"])
                 logging.info(
                     'Already ingested dataset "%s" as "%s". Skipping dataset ingestion.',
                     dataset.description,
@@ -230,7 +222,8 @@ class IngestionFactory:
             datafile.replicas.append(self.conveyor.create_replica(datafile))
 
             matching_datafiles = self._overseer.get_matching_objects(
-                MyTardisObject.DATAFILE, datafile.model_dump()
+                MyTardisObject.DATAFILE,
+                datafile.model_dump(context=CONTEXT_USE_URI_ID_ONLY),
             )
             if len(matching_datafiles) > 0:
                 logging.info(
@@ -269,34 +262,24 @@ class IngestionFactory:
 
     def dump_ingestion_result_json(
         self,
-        projects_result: IngestionResult | None,
-        experiments_result: IngestionResult | None,
-        datasets_result: IngestionResult | None,
-        datafiles_result: IngestionResult | None,
+        projects_result: IngestionResult,
+        experiments_result: IngestionResult,
+        datasets_result: IngestionResult,
+        datafiles_result: IngestionResult,
     ) -> None:
         """Write the results of the ingestion to a JSON file."""
-
-        class IngestionResultEncoder(json.JSONEncoder):
-            """Custom JSON encoder for IngestionResult."""
-
-            def default(self, o: Any) -> Any:
-                """Encode IngestionResult objects as dictionaries."""
-                if isinstance(o, IngestionResult):
-                    return o.__dict__
-                return json.JSONEncoder.default(self, o)
 
         with open("ingestion_result.json", "w", encoding="utf-8") as file:
             json.dump(
                 {
-                    "projects": projects_result,
-                    "experiments": experiments_result,
-                    "datasets": datasets_result,
-                    "datafiles": datafiles_result,
+                    "projects": projects_result.model_dump(),
+                    "experiments": experiments_result.model_dump(),
+                    "datasets": datasets_result.model_dump(),
+                    "datafiles": datafiles_result.model_dump(),
                 },
                 file,
                 ensure_ascii=False,
                 indent=4,
-                cls=IngestionResultEncoder,
             )
 
     def ingest(self, manifest: IngestionManifest) -> None:

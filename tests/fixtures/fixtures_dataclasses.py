@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 from pytest import fixture
 
 from src.blueprints.common_models import GroupACL, Parameter, ParameterSet, UserACL
-from src.blueprints.custom_data_types import URI, ISODateTime, Username
+from src.blueprints.custom_data_types import ISODateTime, Username
 from src.blueprints.datafile import (
     Datafile,
     DatafileReplica,
@@ -20,6 +20,7 @@ from src.blueprints.dataset import Dataset, RawDataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RawExperiment, RefinedExperiment
 from src.blueprints.project import Project, RawProject, RefinedProject
 from src.blueprints.storage_boxes import StorageBox
+from src.mytardis_client.data_types import URI
 from src.mytardis_client.enumerators import DataClassification
 
 

@@ -1,6 +1,5 @@
 # pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
 from datetime import datetime, timedelta
-from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -9,9 +8,9 @@ from pytest import fixture
 from pytz import BaseTzInfo
 
 from src.blueprints.common_models import GroupACL, Parameter, UserACL
-from src.blueprints.custom_data_types import URI, ISODateTime, Username
+from src.blueprints.custom_data_types import ISODateTime, Username
 from src.blueprints.storage_boxes import StorageTypesEnum
-from src.mytardis_client.enumerators import DataClassification
+from src.mytardis_client.data_types import URI
 
 
 @fixture

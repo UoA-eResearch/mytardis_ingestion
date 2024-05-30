@@ -16,7 +16,7 @@ from src.config.config import (
     SchemaConfig,
     StorageBoxConfig,
 )
-from src.mytardis_client.types import MyTardisObject
+from src.mytardis_client.objects import MyTardisObject
 
 
 @fixture

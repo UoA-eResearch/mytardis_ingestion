@@ -12,7 +12,6 @@ from unittest.mock import MagicMock, Mock
 import pytest
 from pytest import fixture
 
-from src.blueprints.custom_data_types import URI
 from src.blueprints.datafile import Datafile, RawDatafile, RefinedDatafile
 from src.blueprints.dataset import (
     Dataset,
@@ -37,8 +36,9 @@ from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
 from src.ingestion_factory import IngestionFactory
 from src.ingestion_factory.factory import IngestionResult
+from src.mytardis_client.data_types import URI
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
-from src.mytardis_client.types import MyTardisObject
+from src.mytardis_client.objects import MyTardisObject
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 

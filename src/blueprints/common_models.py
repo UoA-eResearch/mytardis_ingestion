@@ -6,8 +6,6 @@ from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
 
-# Note the validate_schema function is a fusion of validating a MTUrl and a URI
-# It is kept with the regex definitions of both
 from src.blueprints.custom_data_types import Username
 
 

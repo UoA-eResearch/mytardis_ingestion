@@ -4,6 +4,32 @@ from enum import Enum
 
 from pydantic import BaseModel
 
+# NOTE: moved from blueprints module, as it's thematically part of the MyTardis client.
+#       Should try to unify with MyTardisObject below though.
+KNOWN_MYTARDIS_OBJECTS = [
+    "datafileparameterset",
+    "datafileparameter",
+    "dataset",
+    "dataset_file",
+    "datasetparameter",
+    "datasetparameterset",
+    "experiment",
+    "experimentparameter",
+    "experimentparameterset",
+    "facility",
+    "group",
+    "institution",
+    "instrument",
+    "parametername",
+    "project",
+    "projectparameter",
+    "projectparameterset",
+    "replica",
+    "schema",
+    "storagebox",
+    "user",
+]
+
 
 class MyTardisObject(str, Enum):
     """

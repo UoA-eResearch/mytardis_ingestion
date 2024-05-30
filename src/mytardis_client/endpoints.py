@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 
-from src.mytardis_client.types import MyTardisObject
+from src.mytardis_client.objects import MyTardisObject
 
 
 class MyTardisEndpoint(BaseModel):

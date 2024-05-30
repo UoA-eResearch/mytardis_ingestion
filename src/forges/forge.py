@@ -10,12 +10,12 @@ from pydantic import ValidationError
 from requests.exceptions import HTTPError, JSONDecodeError
 
 from src.blueprints.common_models import ParameterSet
-from src.blueprints.custom_data_types import URI
 from src.blueprints.datafile import Datafile
 from src.blueprints.dataset import Dataset, DatasetParameterSet
 from src.blueprints.experiment import Experiment, ExperimentParameterSet
 from src.blueprints.project import Project, ProjectParameterSet
 from src.helpers.dataclass import get_object_post_type
+from src.mytardis_client.data_types import URI
 from src.mytardis_client.mt_rest import BadGateWayException, MyTardisRESTFactory
 
 logger = logging.getLogger(__name__)

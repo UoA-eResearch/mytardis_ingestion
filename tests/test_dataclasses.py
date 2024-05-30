@@ -5,7 +5,8 @@
 from pytest import fixture
 
 from src.blueprints.common_models import Parameter, ParameterSet
-from src.blueprints.custom_data_types import URI, MTUrl
+from src.blueprints.custom_data_types import MTUrl
+from src.mytardis_client.data_types import URI
 
 
 @fixture
@@ -46,7 +47,7 @@ def test_create_parameter_set_with_uri(
     parameter_4: Parameter,
 ) -> None:
     parameterset = ParameterSet(
-        schema=schema_uri,
+        schema=str(schema_uri),
         parameters=[
             parameter_1,
             parameter_2,
@@ -54,7 +55,7 @@ def test_create_parameter_set_with_uri(
             parameter_4,
         ],
     )
-    assert parameterset.parameter_schema == schema_uri
+    assert parameterset.parameter_schema == str(schema_uri)
 
 
 def test_create_parameter_set_with_url(

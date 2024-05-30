@@ -5,12 +5,12 @@ fields that exist within the MyTardis Database with their equivalent URIs.
 import logging
 from datetime import datetime
 
-from src.blueprints.custom_data_types import URI
 from src.blueprints.datafile import Datafile, RefinedDatafile
 from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
-from src.mytardis_client.types import MyTardisObject
+from src.mytardis_client.data_types import URI
+from src.mytardis_client.objects import MyTardisObject
 from src.overseers.overseer import Overseer
 
 logger = logging.getLogger(__name__)

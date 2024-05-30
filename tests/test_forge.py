@@ -12,10 +12,10 @@ import pytest
 import responses
 from pytest import LogCaptureFixture
 
-from src.blueprints.custom_data_types import URI
 from src.blueprints.project import Project
 from src.config.config import ConnectionConfig
 from src.forges.forge import Forge
+from src.mytardis_client.data_types import URI
 from src.mytardis_client.enumerators import ObjectPostEnum
 
 logger = logging.getLogger(__name__)
