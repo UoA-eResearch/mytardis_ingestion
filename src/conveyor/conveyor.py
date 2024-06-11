@@ -57,7 +57,8 @@ class Conveyor:
 
         if file.directory is None:
             file_path = file.filename
-        file_path = file.directory / file.filename
+        else:
+            file_path = file.directory / file.filename
         dataset_id = file.dataset.id
         return DatafileReplica(
             protocol="file",
