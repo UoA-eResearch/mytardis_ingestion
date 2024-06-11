@@ -16,13 +16,14 @@ from pathlib import Path
 from typing import Dict, Optional
 from urllib.parse import urljoin
 
-from pydantic import BaseModel, ConfigDict, PrivateAttr
+from pydantic import BaseModel, ConfigDict
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from requests import PreparedRequest
 from requests.auth import AuthBase
 
 from src.blueprints.custom_data_types import MTUrl
 from src.blueprints.storage_boxes import StorageTypesEnum
+from src.mytardis_client.mt_rest import MyTardisApiVersion, make_api_stub
 from src.mytardis_client.objects import MyTardisObject
 
 logger = logging.getLogger(__name__)
@@ -102,12 +103,13 @@ class ConnectionConfig(BaseModel):
     hostname: MTUrl
     verify_certificate: bool = True
     proxy: Optional[ProxyConfig] = None
-    _api_stub: str = PrivateAttr("/api/v1/")
+    api_version: MyTardisApiVersion = "v1"
 
+    # NOTE: we should define this in the MyTardis client
     @property
     def api_template(self) -> str:
         """Appends the API stub to the configured hostname and returns it"""
-        return urljoin(self.hostname, self._api_stub)
+        return urljoin(self.hostname, make_api_stub(self.api_version))
 
 
 class SchemaConfig(BaseModel):

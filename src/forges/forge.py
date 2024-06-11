@@ -3,7 +3,6 @@
 
 import logging
 from typing import Any, Dict, Optional
-from urllib.parse import urljoin
 
 import requests
 from pydantic import ValidationError
@@ -14,11 +13,33 @@ from src.blueprints.datafile import Datafile
 from src.blueprints.dataset import Dataset, DatasetParameterSet
 from src.blueprints.experiment import Experiment, ExperimentParameterSet
 from src.blueprints.project import Project, ProjectParameterSet
-from src.helpers.dataclass import get_object_post_type
-from src.mytardis_client.data_types import URI
+from src.mytardis_client.data_types import URI, HttpRequestMethod
+from src.mytardis_client.endpoints import MyTardisEndpointInfo, get_endpoint_info
 from src.mytardis_client.mt_rest import BadGateWayException, MyTardisRESTFactory
+from src.mytardis_client.objects import MyTardisObject
+from src.overseers.overseer import get_default_endpoint
 
 logger = logging.getLogger(__name__)
+
+
+# TODO: define this in the dataclasses, once we move them to mytardis_client
+def get_my_tardis_type(object_type: type) -> MyTardisObject:
+    """Return the MyTardis object type based on the input object type"""
+    if object_type == Project:
+        return MyTardisObject.PROJECT
+    if object_type == Experiment:
+        return MyTardisObject.EXPERIMENT
+    if object_type == Dataset:
+        return MyTardisObject.DATASET
+    if object_type == Datafile:
+        return MyTardisObject.DATAFILE
+    if object_type == ProjectParameterSet:
+        return MyTardisObject.PROJECT_PARAMETER_SET
+    if object_type == ExperimentParameterSet:
+        return MyTardisObject.EXPERIMENT_PARAMETER_SET
+    if object_type == DatasetParameterSet:
+        return MyTardisObject.DATASET_PARAMETER_SET
+    raise ValueError(f"Unknown object type: {object_type}")
 
 
 class ForgeError(Exception):  # pylint: disable=missing-class-docstring
@@ -52,44 +73,45 @@ class Forge:
 
     def _make_api_call(
         self,
-        url: str,
-        action: str,
+        action: HttpRequestMethod,
+        endpoint: MyTardisEndpointInfo,
         data: str,
     ) -> requests.Response:
         """Wrapper around a generic POST request with logging in place."""
         try:
-            response = self.rest_factory.mytardis_api_request(action, url, data=data)
+            # response = self.rest_factory.mytardis_api_request(action, url, data=data)
+            response = self.rest_factory.request(action, endpoint=endpoint, data=data)
         except (HTTPError, BadGateWayException) as error:
             message = (
                 "Failed HTTP request from forge_object call\n"
-                f"Url: {url}\nAction: {action}\nData: {data}"
+                f"Url: {self.rest_factory.hostname}\nAction: {action}\nData: {data}"
             )
 
             logger.error(error, exc_info=True)
             raise ForgeError(
-                f"Forge error during request to {url}. Details: {message}"
+                f"Forge error during request to {self.rest_factory.hostname}. Details: {message}"
             ) from error
         except Exception as error:
             message = (
                 "Non-HTTP-request-error from forge_object call\n"
-                f"Url: {url}\nAction: {action}\nData: {data}"
+                f"Url: {self.rest_factory.hostname}\nAction: {action}\nData: {data}"
             )
             logger.error(message)
             logger.error(error, exc_info=True)
             raise ForgeError(
-                f"Forge error during request to {url}. Details: {message}"
+                f"Forge error during request to {self.rest_factory.hostname}. Details: {message}"
             ) from error
 
         if 300 <= response.status_code < 400:
             # We don't expect any redirects with MyTardis, so treat it as an error.
             message = (
                 "Object not successfully created in forge_object call\n"
-                f"Url: {url}\nAction: {action}\nData: {data}"
+                f"Url: {self.rest_factory.hostname}\nAction: {action}\nData: {data}"
                 f"response status code: {response.status_code}"
             )
             logger.warning(message)
             raise ForgeError(
-                f"Forge failure: request to {url} received a redirect response. Details: {message}"
+                f"Forge failure: request to {self.rest_factory.hostname} received a redirect response. Details: {message}"
             )
 
         return response
@@ -153,20 +175,21 @@ class Forge:
                 "Failed to serialize an object into JSON. Object passed was {refined_object}."
             )
 
-        object_type = get_object_post_type(refined_object)
+        object_type = get_my_tardis_type(type(refined_object))
+        endpoint = get_default_endpoint(object_type)
+        endpoint_info = get_endpoint_info(endpoint)
 
-        # Consider refactoring this as a function to generate the URL?
-        action = "POST"
-        url = urljoin(self.rest_factory.api_template, object_type["url_substring"])
+        response = self._make_api_call("POST", endpoint=endpoint_info, data=object_json)
 
-        response = self._make_api_call(url, action, object_json)
-
-        if object_type["expect_json"]:
+        if (
+            endpoint_info.methods.POST
+            and endpoint_info.methods.POST.expect_response_json
+        ):
             try:
                 response_dict = response.json()
             except JSONDecodeError as error:
                 message = (
-                    f"Expected a JSON return from the {action} request "
+                    f"Expected a JSON return from the POST request "
                     "but no return was found. The object may not have "
                     "been properly created and needs investigating.\n"
                     f"Object in question is: {refined_object}"
@@ -191,7 +214,7 @@ class Forge:
                     (
                         f"Object: {refined_object.display_name} successfully "
                         "created in MyTardis\n"
-                        f"Url substring: {object_type['url_substring']}"
+                        f"Url substring: {endpoint_info.path}\n"
                     )
                 )
                 return uri

@@ -55,6 +55,7 @@ class MyTardisObject(str, Enum):
     PROJECT_PARAMETER_SET = "projectparameterset"
     EXPERIMENT_PARAMETER_SET = "experimentparameterset"
     DATASET_PARAMETER_SET = "datasetparameterset"
+    INTROSPECTION = "introspection"  # TEMPORARY: needed for endpoint defs, but we should use dataclass types there
 
 
 class MyTardisTypeInfo(BaseModel):
