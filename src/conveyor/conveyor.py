@@ -56,9 +56,9 @@ class Conveyor:
         """
 
         if file.directory is None:
-            file_path = file.filename
+            file_path = Path(file.filename)
         else:
-            file_path = file.directory / file.filename
+            file_path = Path(file.directory) / file.filename
         dataset_id = file.dataset.id
         return DatafileReplica(
             protocol="file",
@@ -126,7 +126,11 @@ class Conveyor:
         for dataset_id, file_list in files_by_dataset.items():
             # For each group of datafiles, transfer to a separate folder.
             file_paths = [
-                df.directory / df.filename if df.directory is not None else df.filename
+                (
+                    Path(df.directory) / df.filename
+                    if df.directory is not None
+                    else Path(df.filename)
+                )
                 for df in file_list
             ]
             destination_dir = self._store.target_root_dir / f"ds-{dataset_id}"

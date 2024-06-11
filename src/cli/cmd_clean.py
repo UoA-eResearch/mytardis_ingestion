@@ -44,13 +44,13 @@ def _is_completed_df(
 ) -> bool:
     """Checks if a datafile has been ingested, verified, and its age is higher
     than the minimum age."""
-    pth = df.directory / df.filename
+    pth = Path(df.directory) / df.filename if df.directory else Path(df.filename)
     if query_result is None or len(query_result) == 0:
         return False
     if len(query_result) > 1:
         logger.warning(
             "More than one datafile in MyTardis matched file, using the first match: %s",
-            df.directory / df.filename,
+            pth,
         )
     replica = _get_verified_replica(query_result[0])
     if replica is None:
@@ -94,7 +94,11 @@ def _filter_completed_dfs(
             "Datafiles pending ingestion, verification or do not meet minimum file age:"
         )
         for datafile in unverified_dfs:
-            logger.info(datafile.directory / datafile.filename)
+            logger.info(
+                Path(datafile.directory) / datafile.filename
+                if datafile.directory
+                else Path(datafile.filename)
+            )
         return verified_dfs
     logger.info("Ingestion for this data source is complete.")
     return verified_dfs
@@ -152,7 +156,8 @@ def clean(
     manifest = profile.get_extractor().extract(source_data_path)
     # Print out all files
     df_paths = [
-        manifest.get_data_root() / df.directory / df.filename
+        manifest.get_data_root()
+        / (Path(df.directory) / df.filename if df.directory else Path(df.filename))
         for df in manifest.get_datafiles()
     ]
     logger.info("The following datafiles are found in this data source.")
@@ -163,7 +168,9 @@ def clean(
     # Check verification status.
     verified_dfs = _filter_completed_dfs(config, manifest.get_datafiles(), min_file_age)
     verified_df_paths = [
-        manifest.get_data_root() / df.directory / df.filename for df in verified_dfs
+        manifest.get_data_root()
+        / (Path(df.directory) / df.filename if df.directory else Path(df.filename))
+        for df in verified_dfs
     ]
     if len(verified_dfs) != len(manifest.get_datafiles()):
         logger.error(
