@@ -67,6 +67,7 @@ class BaseDatafile(BaseModel, ABC):
         """Ensures the directory is always serialized as a posix path, or `None` if not set."""
         return directory.as_posix() if directory else None
 
+
 class RawDatafile(BaseDatafile):
     """Concrete class to hold data from the concrete smelter class
     with a validated format as an entry point into the smelting process."""
