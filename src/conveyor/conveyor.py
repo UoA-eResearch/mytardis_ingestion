@@ -54,6 +54,9 @@ class Conveyor:
         Returns:
             DatafileReplica: The Replica representing the copied file.
         """
+
+        if file.directory is None:
+            file_path = file.filename
         file_path = file.directory / file.filename
         dataset_id = file.dataset.id
         return DatafileReplica(
@@ -121,6 +124,9 @@ class Conveyor:
             files_by_dataset[dataset_id].append(df)
         for dataset_id, file_list in files_by_dataset.items():
             # For each group of datafiles, transfer to a separate folder.
-            file_paths = [df.directory / df.filename for df in file_list]
+            file_paths = [
+                df.directory / df.filename if df.directory is not None else df.filename
+                for df in file_list
+            ]
             destination_dir = self._store.target_root_dir / f"ds-{dataset_id}"
             self._transfer_with_rsync(data_root, file_paths, destination_dir)

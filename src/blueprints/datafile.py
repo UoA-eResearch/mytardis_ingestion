@@ -49,7 +49,7 @@ class BaseDatafile(BaseModel, ABC):
             the date that the datafile is able to be deleted"""
 
     filename: str = Field(min_length=1)
-    directory: Path
+    directory: Optional[Path] = None
     md5sum: str
     mimetype: str
     size: int
@@ -63,9 +63,9 @@ class BaseDatafile(BaseModel, ABC):
         return self.filename
 
     @field_serializer("directory")
-    def dir_as_posix_path(self, directory: Path) -> str:
-        """Ensures the directory is always serialized as a posix path"""
-        return directory.as_posix()
+    def dir_as_posix_path(self, directory: Optional[Path]) -> Optional[str]:
+        """Ensures the directory is always serialized as a posix path, or `None` if not set."""
+        return directory.as_posix() if directory else None
 
 
 class RawDatafile(BaseDatafile):
