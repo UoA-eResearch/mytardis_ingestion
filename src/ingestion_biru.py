@@ -1,5 +1,4 @@
 # pylint: disable=C0103, C0301, W0511
-# example: python3 src/ingestion_biru.py /mnt/biru_shared_drive/MyTardisTestData/Demo_ingestion/test_for_richard/ingestion.yaml /srv/mytardis/data/biru_test/ unix_fs
 """
 NB: THIS WILL NOT WORK AS IT IS AND IS PROVIDED FOR INDICATIVE PURPOSES ONLY
 
