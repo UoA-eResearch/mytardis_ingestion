@@ -173,7 +173,6 @@ class IDSIngestionScript:
                 logger.info("Ingested %s: %s", obj_type, data_obj.display_name)
         else:
             data_obj.data_status = DataStatus.FAILED
-            logger.error("Failed to ingest %s: %s", obj_type, data_obj.display_name)
 
 
 if __name__ == "__main__":
