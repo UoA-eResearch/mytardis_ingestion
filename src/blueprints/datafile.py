@@ -62,6 +62,13 @@ class BaseDatafile(BaseModel, ABC):
         """Display name for a datafile (not necessarily unique)"""
         return self.filename
 
+    @property
+    def filepath(self) -> Path:
+        """The full path to the file"""
+        if self.directory is not None:
+            return self.directory / self.filename
+        return Path(self.filename)
+
     @field_serializer("directory")
     def dir_as_posix_path(self, directory: Optional[Path]) -> Optional[str]:
         """Ensures the directory is always serialized as a posix path, or `None` if not set."""

@@ -366,12 +366,7 @@ class ROCrateParser:
                     self.crate.source
                 )
                 if file_relative_path in [
-                    (
-                        Path(datafile.directory) / datafile.filename
-                        if datafile.directory
-                        else Path(datafile.filename)
-                    )
-                    for datafile in raw_datafiles
+                    datafile.filepath for datafile in raw_datafiles
                 ]:
                     continue
                 raw_datafiles.append(

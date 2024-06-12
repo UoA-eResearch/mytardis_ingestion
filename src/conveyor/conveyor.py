@@ -2,7 +2,7 @@
 
 import logging
 import shutil
-import subprocess
+import subprocess  # nosec
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
@@ -55,10 +55,7 @@ class Conveyor:
             DatafileReplica: The Replica representing the copied file.
         """
 
-        if file.directory is None:
-            file_path = Path(file.filename)
-        else:
-            file_path = Path(file.directory) / file.filename
+        file_path = file.filepath
         dataset_id = file.dataset.id
         return DatafileReplica(
             protocol="file",
@@ -125,13 +122,6 @@ class Conveyor:
             files_by_dataset[dataset_id].append(df)
         for dataset_id, file_list in files_by_dataset.items():
             # For each group of datafiles, transfer to a separate folder.
-            file_paths = [
-                (
-                    Path(df.directory) / df.filename
-                    if df.directory is not None
-                    else Path(df.filename)
-                )
-                for df in file_list
-            ]
+            file_paths = [df.filepath for df in file_list]
             destination_dir = self._store.target_root_dir / f"ds-{dataset_id}"
             self._transfer_with_rsync(data_root, file_paths, destination_dir)

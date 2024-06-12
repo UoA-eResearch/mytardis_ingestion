@@ -44,7 +44,7 @@ def _is_completed_df(
 ) -> bool:
     """Checks if a datafile has been ingested, verified, and its age is higher
     than the minimum age."""
-    pth = Path(df.directory) / df.filename if df.directory else Path(df.filename)
+    pth = df.filepath
     if query_result is None or len(query_result) == 0:
         return False
     if len(query_result) > 1:
@@ -94,11 +94,7 @@ def _filter_completed_dfs(
             "Datafiles pending ingestion, verification or do not meet minimum file age:"
         )
         for datafile in unverified_dfs:
-            logger.info(
-                Path(datafile.directory) / datafile.filename
-                if datafile.directory
-                else Path(datafile.filename)
-            )
+            logger.info(datafile.filepath)
         return verified_dfs
     logger.info("Ingestion for this data source is complete.")
     return verified_dfs
@@ -156,9 +152,7 @@ def clean(
     manifest = profile.get_extractor().extract(source_data_path)
     # Print out all files
     df_paths = [
-        manifest.get_data_root()
-        / (Path(df.directory) / df.filename if df.directory else Path(df.filename))
-        for df in manifest.get_datafiles()
+        manifest.get_data_root() / df.filepath for df in manifest.get_datafiles()
     ]
     logger.info("The following datafiles are found in this data source.")
     for file in df_paths:
@@ -167,11 +161,7 @@ def clean(
     config = get_config(storage)
     # Check verification status.
     verified_dfs = _filter_completed_dfs(config, manifest.get_datafiles(), min_file_age)
-    verified_df_paths = [
-        manifest.get_data_root()
-        / (Path(df.directory) / df.filename if df.directory else Path(df.filename))
-        for df in verified_dfs
-    ]
+    verified_df_paths = [manifest.get_data_root() / df.filepath for df in verified_dfs]
     if len(verified_dfs) != len(manifest.get_datafiles()):
         logger.error(
             "Could not proceed with deleting this data source. Ingestion is not complete."
