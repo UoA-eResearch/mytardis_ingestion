@@ -16,8 +16,16 @@ from src.conveyor.conveyor import Conveyor, FailedTransferException
 from src.crucible.crucible import Crucible
 from src.extraction.manifest import IngestionManifest
 from src.forges.forge import Forge
-from src.mytardis_client.data_types import CONTEXT_USE_URI_ID_ONLY, URI
-from src.mytardis_client.mt_rest import MyTardisRESTFactory
+from src.mytardis_client.data_types import (
+    CONTEXT_USE_URI_ID_ONLY,
+    URI,
+    resource_uri_to_id,
+)
+from src.mytardis_client.endpoints import MyTardisEndpoint, get_endpoint_info
+from src.mytardis_client.mt_rest import (  # MyTardisObjectData,
+    Ingested,
+    MyTardisRESTFactory,
+)
 from src.mytardis_client.objects import MyTardisObject
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
@@ -33,6 +41,41 @@ class IngestionResult(BaseModel):
     success: list[tuple[str, Optional[URI]]] = []
     skipped: list[tuple[str, Optional[URI]]] = []
     error: list[str] = []
+
+
+class IngestionState:
+    def __init__(self, mt_client: MyTardisRESTFactory):
+        self._mt_client = mt_client
+        self._dataset_cache: dict[URI, dict[tuple[Path, str], Ingested[Datafile]]] = {}
+
+    def is_ingested(self, obj: BaseModel) -> tuple[bool, Optional[URI]]:
+
+        if isinstance(obj, Datafile):
+            dataset_uri = obj.dataset
+
+            def make_hash(obj: Datafile) -> tuple[Path, str]:
+                return obj.directory, obj.filename
+
+            if self._dataset_cache.get(dataset_uri) is None:
+
+                # Cache the datafiles for this file's dataset
+                datafiles, _ = self._mt_client.get_all(
+                    endpoint=get_endpoint_info(MyTardisEndpoint.DATASET),
+                    query_params={"dataset": resource_uri_to_id(str(dataset_uri))},
+                    object_type=Datafile,
+                )
+                self._dataset_cache[dataset_uri] = {}
+                for datafile in datafiles:
+                    self._dataset_cache[dataset_uri][make_hash(datafile.obj)] = datafile
+
+            if file_match := self._dataset_cache[dataset_uri].get(make_hash(obj)):
+                return True, file_match.resource_uri
+        else:
+            raise ValueError(
+                f"Object type {type(obj)} not yet supported for checking in IngestionState."
+            )
+
+        return False, None
 
 
 class IngestionFactory:
@@ -79,6 +122,8 @@ class IngestionFactory:
             overseer=self._overseer,
         )
         self.conveyor = conveyor or Conveyor(store=config.storage)
+
+        self._state = IngestionState(mt_rest)
 
     def ingest_projects(
         self,
@@ -221,14 +266,22 @@ class IngestionFactory:
             # Add a replica to represent the copy transferred by the Conveyor.
             datafile.replicas.append(self.conveyor.create_replica(datafile))
 
-            matching_datafiles = self._overseer.get_matching_objects(
-                MyTardisObject.DATAFILE,
-                datafile.model_dump(context=CONTEXT_USE_URI_ID_ONLY),
-            )
-            if len(matching_datafiles) > 0:
+            is_ingested, uri = self._state.is_ingested(datafile)
+
+            # matching_datafiles = self._overseer.get_matching_objects(
+            #     MyTardisObject.DATAFILE,
+            #     datafile.model_dump(context=CONTEXT_USE_URI_ID_ONLY),
+            # )
+            # if len(matching_datafiles) > 0:
+            #     logging.info(
+            #         'Already ingested datafile "%s". Skipping datafile ingestion.',
+            #         datafile.directory,
+            #     )
+            if is_ingested:
                 logging.info(
-                    'Already ingested datafile "%s". Skipping datafile ingestion.',
+                    'Already ingested datafile "%s" as %s. Skipping datafile ingestion.',
                     datafile.directory,
+                    str(uri),
                 )
                 result.skipped.append((datafile.display_name, None))
                 continue
