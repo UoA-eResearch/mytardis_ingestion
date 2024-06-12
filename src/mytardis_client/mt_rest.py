@@ -15,7 +15,7 @@ from requests import Response
 from requests.exceptions import RequestException
 
 from src.config.config import AuthConfig, ConnectionConfig
-from src.mytardis_client.data_types import HttpRequestMethod
+from src.mytardis_client.data_types import URI, HttpRequestMethod
 from src.mytardis_client.endpoints import MyTardisEndpointInfo
 from src.utils.types.singleton import Singleton
 
@@ -74,6 +74,13 @@ class GetResponse(BaseModel, Generic[MyTardisObjectData]):
 
     meta: GetResponseMeta
     objects: list[MyTardisObjectData]
+
+
+class Ingested(BaseModel, Generic[MyTardisObjectData]):
+    """A Pydantic model to handle the response from a GET request to the MyTardis API"""
+
+    obj: MyTardisObjectData
+    resource_uri: URI
 
 
 class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
@@ -262,7 +269,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
         object_type: type[MyTardisObjectData],
         query_params: dict[str, Any],
         meta_params: Optional[GetRequestMetaParams],
-    ) -> tuple[list[MyTardisObjectData], GetResponseMeta]:
+    ) -> tuple[list[Ingested[MyTardisObjectData]], GetResponseMeta]:
         """Submit a GET request to the MyTardis API and return the response as a list of objects.
 
         Note that the response is paginated, so the function may not return all objects matching
@@ -284,9 +291,23 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
         response_json = response_data.json()
 
         response_meta = GetResponseMeta.model_validate_json(response_json["meta"])
-        objects = [
-            object_type.model_validate_json(obj) for obj in response_json["objects"]
-        ]
+
+        objects: list[Ingested[MyTardisObjectData]] = []
+
+        response_objects = response_json.get("objects")
+        if response_objects is None:
+            # TODO: more specific error - ill-formed return from MyTardis?
+            raise ValueError(
+                "No 'objects' list in GET response.\n"
+                f"Endpoint: {endpoint}\n"
+                f"Query params: {query_params}\n"
+                f"Response: {response_json}"
+            )
+
+        for object_json in response_objects:
+            obj = object_type.model_validate_json(object_json)
+            resource_uri = URI(object_json["resource_uri"])
+            objects.append(Ingested(obj=obj, resource_uri=resource_uri))
 
         return objects, response_meta
 
@@ -296,7 +317,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
         query_params: dict[str, Any],
         object_type: type[MyTardisObjectData],
         batch_size: int = 500,
-    ) -> tuple[list[MyTardisObjectData], int]:
+    ) -> tuple[list[Ingested[MyTardisObjectData]], int]:
         """Get all objects of the given type that match 'query_params'.
 
         Sends repeated GET requests to the MyTardis API until all objects have been retrieved.
@@ -304,9 +325,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
         each request
         """
 
-        batch_size = batch_size or 500
-
-        objects: list[MyTardisObjectData] = []
+        objects: list[Ingested[MyTardisObjectData]] = []
 
         while True:
             request_meta = GetRequestMetaParams(limit=batch_size, offset=len(objects))
