@@ -23,7 +23,8 @@ from requests.auth import AuthBase
 
 from src.blueprints.custom_data_types import MTUrl
 from src.blueprints.storage_boxes import StorageTypesEnum
-from src.mytardis_client.mt_rest import MyTardisApiVersion, make_api_stub
+
+# from src.mytardis_client.mt_rest import MyTardisApiVersion, make_api_stub
 from src.mytardis_client.objects import MyTardisObject
 
 logger = logging.getLogger(__name__)
@@ -83,6 +84,19 @@ class ProxyConfig(BaseModel):
     https: Optional[MTUrl] = None
 
 
+# Temporarily duplicated from mt_rest for debugging
+def make_api_stub(version: str) -> str:
+    """Creates a stub for the MyTardis API URL
+
+    Args:
+        version: The version of the MyTardis API to use
+
+    Returns:
+        A string containing the stub of the URL tailored for the API calls as defined in MyTardis
+    """
+    return f"/api/{version}/"
+
+
 class ConnectionConfig(BaseModel):
     """MyTardis connection configuration.
 
@@ -103,7 +117,7 @@ class ConnectionConfig(BaseModel):
     hostname: MTUrl
     verify_certificate: bool = True
     proxy: Optional[ProxyConfig] = None
-    api_version: MyTardisApiVersion = "v1"
+    api_version: str = "v1"
 
     # NOTE: we should define this in the MyTardis client
     @property
