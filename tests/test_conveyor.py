@@ -11,13 +11,16 @@ from src.blueprints.datafile import Datafile, DatafileReplica
 from src.config.config import FilesystemStorageBoxConfig
 from src.conveyor.conveyor import Conveyor, is_rsync_on_path
 from src.miners.utils.datafile_metadata_helpers import calculate_md5sum
+from src.mytardis_client.data_types import URI
 
 DatafileFixture = tuple[Path, list[Datafile], Path]
 
 
 @pytest.fixture(name="datafile_list")
 def fixtures_datafile_list(tmp_path: Path) -> Callable[[int], DatafileFixture]:
-    def _fixtures_datafile_list(dataset_id: int) -> DatafileFixture:
+    def _fixtures_datafile_list(
+        dataset_id: int, num_files: int = 15
+    ) -> DatafileFixture:
         """Generates a temporary directory with random data files,
         and source and destination folders.
 
@@ -36,7 +39,7 @@ def fixtures_datafile_list(tmp_path: Path) -> Callable[[int], DatafileFixture]:
         src_dir.mkdir(exist_ok=True)
         dest_dir.mkdir(exist_ok=True)
         datafiles: list[Datafile] = []
-        for i in range(15):
+        for i in range(num_files):
             # Generate 15 random files
             f_path = src_dir / (str(i) + ".txt")
             f_path.touch()
@@ -52,7 +55,7 @@ def fixtures_datafile_list(tmp_path: Path) -> Callable[[int], DatafileFixture]:
                 md5sum=digest,
                 mimetype="text/plain",
                 size=f_path.stat().st_size,
-                dataset=f"/api/v1/dataset/{dataset_id}/",
+                dataset=URI(f"/api/v1/dataset/{dataset_id}/"),
                 replicas=[
                     DatafileReplica(
                         uri=f"{dest_dir}/dataset/{f_path.name}", location="test-box"
@@ -81,6 +84,29 @@ def test_rsync_transfer_ok(datafile_list: Callable[[int], DatafileFixture]) -> N
     src_files = os.listdir(src)
     # Ensure that a directory for the dataset is created.
     dataset_dir = dest / "ds-409"
+    assert dataset_dir.is_dir()
+    dest_files = os.listdir(dataset_dir)
+    # There should be the same number of files at destination.
+    assert sorted(dest_files) == sorted(src_files)
+
+
+@pytest.mark.skipif(not is_rsync_on_path(), reason="requires rsync installed")
+def test_rsync_transfer_single_file_ok(
+    datafile_list: Callable[[int, int], DatafileFixture]
+) -> None:
+    """Test for rsync transferring one file should complete, and file should be inside a directory.
+
+    Args:
+        datafile_list (Callable[[int], DatafileFixture]): Datafile fixtures
+    """
+    src, dfs, dest = datafile_list(401, 1)
+    store = FilesystemStorageBoxConfig(storage_name="test-box", target_root_dir=dest)
+    conveyor = Conveyor(store)
+    # Run the transfer
+    conveyor.transfer(src, dfs)
+    src_files = os.listdir(src)
+    # Ensure that a directory for the dataset is created.
+    dataset_dir = dest / "ds-401"
     assert dataset_dir.is_dir()
     dest_files = os.listdir(dataset_dir)
     # There should be the same number of files at destination.
