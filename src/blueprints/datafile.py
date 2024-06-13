@@ -66,7 +66,7 @@ class BaseDatafile(BaseModel, ABC):
     def filepath(self) -> Path:
         """The full path to the file"""
         if self.directory is not None:
-            return Path(self.directory) / self.filename
+            return self.directory / self.filename
         return Path(self.filename)
 
     @field_serializer("directory")
