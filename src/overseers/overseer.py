@@ -26,6 +26,23 @@ MYTARDIS_PROJECTS_DISABLED_MESSAGE = (
 )
 
 
+class OverseerCache:
+    def __init__(self) -> None:
+        self._uris: dict[MyTardisObject, dict[str, list[URI]]] = {}
+
+    def emplace_uris(
+        self, object_type: MyTardisObject, identifier: str, uris: list[URI]
+    ) -> None:
+        if object_type not in self._uris:
+            self._uris[object_type] = {}
+        self._uris[object_type][identifier] = uris
+
+    def get_uri(self, object_type: MyTardisObject, identifier: str) -> list[URI] | None:
+        if object_type not in self._uris:
+            return None
+        return self._uris[object_type].get(identifier)
+
+
 def get_default_endpoint(object_type: MyTardisObject) -> MyTardisEndpoint:
     """Return the MyTardis endpoint that the forge should POST to for the given object type."""
     if object_type == MyTardisObject.PROJECT:
@@ -42,6 +59,10 @@ def get_default_endpoint(object_type: MyTardisObject) -> MyTardisEndpoint:
         return MyTardisEndpoint.EXPERIMENT_PARAMETER_SET
     elif object_type == MyTardisObject.DATASET_PARAMETER_SET:
         return MyTardisEndpoint.DATASET_PARAMETER_SET
+    elif object_type == MyTardisObject.INSTITUTION:
+        return MyTardisEndpoint.INSTITUTION
+    elif object_type == MyTardisObject.INSTRUMENT:
+        return MyTardisEndpoint.INSTRUMENT
     else:
         raise ValueError(f"Default endpoint not defined for object type {object_type}")
 
@@ -98,6 +119,8 @@ class Overseer(metaclass=Singleton):
             mytardis_setup : IntrospectionConfig
         """
         self.rest_factory = rest_factory
+
+        self._cache = OverseerCache()
 
     @property
     def mytardis_setup(self) -> IntrospectionConfig:
@@ -251,7 +274,12 @@ class Overseer(metaclass=Singleton):
 
         self.check_identifiers_enabled_for_type(object_type)
 
-        return self.get_uris(object_type, {"identifier": identifier})
+        if uris := self._cache.get_uri(object_type, identifier):
+            return uris
+
+        uris = self.get_uris(object_type, {"identifier": identifier})
+        self._cache.emplace_uris(object_type, identifier, uris)
+        return uris
 
     def get_mytardis_setup(self) -> IntrospectionConfig:
         """Query introspection API
