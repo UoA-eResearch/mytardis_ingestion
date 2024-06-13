@@ -122,9 +122,14 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
 
         self.auth = auth
         self.proxies = connection.proxy.model_dump() if connection.proxy else None
-        self.hostname = connection.hostname
         self.verify_certificate = connection.verify_certificate
-        self._url_base = urljoin(connection.hostname, "/api/v1/")
+
+        self.hostname = connection.hostname
+        if not self.hostname.endswith("/"):
+            self.hostname += "/"
+        self._version: MyTardisApiVersion = "v1"
+        self._url_base = urljoin(connection.hostname, make_api_stub(self._version))
+
         self.user_agent = f"{self.user_agent_name}/2.0 ({self.user_agent_url})"
         self._session = requests.Session()
 
@@ -232,7 +237,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
             HTTPError: An error raised when the request fails for other reasons via the
                 requests.Response.raise_for_status function.
         """
-        url = urljoin(self._url_base, endpoint.path)
+        url = urljoin(self._url_base, endpoint.path.lstrip("/"))
 
         if method == "POST":
             url = f"{url}/"
@@ -290,7 +295,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
 
         response_json = response_data.json()
 
-        response_meta = GetResponseMeta.model_validate_json(response_json["meta"])
+        response_meta = GetResponseMeta.model_validate(response_json["meta"])
 
         objects: list[Ingested[MyTardisObjectData]] = []
 
@@ -305,7 +310,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
             )
 
         for object_json in response_objects:
-            obj = object_type.model_validate_json(object_json)
+            obj = object_type.model_validate(object_json)
             resource_uri = URI(object_json["resource_uri"])
             objects.append(Ingested(obj=obj, resource_uri=resource_uri))
 

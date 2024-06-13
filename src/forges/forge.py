@@ -79,7 +79,6 @@ class Forge:
     ) -> requests.Response:
         """Wrapper around a generic POST request with logging in place."""
         try:
-            # response = self.rest_factory.mytardis_api_request(action, url, data=data)
             response = self.rest_factory.request(action, endpoint=endpoint, data=data)
         except (HTTPError, BadGateWayException) as error:
             message = (
@@ -213,8 +212,8 @@ class Forge:
                 logger.info(
                     (
                         f"Object: {refined_object.display_name} successfully "
-                        "created in MyTardis\n"
-                        f"Url substring: {endpoint_info.path}\n"
+                        "created in MyTardis"
+                        f"Url substring: {endpoint_info.path}"
                     )
                 )
                 return uri

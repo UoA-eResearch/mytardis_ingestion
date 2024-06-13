@@ -60,7 +60,7 @@ class IngestionState:
 
                 # Cache the datafiles for this file's dataset
                 datafiles, _ = self._mt_client.get_all(
-                    endpoint=get_endpoint_info(MyTardisEndpoint.DATASET),
+                    endpoint=get_endpoint_info(MyTardisEndpoint.DATAFILE),
                     query_params={"dataset": resource_uri_to_id(str(dataset_uri))},
                     object_type=Datafile,
                 )
