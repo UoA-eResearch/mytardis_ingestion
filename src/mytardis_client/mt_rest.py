@@ -193,7 +193,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
             auth=self.auth,
             verify=self.verify_certificate,
             proxies=self.proxies,
-            timeout=5,
+            timeout=120,
         )
 
         if response.status_code == 502:
@@ -259,7 +259,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
             auth=self.auth,
             verify=self.verify_certificate,
             proxies=self.proxies,
-            timeout=5,
+            timeout=120,
         )
 
         if response.status_code == 502:
