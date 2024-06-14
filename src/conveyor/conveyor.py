@@ -86,6 +86,10 @@ class Conveyor:
             logger.info(
                 "rsync process has started, output not available until it finishes."
             )
+            # Ensure destination dataset dir exists before transferring.
+            # This means if we are transferring one file, rsync will not
+            # name the file with the destination directory name.
+            destination_dir.mkdir()
             result = subprocess.run(  # nosec
                 ["rsync", "-av", "--files-from", list_f.name, src, destination_dir],
                 check=False,
