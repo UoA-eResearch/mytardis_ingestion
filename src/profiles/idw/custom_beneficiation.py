@@ -62,8 +62,7 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
                 if isinstance(obj, RawDataset):
                     ingestible_dclasses.add_dataset(obj)
                 if isinstance(obj, RawDatafile):
-                    df_path = yaml_path.parent.joinpath(obj.directory)
-                    df_dir = df_path / obj.filename
-                    obj.md5sum = datafile_metadata_helpers.calculate_md5sum(df_dir)
+                    df_path = yaml_path.parent / obj.filepath
+                    obj.md5sum = datafile_metadata_helpers.calculate_md5sum(df_path)
                     ingestible_dclasses.add_datafile(obj)
         return ingestible_dclasses

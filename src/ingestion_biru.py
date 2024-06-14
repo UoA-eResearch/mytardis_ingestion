@@ -147,13 +147,13 @@ class IDSIngestionScript:
             data_obj.data_status is not None
             and data_obj.data_status == DataStatus.INGESTED
         ):
-            obj_name_attr = obj_type.lower()
-            logger.info("%s %s has already been ingested.", obj_type, obj_name_attr)
+            logger.info(
+                "%s %s has already been ingested.", obj_type, data_obj.display_name
+            )
             return
 
         # Ingest the data object
-        obj_name_attr = obj_type.lower()
-        logger.info("Ingesting %s: %s", obj_type.lower(), obj_name_attr)
+        logger.info("Ingesting %s: %s", obj_type, data_obj.display_name)
 
         if isinstance(data_obj, RawDatafile):
             result = self.factory.ingest_datafiles(
@@ -169,6 +169,8 @@ class IDSIngestionScript:
             if obj_type == "datafile":
                 if not isinstance(data_obj, RawDatafile):
                     raise TypeError("data_obj must be an instance of RawDatafile")
+            else:
+                logger.info("Ingested %s: %s", obj_type, data_obj.display_name)
         else:
             data_obj.data_status = DataStatus.FAILED
 
