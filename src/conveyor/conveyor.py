@@ -89,7 +89,7 @@ class Conveyor:
             # Ensure destination dataset dir exists before transferring.
             # This means if we are transferring one file, rsync will not
             # name the file with the destination directory name.
-            destination_dir.mkdir()
+            destination_dir.mkdir(exist_ok=True)
             result = subprocess.run(  # nosec
                 ["rsync", "-av", "--files-from", list_f.name, src, destination_dir],
                 check=False,
