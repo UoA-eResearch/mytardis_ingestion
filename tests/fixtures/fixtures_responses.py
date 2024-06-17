@@ -418,26 +418,3 @@ def project_creation_response_dict(
         "tags": [],
         "url": project.url,
     }
-
-
-@fixture
-def response_by_substring(
-    response_dict_not_found: Dict[str, Any],
-    dataset_response_dict: Dict[str, Any],
-    experiment_response_dict: Dict[str, Any],
-    project_response_dict: Dict[str, Any],
-    datafile_response_dict: Dict[str, Any],
-) -> Callable[[URLSubstring], Any]:
-    def _get_response_dict(substring: URLSubstring) -> Dict[str, Any]:
-        match substring:
-            case URLSubstring.PROJECT:
-                return project_response_dict
-            case URLSubstring.EXPERIMENT:
-                return experiment_response_dict
-            case URLSubstring.DATASET:
-                return dataset_response_dict
-            case URLSubstring.DATAFILE:
-                return datafile_response_dict
-        return response_dict_not_found
-
-    return _get_response_dict
