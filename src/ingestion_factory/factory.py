@@ -267,16 +267,6 @@ class IngestionFactory:
             datafile.replicas.append(self.conveyor.create_replica(datafile))
 
             is_ingested, uri = self._state.is_ingested(datafile)
-
-            # matching_datafiles = self._overseer.get_matching_objects(
-            #     MyTardisObject.DATAFILE,
-            #     datafile.model_dump(context=CONTEXT_USE_URI_ID_ONLY),
-            # )
-            # if len(matching_datafiles) > 0:
-            #     logging.info(
-            #         'Already ingested datafile "%s". Skipping datafile ingestion.',
-            #         datafile.directory,
-            #     )
             if is_ingested:
                 logging.info(
                     'Already ingested datafile "%s" as %s. Skipping datafile ingestion.',
