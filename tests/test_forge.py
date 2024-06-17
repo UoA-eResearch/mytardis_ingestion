@@ -45,7 +45,7 @@ def test_post_returns_URI_on_success(  # pylint: disable=invalid-name
         status=200,
         json=(project_creation_response_dict),
     )
-    test_value = forge.forge_object(project, TEST_OBJECT_ID)
+    test_value = forge.forge_object(project)
 
     info_str = (
         f"Object: {project.name} successfully "
@@ -70,7 +70,7 @@ def test_post_returns_none_on_missing_body(
         urljoin(connection.api_template, TEST_OBJECT_TYPE),
         status=201,
     )
-    test_value = forge.forge_object(project, TEST_OBJECT_ID)
+    test_value = forge.forge_object(project)
 
     info_str = (
         f"Expected a JSON return from the POST request "
@@ -80,22 +80,6 @@ def test_post_returns_none_on_missing_body(
     )
     assert test_value is None
     assert info_str in caplog.text
-
-
-@pytest.mark.xfail
-def test_overwrite_without_object_id_logs_warning(
-    caplog: LogCaptureFixture,
-    forge: Forge,
-    project: Project,
-) -> None:
-    caplog.set_level(logging.WARNING)
-    forge.forge_object(project, overwrite_objects=True)
-
-    warning_str = (
-        f"Overwrite was requested for an object of type {ObjectPostEnum.PROJECT.value} "
-        "called from Forge class. There was no object_id passed with this request"
-    )
-    assert warning_str in caplog.text
 
 
 @pytest.mark.xfail

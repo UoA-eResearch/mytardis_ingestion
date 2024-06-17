@@ -117,7 +117,7 @@ class Forge:
             return None
         return uri
 
-    def forge_object(  # pylint: disable=too-many-return-statements
+    def forge_object(
         self,
         refined_object: (
             Project
@@ -128,8 +128,6 @@ class Forge:
             | ExperimentParameterSet
             | DatasetParameterSet
         ),
-        object_id: int | None = None,
-        overwrite_objects: bool = False,
     ) -> URI | None:
         """POSTs a request to create an object in MyTardis
 
@@ -141,9 +139,6 @@ class Forge:
             object_type: The MyTardis object type to be created
             object_dict: A data dictionary to be passed to the POST request containing
                 the data necessary to create the object.
-            object_id: The id of the object to update if the forge request is an
-                overwrite_objects = True forge request.
-            overwrite_objects: A bool indicating whether duplicate items should be overwritten
 
         Returns:
             False if the object was not created
@@ -163,16 +158,6 @@ class Forge:
         # Consider refactoring this as a function to generate the URL?
         action = "POST"
         url = urljoin(self.rest_factory.api_template, object_type["url_substring"])
-
-        if overwrite_objects:
-            if object_id:
-                action = "PUT"
-                url = urljoin(url, str(object_id))
-            else:
-                raise ValueError(
-                    f"Overwrite was requested for an object of type {object_type} "
-                    "called from Forge class, but there was no object_id passed with this request."
-                )
 
         response = self._make_api_call(url, action, object_json)
 

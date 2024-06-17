@@ -545,7 +545,6 @@ introspection_response_dict = rsps.introspection_response_dict
 institution_response_dict = rsps.institution_response_dict
 storage_box_response_dict = rsps.storage_box_response_dict
 project_creation_response_dict = rsps.project_creation_response_dict
-response_by_substring = rsps.response_by_substring
 get_experiment_details = rsps.get_experiment_details
 get_project_details = rsps.get_project_details
 
