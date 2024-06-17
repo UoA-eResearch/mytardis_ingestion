@@ -14,8 +14,8 @@ from src.blueprints.datafile import Datafile
 from src.blueprints.dataset import Dataset, DatasetParameterSet
 from src.blueprints.experiment import Experiment, ExperimentParameterSet
 from src.blueprints.project import Project, ProjectParameterSet
-from src.helpers.dataclass import get_object_post_type
-from src.mytardis_client.data_types import URI
+from src.mytardis_client.data_types import URI, HttpRequestMethod
+from src.mytardis_client.endpoints import MyTardisEndpoint, get_endpoint_info
 from src.mytardis_client.mt_rest import BadGateWayException, MyTardisRESTFactory
 
 logger = logging.getLogger(__name__)
@@ -53,12 +53,14 @@ class Forge:
     def _make_api_call(
         self,
         url: str,
-        action: str,
+        action: HttpRequestMethod,
         data: str,
     ) -> requests.Response:
         """Wrapper around a generic POST request with logging in place."""
         try:
-            response = self.rest_factory.mytardis_api_request(action, url, data=data)
+            response = self.rest_factory.mytardis_api_request(
+                str(action), url, data=data
+            )
         except (HTTPError, BadGateWayException) as error:
             message = (
                 "Failed HTTP request from forge_object call\n"
@@ -119,6 +121,7 @@ class Forge:
 
     def forge_object(
         self,
+        endpoint: MyTardisEndpoint,
         refined_object: (
             Project
             | Experiment
@@ -153,15 +156,18 @@ class Forge:
                 "Failed to serialize an object into JSON. Object passed was {refined_object}."
             )
 
-        object_type = get_object_post_type(refined_object)
+        endpoint_info = get_endpoint_info(endpoint)
+
+        if endpoint_info.methods.POST is None:
+            raise ValueError(f"Endpoint {endpoint} does not support POST requests")
 
         # Consider refactoring this as a function to generate the URL?
         action = "POST"
-        url = urljoin(self.rest_factory.api_template, object_type["url_substring"])
+        url = urljoin(self.rest_factory.api_template, endpoint.lstrip("/"))
 
-        response = self._make_api_call(url, action, object_json)
+        response = self._make_api_call(url, "POST", object_json)
 
-        if object_type["expect_json"]:
+        if endpoint_info.methods.POST.expect_response_json:
             try:
                 response_dict = response.json()
             except JSONDecodeError as error:
@@ -191,7 +197,7 @@ class Forge:
                     (
                         f"Object: {refined_object.display_name} successfully "
                         "created in MyTardis\n"
-                        f"Url substring: {object_type['url_substring']}"
+                        f"Endpoint: {endpoint}"
                     )
                 )
                 return uri
@@ -215,7 +221,7 @@ class Forge:
         Returns:
             The URI of the forged project if the forging was successful, otherwise None
         """
-        uri = self.forge_object(refined_object)
+        uri = self.forge_object("/project", refined_object)
         if uri is None:
             raise ForgeError(
                 f"No URI returned when forging project {refined_object.name}. Check MyTardis."
@@ -229,7 +235,7 @@ class Forge:
             )
 
             # No URI is yielded when forging parameters
-            _ = self.forge_object(refined_parameters)
+            _ = self.forge_object("/projectparameterset", refined_parameters)
 
         return uri
 
@@ -249,7 +255,7 @@ class Forge:
         Returns:
             The URI of the forged experiment if the forging was successful, otherwise None
         """
-        uri = self.forge_object(refined_object)
+        uri = self.forge_object("/experiment", refined_object)
         if uri is None:
             raise ForgeError(
                 f"No URI returned when forging experiment {refined_object.title}. Check MyTardis."
@@ -262,7 +268,7 @@ class Forge:
                 experiment=uri,
             )
             # No URI is yielded when forging parameters
-            _ = self.forge_object(refined_parameters)
+            _ = self.forge_object("/experimentparameterset", refined_parameters)
 
         return uri
 
@@ -282,7 +288,7 @@ class Forge:
         Returns:
             The URI of the forged dataset if the forging was successful, otherwise None
         """
-        uri = self.forge_object(refined_object)
+        uri = self.forge_object("/dataset", refined_object)
         if uri is None:
             raise ForgeError(
                 f"No URI returned when forging experiment ('{refined_object.description}'). "
@@ -295,7 +301,7 @@ class Forge:
                 parameters=dataset_parameters.parameters,
                 dataset=uri,
             )
-            _ = self.forge_object(refined_parameters)
+            _ = self.forge_object("/datasetparameterset", refined_parameters)
 
         # No URI yielded when forging parameters
         return uri
@@ -312,4 +318,4 @@ class Forge:
                 the datafile in MyTardis
         """
         # No URI is yielded when forging a datafile
-        _ = self.forge_object(refined_object)
+        _ = self.forge_object("/dataset_file", refined_object)
