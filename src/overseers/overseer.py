@@ -26,6 +26,7 @@ MYTARDIS_PROJECTS_DISABLED_MESSAGE = (
 )
 
 
+# pylint: disable=too-many-return-statements
 def get_default_endpoint(object_type: MyTardisObject) -> MyTardisEndpoint:
     """Return the MyTardis endpoint that the forge should POST to for the given object type.
 
@@ -33,24 +34,24 @@ def get_default_endpoint(object_type: MyTardisObject) -> MyTardisEndpoint:
     type may be returned by multiple endpoints."""
     if object_type == MyTardisObject.PROJECT:
         return "/project"
-    elif object_type == MyTardisObject.EXPERIMENT:
+    if object_type == MyTardisObject.EXPERIMENT:
         return "/experiment"
-    elif object_type == MyTardisObject.DATASET:
+    if object_type == MyTardisObject.DATASET:
         return "/dataset"
-    elif object_type == MyTardisObject.DATAFILE:
+    if object_type == MyTardisObject.DATAFILE:
         return "/dataset_file"
-    elif object_type == MyTardisObject.PROJECT_PARAMETER_SET:
+    if object_type == MyTardisObject.PROJECT_PARAMETER_SET:
         return "/projectparameterset"
-    elif object_type == MyTardisObject.EXPERIMENT_PARAMETER_SET:
+    if object_type == MyTardisObject.EXPERIMENT_PARAMETER_SET:
         return "/experimentparameterset"
-    elif object_type == MyTardisObject.DATASET_PARAMETER_SET:
+    if object_type == MyTardisObject.DATASET_PARAMETER_SET:
         return "/datasetparameterset"
-    elif object_type == MyTardisObject.INSTITUTION:
+    if object_type == MyTardisObject.INSTITUTION:
         return "/institution"
-    elif object_type == MyTardisObject.INSTRUMENT:
+    if object_type == MyTardisObject.INSTRUMENT:
         return "/instrument"
-    else:
-        raise ValueError(f"Default endpoint not defined for object type {object_type}")
+
+    raise ValueError(f"Default endpoint not defined for object type {object_type}")
 
 
 def extract_values_for_matching(

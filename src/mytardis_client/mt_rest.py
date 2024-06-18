@@ -240,9 +240,8 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
 
         response_objects = response_json.get("objects")
         if response_objects is None:
-            # TODO: more specific error - ill-formed return from MyTardis?
-            raise ValueError(
-                "No 'objects' list in GET response.\n"
+            raise RuntimeError(
+                "Ill-formed response to MyTardis GET request; response has no 'objects' list.\n"
                 f"Endpoint: {endpoint}\n"
                 f"Query params: {query_params}\n"
                 f"Response: {response_json}"

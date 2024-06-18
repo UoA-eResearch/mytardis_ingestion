@@ -91,7 +91,7 @@ class Forge:
             )
             logger.warning(message)
             raise ForgeError(
-                f"Forge failure: request to {endpoint} received a redirect response. Details: {message}"
+                f"Forge failure: received redirect response from  {endpoint}. Details: {message}"
             )
 
         return response
