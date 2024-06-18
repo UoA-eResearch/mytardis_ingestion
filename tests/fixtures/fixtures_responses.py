@@ -1,14 +1,13 @@
 # pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict, List
 
 from pytest import fixture
 
 from src.blueprints.project import Project
 from src.blueprints.storage_boxes import StorageBox
 from src.mytardis_client.data_types import URI
-from src.mytardis_client.enumerators import URLSubstring
 
 
 @fixture
