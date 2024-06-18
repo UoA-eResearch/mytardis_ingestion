@@ -53,6 +53,8 @@ flake8-pyproject = "^1.2.3"
 toml = "^0.10.2"
 pyproject-pre-commit = "^0.1.4"
 pyfakefs = "^5.3.1"
+black = "^24.4.0"
+isort = "^5.13.2"
 
 [tool.poetry.scripts]
 ids = 'src.ids:app'
