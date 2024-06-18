@@ -128,7 +128,7 @@ def test_get_objects_http_error(
     Overseer.clear()
 
 
-@mock.patch("src.mytardis_client.mt_rest.MyTardisRESTFactory.mytardis_api_request")
+@mock.patch("src.mytardis_client.mt_rest.MyTardisRESTFactory.request")
 def test_get_objects_general_error(
     mock_mytardis_api_request: Any,
     caplog: LogCaptureFixture,
@@ -348,7 +348,7 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
     Overseer.clear()
 
 
-@mock.patch("src.mytardis_client.mt_rest.MyTardisRESTFactory.mytardis_api_request")
+@mock.patch("src.mytardis_client.mt_rest.MyTardisRESTFactory.request")
 def test_get_uris_general_error(
     mock_mytardis_api_request: Any,
     overseer: Overseer,

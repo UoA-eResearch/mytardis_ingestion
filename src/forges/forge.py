@@ -3,7 +3,6 @@
 
 import logging
 from typing import Any, Dict, Optional
-from urllib.parse import urljoin
 
 import requests
 from pydantic import ValidationError
@@ -52,46 +51,47 @@ class Forge:
 
     def _make_api_call(
         self,
-        url: str,
+        endpoint: MyTardisEndpoint,
         action: HttpRequestMethod,
         data: str,
     ) -> requests.Response:
         """Wrapper around a generic POST request with logging in place."""
         try:
-            response = self.rest_factory.mytardis_api_request(
-                str(action), url, data=data
+            endpoint_info = get_endpoint_info(endpoint)
+            response = self.rest_factory.request(
+                action, endpoint=endpoint_info, data=data
             )
         except (HTTPError, BadGateWayException) as error:
             message = (
                 "Failed HTTP request from forge_object call\n"
-                f"Url: {url}\nAction: {action}\nData: {data}"
+                f"Endpoint: {endpoint}\nAction: {action}\nData: {data}"
             )
 
             logger.error(error, exc_info=True)
             raise ForgeError(
-                f"Forge error during request to {url}. Details: {message}"
+                f"Forge error during request to {endpoint}. Details: {message}"
             ) from error
         except Exception as error:
             message = (
                 "Non-HTTP-request-error from forge_object call\n"
-                f"Url: {url}\nAction: {action}\nData: {data}"
+                f"Url: {endpoint}\nAction: {action}\nData: {data}"
             )
             logger.error(message)
             logger.error(error, exc_info=True)
             raise ForgeError(
-                f"Forge error during request to {url}. Details: {message}"
+                f"Forge error during request to {endpoint}. Details: {message}"
             ) from error
 
         if 300 <= response.status_code < 400:
             # We don't expect any redirects with MyTardis, so treat it as an error.
             message = (
                 "Object not successfully created in forge_object call\n"
-                f"Url: {url}\nAction: {action}\nData: {data}"
+                f"Url: {endpoint}\nAction: {action}\nData: {data}"
                 f"response status code: {response.status_code}"
             )
             logger.warning(message)
             raise ForgeError(
-                f"Forge failure: request to {url} received a redirect response. Details: {message}"
+                f"Forge failure: request to {endpoint} received a redirect response. Details: {message}"
             )
 
         return response
@@ -161,18 +161,16 @@ class Forge:
         if endpoint_info.methods.POST is None:
             raise ValueError(f"Endpoint {endpoint} does not support POST requests")
 
-        # Consider refactoring this as a function to generate the URL?
-        action = "POST"
-        url = urljoin(self.rest_factory.api_template, endpoint.lstrip("/"))
-
-        response = self._make_api_call(url, "POST", object_json)
+        response = self._make_api_call(
+            endpoint=endpoint, action="POST", data=object_json
+        )
 
         if endpoint_info.methods.POST.expect_response_json:
             try:
                 response_dict = response.json()
             except JSONDecodeError as error:
                 message = (
-                    f"Expected a JSON return from the {action} request "
+                    f"Expected a JSON return from the POST request "
                     "but no return was found. The object may not have "
                     "been properly created and needs investigating.\n"
                     f"Object in question is: {refined_object}"
