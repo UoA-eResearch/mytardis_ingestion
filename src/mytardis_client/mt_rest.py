@@ -124,19 +124,29 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
         self.proxies = connection.proxy.model_dump() if connection.proxy else None
         self.verify_certificate = connection.verify_certificate
 
-        self.hostname = connection.hostname
-        if not self.hostname.endswith("/"):
-            self.hostname += "/"
+        self._hostname = connection.hostname
+        if not self._hostname.endswith("/"):
+            # urljoin
+            self._hostname += "/"
         self._version: MyTardisApiVersion = "v1"
-        self._url_base = urljoin(connection.hostname, make_api_stub(self._version))
+        self._api_stub = make_api_stub(self._version)
+        self._url_base = urljoin(self._hostname, self._api_stub)
 
         self.user_agent = f"{self.user_agent_name}/2.0 ({self.user_agent_url})"
         self._session = requests.Session()
 
     @property
-    def url_base(self) -> str:
-        """The base URL for the MyTardis API calls (hostname, API version, but not the endpoint)"""
-        return self._url_base
+    def hostname(self) -> str:
+        """The hostname of the MyTardis instance"""
+        return self._hostname
+
+    def compose_url(self, endpoint: MyTardisEndpoint) -> str:
+        """Compose a full URL from the base URL and an endpoint path."""
+
+        path = endpoint.lstrip("/") if endpoint.startswith("/") else endpoint
+
+        # Note: it's important here that the base URL ends with a slash and the path does not
+        return urljoin(self._url_base, path)
 
     @backoff.on_exception(backoff.expo, BadGateWayException, max_tries=8)
     def request(
@@ -173,7 +183,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
             HTTPError: An error raised when the request fails for other reasons via the
                 requests.Response.raise_for_status function.
         """
-        url = urljoin(self._url_base, endpoint.lstrip("/"))
+        url = self.compose_url(endpoint)
 
         if method == "POST":
             url = f"{url}/"
