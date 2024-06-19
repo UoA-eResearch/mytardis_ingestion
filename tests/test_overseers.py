@@ -191,7 +191,6 @@ def test_get_uris(
     overseer: Overseer,
     project_response_dict: dict[str, Any],
 ) -> None:
-    object_type = MyTardisObject.PROJECT
     endpoint = "project"
     search_string = "Project_1"
 
@@ -221,7 +220,6 @@ def test_get_uris_no_objects(
     overseer: Overseer,
     response_dict_not_found: dict[str, Any],
 ) -> None:
-    object_type = MyTardisObject.PROJECT
     endpoint = "project"
     search_string = "Project_1"
     responses.add(
