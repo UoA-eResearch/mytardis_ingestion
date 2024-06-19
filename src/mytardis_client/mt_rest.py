@@ -83,7 +83,7 @@ class Ingested(BaseModel, Generic[MyTardisObjectData]):
     resource_uri: URI
 
 
-class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
+class MyTardisRESTFactory(metaclass=Singleton):
     """Class to interact with MyTardis by calling the REST API
 
     This is the main class that sets up access to the RESTful API supported by MyTardis. It takes
