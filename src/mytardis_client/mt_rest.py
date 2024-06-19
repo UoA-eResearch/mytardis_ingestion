@@ -16,7 +16,7 @@ from requests.exceptions import RequestException
 
 from src.config.config import AuthConfig, ConnectionConfig
 from src.mytardis_client.data_types import URI, HttpRequestMethod
-from src.mytardis_client.endpoints import MyTardisEndpointInfo
+from src.mytardis_client.endpoints import MyTardisEndpoint
 from src.utils.types.singleton import Singleton
 
 # Defines the valid values for the MyTardis API version
@@ -142,7 +142,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
     def request(
         self,
         method: HttpRequestMethod,
-        endpoint: MyTardisEndpointInfo,
+        endpoint: MyTardisEndpoint,
         data: Optional[str] = None,
         params: Optional[Dict[str, str]] = None,
         extra_headers: Optional[Dict[str, str]] = None,
@@ -173,7 +173,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
             HTTPError: An error raised when the request fails for other reasons via the
                 requests.Response.raise_for_status function.
         """
-        url = urljoin(self._url_base, endpoint.path.lstrip("/"))
+        url = urljoin(self._url_base, endpoint.lstrip("/"))
 
         if method == "POST":
             url = f"{url}/"
@@ -206,7 +206,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
 
     def get(
         self,
-        endpoint: MyTardisEndpointInfo,
+        endpoint: MyTardisEndpoint,
         object_type: type[MyTardisObjectData],
         query_params: Optional[dict[str, Any]],
         meta_params: Optional[GetRequestMetaParams] = None,
@@ -256,7 +256,7 @@ class MyTardisRESTFactory(metaclass=Singleton):  # pylint: disable=R0903
 
     def get_all(
         self,
-        endpoint: MyTardisEndpointInfo,
+        endpoint: MyTardisEndpoint,
         query_params: dict[str, Any],
         object_type: type[MyTardisObjectData],
         batch_size: int = 500,

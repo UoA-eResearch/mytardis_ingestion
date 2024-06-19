@@ -57,10 +57,7 @@ class Forge:
     ) -> requests.Response:
         """Wrapper around a generic POST request with logging in place."""
         try:
-            endpoint_info = get_endpoint_info(endpoint)
-            response = self.rest_factory.request(
-                action, endpoint=endpoint_info, data=data
-            )
+            response = self.rest_factory.request(action, endpoint=endpoint, data=data)
         except (HTTPError, BadGateWayException) as error:
             message = (
                 "Failed HTTP request from forge_object call\n"

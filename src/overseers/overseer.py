@@ -11,7 +11,7 @@ from requests.exceptions import HTTPError
 
 from src.config.config import IntrospectionConfig
 from src.mytardis_client.data_types import URI
-from src.mytardis_client.endpoints import MyTardisEndpoint, get_endpoint_info
+from src.mytardis_client.endpoints import MyTardisEndpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject, get_type_info
 from src.utils.types.singleton import Singleton
@@ -156,11 +156,10 @@ class Overseer(metaclass=Singleton):
         """Get objects from MyTardis that match the given query parameters"""
 
         endpoint = get_default_endpoint(object_type)
-        endpoint_info = get_endpoint_info(endpoint)
 
         try:
             response = self.rest_factory.request(
-                "GET", endpoint=endpoint_info, params=query_params
+                "GET", endpoint=endpoint, params=query_params
             )
         except HTTPError as error:
             logger.warning(
@@ -269,9 +268,7 @@ class Overseer(metaclass=Singleton):
         Requests introspection info from MyTardis instance configured in connection
         """
 
-        endpoint_info = get_endpoint_info("/introspection")
-
-        response = self.rest_factory.request("GET", endpoint=endpoint_info)
+        response = self.rest_factory.request("GET", "/introspection")
 
         response_dict = response.json()
         if response_dict == {} or response_dict["objects"] == []:
