@@ -76,7 +76,9 @@ class GetResponse(BaseModel, Generic[MyTardisObjectData]):
 
 
 class Ingested(BaseModel, Generic[MyTardisObjectData]):
-    """A Pydantic model to handle the response from a GET request to the MyTardis API"""
+    """A Pydantic model to store the data of an ingested object, i.e. the response from a GET
+    request to the MyTardis API, along with the URI.
+    """
 
     obj: MyTardisObjectData
     resource_uri: URI
