@@ -125,7 +125,6 @@ class MyTardisRESTFactory:
 
         self._hostname = connection.hostname
         if not self._hostname.endswith("/"):
-            # urljoin
             self._hostname += "/"
         self._version: MyTardisApiVersion = "v1"
         self._api_stub = make_api_stub(self._version)
