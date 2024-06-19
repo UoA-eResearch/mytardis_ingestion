@@ -10,16 +10,59 @@ from src.blueprints.storage_boxes import StorageBox
 from src.mytardis_client.data_types import URI
 
 
+def generate_get_response_meta(**kwargs: Any) -> dict[str, Any]:
+    defaults = {
+        "limit": 20,
+        "next": None,
+        "offset": 0,
+        "previous": None,
+        "total_count": 0,
+    }
+
+    response_values = defaults.copy()
+    response_values.update(**kwargs)
+
+    return response_values
+
+
+def generate_datafile_response(**kwargs: Any) -> dict[str, Any]:
+    """Factory for generating a datafile response dictionary for testing purposes.
+
+    Forwards all keyword arguments to the response dictionary, making it easy to
+    vary just the values that need to be different for a given test."""
+
+    defaults: dict[str, Any] = {
+        "created_time": None,
+        "datafile": None,
+        "dataset": "/api/v1/dataset/1/",
+        "deleted": False,
+        "deleted_time": None,
+        "directory": "foo/bar/baz",
+        "filename": "test_filename.txt",
+        "id": 0,
+        "identifiers": None,
+        "md5sum": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+        "mimetype": "text/plain",
+        "modification_time": None,
+        "parameter_sets": [],
+        "public_access": 1,
+        "replicas": [],
+        "resource_uri": "/api/v1/dataset_file/0/",
+        "sha512sum": "",
+        "size": 128,
+        "version": 1,
+    }
+
+    response_values = defaults.copy()
+    response_values.update(**kwargs)
+
+    return response_values
+
+
 @fixture
 def response_dict_not_found() -> Dict[str, Any]:
     return {
-        "meta": {
-            "limit": 20,
-            "next": None,
-            "offset": 0,
-            "previous": None,
-            "total_count": 0,
-        },
+        "meta": generate_get_response_meta(),
         "objects": [],
     }
 
@@ -33,13 +76,7 @@ def datafile_response_dict(
     datafile_dataset: str,
 ) -> Dict[str, Any]:
     return {
-        "meta": {
-            "limit": 20,
-            "next": None,
-            "offset": 0,
-            "previous": None,
-            "total_count": 6,
-        },
+        "meta": generate_get_response_meta(total_count=6),
         "objects": [
             {
                 "created_time": None,
@@ -63,6 +100,65 @@ def datafile_response_dict(
                 "version": 1,
             }
         ],
+    }
+
+
+def datafile_object_json(n: int = 10) -> list[dict[str, Any]]:
+    objects: list[dict[str, Any]] = []
+
+    for i in range(n):
+        objects.append(
+            generate_datafile_response(
+                filename=f"test_filename_{i}.txt",
+                id=i,
+                resource_uri=f"/api/v1/dataset_file/{i}/",
+            )
+        )
+
+    return objects
+
+
+@fixture
+def datafile_get_response_single() -> dict[str, Any]:
+    return {
+        "meta": generate_get_response_meta(total_count=1),
+        "objects": generate_datafile_response(),
+    }
+
+
+@fixture
+def datafile_get_response_multi() -> dict[str, Any]:
+    num_datafiles = 30
+    return {
+        "meta": generate_get_response_meta(
+            limit=num_datafiles,
+            total_count=num_datafiles,
+        ),
+        "objects": datafile_object_json(num_datafiles),
+    }
+
+
+@fixture
+def datafile_get_response_paginated_first() -> dict[str, Any]:
+    num_datafiles = 30
+    page_size = 20
+
+    return {
+        "meta": generate_get_response_meta(limit=page_size, total_count=num_datafiles),
+        "objects": datafile_object_json(num_datafiles)[:page_size],
+    }
+
+
+@fixture
+def datafile_get_response_paginated_second() -> dict[str, Any]:
+    num_datafiles = 30
+    page_size = 20
+
+    return {
+        "meta": generate_get_response_meta(
+            offset=page_size, limit=page_size, total_count=num_datafiles
+        ),
+        "objects": datafile_object_json(num_datafiles)[page_size:],
     }
 
 
