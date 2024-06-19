@@ -17,7 +17,6 @@ from requests.exceptions import RequestException
 from src.config.config import AuthConfig, ConnectionConfig
 from src.mytardis_client.data_types import URI, HttpRequestMethod
 from src.mytardis_client.endpoints import MyTardisEndpoint
-from src.utils.types.singleton import Singleton
 
 # Defines the valid values for the MyTardis API version
 MyTardisApiVersion = Literal["v1"]
@@ -83,7 +82,7 @@ class Ingested(BaseModel, Generic[MyTardisObjectData]):
     resource_uri: URI
 
 
-class MyTardisRESTFactory(metaclass=Singleton):
+class MyTardisRESTFactory:
     """Class to interact with MyTardis by calling the REST API
 
     This is the main class that sets up access to the RESTful API supported by MyTardis. It takes
