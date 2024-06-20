@@ -26,6 +26,10 @@ MyTardisEndpoint = Literal[
 class GetRequestProperties(BaseModel):
     """Definition of behaviour/structure for a GET request to a MyTardis endpoint."""
 
+    # Note: it would be useful here to store the dataclass type for the response, so that
+    #       the response can be validated/deserialized without the requester needing
+    #       to know the correct type. But the dataclasses are currently defined outside the
+    #       mytardis_client module, and this module should ideally be self-contained.
     response_obj_type: MyTardisObject
 
 
