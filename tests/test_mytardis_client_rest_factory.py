@@ -178,12 +178,8 @@ def test_mytardis_client_rest_get_all(
     assert len(datafiles) == 30
     assert (isinstance(df, Datafile) for df in datafiles)
 
-    assert datafiles[0].resource_uri == URI("/api/v1/dataset_file/0/")
-    assert datafiles[1].resource_uri == URI("/api/v1/dataset_file/1/")
-    assert datafiles[2].resource_uri == URI("/api/v1/dataset_file/2/")
-
-    assert datafiles[0].obj.filename == "test_filename_0.txt"
-    assert datafiles[1].obj.filename == "test_filename_1.txt"
-    assert datafiles[2].obj.filename == "test_filename_2.txt"
+    for i in range(30):
+        assert datafiles[i].resource_uri == URI(f"/api/v1/dataset_file/{i}/")
+        assert datafiles[i].obj.filename == f"test_filename_{i}.txt"
 
     assert total_count == 30
