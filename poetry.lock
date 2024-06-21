@@ -2541,16 +2541,17 @@ testing = ["fields", "hunter", "process-tests", "pytest-xdist", "virtualenv"]
 
 [[package]]
 name = "pytest-dependency"
-version = "0.5.1"
+version = "0.6.0"
 description = "Manage dependencies of tests"
 optional = false
-python-versions = "*"
+python-versions = ">=3.4"
 files = [
-    {file = "pytest-dependency-0.5.1.tar.gz", hash = "sha256:c2a892906192663f85030a6ab91304e508e546cddfe557d692d61ec57a1d946b"},
+    {file = "pytest-dependency-0.6.0.tar.gz", hash = "sha256:934b0e6a39d95995062c193f7eaeed8a8ffa06ff1bcef4b62b0dc74a708bacc1"},
 ]
 
 [package.dependencies]
-pytest = ">=3.6.0"
+pytest = ">=3.7.0"
+setuptools = "*"
 
 [[package]]
 name = "pytest-mock"
@@ -3767,4 +3768,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "620ba6a03f91934dad9ac7226742a71df062713b874c0f2683b3309a76608cad"
+content-hash = "398a7d237806ebe7869a02f4009f88077d5cc2c28bd0371340a84ca72f6e134b"
