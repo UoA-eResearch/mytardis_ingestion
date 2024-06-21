@@ -7,19 +7,21 @@ from pydantic import BaseModel
 from src.mytardis_client.objects import MyTardisObject
 
 MyTardisEndpoint = Literal[
-    "/project",
-    "/experiment",
     "/dataset",
+    "/datasetparameterset",
     "/dataset_file",
-    "/instrument",
-    "/institution",
+    "/experiment",
+    "/experimentparameterset",
     "/facility",
+    "/group",
+    "/institution",
+    "/instrument",
+    "/introspection",
+    "/project",
+    "/projectparameterset",
+    "/schema",
     "/storagebox",
     "/user",
-    "/projectparameterset",
-    "/experimentparameterset",
-    "/datasetparameterset",
-    "/introspection",
 ]
 
 
