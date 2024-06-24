@@ -260,8 +260,8 @@ def collate_datafile_info(
         mimetype = "application/octet-stream"
 
     return RawDatafile(
-        filename=file_rel_path.name,
-        directory=file_rel_path,
+        filename=file.name(),
+        directory=file_rel_path.parent,
         md5sum=checksums.calculate_md5(file.path()),
         mimetype=mimetype,
         size=file.stat().st_size,
