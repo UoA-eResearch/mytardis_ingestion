@@ -25,31 +25,27 @@ MYTARDIS_PROJECTS_DISABLED_MESSAGE = (
     "migrations."
 )
 
+_DEFAULT_ENDPOINTS: dict[MyTardisObject, MyTardisEndpoint] = {
+    MyTardisObject.PROJECT: "/project",
+    MyTardisObject.EXPERIMENT: "/experiment",
+    MyTardisObject.DATASET: "/dataset",
+    MyTardisObject.DATAFILE: "/dataset_file",
+    MyTardisObject.PROJECT_PARAMETER_SET: "/projectparameterset",
+    MyTardisObject.EXPERIMENT_PARAMETER_SET: "/experimentparameterset",
+    MyTardisObject.DATASET_PARAMETER_SET: "/datasetparameterset",
+    MyTardisObject.INSTITUTION: "/institution",
+    MyTardisObject.INSTRUMENT: "/instrument",
+}
 
-# pylint: disable=too-many-return-statements
+
 def get_default_endpoint(object_type: MyTardisObject) -> MyTardisEndpoint:
-    """Return the MyTardis endpoint that the forge should POST to for the given object type.
+    """Return the default MyTardis endpoint to POST to for the given object type.
 
     Note that the idea of a default endpoint is a simplification, as in general a given object
     type may be returned by multiple endpoints."""
-    if object_type == MyTardisObject.PROJECT:
-        return "/project"
-    if object_type == MyTardisObject.EXPERIMENT:
-        return "/experiment"
-    if object_type == MyTardisObject.DATASET:
-        return "/dataset"
-    if object_type == MyTardisObject.DATAFILE:
-        return "/dataset_file"
-    if object_type == MyTardisObject.PROJECT_PARAMETER_SET:
-        return "/projectparameterset"
-    if object_type == MyTardisObject.EXPERIMENT_PARAMETER_SET:
-        return "/experimentparameterset"
-    if object_type == MyTardisObject.DATASET_PARAMETER_SET:
-        return "/datasetparameterset"
-    if object_type == MyTardisObject.INSTITUTION:
-        return "/institution"
-    if object_type == MyTardisObject.INSTRUMENT:
-        return "/instrument"
+
+    if endpoint := _DEFAULT_ENDPOINTS.get(object_type):
+        return endpoint
 
     raise ValueError(f"Default endpoint not defined for object type {object_type}")
 
