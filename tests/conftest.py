@@ -537,6 +537,10 @@ def preconditioned_datafile_dictionary() -> Dict[str, Any]:
 
 response_dict_not_found = rsps.response_dict_not_found
 datafile_response_dict = rsps.datafile_response_dict
+datafile_get_response_single = rsps.datafile_get_response_single
+datafile_get_response_multi = rsps.datafile_get_response_multi
+datafile_get_response_paginated_first = rsps.datafile_get_response_paginated_first
+datafile_get_response_paginated_second = rsps.datafile_get_response_paginated_second
 dataset_response_dict = rsps.dataset_response_dict
 experiment_response_dict = rsps.experiment_response_dict
 project_response_dict = rsps.project_response_dict

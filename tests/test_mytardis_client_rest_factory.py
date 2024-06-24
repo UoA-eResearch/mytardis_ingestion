@@ -9,10 +9,18 @@ from typing import Any
 
 import mock
 import pytest
+import responses
+from mock import MagicMock
 from requests import HTTPError, Request, RequestException, Response
 
+from src.blueprints.datafile import Datafile
 from src.config.config import AuthConfig, ConnectionConfig
-from src.mytardis_client.mt_rest import MyTardisRESTFactory
+from src.mytardis_client.data_types import URI
+from src.mytardis_client.mt_rest import (
+    GetRequestMetaParams,
+    GetResponseMeta,
+    MyTardisRESTFactory,
+)
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -35,7 +43,6 @@ def test_mytardis_rest_factory_setup(
     test_request = Request()
     assert test_factory.auth(test_request) == test_auth(test_request)  # type: ignore
     assert test_factory.verify_certificate == connection.verify_certificate
-    assert test_factory.api_template == connection.api_template
     assert test_factory.proxies["http"] == "http://myproxy.com"  # type: ignore
     assert test_factory.proxies["https"] == "http://myproxy.com"  # type: ignore
     assert (
@@ -46,21 +53,21 @@ def test_mytardis_rest_factory_setup(
 
 @mock.patch("requests.Session.request")
 def test_backoff_on_mytardis_rest_factory_doesnt_trigger_on_httperror(
-    mock_requests_request: Any, auth: AuthConfig, connection: ConnectionConfig
+    mock_requests_request: MagicMock, auth: AuthConfig, connection: ConnectionConfig
 ) -> None:
     mock_response = Response()
     mock_response.status_code = 504
     mock_requests_request.return_value = mock_response
     test_factory = MyTardisRESTFactory(auth, connection)
     with pytest.raises(HTTPError):
-        _ = test_factory.mytardis_api_request("GET", "http://example.com")
+        _ = test_factory.request("GET", "/project")
         assert mock_requests_request.call_count == 1
 
 
 @mock.patch("requests.Session.request")
 @pytest.mark.long
 def test_backoff_on_mytardis_rest_factory(
-    mock_requests_request: Any, auth: AuthConfig, connection: ConnectionConfig
+    mock_requests_request: MagicMock, auth: AuthConfig, connection: ConnectionConfig
 ) -> None:
     backoff_max_tries = 8
     # See backoff decorator on the mytardis_api_request function in MyTardisRESTFactory
@@ -70,5 +77,109 @@ def test_backoff_on_mytardis_rest_factory(
     mock_requests_request.return_value = mock_response
     test_factory = MyTardisRESTFactory(auth, connection)
     with pytest.raises(RequestException):
-        _ = test_factory.mytardis_api_request("GET", "http://example.com")
+        _ = test_factory.request("GET", "/project")
     assert mock_requests_request.call_count == backoff_max_tries
+
+
+@responses.activate
+def test_mytardis_client_rest_get_single(
+    datafile_get_response_single: dict[str, Any],
+    auth: AuthConfig,
+    connection: ConnectionConfig,
+) -> None:
+    mt_client = MyTardisRESTFactory(auth, connection)
+
+    responses.add(
+        responses.GET,
+        mt_client.compose_url("/dataset_file"),
+        status=200,
+        json=datafile_get_response_single,
+    )
+
+    datafiles, meta = mt_client.get("/dataset_file", object_type=Datafile)
+
+    assert isinstance(datafiles, list)
+    assert len(datafiles) == 1
+    assert datafiles[0].resource_uri == URI("/api/v1/dataset_file/0/")
+    assert datafiles[0].obj.filename == "test_filename.txt"
+
+    assert isinstance(meta, GetResponseMeta)
+    assert meta.total_count == 1
+
+
+@responses.activate
+def test_mytardis_client_rest_get_multi(
+    datafile_get_response_multi: dict[str, Any],
+    auth: AuthConfig,
+    connection: ConnectionConfig,
+) -> None:
+    mt_client = MyTardisRESTFactory(auth, connection)
+
+    responses.add(
+        responses.GET,
+        mt_client.compose_url("/dataset_file"),
+        status=200,
+        json=datafile_get_response_multi,
+    )
+
+    datafiles, meta = mt_client.get(
+        "/dataset_file",
+        object_type=Datafile,
+        meta_params=GetRequestMetaParams(offset=2, limit=3),
+    )
+
+    assert isinstance(datafiles, list)
+    assert len(datafiles) == 30
+    assert (isinstance(df, Datafile) for df in datafiles)
+
+    assert datafiles[0].resource_uri == URI("/api/v1/dataset_file/0/")
+    assert datafiles[1].resource_uri == URI("/api/v1/dataset_file/1/")
+    assert datafiles[2].resource_uri == URI("/api/v1/dataset_file/2/")
+
+    assert datafiles[0].obj.filename == "test_filename_0.txt"
+    assert datafiles[1].obj.filename == "test_filename_1.txt"
+    assert datafiles[2].obj.filename == "test_filename_2.txt"
+
+    assert isinstance(meta, GetResponseMeta)
+    assert meta.total_count == 30
+    assert meta.limit == 30
+    assert meta.offset == 0
+
+
+@responses.activate
+def test_mytardis_client_rest_get_all(
+    datafile_get_response_paginated_first: dict[str, Any],
+    datafile_get_response_paginated_second: dict[str, Any],
+    auth: AuthConfig,
+    connection: ConnectionConfig,
+) -> None:
+    mt_client = MyTardisRESTFactory(auth, connection)
+
+    responses.add(
+        responses.GET,
+        mt_client.compose_url("/dataset_file"),
+        status=200,
+        json=datafile_get_response_paginated_first,
+    )
+    responses.add(
+        responses.GET,
+        mt_client.compose_url("/dataset_file"),
+        status=200,
+        json=datafile_get_response_paginated_second,
+    )
+
+    datafiles, total_count = mt_client.get_all(
+        "/dataset_file",
+        object_type=Datafile,
+        batch_size=20,
+    )
+
+    assert isinstance(datafiles, list)
+    assert len(datafiles) == 30
+    assert (isinstance(df, Datafile) for df in datafiles)
+
+    for i in range(30):
+        assert datafiles[i].resource_uri == URI(f"/api/v1/dataset_file/{i}/")
+        assert datafiles[i].obj.filename == f"test_filename_{i}.txt"
+
+    assert total_count == 30

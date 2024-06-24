@@ -5,14 +5,13 @@ for the Forge class."""
 import logging
 from collections.abc import Generator
 from typing import Any
-from urllib.parse import urljoin
 
 from pydantic import ValidationError
 from requests.exceptions import HTTPError
 
 from src.config.config import IntrospectionConfig
 from src.mytardis_client.data_types import URI
-from src.mytardis_client.endpoints import get_endpoint
+from src.mytardis_client.endpoints import MyTardisEndpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject, get_type_info
 from src.utils.types.singleton import Singleton
@@ -25,6 +24,30 @@ MYTARDIS_PROJECTS_DISABLED_MESSAGE = (
     "and ensure that the 'projects' app is enabled. This may require rerunning "
     "migrations."
 )
+
+_DEFAULT_ENDPOINTS: dict[MyTardisObject, MyTardisEndpoint] = {
+    MyTardisObject.PROJECT: "/project",
+    MyTardisObject.EXPERIMENT: "/experiment",
+    MyTardisObject.DATASET: "/dataset",
+    MyTardisObject.DATAFILE: "/dataset_file",
+    MyTardisObject.PROJECT_PARAMETER_SET: "/projectparameterset",
+    MyTardisObject.EXPERIMENT_PARAMETER_SET: "/experimentparameterset",
+    MyTardisObject.DATASET_PARAMETER_SET: "/datasetparameterset",
+    MyTardisObject.INSTITUTION: "/institution",
+    MyTardisObject.INSTRUMENT: "/instrument",
+}
+
+
+def get_default_endpoint(object_type: MyTardisObject) -> MyTardisEndpoint:
+    """Return the default MyTardis endpoint to POST to for the given object type.
+
+    Note that the idea of a default endpoint is a simplification, as in general a given object
+    type may be returned by multiple endpoints."""
+
+    if endpoint := _DEFAULT_ENDPOINTS.get(object_type):
+        return endpoint
+
+    raise ValueError(f"Default endpoint not defined for object type {object_type}")
 
 
 def extract_values_for_matching(
@@ -126,11 +149,13 @@ class Overseer(metaclass=Singleton):
         object_type: MyTardisObject,
         query_params: dict[str, str],
     ) -> list[dict[str, Any]]:
-        endpoint = get_endpoint(object_type)
-        url = urljoin(self.rest_factory.api_template, endpoint.url_suffix)
+        """Get objects from MyTardis that match the given query parameters"""
+
+        endpoint = get_default_endpoint(object_type)
+
         try:
-            response = self.rest_factory.mytardis_api_request(
-                "GET", url, params=query_params
+            response = self.rest_factory.request(
+                "GET", endpoint=endpoint, params=query_params
             )
         except HTTPError as error:
             logger.warning(
@@ -238,8 +263,8 @@ class Overseer(metaclass=Singleton):
 
         Requests introspection info from MyTardis instance configured in connection
         """
-        url = urljoin(self.rest_factory.api_template, "introspection")
-        response = self.rest_factory.mytardis_api_request("GET", url)
+
+        response = self.rest_factory.request("GET", "/introspection")
 
         response_dict = response.json()
         if response_dict == {} or response_dict["objects"] == []:
