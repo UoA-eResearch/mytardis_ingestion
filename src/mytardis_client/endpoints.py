@@ -53,7 +53,7 @@ class EndpointMethods(BaseModel):
 class MyTardisEndpointInfo(BaseModel):
     """Properties of a MyTardis endpoint"""
 
-    path: str
+    path: MyTardisEndpoint
     methods: EndpointMethods
 
 
