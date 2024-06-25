@@ -8,6 +8,7 @@ from typing import Any, Optional
 from src.blueprints.datafile import RawDatafile
 from src.config.config import ConfigFromEnv
 from src.crucible.crucible import Crucible
+from src.mytardis_client.data_types import CONTEXT_USE_URI_ID_ONLY
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject
 from src.overseers.overseer import Overseer
@@ -51,5 +52,5 @@ class Inspector:
 
         # Look up the datafile in MyTardis to check if it's ingested.
         return self._overseer.get_matching_objects(
-            MyTardisObject.DATAFILE, df.model_dump()
+            MyTardisObject.DATAFILE, df.model_dump(context=CONTEXT_USE_URI_ID_ONLY)
         )
