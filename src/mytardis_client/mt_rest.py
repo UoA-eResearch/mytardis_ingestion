@@ -5,6 +5,7 @@ is heavily based on the NGS ingestor for MyTardis found at
     https://github.com/mytardis/mytardis_ngs_ingestor
 """
 
+from copy import deepcopy
 from typing import Any, Dict, Generic, Literal, Optional, TypeVar
 from urllib.parse import urljoin
 
@@ -82,6 +83,32 @@ class Ingested(BaseModel, Generic[MyTardisObjectData]):
 
     obj: MyTardisObjectData
     resource_uri: URI
+
+
+def sanitize_params(params: dict[str, Any]) -> dict[str, Any]:
+    """Apply any necessary cleaning/transformation to a set of query parameters for a GET request.
+
+    Args:
+        params: A dictionary of query parameters
+
+    Returns:
+        A dictionary of parameters with sanitised values.
+    """
+
+    for key, value in params.items():
+        if isinstance(value, (dict, list)):
+            raise ValueError(
+                f"Nested query parameters not currently supported. Params are: {params}"
+            )
+
+    updated_params = deepcopy(params)
+
+    # Replace any URIs with the ID as this is what MyTardis requires for GET requests
+    for key, value in updated_params.items():
+        if isinstance(value, URI):
+            updated_params[key] = value.id
+
+    return updated_params
 
 
 class MyTardisRESTFactory:
@@ -184,6 +211,9 @@ class MyTardisRESTFactory:
                 requests.Response.raise_for_status function.
         """
         url = self.compose_url(endpoint)
+
+        if method == "GET" and params:
+            params = sanitize_params(params)
 
         if method == "POST":
             url = f"{url}/"
