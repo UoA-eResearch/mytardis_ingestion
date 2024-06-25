@@ -2879,13 +2879,13 @@ jupyter = ["ipywidgets (>=7.5.1,<9)"]
 
 [[package]]
 name = "rocrate"
-version = "0.9.0"
+version = "0.10.0"
 description = "RO-Crate metadata generator/parser"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "rocrate-0.9.0-py3-none-any.whl", hash = "sha256:cd5c230e25d4b68a8a2c8279d375f3b3d2197cad4311749884ebfcb5ee85fae4"},
-    {file = "rocrate-0.9.0.tar.gz", hash = "sha256:0634a294ff3d84bd627293964d72af097d8675f0c5bc01f387e5c3d121a09535"},
+    {file = "rocrate-0.10.0-py3-none-any.whl", hash = "sha256:fa49f19a10040d2990f129412930b0fabc8fdb6569275fa8c5807c661b2a676e"},
+    {file = "rocrate-0.10.0.tar.gz", hash = "sha256:cbe54d441b62096cef304404f23e9d4e9def7d267577dae4e2f87c7f9020bc32"},
 ]
 
 [package.dependencies]
@@ -3768,4 +3768,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "d9896a08d0e501a71d378287f3d3e220d2c4439e08b74ed29b0c7ea9e6d579b5"
+content-hash = "8343af2bbe809a0684e5cd2f14a027de44b5e47df427d198396c977353061505"
