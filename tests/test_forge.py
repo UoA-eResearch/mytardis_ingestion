@@ -16,7 +16,6 @@ from src.blueprints.project import Project
 from src.config.config import ConnectionConfig
 from src.forges.forge import Forge
 from src.mytardis_client.data_types import URI
-from src.mytardis_client.enumerators import ObjectPostEnum
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -45,15 +44,9 @@ def test_post_returns_URI_on_success(  # pylint: disable=invalid-name
         status=200,
         json=(project_creation_response_dict),
     )
-    test_value = forge.forge_object(project, TEST_OBJECT_ID)
+    test_value = forge.forge_object("/project", project)
 
-    info_str = (
-        f"Object: {project.name} successfully "
-        "created in MyTardis\n"
-        f"Url substring: {ObjectPostEnum.PROJECT.value['url_substring']}"
-    )
     assert test_value == project_uri
-    assert info_str in caplog.text
 
 
 @pytest.mark.xfail
@@ -70,7 +63,7 @@ def test_post_returns_none_on_missing_body(
         urljoin(connection.api_template, TEST_OBJECT_TYPE),
         status=201,
     )
-    test_value = forge.forge_object(project, TEST_OBJECT_ID)
+    test_value = forge.forge_object("/project", project)
 
     info_str = (
         f"Expected a JSON return from the POST request "
@@ -80,22 +73,6 @@ def test_post_returns_none_on_missing_body(
     )
     assert test_value is None
     assert info_str in caplog.text
-
-
-@pytest.mark.xfail
-def test_overwrite_without_object_id_logs_warning(
-    caplog: LogCaptureFixture,
-    forge: Forge,
-    project: Project,
-) -> None:
-    caplog.set_level(logging.WARNING)
-    forge.forge_object(project, overwrite_objects=True)
-
-    warning_str = (
-        f"Overwrite was requested for an object of type {ObjectPostEnum.PROJECT.value} "
-        "called from Forge class. There was no object_id passed with this request"
-    )
-    assert warning_str in caplog.text
 
 
 @pytest.mark.xfail
@@ -114,7 +91,7 @@ def test_HTTPError_logs_warning(  # pylint: disable=invalid-name
         status=504,
     )
     caplog.set_level(logging.WARNING)
-    test_value = forge.forge_object(project)
+    test_value = forge.forge_object("/project", project)
 
     warning_str = (
         "Failed HTTP request from forge_object call\n"
@@ -140,13 +117,13 @@ def test_HTTPError_fully_logs_error_at_error(  # pylint: disable=invalid-name
         status=504,
     )
     caplog.set_level(logging.ERROR)
-    _ = forge.forge_object(project)
+    _ = forge.forge_object("/project", project)
     info_str = "504 Server Error: Gateway Timeout for url: " f"{url}"
     assert info_str in caplog.text
 
 
 @pytest.mark.xfail
-@mock.patch("src.mytardis_client.mt_rest.MyTardisRESTFactory.mytardis_api_request")
+@mock.patch("src.mytardis_client.mt_rest.MyTardisRESTFactory.request")
 def test_non_HTTPError_logs_error(  # pylint: disable=invalid-name
     mock_mytardis_api_request: Any,
     caplog: LogCaptureFixture,
@@ -163,7 +140,7 @@ def test_non_HTTPError_logs_error(  # pylint: disable=invalid-name
         f"\nData: {project.json(exclude_none=True)}"
     )
     with pytest.raises(ValueError):
-        _ = forge.forge_object(project)
+        _ = forge.forge_object("/project", project)
 
     assert warning_str in caplog.text
     assert "ValueError" in caplog.text
@@ -186,7 +163,7 @@ def test_response_status_larger_than_300_logs_error(
         status=status_code,
     )
     caplog.set_level(logging.WARNING)
-    test_value = forge.forge_object(project)
+    test_value = forge.forge_object("/project", project)
     warning_str = (
         "Object not successfully created in forge_object call\n"
         f"Url: {url}\nAction: {responses.POST}\nData: {project.json(exclude_none=True)}"
@@ -214,7 +191,7 @@ def test_no_uri_returns_warning(
         json=test_response_dict_without_uri,
     )
     caplog.set_level(logging.WARNING)
-    test_value = forge.forge_object(project)
+    test_value = forge.forge_object("/project", project)
     warning_str = (
         "No URI was able to be discerned when creating object: "
         f"{project.name}. Object may have "

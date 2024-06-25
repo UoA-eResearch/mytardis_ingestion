@@ -4,12 +4,14 @@ Note that the specifications of the MyTardis objects are not included here; see
 objects.py for that."""
 
 import re
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import urlparse
 
 from pydantic import RootModel, SerializationInfo, field_serializer, field_validator
 
 from src.mytardis_client.objects import KNOWN_MYTARDIS_OBJECTS
+
+HttpRequestMethod = Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
 
 uri_regex = re.compile(r"^/api/v1/([a-z]{1,}|dataset_file)/[0-9]{1,}/$")
 
