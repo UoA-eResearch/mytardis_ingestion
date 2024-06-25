@@ -7,7 +7,7 @@ import re
 from typing import Any, Literal
 from urllib.parse import urlparse
 
-from pydantic import RootModel, SerializationInfo, field_serializer, field_validator
+from pydantic import RootModel, field_serializer, field_validator
 
 from src.mytardis_client.objects import KNOWN_MYTARDIS_OBJECTS
 
@@ -47,17 +47,8 @@ def resource_uri_to_id(uri: str) -> int:
     return int(urlparse(uri).path.rstrip(uri_sep).split(uri_sep).pop())
 
 
-_KEY_USE_ID_ONLY_FROM_URI = "use_only_id_from_uri"
-CONTEXT_USE_URI_ID_ONLY = {_KEY_USE_ID_ONLY_FROM_URI: True}
-
-
 class URI(RootModel[str], frozen=True):
-    """A MyTardis URI string, with validation and serialization logic.
-
-    Note that the serialization method may either write the full URI, or just the ID
-    component, depending on the context passed in. See the serialize_uri method docs
-    for details.
-    """
+    """A MyTardis URI string, with validation and serialization logic."""
 
     root: str
 
@@ -76,18 +67,7 @@ class URI(RootModel[str], frozen=True):
         return validate_uri(value)
 
     @field_serializer("root")
-    def serialize_uri(self, uri: str, info: SerializationInfo) -> str:
-        """Serialize a URI, optionally extracting just the ID component, as MyTardis
-        requires this sometimes (e.g. for GET requests), but we only know this at
-        serialization time.
-
-        The context can be passed to a Pydantic model containing URI fields, and it will be
-        propagated down into all URI fields, so the serialization can be controlled in
-        one place. Ideally the MyTardis client would encapsulate this logic eventually.
-        """
-
-        if context := info.context:
-            if context.get(_KEY_USE_ID_ONLY_FROM_URI):
-                return str(resource_uri_to_id(uri))
+    def serialize_uri(self, uri: str) -> str:
+        """Serialize the URI as a simple string"""
 
         return uri

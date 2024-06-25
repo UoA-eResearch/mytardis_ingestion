@@ -12,6 +12,7 @@ import pytest
 import responses
 from mock import MagicMock
 from requests import HTTPError, Request, RequestException, Response
+from responses import matchers
 
 from src.blueprints.datafile import Datafile
 from src.config.config import AuthConfig, ConnectionConfig
@@ -20,6 +21,7 @@ from src.mytardis_client.mt_rest import (
     GetRequestMetaParams,
     GetResponseMeta,
     MyTardisRESTFactory,
+    sanitize_params,
 )
 
 logger = logging.getLogger(__name__)
@@ -183,3 +185,43 @@ def test_mytardis_client_rest_get_all(
         assert datafiles[i].obj.filename == f"test_filename_{i}.txt"
 
     assert total_count == 30
+
+
+def test_mytardis_client_sanitize_params() -> None:
+
+    sanitized = sanitize_params(
+        {
+            "string": "Hello",
+            "int": 12,
+            "uri": URI("/api/v1/dataset/34/"),
+        }
+    )
+    assert sanitized == {
+        "string": "Hello",
+        "int": 12,
+        "uri": 34,
+    }
+
+
+@responses.activate
+def test_mytardis_client_get_params_are_sanitized(
+    datafile_get_response_single: dict[str, Any],
+    auth: AuthConfig,
+    connection: ConnectionConfig,
+) -> None:
+
+    mt_client = MyTardisRESTFactory(auth, connection)
+
+    responses.get(
+        mt_client.compose_url("/dataset_file"),
+        status=200,
+        json=datafile_get_response_single,
+        match=[matchers.query_param_matcher({"limit": 1, "offset": 0, "dataset": 0})],
+    )
+
+    _ = mt_client.get(
+        "/dataset_file",
+        object_type=Datafile,
+        query_params={"dataset": URI("/api/v1/dataset/0/")},
+        meta_params=GetRequestMetaParams(limit=1, offset=0),
+    )
