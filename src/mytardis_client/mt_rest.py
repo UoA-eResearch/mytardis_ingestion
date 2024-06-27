@@ -11,7 +11,7 @@ from urllib.parse import urljoin
 
 import backoff
 import requests
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from requests import Response
 from requests.exceptions import RequestException
 
@@ -108,6 +108,12 @@ def sanitize_params(params: dict[str, Any]) -> dict[str, Any]:
     def replace_uri_with_id(value: Any) -> Any:
         if isinstance(value, URI):
             return value.id
+        if isinstance(value, str):
+            try:
+                return URI(value).id
+            except ValidationError:
+                pass
+
         return value
 
     # Replace any URIs with the ID as this is what MyTardis requires for GET requests
