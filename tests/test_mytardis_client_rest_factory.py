@@ -12,6 +12,7 @@ import pytest
 import responses
 from mock import MagicMock
 from requests import HTTPError, Request, RequestException, Response
+from responses import matchers
 
 from src.blueprints.datafile import Datafile
 from src.config.config import AuthConfig, ConnectionConfig
@@ -20,6 +21,7 @@ from src.mytardis_client.mt_rest import (
     GetRequestMetaParams,
     GetResponseMeta,
     MyTardisRESTFactory,
+    sanitize_params,
 )
 
 logger = logging.getLogger(__name__)
@@ -183,3 +185,107 @@ def test_mytardis_client_rest_get_all(
         assert datafiles[i].obj.filename == f"test_filename_{i}.txt"
 
     assert total_count == 30
+
+
+@pytest.mark.parametrize(
+    "input_params,expected_sanitized",
+    [
+        pytest.param(
+            {"string": "Hello", "int": 12, "dataset": URI("/api/v1/dataset/34/")},
+            {"string": "Hello", "int": 12, "dataset": 34},
+            id="no-nesting",
+        ),
+        pytest.param(
+            {
+                "string": "Hello",
+                "nested_dict": {"string": "Foo", "dataset": URI("/api/v1/dataset/34/")},
+            },
+            {
+                "string": "Hello",
+                "nested_dict": {"string": "Foo", "dataset": 34},
+            },
+            id="nested-dict",
+        ),
+        pytest.param(
+            {
+                "string": "Foo",
+                "nested_list": [URI("/api/v1/dataset/10/"), URI("/api/v1/dataset/11/")],
+            },
+            {
+                "string": "Foo",
+                "nested_list": [10, 11],
+            },
+            id="nested-list",
+        ),
+        pytest.param(
+            {
+                "string": "Foo",
+                "nested_list": [URI("/api/v1/dataset/10/"), URI("/api/v1/dataset/11/")],
+                "nested_dict": {"string": "Foo", "dataset": URI("/api/v1/dataset/34/")},
+            },
+            {
+                "string": "Foo",
+                "nested_list": [10, 11],
+                "nested_dict": {"string": "Foo", "dataset": 34},
+            },
+            id="nested-list-and-dict",
+        ),
+        pytest.param(
+            {
+                "string": "Foo",
+                "nested_list_of_dicts": [
+                    {"string": "Foo", "dataset": URI("/api/v1/dataset/34/")},
+                    {"string": "Bar", "dataset": URI("/api/v1/dataset/35/")},
+                ],
+                "nested_dict_with_list": {
+                    "string": "Foo",
+                    "datasets": [
+                        URI("/api/v1/dataset/34/"),
+                        URI("/api/v1/dataset/35/"),
+                    ],
+                },
+            },
+            {
+                "string": "Foo",
+                "nested_list_of_dicts": [
+                    {"string": "Foo", "dataset": 34},
+                    {"string": "Bar", "dataset": 35},
+                ],
+                "nested_dict_with_list": {
+                    "string": "Foo",
+                    "datasets": [34, 35],
+                },
+            },
+            id="doubly-nested",
+        ),
+    ],
+)
+def test_mytardis_client_sanitize_params(
+    input_params: dict[str, Any], expected_sanitized: dict[str, Any]
+) -> None:
+
+    assert sanitize_params(input_params) == expected_sanitized
+
+
+@responses.activate
+def test_mytardis_client_get_params_are_sanitized(
+    datafile_get_response_single: dict[str, Any],
+    auth: AuthConfig,
+    connection: ConnectionConfig,
+) -> None:
+
+    mt_client = MyTardisRESTFactory(auth, connection)
+
+    responses.get(
+        mt_client.compose_url("/dataset_file"),
+        status=200,
+        json=datafile_get_response_single,
+        match=[matchers.query_param_matcher({"limit": 1, "offset": 0, "dataset": 0})],
+    )
+
+    _ = mt_client.get(
+        "/dataset_file",
+        object_type=Datafile,
+        query_params={"dataset": URI("/api/v1/dataset/0/")},
+        meta_params=GetRequestMetaParams(limit=1, offset=0),
+    )

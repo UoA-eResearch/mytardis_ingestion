@@ -2,11 +2,7 @@
 # nosec assert_used
 import pytest
 
-from src.mytardis_client.data_types import (
-    CONTEXT_USE_URI_ID_ONLY,
-    URI,
-    resource_uri_to_id,
-)
+from src.mytardis_client.data_types import URI, resource_uri_to_id
 from src.mytardis_client.objects import KNOWN_MYTARDIS_OBJECTS
 
 
@@ -64,4 +60,3 @@ def test_uri_serialization() -> None:
     uri = URI(uri_content)
 
     assert uri.model_dump() == uri_content
-    assert uri.model_dump(context=CONTEXT_USE_URI_ID_ONLY) == "10"

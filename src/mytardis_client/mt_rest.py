@@ -5,7 +5,8 @@ is heavily based on the NGS ingestor for MyTardis found at
     https://github.com/mytardis/mytardis_ngs_ingestor
 """
 
-from typing import Any, Dict, Generic, Literal, Optional, TypeVar
+from copy import deepcopy
+from typing import Any, Callable, Dict, Generic, Literal, Optional, TypeVar
 from urllib.parse import urljoin
 
 import backoff
@@ -82,6 +83,37 @@ class Ingested(BaseModel, Generic[MyTardisObjectData]):
 
     obj: MyTardisObjectData
     resource_uri: URI
+
+
+def sanitize_params(params: dict[str, Any]) -> dict[str, Any]:
+    """Apply any necessary cleaning/transformation to a set of query parameters for a GET request.
+
+    Args:
+        params: A dictionary of query parameters
+
+    Returns:
+        A dictionary of parameters with sanitised values.
+    """
+
+    updated_params = deepcopy(params)
+
+    def visit_entries(obj: Any, update: Callable[[Any], Any]) -> Any:
+
+        if isinstance(obj, dict):
+            return {k: visit_entries(v, update) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [visit_entries(v, update) for v in obj]
+        return update(obj)
+
+    def replace_uri_with_id(value: Any) -> Any:
+        if isinstance(value, URI):
+            return value.id
+        return value
+
+    # Replace any URIs with the ID as this is what MyTardis requires for GET requests
+    updated_params = visit_entries(updated_params, replace_uri_with_id)
+
+    return updated_params
 
 
 class MyTardisRESTFactory:
@@ -184,6 +216,9 @@ class MyTardisRESTFactory:
                 requests.Response.raise_for_status function.
         """
         url = self.compose_url(endpoint)
+
+        if method == "GET" and params:
+            params = sanitize_params(params)
 
         if method == "POST":
             url = f"{url}/"
