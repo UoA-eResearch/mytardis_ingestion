@@ -48,7 +48,7 @@ The data ingestion part of the ingestion process is required to be customised fo
 
 #### Profiles
 
-This process may include analysis of one or more run-file formats that are created by the instrument. Parsing is therefore customised on an instrument-by-instrument basis as Profiles. A Profile must be specified when ingesting metadata. Each extends the **_IProfile_** class, and contain a custom set of parsing functions run by an extractor. Extractors all extend the **_IMetadataExtractor_** class and use the **extract()** function to take Path containing instrument specific metadata files and parse them into a set of python objects suitable for the **__IngestionFactory__**.
+This process may include analysis of one or more run-file formats that are created by the instrument. Parsing is therefore customised on an instrument-by-instrument basis as Profiles. A Profile must be specified when ingesting metadata. Each extends the **_IProfile_** class, and contain a custom set of parsing functions run by an extractor. Extractors all extend the **_IMetadataExtractor_** class and use the **extract()** function to take Path containing instrument specific metadata files and parse them into a dictionary of python objects suitable for the **__IngestionFactory__**.
 
 Current profiles are listed in [**profile_register.py**](src/profiles/profile_register.py).
 
