@@ -258,6 +258,17 @@ def test_mytardis_client_rest_get_all(
             },
             id="doubly-nested",
         ),
+        pytest.param(
+            {
+                "uri_string": "/api/v1/dataset/34/",
+                "uri_strings": ["/api/v1/dataset/34/", "/api/v1/dataset/35/"],
+            },
+            {
+                "uri_string": 34,
+                "uri_strings": [34, 35],
+            },
+            id="uris-stored-as-strings",
+        ),
     ],
 )
 def test_mytardis_client_sanitize_params(
