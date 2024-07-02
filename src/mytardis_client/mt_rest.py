@@ -6,12 +6,12 @@ is heavily based on the NGS ingestor for MyTardis found at
 """
 
 from copy import deepcopy
-from typing import Any, Dict, Generic, Literal, Optional, TypeVar
+from typing import Any, Callable, Dict, Generic, Literal, Optional, TypeVar
 from urllib.parse import urljoin
 
 import backoff
 import requests
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from requests import Response
 from requests.exceptions import RequestException
 
@@ -95,18 +95,29 @@ def sanitize_params(params: dict[str, Any]) -> dict[str, Any]:
         A dictionary of parameters with sanitised values.
     """
 
-    for key, value in params.items():
-        if isinstance(value, (dict, list)):
-            raise ValueError(
-                f"Nested query parameters not currently supported. Params are: {params}"
-            )
-
     updated_params = deepcopy(params)
 
-    # Replace any URIs with the ID as this is what MyTardis requires for GET requests
-    for key, value in updated_params.items():
+    def visit_entries(obj: Any, update: Callable[[Any], Any]) -> Any:
+
+        if isinstance(obj, dict):
+            return {k: visit_entries(v, update) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [visit_entries(v, update) for v in obj]
+        return update(obj)
+
+    def replace_uri_with_id(value: Any) -> Any:
         if isinstance(value, URI):
-            updated_params[key] = value.id
+            return value.id
+        if isinstance(value, str):
+            try:
+                return URI(value).id
+            except ValidationError:
+                pass
+
+        return value
+
+    # Replace any URIs with the ID as this is what MyTardis requires for GET requests
+    updated_params = visit_entries(updated_params, replace_uri_with_id)
 
     return updated_params
 

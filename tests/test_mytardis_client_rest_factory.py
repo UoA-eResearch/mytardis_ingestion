@@ -187,20 +187,95 @@ def test_mytardis_client_rest_get_all(
     assert total_count == 30
 
 
-def test_mytardis_client_sanitize_params() -> None:
+@pytest.mark.parametrize(
+    "input_params,expected_sanitized",
+    [
+        pytest.param(
+            {"string": "Hello", "int": 12, "dataset": URI("/api/v1/dataset/34/")},
+            {"string": "Hello", "int": 12, "dataset": 34},
+            id="no-nesting",
+        ),
+        pytest.param(
+            {
+                "string": "Hello",
+                "nested_dict": {"string": "Foo", "dataset": URI("/api/v1/dataset/34/")},
+            },
+            {
+                "string": "Hello",
+                "nested_dict": {"string": "Foo", "dataset": 34},
+            },
+            id="nested-dict",
+        ),
+        pytest.param(
+            {
+                "string": "Foo",
+                "nested_list": [URI("/api/v1/dataset/10/"), URI("/api/v1/dataset/11/")],
+            },
+            {
+                "string": "Foo",
+                "nested_list": [10, 11],
+            },
+            id="nested-list",
+        ),
+        pytest.param(
+            {
+                "string": "Foo",
+                "nested_list": [URI("/api/v1/dataset/10/"), URI("/api/v1/dataset/11/")],
+                "nested_dict": {"string": "Foo", "dataset": URI("/api/v1/dataset/34/")},
+            },
+            {
+                "string": "Foo",
+                "nested_list": [10, 11],
+                "nested_dict": {"string": "Foo", "dataset": 34},
+            },
+            id="nested-list-and-dict",
+        ),
+        pytest.param(
+            {
+                "string": "Foo",
+                "nested_list_of_dicts": [
+                    {"string": "Foo", "dataset": URI("/api/v1/dataset/34/")},
+                    {"string": "Bar", "dataset": URI("/api/v1/dataset/35/")},
+                ],
+                "nested_dict_with_list": {
+                    "string": "Foo",
+                    "datasets": [
+                        URI("/api/v1/dataset/34/"),
+                        URI("/api/v1/dataset/35/"),
+                    ],
+                },
+            },
+            {
+                "string": "Foo",
+                "nested_list_of_dicts": [
+                    {"string": "Foo", "dataset": 34},
+                    {"string": "Bar", "dataset": 35},
+                ],
+                "nested_dict_with_list": {
+                    "string": "Foo",
+                    "datasets": [34, 35],
+                },
+            },
+            id="doubly-nested",
+        ),
+        pytest.param(
+            {
+                "uri_string": "/api/v1/dataset/34/",
+                "uri_strings": ["/api/v1/dataset/34/", "/api/v1/dataset/35/"],
+            },
+            {
+                "uri_string": 34,
+                "uri_strings": [34, 35],
+            },
+            id="uris-stored-as-strings",
+        ),
+    ],
+)
+def test_mytardis_client_sanitize_params(
+    input_params: dict[str, Any], expected_sanitized: dict[str, Any]
+) -> None:
 
-    sanitized = sanitize_params(
-        {
-            "string": "Hello",
-            "int": 12,
-            "uri": URI("/api/v1/dataset/34/"),
-        }
-    )
-    assert sanitized == {
-        "string": "Hello",
-        "int": 12,
-        "uri": 34,
-    }
+    assert sanitize_params(input_params) == expected_sanitized
 
 
 @responses.activate
