@@ -19,67 +19,8 @@ from src.blueprints.datafile import (
 from src.blueprints.dataset import Dataset, RawDataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RawExperiment, RefinedExperiment
 from src.blueprints.project import Project, RawProject, RefinedProject
-from src.blueprints.storage_boxes import StorageBox
 from src.mytardis_client.data_types import URI
 from src.mytardis_client.enumerators import DataClassification
-
-
-@fixture
-def archive_box(
-    archive_box_name: str,
-    archive_box_dir: str,
-    archive_box_uri: str,
-    archive_box_description: str,
-) -> StorageBox:
-    return StorageBox(
-        name=archive_box_name,
-        location=Path(archive_box_dir),
-        uri=URI(archive_box_uri),
-        description=archive_box_description,
-    )
-
-
-@fixture
-def storage_box(
-    storage_box_name: str,
-    storage_box_dir: str,
-    storage_box_uri: str,
-    storage_box_description: str,
-) -> StorageBox:
-    return StorageBox(
-        name=storage_box_name,
-        location=Path(storage_box_dir),
-        uri=URI(storage_box_uri),
-        description=storage_box_description,
-    )
-
-
-@fixture
-def datafile_replica(
-    storage_box: StorageBox,
-    dataset_dir: Path,
-    filename: str,
-    target_dir: Path,
-) -> DatafileReplica:
-    return DatafileReplica(
-        uri=Path(target_dir / dataset_dir / filename).as_posix(),
-        location=storage_box.name,
-        protocol="file",
-    )
-
-
-@fixture
-def archive_replica(
-    archive_box: StorageBox,
-    dataset_dir: Path,
-    filename: str,
-    target_dir: Path,
-) -> DatafileReplica:
-    return DatafileReplica(
-        uri=Path(target_dir / dataset_dir / filename).as_posix(),
-        location=archive_box.name,
-        protocol="file",
-    )
 
 
 @fixture

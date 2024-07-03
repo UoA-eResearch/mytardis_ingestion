@@ -30,7 +30,6 @@ from src.blueprints.project import (
     RawProject,
     RefinedProject,
 )
-from src.blueprints.storage_boxes import StorageBox
 
 # Define __all__ to specify which attributes are exported
 __all__ = [
