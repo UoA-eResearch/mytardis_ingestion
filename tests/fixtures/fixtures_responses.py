@@ -6,7 +6,6 @@ from typing import Any, Dict, List
 from pytest import fixture
 
 from src.blueprints.project import Project
-from src.blueprints.storage_boxes import StorageBox
 from src.mytardis_client.data_types import URI
 
 
@@ -159,35 +158,6 @@ def datafile_get_response_paginated_second() -> dict[str, Any]:
             offset=page_size, limit=page_size, total_count=num_datafiles
         ),
         "objects": datafile_object_json(num_datafiles)[page_size:],
-    }
-
-
-@fixture
-def autoarchive_details(
-    autoarchive_offset: int,
-    delete_offset: int,
-    archive_box: StorageBox,
-    storage_box: StorageBox,
-) -> Dict[str, Any]:
-    return {
-        "offset": autoarchive_offset,
-        "delete_offset": delete_offset,
-        "archives": [
-            {
-                "name": archive_box.name,
-                "description": archive_box.description,
-                "uri": archive_box.uri,
-                "location": archive_box.location.as_posix(),
-            }
-        ],
-        "active_stores": [
-            {
-                "name": storage_box.name,
-                "description": storage_box.description,
-                "uri": storage_box.uri,
-                "location": storage_box.location.as_posix(),
-            }
-        ],
     }
 
 

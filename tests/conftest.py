@@ -6,7 +6,6 @@ from typing import Any, Dict, List
 
 from pytest import FixtureRequest, fixture
 
-import tests.fixtures.fixtures_archive_app as arch
 import tests.fixtures.fixtures_config_from_env as cfg
 import tests.fixtures.fixtures_constants as const
 import tests.fixtures.fixtures_data_classification_app as dclass
@@ -155,9 +154,6 @@ def datadir(tmpdir: str, request: FixtureRequest) -> Path:
 #
 # ==============================
 
-storage_box = dcls.storage_box
-datafile_replica = dcls.datafile_replica
-archive_replica = dcls.archive_replica
 raw_project_parameterset = dcls.raw_project_parameterset
 raw_project = dcls.raw_project
 raw_experiment_parameterset = dcls.raw_experiment_parameterset
@@ -589,24 +585,6 @@ smelter = ingestion_classes.smelter
 forge = ingestion_classes.forge
 crucible = ingestion_classes.crucible
 factory = ingestion_classes.factory
-
-
-# ========================================
-#
-# Archive in X days app
-#
-# =========================================
-
-archive_in_days = arch.archive_in_days
-delete_in_days = arch.delete_in_days
-storage_options = arch.storage_options
-storage_options_reduced = arch.storage_options_reduced
-archive_options = arch.archive_options
-archive_options_reduced = arch.archive_options_reduced
-s3_bucket = arch.s3_bucket
-target_key = arch.target_key
-project_archive_box_name = arch.project_archive_box_name
-project_storage_box_name = arch.project_storage_box_name
 
 
 # ========================================
