@@ -100,8 +100,6 @@ def parse_project_info(directory: DirectoryNode) -> RawProject:
         start_time=None,
         end_time=None,
         embargo_until=None,
-        delete_in_days=-1,
-        archive_in_days=365,
     )
 
     return raw_project

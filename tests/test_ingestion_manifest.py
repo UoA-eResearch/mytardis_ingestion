@@ -45,8 +45,6 @@ def _() -> IngestionManifest:
             start_time=datetime(2024, 1, 1, 12, 41, 36),
             end_time=datetime(2025, 1, 1, 12, 41, 36),
             embargo_until=datetime(2024, 6, 1, 12, 41, 36),
-            delete_in_days=30,
-            archive_in_days=365,
         ),
         RawProject(
             name="project2_name",
@@ -66,8 +64,6 @@ def _() -> IngestionManifest:
             start_time=datetime(2023, 1, 1, 12, 41, 36),
             end_time=datetime(2024, 1, 1, 12, 41, 36),
             embargo_until=datetime(2023, 6, 1, 12, 41, 36),
-            delete_in_days=60,
-            archive_in_days=730,
         ),
     ]
     raw_experiments = [

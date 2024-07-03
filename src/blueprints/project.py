@@ -45,8 +45,6 @@ class RawProject(BaseProject):
     start_time: Optional[datetime | str] = None
     end_time: Optional[datetime | str] = None
     embargo_until: Optional[datetime | str] = None
-    delete_in_days: int = -1
-    archive_in_days: int = 365
 
 
 class RefinedProject(BaseProject):
