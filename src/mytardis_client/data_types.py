@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 from pydantic import RootModel, field_serializer, field_validator
 
-from src.mytardis_client.objects import KNOWN_MYTARDIS_OBJECTS
+from src.mytardis_client.objects import list_mytardis_objects
 
 HttpRequestMethod = Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
 
@@ -26,7 +26,7 @@ def validate_uri(value: Any) -> str:
             f'Passed string value "{value}" is not a well formatted MyTardis URI'
         )
     object_type_str = object_type.group(1)
-    if object_type_str.lower() not in KNOWN_MYTARDIS_OBJECTS:
+    if object_type_str.lower() not in list_mytardis_objects():
         raise ValueError(f'Unknown object type: "{object_type_str}"')
     return value
 

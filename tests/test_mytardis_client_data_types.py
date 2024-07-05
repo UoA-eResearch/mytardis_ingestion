@@ -3,7 +3,7 @@
 import pytest
 
 from src.mytardis_client.data_types import URI, resource_uri_to_id
-from src.mytardis_client.objects import KNOWN_MYTARDIS_OBJECTS
+from src.mytardis_client.objects import list_mytardis_objects
 
 
 def test_function_resource_uri_to_id() -> None:
@@ -19,7 +19,7 @@ def test_function_resource_uri_to_id() -> None:
 
 
 VALID_URIS = [
-    (f"/api/v1/{obj}/{id}/", id) for id, obj in enumerate(KNOWN_MYTARDIS_OBJECTS)
+    (f"/api/v1/{obj}/{id}/", id) for id, obj in enumerate(list_mytardis_objects())
 ]
 
 
