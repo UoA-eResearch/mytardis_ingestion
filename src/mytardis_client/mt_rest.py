@@ -258,7 +258,7 @@ class MyTardisRESTFactory:
     def get(
         self,
         endpoint: MyTardisEndpoint,
-        object_type: type[MyTardisObjectData],
+        object_type: MyTardisObjectData,
         query_params: Optional[dict[str, Any]] = None,
         meta_params: Optional[GetRequestMetaParams] = None,
     ) -> tuple[list[Ingested[MyTardisObjectData]], GetResponseMeta]:
@@ -311,7 +311,7 @@ class MyTardisRESTFactory:
     def get_all(
         self,
         endpoint: MyTardisEndpoint,
-        object_type: type[MyTardisObjectData],
+        object_type: MyTardisObjectData,
         query_params: Optional[dict[str, Any]] = None,
         batch_size: int = 500,
     ) -> tuple[list[Ingested[MyTardisObjectData]], int]:

@@ -4,6 +4,9 @@ from enum import Enum
 
 from pydantic import BaseModel
 
+from src.mytardis_client.data_types import URI
+from src.mytardis_client.enumerators import DataClassification
+
 # NOTE: moved from blueprints module, as it's thematically part of the MyTardis client.
 #       Should try to unify with MyTardisObject below though.
 KNOWN_MYTARDIS_OBJECTS = [
@@ -127,3 +130,32 @@ def get_type_info(object_type: MyTardisObject) -> MyTardisTypeInfo:
         raise ValueError(f"No type info defined for object type {object_type}")
 
     return type_info
+
+
+# from __future__ import annotations
+
+from typing import Any
+
+
+class IngestedProject(BaseModel):
+    classification: DataClassification
+    created_by: URI
+    # datafile_count: int
+    # dataset_count: int
+    description: str
+    embargo_until: Any
+    end_time: Any
+    # experiment_count: int
+    id: int
+    identifiers: list[str]
+    institution: list[str]
+    locked: bool
+    name: str
+    parameter_sets: list
+    principal_investigator: str
+    public_access: int
+    resource_uri: str
+    size: int
+    start_time: str
+    tags: Any
+    url: Any

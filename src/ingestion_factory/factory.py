@@ -207,6 +207,15 @@ class IngestionFactory:
         result = IngestionResult()
         datafiles: list[Datafile] = []
 
+        datasets = set(raw_datafile.dataset for raw_datafile in raw_datafiles)
+        for dataset in datasets:
+            # Shouldn't need to declare object type here. Make it not so.
+            self._overseer.prefetch(
+                "/dataset",
+                object_type=Datafile,
+                query_params={"dataset": dataset},
+            )
+
         for raw_datafile in raw_datafiles:
             refined_datafile = self.smelter.smelt_datafile(raw_datafile)
             if not refined_datafile:

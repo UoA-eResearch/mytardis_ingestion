@@ -4,14 +4,18 @@ for the Forge class."""
 
 import logging
 from collections.abc import Generator
-from typing import Any
+from typing import Any, TypeVar, Union
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 from requests.exceptions import HTTPError
 
+from src.blueprints.datafile import Datafile
+from src.blueprints.dataset import Dataset
+from src.blueprints.experiment import Experiment
+from src.blueprints.project import Project
 from src.mytardis_client.data_types import URI
 from src.mytardis_client.endpoints import MyTardisEndpoint
-from src.mytardis_client.mt_rest import MyTardisRESTFactory
+from src.mytardis_client.mt_rest import Ingested, MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject, get_type_info
 from src.mytardis_client.response_data import MyTardisIntrospection
 from src.utils.types.singleton import Singleton
@@ -67,6 +71,32 @@ def extract_values_for_matching(
     return match_keys
 
 
+MyTardisObjectData = TypeVar("MyTardisObjectData", bound=BaseModel)
+
+MyTardisDataclass = Union[Project, Experiment, Dataset, Datafile]
+
+
+class MyTardisEndpointCache:
+    """A cache for URIs and objects from a specific MyTardis endpoint"""
+
+    def __init__(self, endpoint: MyTardisEndpoint) -> None:
+        self.endpoint = endpoint
+        self._objects: list[Ingested[MyTardisDataclass]] = []
+        self._index: dict[dict[str, Any], int] = {}
+
+    def emplace(self, keys: dict[str, Any], obj: Ingested[MyTardisDataclass]) -> None:
+        if keys in self._index:
+            raise ValueError(f"Duplicate keys {keys} in MyTardisEndpointCache")
+
+        self._index[keys] = len(self._objects)
+        self._objects.append(obj)
+
+    def get(self, keys: dict[str, Any]) -> Ingested[MyTardisDataclass] | None:
+        if object_index := self._index.get(keys):
+            return self._objects[object_index]
+        return None
+
+
 class Overseer(metaclass=Singleton):
     """The Overseer class inspects MyTardis
 
@@ -102,6 +132,8 @@ class Overseer(metaclass=Singleton):
             mytardis_setup : MyTardisIntrospection
         """
         self.rest_factory = rest_factory
+
+        self._cache: dict[MyTardisEndpoint, MyTardisEndpointCache] = {}
 
     @property
     def mytardis_setup(self) -> MyTardisIntrospection:
@@ -182,6 +214,38 @@ class Overseer(metaclass=Singleton):
 
         response_json: dict[str, Any] = response.json()
         return list(response_json["objects"])
+
+    def prefetch(
+        self,
+        endpoint: MyTardisEndpoint,
+        object_type: MyTardisDataclass,
+        query_params: dict[str, Any],
+    ) -> None:
+        """Populate the cache for the given endpoint"""
+
+        if self._cache.get(endpoint) is None:
+            self._cache[endpoint] = MyTardisEndpointCache(endpoint)
+
+        objects, _ = self.rest_factory.get_all(endpoint, object_type, query_params)
+
+        def get_mt_type(dclass: type[MyTardisDataclass]) -> MyTardisObject:
+
+            mt_type = {
+                Project: MyTardisObject.PROJECT,
+                Experiment: MyTardisObject.EXPERIMENT,
+                Dataset: MyTardisObject.DATASET,
+                Datafile: MyTardisObject.DATAFILE,
+            }
+
+            return mt_type[dclass]
+
+        mt_type = get_mt_type(type(object_type))
+
+        for obj in objects:
+            matchers = self.generate_object_matchers(mt_type, obj.model_dump())
+
+            for keys in matchers:
+                self._cache[endpoint].emplace(keys, obj)
 
     def get_matching_objects(
         self,
