@@ -16,8 +16,9 @@ from requests import Response
 from requests.exceptions import RequestException
 
 from src.config.config import AuthConfig, ConnectionConfig
-from src.mytardis_client.data_types import URI, HttpRequestMethod
-from src.mytardis_client.endpoints import MyTardisEndpoint
+from src.mytardis_client.endpoints import URI, MyTardisEndpoint
+
+HttpRequestMethod = Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
 
 # Defines the valid values for the MyTardis API version
 MyTardisApiVersion = Literal["v1"]

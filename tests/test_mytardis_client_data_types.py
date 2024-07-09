@@ -2,7 +2,7 @@
 # nosec assert_used
 import pytest
 
-from src.mytardis_client.data_types import URI, resource_uri_to_id
+from src.mytardis_client.endpoints import URI, resource_uri_to_id
 from src.mytardis_client.objects import list_mytardis_objects
 
 

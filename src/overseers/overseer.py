@@ -13,8 +13,7 @@ from src.blueprints.datafile import Datafile
 from src.blueprints.dataset import Dataset
 from src.blueprints.experiment import Experiment
 from src.blueprints.project import Project
-from src.mytardis_client.data_types import URI
-from src.mytardis_client.endpoints import MyTardisEndpoint
+from src.mytardis_client.endpoints import URI, MyTardisEndpoint
 from src.mytardis_client.mt_rest import Ingested, MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject, get_type_info
 from src.mytardis_client.response_data import MyTardisIntrospection

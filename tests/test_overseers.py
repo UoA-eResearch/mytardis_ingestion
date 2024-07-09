@@ -15,7 +15,7 @@ from requests import HTTPError
 from responses import matchers
 
 from src.config.config import ConnectionConfig
-from src.mytardis_client.data_types import URI
+from src.mytardis_client.dataclasses import URI
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject
 from src.mytardis_client.response_data import MyTardisIntrospection

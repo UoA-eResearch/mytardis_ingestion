@@ -17,7 +17,7 @@ from src.blueprints.dataset import RawDataset, RefinedDataset
 from src.blueprints.experiment import RawExperiment, RefinedExperiment
 from src.blueprints.project import RawProject, RefinedProject
 from src.config.config import GeneralConfig, SchemaConfig
-from src.mytardis_client.data_types import URI
+from src.mytardis_client.endpoints import URI
 from src.overseers.overseer import MYTARDIS_PROJECTS_DISABLED_MESSAGE, Overseer
 
 logger = logging.getLogger(__name__)
