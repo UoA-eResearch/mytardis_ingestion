@@ -9,14 +9,19 @@ from typing import Optional
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
+    Field,
     RootModel,
     ValidationError,
     field_serializer,
     field_validator,
+    model_validator,
 )
+from typing_extensions import Self
 
 from src.mytardis_client.endpoints import URI
 from src.mytardis_client.enumerators import DataClassification
+from src.mytardis_client.objects import MyTardisObject
 
 # TODO: can we use Protocol instead of BaseModel? Only inheriting data from MyTardisResource
 # TODO: use datetime instead of str for created_time, modified_time, etc.
@@ -95,6 +100,45 @@ class Instrument(MyTardisResource):
     name: str
 
 
+class MyTardisIntrospection(BaseModel):
+    """MyTardis introspection data (the configuration of the MyTardis instance).
+
+    NOTE: this class relies on data from the MyTardis introspection API and
+    therefore can't be instantiated without a request to the specific MyTardis
+    instance.
+    """
+
+    model_config = ConfigDict(use_enum_values=False)
+
+    data_classification_enabled: Optional[bool]
+    identifiers_enabled: bool
+    objects_with_ids: list[MyTardisObject] = Field(
+        validation_alias="identified_objects"
+    )
+    objects_with_profiles: list[MyTardisObject] = Field(
+        validation_alias="profiled_objects"
+    )
+    old_acls: bool = Field(validation_alias="experiment_only_acls")
+    projects_enabled: bool
+    profiles_enabled: bool
+
+    @model_validator(mode="after")
+    def validate_consistency(self) -> Self:
+        """Check that the introspection data is consistent."""
+
+        if not self.identifiers_enabled and len(self.objects_with_ids) > 0:
+            raise ValueError(
+                "Identifiers are disabled in MyTardis but it reports identifiable types"
+            )
+
+        if not self.profiles_enabled and len(self.objects_with_profiles) > 0:
+            raise ValueError(
+                "Profiles are disabled in MyTardis but it reports profiled types"
+            )
+
+        return self
+
+
 class Replica(MyTardisResource):
     """Metadata associated with a Datafile replica in MyTardis."""
 
@@ -113,7 +157,7 @@ class ParameterName(MyTardisResource):
     immutable: bool
     is_searchable: bool
     name: str
-    schema: URI
+    parent_schema: URI = Field(serialization_alias="schema")
     sensitive: bool
     units: str
 

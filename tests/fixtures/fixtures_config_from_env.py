@@ -15,6 +15,7 @@ from src.config.config import (
     SchemaConfig,
     StorageBoxConfig,
 )
+from src.mytardis_client.dataclasses import MyTardisIntrospection
 
 
 @fixture

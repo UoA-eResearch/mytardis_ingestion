@@ -13,6 +13,7 @@ from src.blueprints.datafile import Datafile
 from src.blueprints.dataset import Dataset
 from src.blueprints.experiment import Experiment
 from src.blueprints.project import Project
+from src.mytardis_client.dataclasses import MyTardisIntrospection
 from src.mytardis_client.endpoints import URI, MyTardisEndpoint
 from src.mytardis_client.mt_rest import Ingested, MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject, get_type_info
@@ -329,28 +330,16 @@ class Overseer(metaclass=Singleton):
         Requests introspection info from MyTardis instance configured in connection
         """
 
-        response = self.rest_factory.request("GET", "/introspection")
-
-        response_dict = response.json()
-        if response_dict == {} or response_dict["objects"] == []:
-            raise ValueError(
-                (
-                    "MyTardis introspection did not return any data when called from "
-                    "ConfigFromEnv.get_mytardis_setup"
-                )
-            )
-        if len(response_dict["objects"]) > 1:
-            raise ValueError(
-                (
-                    """MyTardis introspection returned more than one object when called from
-                    ConfigFromEnv.get_mytardis_setup\n
-                    Returned response was: %s""",
-                    response_dict,
-                )
-            )
-
-        introspection = MyTardisIntrospection.model_validate(
-            response_dict["objects"][0]
+        objects, _ = self.rest_factory.get(
+            "/introspection", object_type=MyTardisIntrospection
         )
 
-        return introspection
+        if len(objects) == 0:
+            raise RuntimeError("Failed to retrieve MyTardis introspection/config info")
+
+        if len(objects) > 1:
+            raise RuntimeError(
+                "Multiple MyTardis introspection/config info objects returned"
+            )
+
+        return objects[0]

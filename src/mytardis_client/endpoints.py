@@ -1,30 +1,43 @@
 """Information about MyTardis endpoints"""
 
 import re
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, get_args
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, RootModel, field_serializer, field_validator
 
-from src.mytardis_client.objects import MyTardisObject, list_mytardis_objects
+from src.mytardis_client.objects import MyTardisObject
 
 MyTardisEndpoint = Literal[
+    "/datafileparameter",
+    "/datafileparameterset",
     "/dataset",
+    "/datasetparameter",
     "/datasetparameterset",
     "/dataset_file",
     "/experiment",
+    "/experimentparameter",
     "/experimentparameterset",
     "/facility",
     "/group",
     "/institution",
     "/instrument",
     "/introspection",
+    "/parametername",
     "/project",
+    "/projectparameter",
     "/projectparameterset",
     "/schema",
     "/storagebox",
     "/user",
 ]
+
+_MYTARDIS_ENDPOINTS = list(get_args(MyTardisEndpoint))
+
+
+def list_mytardis_endpoints() -> list[str]:
+    """List the names of all MyTardis endpoints"""
+    return _MYTARDIS_ENDPOINTS
 
 
 class GetRequestProperties(BaseModel):
@@ -60,7 +73,7 @@ class MyTardisEndpointInfo(BaseModel):
 
 
 # Information about each MyTardis endpoint
-_MYTARDIS_ENDPOINTS: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
+_MYTARDIS_ENDPOINT_INFO: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
     "/project": MyTardisEndpointInfo(
         path="/project",
         methods=EndpointMethods(
@@ -177,6 +190,18 @@ _MYTARDIS_ENDPOINTS: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
             ),
         ),
     ),
+    "/datafileparameterset": MyTardisEndpointInfo(
+        path="/datafileparameterset",
+        methods=EndpointMethods(
+            GET=GetRequestProperties(
+                response_obj_type=MyTardisObject.DATAFILE_PARAMETER_SET,
+            ),
+            POST=PostRequestProperties(
+                expect_response_json=False,
+                request_body_obj_type=MyTardisObject.DATAFILE_PARAMETER_SET,
+            ),
+        ),
+    ),
     "/introspection": MyTardisEndpointInfo(
         path="/introspection",
         methods=EndpointMethods(
@@ -190,7 +215,7 @@ _MYTARDIS_ENDPOINTS: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
 
 def get_endpoint_info(endpoint: MyTardisEndpoint) -> MyTardisEndpointInfo:
     """Get the endpoint for a given MyTardis object type"""
-    endpoint_info = _MYTARDIS_ENDPOINTS.get(endpoint)
+    endpoint_info = _MYTARDIS_ENDPOINT_INFO.get(endpoint)
 
     if endpoint_info is None:
         raise ValueError(f"{endpoint_info} is not a known MyTardis endpoint")
@@ -205,14 +230,16 @@ def validate_uri(value: Any) -> str:
     """Validator for a URI string to ensure that it matches the expected form of a URI"""
     if not isinstance(value, str):
         raise TypeError(f'Unexpected type for URI: "{type(value)}"')
-    object_type = uri_regex.search(value.lower())
-    if not object_type:
+    endpoint = uri_regex.search(value.lower())
+    if not endpoint:
         raise ValueError(
             f'Passed string value "{value}" is not a well formatted MyTardis URI'
         )
-    object_type_str = object_type.group(1)
-    if object_type_str.lower() not in list_mytardis_objects():
-        raise ValueError(f'Unknown object type: "{object_type_str}"')
+    endpoint_str = endpoint.group(1)
+
+    candidate_endpoint = f"/{endpoint_str.lower()}"
+    if candidate_endpoint not in get_args(MyTardisEndpoint):
+        raise ValueError(f'Unknown endpoint: "{endpoint_str}"')
     return value
 
 

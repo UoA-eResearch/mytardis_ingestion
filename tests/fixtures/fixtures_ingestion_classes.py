@@ -18,6 +18,7 @@ from src.conveyor.conveyor import Conveyor
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
 from src.ingestion_factory import IngestionFactory
+from src.mytardis_client.dataclasses import MyTardisIntrospection
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.response_data import MyTardisIntrospection
 from src.overseers.overseer import Overseer
