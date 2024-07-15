@@ -11,7 +11,7 @@ from src.blueprints.datafile import Datafile, DatafileReplica
 from src.config.config import FilesystemStorageBoxConfig
 from src.conveyor.conveyor import Conveyor, is_rsync_on_path
 from src.miners.utils.datafile_metadata_helpers import calculate_md5sum
-from src.mytardis_client.endpoints import URI
+from src.mytardis_client.endpoints.endpoints import URI
 
 DatafileFixture = tuple[Path, list[Datafile], Path]
 

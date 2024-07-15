@@ -1,43 +1,12 @@
-"""Information about MyTardis endpoints"""
+"""Information about MyTardis endpoints, including the expected request/response types."""
 
-import re
-from typing import Any, Literal, Optional, get_args
-from urllib.parse import urlparse
+from typing import Optional, Type
 
-from pydantic import BaseModel, RootModel, field_serializer, field_validator
+from pydantic import BaseModel
 
+from src.mytardis_client import mt_dataclasses as dc
+from src.mytardis_client.endpoints.endpoints import MyTardisEndpoint
 from src.mytardis_client.objects import MyTardisObject
-
-MyTardisEndpoint = Literal[
-    "/datafileparameter",
-    "/datafileparameterset",
-    "/dataset",
-    "/datasetparameter",
-    "/datasetparameterset",
-    "/dataset_file",
-    "/experiment",
-    "/experimentparameter",
-    "/experimentparameterset",
-    "/facility",
-    "/group",
-    "/institution",
-    "/instrument",
-    "/introspection",
-    "/parametername",
-    "/project",
-    "/projectparameter",
-    "/projectparameterset",
-    "/schema",
-    "/storagebox",
-    "/user",
-]
-
-_MYTARDIS_ENDPOINTS = list(get_args(MyTardisEndpoint))
-
-
-def list_mytardis_endpoints() -> list[str]:
-    """List the names of all MyTardis endpoints"""
-    return _MYTARDIS_ENDPOINTS
 
 
 class GetRequestProperties(BaseModel):
@@ -48,6 +17,7 @@ class GetRequestProperties(BaseModel):
     #       to know the correct type. But the dataclasses are currently defined outside the
     #       mytardis_client module, and this module should ideally be self-contained.
     response_obj_type: MyTardisObject
+    response_dataclass: Type[dc.MyTardisResource]
 
 
 class PostRequestProperties(BaseModel):
@@ -79,6 +49,7 @@ _MYTARDIS_ENDPOINT_INFO: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         methods=EndpointMethods(
             GET=GetRequestProperties(
                 response_obj_type=MyTardisObject.PROJECT,
+                response_dataclass=dc.IngestedProject,
             ),
             POST=PostRequestProperties(
                 expect_response_json=True,
@@ -91,6 +62,7 @@ _MYTARDIS_ENDPOINT_INFO: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         methods=EndpointMethods(
             GET=GetRequestProperties(
                 response_obj_type=MyTardisObject.EXPERIMENT,
+                response_dataclass=dc.IngestedExperiment,
             ),
             POST=PostRequestProperties(
                 expect_response_json=True,
@@ -103,6 +75,7 @@ _MYTARDIS_ENDPOINT_INFO: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         methods=EndpointMethods(
             GET=GetRequestProperties(
                 response_obj_type=MyTardisObject.DATASET,
+                response_dataclass=dc.IngestedDataset,
             ),
             POST=PostRequestProperties(
                 expect_response_json=True,
@@ -115,6 +88,7 @@ _MYTARDIS_ENDPOINT_INFO: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         methods=EndpointMethods(
             GET=GetRequestProperties(
                 response_obj_type=MyTardisObject.DATAFILE,
+                response_dataclass=dc.IngestedDatafile,
             ),
             POST=PostRequestProperties(
                 expect_response_json=False,
@@ -127,6 +101,7 @@ _MYTARDIS_ENDPOINT_INFO: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         methods=EndpointMethods(
             GET=GetRequestProperties(
                 response_obj_type=MyTardisObject.INSTITUTION,
+                response_dataclass=dc.Institution,
             ),
         ),
     ),
@@ -135,6 +110,7 @@ _MYTARDIS_ENDPOINT_INFO: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         methods=EndpointMethods(
             GET=GetRequestProperties(
                 response_obj_type=MyTardisObject.INSTRUMENT,
+                response_dataclass=dc.Instrument,
             ),
         ),
     ),
@@ -143,6 +119,7 @@ _MYTARDIS_ENDPOINT_INFO: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         methods=EndpointMethods(
             GET=GetRequestProperties(
                 response_obj_type=MyTardisObject.FACILITY,
+                response_dataclass=dc.Facility,
             ),
         ),
     ),
@@ -151,6 +128,7 @@ _MYTARDIS_ENDPOINT_INFO: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         methods=EndpointMethods(
             GET=GetRequestProperties(
                 response_obj_type=MyTardisObject.STORAGE_BOX,
+                response_dataclass=dc.StorageBox,
             ),
         ),
     ),
@@ -159,6 +137,7 @@ _MYTARDIS_ENDPOINT_INFO: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         methods=EndpointMethods(
             GET=GetRequestProperties(
                 response_obj_type=MyTardisObject.PROJECT_PARAMETER_SET,
+                response_dataclass=dc.ProjectParameterSet,
             ),
             POST=PostRequestProperties(
                 expect_response_json=False,
@@ -171,6 +150,7 @@ _MYTARDIS_ENDPOINT_INFO: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         methods=EndpointMethods(
             GET=GetRequestProperties(
                 response_obj_type=MyTardisObject.EXPERIMENT_PARAMETER_SET,
+                response_dataclass=dc.ExperimentParameterSet,
             ),
             POST=PostRequestProperties(
                 expect_response_json=False,
@@ -183,6 +163,7 @@ _MYTARDIS_ENDPOINT_INFO: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         methods=EndpointMethods(
             GET=GetRequestProperties(
                 response_obj_type=MyTardisObject.DATASET_PARAMETER_SET,
+                response_dataclass=dc.DatasetParameterSet,
             ),
             POST=PostRequestProperties(
                 expect_response_json=False,
@@ -195,6 +176,7 @@ _MYTARDIS_ENDPOINT_INFO: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         methods=EndpointMethods(
             GET=GetRequestProperties(
                 response_obj_type=MyTardisObject.DATAFILE_PARAMETER_SET,
+                response_dataclass=dc.DatafileParameterSet,
             ),
             POST=PostRequestProperties(
                 expect_response_json=False,
@@ -207,6 +189,7 @@ _MYTARDIS_ENDPOINT_INFO: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         methods=EndpointMethods(
             GET=GetRequestProperties(
                 response_obj_type=MyTardisObject.INTROSPECTION,
+                response_dataclass=dc.MyTardisIntrospection,
             ),
         ),
     ),
@@ -221,68 +204,3 @@ def get_endpoint_info(endpoint: MyTardisEndpoint) -> MyTardisEndpointInfo:
         raise ValueError(f"{endpoint_info} is not a known MyTardis endpoint")
 
     return endpoint_info
-
-
-uri_regex = re.compile(r"^/api/v1/([a-z]{1,}|dataset_file)/[0-9]{1,}/$")
-
-
-def validate_uri(value: Any) -> str:
-    """Validator for a URI string to ensure that it matches the expected form of a URI"""
-    if not isinstance(value, str):
-        raise TypeError(f'Unexpected type for URI: "{type(value)}"')
-    endpoint = uri_regex.search(value.lower())
-    if not endpoint:
-        raise ValueError(
-            f'Passed string value "{value}" is not a well formatted MyTardis URI'
-        )
-    endpoint_str = endpoint.group(1)
-
-    candidate_endpoint = f"/{endpoint_str.lower()}"
-    if candidate_endpoint not in get_args(MyTardisEndpoint):
-        raise ValueError(f'Unknown endpoint: "{endpoint_str}"')
-    return value
-
-
-def resource_uri_to_id(uri: str) -> int:
-    """Gets the id from a resource URI
-
-    Takes resource URI like: http://example.org/api/v1/experiment/998
-    and returns just the id value (998).
-
-    Args:
-        uri: str - the URI from MyTardis
-
-    Returns:
-        The integer id that maps to the URI
-    """
-    uri_sep: str = "/"
-    return int(urlparse(uri).path.rstrip(uri_sep).split(uri_sep).pop())
-
-
-class URI(RootModel[str], frozen=True):
-    """A URI string identifying a MyTardis object.
-
-    Expected to be of the form: /api/v1/<endpoint>/<id>/
-    """
-
-    root: str
-
-    def __str__(self) -> str:
-        return self.root
-
-    @property
-    def id(self) -> int:
-        """Get the ID from the URI"""
-        return resource_uri_to_id(self.root)
-
-    @field_validator("root", mode="after")
-    @classmethod
-    def validate_uri(cls, value: str) -> str:
-        """Check that the URI is well-formed"""
-        return validate_uri(value)
-
-    @field_serializer("root")
-    def serialize_uri(self, uri: str) -> str:
-        """Serialize the URI as a simple string"""
-
-        return uri

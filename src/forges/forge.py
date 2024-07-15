@@ -13,7 +13,8 @@ from src.blueprints.datafile import Datafile
 from src.blueprints.dataset import Dataset, DatasetParameterSet
 from src.blueprints.experiment import Experiment, ExperimentParameterSet
 from src.blueprints.project import Project, ProjectParameterSet
-from src.mytardis_client.endpoints import URI, MyTardisEndpoint, get_endpoint_info
+from src.mytardis_client.endpoints.endpoint_info import get_endpoint_info
+from src.mytardis_client.endpoints.endpoints import URI, MyTardisEndpoint
 from src.mytardis_client.mt_rest import (
     BadGateWayException,
     HttpRequestMethod,

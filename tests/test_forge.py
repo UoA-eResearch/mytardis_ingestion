@@ -15,7 +15,7 @@ from pytest import LogCaptureFixture
 from src.blueprints.project import Project
 from src.config.config import ConnectionConfig
 from src.forges.forge import Forge
-from src.mytardis_client.endpoints import URI
+from src.mytardis_client.endpoints.endpoints import URI
 
 logger = logging.getLogger(__name__)
 logger.propagate = True

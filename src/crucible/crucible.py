@@ -9,7 +9,7 @@ from src.blueprints.datafile import Datafile, RefinedDatafile
 from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
-from src.mytardis_client.endpoints import URI
+from src.mytardis_client.endpoints.endpoints import URI
 from src.mytardis_client.objects import MyTardisObject
 from src.overseers.overseer import Overseer
 

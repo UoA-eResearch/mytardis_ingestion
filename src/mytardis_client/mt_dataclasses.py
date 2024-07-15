@@ -5,7 +5,7 @@ The idea is to only include the data that is necessary for ingestion, to make th
 less brittle to changes in the API.
 """
 
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import (
     BaseModel,
@@ -19,7 +19,7 @@ from pydantic import (
 )
 from typing_extensions import Self
 
-from src.mytardis_client.endpoints import URI
+from src.mytardis_client.endpoints.endpoints import URI
 from src.mytardis_client.enumerators import DataClassification
 from src.mytardis_client.objects import MyTardisObject
 
@@ -100,7 +100,7 @@ class Instrument(MyTardisResource):
     name: str
 
 
-class MyTardisIntrospection(BaseModel):
+class MyTardisIntrospection(MyTardisResource):
     """MyTardis introspection data (the configuration of the MyTardis instance).
 
     NOTE: this class relies on data from the MyTardis introspection API and
@@ -121,6 +121,23 @@ class MyTardisIntrospection(BaseModel):
     old_acls: bool = Field(validation_alias="experiment_only_acls")
     projects_enabled: bool
     profiles_enabled: bool
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_model(cls, data: Any) -> Any:
+        """Adapter for the raw data, as the ID from the introspection endpoint
+        comes back as None"""
+
+        if isinstance(data, dict):
+            dummy_id = 0
+            resource_uri = data.get("resource_uri")
+            if isinstance(resource_uri, str):
+                data["resource_uri"] = resource_uri.replace("None", str(dummy_id))
+
+            if "id" not in data:
+                data["id"] = dummy_id
+
+        return data
 
     @model_validator(mode="after")
     def validate_consistency(self) -> Self:
@@ -264,4 +281,52 @@ class IngestedDatafile(MyTardisResource):
     version: int
 
 
-# TODO: Introspection, various ParameterSets
+class ProjectParameterSet(MyTardisResource):
+    """Metadata associated with a project parameter set in MyTardis."""
+
+    todo: Any
+
+
+class ExperimentParameterSet(MyTardisResource):
+    """Metadata associated with an experiment parameter set in MyTardis."""
+
+    todo: Any
+
+
+class DatasetParameterSet(MyTardisResource):
+    """Metadata associated with a dataset parameter set in MyTardis."""
+
+    todo: Any
+
+
+class DatafileParameterSet(MyTardisResource):
+    """Metadata associated with a datafile parameter set in MyTardis."""
+
+    todo: Any
+
+
+if __name__ == "__main__":
+
+    introspection_data = {
+        "data_classification_enabled": None,
+        "experiment_only_acls": False,
+        "identified_objects": [
+            "dataset",
+            "experiment",
+            "facility",
+            "instrument",
+            "project",
+            "institution",
+            "user",
+            "datafile",
+        ],
+        "identifiers_enabled": True,
+        "profiled_objects": [],
+        "profiles_enabled": False,
+        "projects_enabled": True,
+        "resource_uri": "/api/v1/introspection/None/",
+    }
+
+    introspection = MyTardisIntrospection(**introspection_data)
+
+    print(introspection)

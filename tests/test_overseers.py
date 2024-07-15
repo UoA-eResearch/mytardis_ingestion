@@ -15,7 +15,8 @@ from requests import HTTPError
 from responses import matchers
 
 from src.config.config import ConnectionConfig
-from src.mytardis_client.dataclasses import URI, MyTardisIntrospection
+from src.mytardis_client.endpoints.endpoints import URI
+from src.mytardis_client.mt_dataclasses import MyTardisIntrospection
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject
 from src.overseers.overseer import Overseer
