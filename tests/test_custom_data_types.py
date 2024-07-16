@@ -4,15 +4,12 @@
 # flake8: noqa S101
 
 from datetime import datetime
-from typing import List
 
 import pytest
 from dateutil import tz
 from pydantic import BaseModel
 
 from src.blueprints.custom_data_types import ISODateTime, Username
-from src.mytardis_client.data_types import URI
-from src.mytardis_client.objects import KNOWN_MYTARDIS_OBJECTS
 
 NZT = tz.gettz("Pacific/Auckland")
 
@@ -46,7 +43,7 @@ def test_UPI_wrong_type() -> None:  # pylint: disable=invalid-name
 )
 def test_malformed_UPI(upis: Username) -> None:  # pylint: disable=invalid-name
     with pytest.raises(ValueError) as e_info:
-        test_class = DummyUsernames(user=upis)
+        _ = DummyUsernames(user=upis)
     assert (
         (
             "1 validation error for DummyUsernames\nuser\n  "
