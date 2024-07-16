@@ -5,7 +5,6 @@ from typing import Any, Callable
 import responses
 from pytest import fixture
 
-from src.blueprints.storage_boxes import StorageTypesEnum
 from src.config.config import (
     AuthConfig,
     ConfigFromEnv,
