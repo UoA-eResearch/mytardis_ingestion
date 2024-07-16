@@ -16,14 +16,13 @@ from pathlib import Path
 from typing import Dict, Optional
 from urllib.parse import urljoin
 
-from pydantic import BaseModel, ConfigDict, PrivateAttr
+from pydantic import BaseModel, PrivateAttr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from requests import PreparedRequest
 from requests.auth import AuthBase
 
 from src.blueprints.custom_data_types import MTUrl
 from src.blueprints.storage_boxes import StorageTypesEnum
-from src.mytardis_client.objects import MyTardisObject
 
 logger = logging.getLogger(__name__)
 
