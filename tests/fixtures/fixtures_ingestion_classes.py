@@ -41,10 +41,10 @@ def rest_factory(
 @fixture
 def overseer(
     rest_factory: MyTardisRESTFactory,
-    mytardis_setup: MyTardisIntrospection,
+    mytardis_introspection: MyTardisIntrospection,
 ) -> Overseer:
     overseer = Overseer(rest_factory)
-    overseer._mytardis_setup = mytardis_setup  # pylint: disable=W0212
+    overseer._mytardis_setup = mytardis_introspection  # pylint: disable=W0212
     return overseer
 
 

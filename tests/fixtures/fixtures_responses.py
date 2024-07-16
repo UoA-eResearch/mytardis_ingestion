@@ -357,7 +357,7 @@ def instrument_response_dict(
 
 
 @fixture
-def introspection_response_dict() -> Dict[str, Any]:
+def introspection_response() -> dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -368,6 +368,7 @@ def introspection_response_dict() -> Dict[str, Any]:
         },
         "objects": [
             {
+                "data_classification_enabled": None,
                 "experiment_only_acls": False,
                 "identified_objects": [
                     "dataset",

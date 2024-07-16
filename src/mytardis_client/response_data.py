@@ -1,6 +1,9 @@
 """Dataclasses for validating/storing MyTardis API response data."""
 
-from pydantic import BaseModel, ConfigDict
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Self
 
 from src.mytardis_client.objects import MyTardisObject
 
@@ -14,9 +17,30 @@ class MyTardisIntrospection(BaseModel):
 
     model_config = ConfigDict(use_enum_values=False)
 
-    old_acls: bool
-    projects_enabled: bool
+    data_classification_enabled: Optional[bool]
     identifiers_enabled: bool
+    objects_with_ids: list[MyTardisObject] = Field(
+        validation_alias="identified_objects"
+    )
+    objects_with_profiles: list[MyTardisObject] = Field(
+        validation_alias="profiled_objects"
+    )
+    old_acls: bool = Field(validation_alias="experiment_only_acls")
+    projects_enabled: bool
     profiles_enabled: bool
-    objects_with_ids: list[MyTardisObject]
-    objects_with_profiles: list[MyTardisObject]
+
+    @model_validator(mode="after")
+    def validate_consistency(self) -> Self:
+        """Check that the introspection data is consistent."""
+
+        if not self.identifiers_enabled and len(self.objects_with_ids) > 0:
+            raise ValueError(
+                "Identifiers are disabled in MyTardis but it reports identifiable types"
+            )
+
+        if not self.profiles_enabled and len(self.objects_with_profiles) > 0:
+            raise ValueError(
+                "Profiles are disabled in MyTardis but it reports profiled types"
+            )
+
+        return self

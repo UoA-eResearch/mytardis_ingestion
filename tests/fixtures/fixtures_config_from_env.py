@@ -1,7 +1,7 @@
 # pylint: disable=missing-function-docstring,redefined-outer-name
 # pylint: disable=missing-module-docstring
 
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from pytest import fixture
 
@@ -15,8 +15,6 @@ from src.config.config import (
     SchemaConfig,
     StorageBoxConfig,
 )
-from src.mytardis_client.objects import MyTardisObject
-from src.mytardis_client.response_data import MyTardisIntrospection
 
 
 @fixture
@@ -117,25 +115,6 @@ def archive_store(
 
 
 @fixture
-def processed_introspection_response() -> Dict[str, bool | List[str]]:
-    return {
-        "old_acls": False,
-        "projects_enabled": True,
-        "identifiers_enabled": True,
-        "objects_with_ids": [
-            "dataset",
-            "experiment",
-            "facility",
-            "instrument",
-            "project",
-            "institution",
-        ],
-        "profiles_enabled": False,
-        "objects_with_profiles": [],
-    }
-
-
-@fixture
 def general(
     default_institution: str,
 ) -> GeneralConfig:
@@ -205,31 +184,6 @@ def default_schema(
         experiment=experiment_schema,
         dataset=dataset_schema,
         datafile=datafile_schema,
-    )
-
-
-# TODO: move from here
-@fixture
-def mytardis_setup(
-    processed_introspection_response: dict[str, Any],
-) -> MyTardisIntrospection:
-
-    objects_with_ids = [
-        MyTardisObject(obj)
-        for obj in processed_introspection_response["objects_with_ids"]
-    ]
-    objects_with_profiles = [
-        MyTardisObject(obj)
-        for obj in processed_introspection_response["objects_with_profiles"]
-    ]
-
-    return MyTardisIntrospection(
-        old_acls=processed_introspection_response["old_acls"],
-        projects_enabled=processed_introspection_response["projects_enabled"],
-        identifiers_enabled=processed_introspection_response["identifiers_enabled"],
-        profiles_enabled=processed_introspection_response["profiles_enabled"],
-        objects_with_ids=objects_with_ids,
-        objects_with_profiles=objects_with_profiles,
     )
 
 

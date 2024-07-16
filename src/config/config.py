@@ -165,8 +165,7 @@ class ConfigFromEnv(BaseSettings):
     """Full MyTardis settings model.
 
     This class holds the configuration to access and run an ingestion on
-    MyTardis. It also provides access to the introspection API via the
-    mytardis_setup property.
+    MyTardis.
 
     Attributes:
         general : GeneralConfig
@@ -206,7 +205,6 @@ class ConfigFromEnv(BaseSettings):
     ## Example
     '''python
     settings = ConfigFromEnv()
-    setup = settings.mytardis_setup # <- only has value after first call
     '''
     """
 
