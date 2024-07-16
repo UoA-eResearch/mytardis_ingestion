@@ -99,7 +99,7 @@ class Overseer(metaclass=Singleton):
                 instance
             connection : ConnectionConfig
             Pydantic config class containing information about connecting to a MyTardis instance
-            mytardis_setup : IntrospectionConfig
+            mytardis_setup : MyTardisIntrospection
         """
         self.rest_factory = rest_factory
 
