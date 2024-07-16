@@ -11,6 +11,7 @@ import tests.fixtures.fixtures_constants as const
 import tests.fixtures.fixtures_data_classification_app as dclass
 import tests.fixtures.fixtures_dataclasses as dcls
 import tests.fixtures.fixtures_ingestion_classes as ingestion_classes
+import tests.fixtures.fixtures_mytardis_client as mt_client
 import tests.fixtures.fixtures_responses as rsps
 import tests.fixtures.mock_rest_factory as mock_rest
 from src.blueprints.common_models import GroupACL, UserACL
@@ -541,7 +542,7 @@ dataset_response_dict = rsps.dataset_response_dict
 experiment_response_dict = rsps.experiment_response_dict
 project_response_dict = rsps.project_response_dict
 instrument_response_dict = rsps.instrument_response_dict
-introspection_response_dict = rsps.introspection_response_dict
+introspection_response = rsps.introspection_response
 institution_response_dict = rsps.institution_response_dict
 storage_box_response_dict = rsps.storage_box_response_dict
 project_creation_response_dict = rsps.project_creation_response_dict
@@ -554,14 +555,12 @@ get_project_details = rsps.get_project_details
 #
 # =========================================
 
-processed_introspection_response = cfg.processed_introspection_response
 general = cfg.general
 auth = cfg.auth
 connection = cfg.connection
 active_store = cfg.active_store
 archive_store = cfg.archive_store
 default_schema = cfg.default_schema
-mytardis_setup = cfg.mytardis_setup
 mytardis_settings = cfg.mytardis_settings
 storage_box_name = cfg.storage_box_name
 storage_attributes = cfg.storage_attributes
@@ -596,3 +595,12 @@ factory = ingestion_classes.factory
 project_data_classification = dclass.project_data_classification
 experiment_data_classification = dclass.experiment_data_classification
 dataset_data_classification = dclass.dataset_data_classification
+
+
+# ========================================
+#
+# MyTardis client data fixtures
+#
+# =========================================
+
+mytardis_introspection = mt_client.mytardis_introspection

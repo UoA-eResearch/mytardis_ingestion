@@ -9,11 +9,11 @@ from typing import Any
 from pydantic import ValidationError
 from requests.exceptions import HTTPError
 
-from src.config.config import IntrospectionConfig
 from src.mytardis_client.data_types import URI
 from src.mytardis_client.endpoints import MyTardisEndpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject, get_type_info
+from src.mytardis_client.response_data import MyTardisIntrospection
 from src.utils.types.singleton import Singleton
 
 logger = logging.getLogger(__name__)
@@ -82,7 +82,7 @@ class Overseer(metaclass=Singleton):
         rest_factory: An instance of MyTardisRESTFactory providing access to the API
     """
 
-    _mytardis_setup: IntrospectionConfig | None = None
+    _mytardis_setup: MyTardisIntrospection | None = None
 
     def __init__(
         self,
@@ -99,14 +99,16 @@ class Overseer(metaclass=Singleton):
                 instance
             connection : ConnectionConfig
             Pydantic config class containing information about connecting to a MyTardis instance
-            mytardis_setup : IntrospectionConfig
+            mytardis_setup : MyTardisIntrospection
         """
         self.rest_factory = rest_factory
 
     @property
-    def mytardis_setup(self) -> IntrospectionConfig:
-        """Getter for mytardis_setup. Sends API request if self._mytardis_setup is None"""
-        return self._mytardis_setup or self.get_mytardis_setup()
+    def mytardis_setup(self) -> MyTardisIntrospection:
+        """Getter for mytardis_setup. Sends API request on first call and caches the result"""
+        if self._mytardis_setup is None:
+            self._mytardis_setup = self.fetch_mytardis_setup()
+        return self._mytardis_setup
 
     def check_identifiers_enabled_for_type(self, object_type: MyTardisObject) -> None:
         """Check if identifiers are enabled for the given object type.
@@ -258,7 +260,7 @@ class Overseer(metaclass=Singleton):
 
         return self.get_uris(object_type, {"identifier": identifier})
 
-    def get_mytardis_setup(self) -> IntrospectionConfig:
+    def fetch_mytardis_setup(self) -> MyTardisIntrospection:
         """Query introspection API
 
         Requests introspection info from MyTardis instance configured in connection
@@ -268,12 +270,6 @@ class Overseer(metaclass=Singleton):
 
         response_dict = response.json()
         if response_dict == {} or response_dict["objects"] == []:
-            logger.error(
-                (
-                    "MyTardis introspection did not return any data when called from "
-                    "ConfigFromEnv.get_mytardis_setup"
-                )
-            )
             raise ValueError(
                 (
                     "MyTardis introspection did not return any data when called from "
@@ -281,7 +277,7 @@ class Overseer(metaclass=Singleton):
                 )
             )
         if len(response_dict["objects"]) > 1:
-            logger.error(
+            raise ValueError(
                 (
                     """MyTardis introspection returned more than one object when called from
                     ConfigFromEnv.get_mytardis_setup\n
@@ -289,39 +285,9 @@ class Overseer(metaclass=Singleton):
                     response_dict,
                 )
             )
-            raise ValueError(
-                (
-                    "MyTardis introspection returned more than one object when called from "
-                    "ConfigFromEnv.get_mytardis_setup"
-                )
-            )
-        response_dict = response_dict["objects"][0]
 
-        identifiers_enabled: bool = response_dict["identifiers_enabled"]
-        objects_with_ids = [
-            MyTardisObject(obj) for obj in response_dict["identified_objects"]
-        ]
-        if not identifiers_enabled and len(objects_with_ids) > 0:
-            raise ValueError(
-                "Identifiers are disabled in MyTardis but it reports identifiable types"
-            )
-
-        profiles_enabled: bool = response_dict["profiles_enabled"]
-        objects_with_profiles = [
-            MyTardisObject(obj) for obj in response_dict["profiled_objects"]
-        ]
-        if not profiles_enabled and len(objects_with_profiles) > 0:
-            raise ValueError(
-                "Profiles are disabled in MyTardis but it reports profiled types"
-            )
-
-        mytardis_setup = IntrospectionConfig(
-            old_acls=response_dict["experiment_only_acls"],
-            projects_enabled=response_dict["projects_enabled"],
-            identifiers_enabled=identifiers_enabled,
-            profiles_enabled=profiles_enabled,
-            objects_with_ids=objects_with_ids,
-            objects_with_profiles=objects_with_profiles,
+        introspection = MyTardisIntrospection.model_validate(
+            response_dict["objects"][0]
         )
-        self._mytardis_setup = mytardis_setup
-        return mytardis_setup
+
+        return introspection

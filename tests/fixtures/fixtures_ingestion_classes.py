@@ -11,7 +11,6 @@ from src.config.config import (
     ConnectionConfig,
     FilesystemStorageBoxConfig,
     GeneralConfig,
-    IntrospectionConfig,
     SchemaConfig,
     StorageBoxConfig,
 )
@@ -20,6 +19,7 @@ from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
 from src.ingestion_factory import IngestionFactory
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
+from src.mytardis_client.response_data import MyTardisIntrospection
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 from tests.fixtures.mock_rest_factory import MockMtRest
@@ -41,10 +41,10 @@ def rest_factory(
 @fixture
 def overseer(
     rest_factory: MyTardisRESTFactory,
-    mytardis_setup: IntrospectionConfig,
+    mytardis_introspection: MyTardisIntrospection,
 ) -> Overseer:
     overseer = Overseer(rest_factory)
-    overseer._mytardis_setup = mytardis_setup  # pylint: disable=W0212
+    overseer._mytardis_setup = mytardis_introspection  # pylint: disable=W0212
     return overseer
 
 
