@@ -9,11 +9,11 @@ from typing import Any
 from pydantic import ValidationError
 from requests.exceptions import HTTPError
 
-from src.config.config import IntrospectionConfig
 from src.mytardis_client.data_types import URI
 from src.mytardis_client.endpoints import MyTardisEndpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject, get_type_info
+from src.mytardis_client.response_data import IntrospectionConfig
 from src.utils.types.singleton import Singleton
 
 logger = logging.getLogger(__name__)

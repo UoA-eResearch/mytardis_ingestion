@@ -11,12 +11,12 @@ from src.config.config import (
     ConfigFromEnv,
     ConnectionConfig,
     GeneralConfig,
-    IntrospectionConfig,
     ProxyConfig,
     SchemaConfig,
     StorageBoxConfig,
 )
 from src.mytardis_client.objects import MyTardisObject
+from src.mytardis_client.response_data import IntrospectionConfig
 
 
 @fixture
@@ -208,6 +208,7 @@ def default_schema(
     )
 
 
+# TODO: move from here
 @fixture
 def mytardis_setup(
     processed_introspection_response: dict[str, Any],

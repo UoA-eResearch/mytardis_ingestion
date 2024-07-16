@@ -11,7 +11,6 @@ from src.config.config import (
     ConnectionConfig,
     FilesystemStorageBoxConfig,
     GeneralConfig,
-    IntrospectionConfig,
     SchemaConfig,
     StorageBoxConfig,
 )
@@ -20,6 +19,7 @@ from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
 from src.ingestion_factory import IngestionFactory
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
+from src.mytardis_client.response_data import IntrospectionConfig
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 from tests.fixtures.mock_rest_factory import MockMtRest
