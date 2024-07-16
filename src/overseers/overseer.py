@@ -13,7 +13,7 @@ from src.mytardis_client.data_types import URI
 from src.mytardis_client.endpoints import MyTardisEndpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject, get_type_info
-from src.mytardis_client.response_data import IntrospectionConfig
+from src.mytardis_client.response_data import MyTardisIntrospection
 from src.utils.types.singleton import Singleton
 
 logger = logging.getLogger(__name__)
@@ -82,7 +82,7 @@ class Overseer(metaclass=Singleton):
         rest_factory: An instance of MyTardisRESTFactory providing access to the API
     """
 
-    _mytardis_setup: IntrospectionConfig | None = None
+    _mytardis_setup: MyTardisIntrospection | None = None
 
     def __init__(
         self,
@@ -104,7 +104,7 @@ class Overseer(metaclass=Singleton):
         self.rest_factory = rest_factory
 
     @property
-    def mytardis_setup(self) -> IntrospectionConfig:
+    def mytardis_setup(self) -> MyTardisIntrospection:
         """Getter for mytardis_setup. Sends API request if self._mytardis_setup is None"""
         return self._mytardis_setup or self.get_mytardis_setup()
 
@@ -258,7 +258,7 @@ class Overseer(metaclass=Singleton):
 
         return self.get_uris(object_type, {"identifier": identifier})
 
-    def get_mytardis_setup(self) -> IntrospectionConfig:
+    def get_mytardis_setup(self) -> MyTardisIntrospection:
         """Query introspection API
 
         Requests introspection info from MyTardis instance configured in connection
@@ -315,7 +315,7 @@ class Overseer(metaclass=Singleton):
                 "Profiles are disabled in MyTardis but it reports profiled types"
             )
 
-        mytardis_setup = IntrospectionConfig(
+        mytardis_setup = MyTardisIntrospection(
             old_acls=response_dict["experiment_only_acls"],
             projects_enabled=response_dict["projects_enabled"],
             identifiers_enabled=identifiers_enabled,

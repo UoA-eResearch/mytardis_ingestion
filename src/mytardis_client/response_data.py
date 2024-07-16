@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict
 from src.mytardis_client.objects import MyTardisObject
 
 
-class IntrospectionConfig(BaseModel):
+class MyTardisIntrospection(BaseModel):
     """MyTardis introspection data.
 
     NOTE: this class relies on data from the MyTardis introspection API and therefore

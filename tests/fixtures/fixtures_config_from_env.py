@@ -16,7 +16,7 @@ from src.config.config import (
     StorageBoxConfig,
 )
 from src.mytardis_client.objects import MyTardisObject
-from src.mytardis_client.response_data import IntrospectionConfig
+from src.mytardis_client.response_data import MyTardisIntrospection
 
 
 @fixture
@@ -212,7 +212,7 @@ def default_schema(
 @fixture
 def mytardis_setup(
     processed_introspection_response: dict[str, Any],
-) -> IntrospectionConfig:
+) -> MyTardisIntrospection:
 
     objects_with_ids = [
         MyTardisObject(obj)
@@ -223,7 +223,7 @@ def mytardis_setup(
         for obj in processed_introspection_response["objects_with_profiles"]
     ]
 
-    return IntrospectionConfig(
+    return MyTardisIntrospection(
         old_acls=processed_introspection_response["old_acls"],
         projects_enabled=processed_introspection_response["projects_enabled"],
         identifiers_enabled=processed_introspection_response["identifiers_enabled"],

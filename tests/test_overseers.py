@@ -18,7 +18,7 @@ from src.config.config import ConnectionConfig
 from src.mytardis_client.data_types import URI
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject
-from src.mytardis_client.response_data import IntrospectionConfig
+from src.mytardis_client.response_data import MyTardisIntrospection
 from src.overseers.overseer import Overseer
 
 logger = logging.getLogger(__name__)
@@ -367,7 +367,7 @@ def test_get_mytardis_setup(
     overseer_plain: Overseer,
     connection: ConnectionConfig,
     introspection_response_dict: dict[str, Any],
-    mytardis_setup: IntrospectionConfig,
+    mytardis_setup: MyTardisIntrospection,
 ) -> None:
     overseer_plain._mytardis_setup = None  # pylint: disable=protected-access
     assert overseer_plain._mytardis_setup is None  # pylint: disable=protected-access
