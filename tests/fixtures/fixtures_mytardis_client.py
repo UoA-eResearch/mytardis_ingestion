@@ -6,7 +6,8 @@ from typing import Any
 
 from pytest import fixture
 
-from src.mytardis_client.response_data import MyTardisIntrospection
+# from src.mytardis_client.response_data import MyTardisIntrospection
+from src.mytardis_client.mt_dataclasses import MyTardisIntrospection
 
 
 @fixture

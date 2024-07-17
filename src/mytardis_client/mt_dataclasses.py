@@ -263,7 +263,7 @@ class IngestedDataset(MyTardisResource):
 class IngestedDatafile(MyTardisResource):
     """Metadata associated with a datafile that has been ingested into MyTardis."""
 
-    created_time: ISODateTime
+    created_time: Optional[ISODateTime]
     # "datafile": null,
     dataset: URI
     deleted: bool
@@ -273,7 +273,7 @@ class IngestedDatafile(MyTardisResource):
     identifiers: Optional[list[str]]
     md5sum: MD5Sum
     mimetype: str
-    modification_time: ISODateTime
+    modification_time: Optional[ISODateTime]
     # "parameter_sets": []
     public_access: bool
     replicas: list[Replica]

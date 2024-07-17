@@ -460,7 +460,7 @@ def test_get_mytardis_setup_too_many_objects(
         status=200,
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(RuntimeError):
         _ = overseer.fetch_mytardis_setup()
 
     Overseer.clear()

@@ -17,7 +17,8 @@ from src.mytardis_client.endpoints.endpoints import URI, MyTardisEndpoint
 from src.mytardis_client.mt_dataclasses import MyTardisIntrospection
 from src.mytardis_client.mt_rest import Ingested, MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject, get_type_info
-from src.mytardis_client.response_data import MyTardisIntrospection
+
+# from src.mytardis_client.response_data import MyTardisIntrospection
 from src.utils.types.singleton import Singleton
 
 logger = logging.getLogger(__name__)
