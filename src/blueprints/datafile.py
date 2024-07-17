@@ -43,10 +43,7 @@ class BaseDatafile(BaseModel, ABC):
             the MIME type of the file to be ingested
         size: int
             the size in bytes of the file to be ingested
-        archive_date: ISODateTime
-            the date that the datafile will be automatically archived
-        delete_date: ISODateTime
-            the date that the datafile is able to be deleted"""
+    """
 
     filename: str = Field(min_length=1)
     directory: Optional[Path] = None

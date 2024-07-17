@@ -19,6 +19,7 @@ from pydantic import (
 )
 from typing_extensions import Self
 
+from src.mytardis_client.common_types import ISODateTime
 from src.mytardis_client.endpoints.endpoints import URI
 from src.mytardis_client.enumerators import DataClassification
 from src.mytardis_client.objects import MyTardisObject
@@ -77,9 +78,9 @@ class Group(MyTardisResource):
 class Facility(MyTardisResource):
     """Metadata associated with a facility in MyTardis."""
 
-    created_time: str  # "2023-09-26T16:42:42",
+    created_time: ISODateTime  # "2023-09-26T16:42:42",
     manager_group: Group
-    modified_time: str  # "2023-09-26T16:42:56.677652",
+    modified_time: ISODateTime  # "2023-09-26T16:42:56.677652",
     name: str
 
 
@@ -94,9 +95,9 @@ class Institution(MyTardisResource):
 class Instrument(MyTardisResource):
     """Metadata associated with an instrument in MyTardis."""
 
-    created_time: str  # "2023-09-26T16:42:32",
+    created_time: ISODateTime  # "2023-09-26T16:42:32",
     facility: Facility
-    modified_time: str  # "2023-09-26T16:42:58.701466",
+    modified_time: ISODateTime  # "2023-09-26T16:42:58.701466",
     name: str
 
 
@@ -159,9 +160,9 @@ class MyTardisIntrospection(MyTardisResource):
 class Replica(MyTardisResource):
     """Metadata associated with a Datafile replica in MyTardis."""
 
-    created_time: str  # "2024-04-09T11:41:29.405520",
+    created_time: ISODateTime  # "2024-04-09T11:41:29.405520",
     datafile: URI
-    last_verified_time: str  # "2024-04-09T11:41:35.576550",
+    last_verified_time: ISODateTime  # "2024-04-09T11:41:35.576550",
     location: str  # "unix_fs",
     uri: str  # "ds-544/20221113_haruna_rwm_cd34/20221113_slide3-1_humanRWM_cd34_x5_0.62umpix_03.czi",
     verified: bool
@@ -247,14 +248,14 @@ class IngestedDataset(MyTardisResource):
     """Metadata associated with a dataset that has been ingested into MyTardis."""
 
     classification: DataClassification
-    created_time: str  # TODO: make it a datetime
+    created_time: ISODateTime  # TODO: make it a datetime
     description: str
     directory: str  # TODO: make it a Path?
     experiments: list[URI]
     identifiers: list[str]
     immutable: bool
     instrument: Instrument
-    modified_time: str  # "2024-07-01T12:39:07.411025",
+    modified_time: ISODateTime  # "2024-07-01T12:39:07.411025",
     # parameter_sets: list[Any]
     public_access: bool
 
@@ -262,17 +263,17 @@ class IngestedDataset(MyTardisResource):
 class IngestedDatafile(MyTardisResource):
     """Metadata associated with a datafile that has been ingested into MyTardis."""
 
-    created_time: str
+    created_time: ISODateTime
     # "datafile": null,
     dataset: URI
     deleted: bool
-    deleted_time: str
+    deleted_time: Optional[ISODateTime]
     directory: str  # TODO: make it a Path?
     filename: str
     identifiers: Optional[list[str]]
     md5sum: MD5Sum
     mimetype: str
-    modification_time: str
+    modification_time: ISODateTime
     # "parameter_sets": []
     public_access: bool
     replicas: list[Replica]

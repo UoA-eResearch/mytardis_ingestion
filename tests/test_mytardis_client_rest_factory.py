@@ -14,9 +14,9 @@ from mock import MagicMock
 from requests import HTTPError, Request, RequestException, Response
 from responses import matchers
 
-from src.blueprints.datafile import Datafile
 from src.config.config import AuthConfig, ConnectionConfig
 from src.mytardis_client.endpoints.endpoints import URI
+from src.mytardis_client.mt_dataclasses import IngestedDatafile
 from src.mytardis_client.mt_rest import (
     GetRequestMetaParams,
     GetResponseMeta,
@@ -98,12 +98,13 @@ def test_mytardis_client_rest_get_single(
         json=datafile_get_response_single,
     )
 
-    datafiles, meta = mt_client.get("/dataset_file", object_type=Datafile)
+    datafiles, meta = mt_client.get("/dataset_file")
 
     assert isinstance(datafiles, list)
     assert len(datafiles) == 1
+    assert isinstance(datafiles[0], IngestedDatafile)
     assert datafiles[0].resource_uri == URI("/api/v1/dataset_file/0/")
-    assert datafiles[0].obj.filename == "test_filename.txt"
+    assert datafiles[0].filename == "test_filename.txt"
 
     assert isinstance(meta, GetResponseMeta)
     assert meta.total_count == 1
@@ -126,13 +127,12 @@ def test_mytardis_client_rest_get_multi(
 
     datafiles, meta = mt_client.get(
         "/dataset_file",
-        object_type=Datafile,
         meta_params=GetRequestMetaParams(offset=2, limit=3),
     )
 
     assert isinstance(datafiles, list)
     assert len(datafiles) == 30
-    assert (isinstance(df, Datafile) for df in datafiles)
+    assert (isinstance(df, IngestedDatafile) for df in datafiles)
 
     assert datafiles[0].resource_uri == URI("/api/v1/dataset_file/0/")
     assert datafiles[1].resource_uri == URI("/api/v1/dataset_file/1/")
@@ -172,13 +172,12 @@ def test_mytardis_client_rest_get_all(
 
     datafiles, total_count = mt_client.get_all(
         "/dataset_file",
-        object_type=Datafile,
         batch_size=20,
     )
 
     assert isinstance(datafiles, list)
     assert len(datafiles) == 30
-    assert (isinstance(df, Datafile) for df in datafiles)
+    assert (isinstance(df, IngestedDatafile) for df in datafiles)
 
     for i in range(30):
         assert datafiles[i].resource_uri == URI(f"/api/v1/dataset_file/{i}/")
@@ -296,7 +295,6 @@ def test_mytardis_client_get_params_are_sanitized(
 
     _ = mt_client.get(
         "/dataset_file",
-        object_type=Datafile,
         query_params={"dataset": URI("/api/v1/dataset/0/")},
         meta_params=GetRequestMetaParams(limit=1, offset=0),
     )

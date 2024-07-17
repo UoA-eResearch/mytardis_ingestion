@@ -9,7 +9,8 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
-from src.blueprints.custom_data_types import ISODateTime, MTUrl
+from src.blueprints.custom_data_types import MTUrl
+from src.mytardis_client.common_types import ISODateTime
 from src.mytardis_client.endpoints.endpoints import URI
 from src.mytardis_client.enumerators import DataClassification, DataStatus
 

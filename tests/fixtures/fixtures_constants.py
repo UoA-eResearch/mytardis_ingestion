@@ -8,8 +8,9 @@ from pytest import fixture
 from pytz import BaseTzInfo
 
 from src.blueprints.common_models import GroupACL, Parameter, UserACL
-from src.blueprints.custom_data_types import ISODateTime, Username
+from src.blueprints.custom_data_types import Username
 from src.blueprints.storage_boxes import StorageTypesEnum
+from src.mytardis_client.common_types import ISODateTime
 from src.mytardis_client.endpoints.endpoints import URI
 
 
