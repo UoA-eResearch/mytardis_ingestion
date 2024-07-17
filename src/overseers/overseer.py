@@ -330,9 +330,7 @@ class Overseer(metaclass=Singleton):
         Requests introspection info from MyTardis instance configured in connection
         """
 
-        objects, _ = self.rest_factory.get(
-            "/introspection", object_type=MyTardisIntrospection
-        )
+        objects, _ = self.rest_factory.get("/introspection")
 
         if len(objects) == 0:
             raise RuntimeError("Failed to retrieve MyTardis introspection/config info")
@@ -340,6 +338,11 @@ class Overseer(metaclass=Singleton):
         if len(objects) > 1:
             raise RuntimeError(
                 "Multiple MyTardis introspection/config info objects returned"
+            )
+
+        if not isinstance(objects[0], MyTardisIntrospection):
+            raise TypeError(
+                "Unexpected type returned from MyTardis introspection endpoint"
             )
 
         return objects[0]
