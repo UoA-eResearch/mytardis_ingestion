@@ -43,6 +43,7 @@ from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
+from src.cli.cmd_clean import clean
 
 # from src.cli.cmd_clean import clean
 from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
@@ -200,4 +201,4 @@ if __name__ == "__main__":
 
     script = IDSIngestionScript(args.yaml_pth, args.storage_dir, args.storage_name)
     script.run_ingestion()
-    # clean(Path(args.yaml_pth), "idw", args.storage_dir, ask_first=False, min_file_age=0)
+    clean(Path(args.yaml_pth), "idw", args.storage_dir, ask_first=False, min_file_age=0)
