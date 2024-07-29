@@ -3166,17 +3166,17 @@ files = [
 
 [[package]]
 name = "sphinx"
-version = "7.4.6"
+version = "8.0.0"
 description = "Python documentation generator"
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 files = [
-    {file = "sphinx-7.4.6-py3-none-any.whl", hash = "sha256:915760d6188288a1e30c2cd0d9fa31b1b009bc6e6019cc0c32d16c77d20e86d9"},
-    {file = "sphinx-7.4.6.tar.gz", hash = "sha256:116918d455c493fff3178edea12b4fe1c1e4894680fd81e7b7431ea21d47ca52"},
+    {file = "sphinx-8.0.0-py3-none-any.whl", hash = "sha256:24e82f79de739d6a82785721d97eb9849641ebb5abd52a0fe31577d041c9723e"},
+    {file = "sphinx-8.0.0.tar.gz", hash = "sha256:22551dc8fda6038a422bf1de59d91b31837b66afe45a3f30b2d8cc5aa9337343"},
 ]
 
 [package.dependencies]
-alabaster = ">=0.7.14,<0.8.0"
+alabaster = ">=0.7.14"
 babel = ">=2.13"
 colorama = {version = ">=0.4.6", markers = "sys_platform == \"win32\""}
 docutils = ">=0.20,<0.22"
@@ -3196,7 +3196,7 @@ tomli = {version = ">=2", markers = "python_version < \"3.11\""}
 
 [package.extras]
 docs = ["sphinxcontrib-websupport"]
-lint = ["flake8 (>=6.0)", "importlib-metadata (>=6.0)", "mypy (==1.10.1)", "pytest (>=6.0)", "ruff (==0.5.2)", "sphinx-lint (>=0.9)", "tomli (>=2)", "types-docutils (==0.21.0.20240711)", "types-requests (>=2.30.0)"]
+lint = ["flake8 (>=6.0)", "mypy (==1.11.0)", "pytest (>=6.0)", "ruff (==0.5.5)", "sphinx-lint (>=0.9)", "tomli (>=2)", "types-Pillow (==10.2.0.20240520)", "types-Pygments (==2.18.0.20240506)", "types-colorama (==0.4.15.20240311)", "types-defusedxml (==0.7.0.20240218)", "types-docutils (==0.21.0.20240724)", "types-requests (>=2.30.0)"]
 test = ["cython (>=3.0)", "defusedxml (>=0.7.1)", "pytest (>=8.0)", "setuptools (>=70.0)", "typing_extensions (>=4.9)"]
 
 [[package]]
@@ -3705,4 +3705,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "818ed73eb61f148c83af689e208c8d8b80cf573f2debff35a962117ab35680c2"
+content-hash = "4d302338611624e002b895bf86056634ddfeb6a3b42de9504c318bacccc0bb80"
