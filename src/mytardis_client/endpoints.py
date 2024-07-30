@@ -25,6 +25,7 @@ MyTardisEndpoint = Literal[
     "/project",
     "/projectparameter",
     "/projectparameterset",
+    "/replica",
     "/schema",
     "/storagebox",
     "/user",
@@ -38,8 +39,7 @@ def list_mytardis_endpoints() -> list[str]:
     return _MYTARDIS_ENDPOINTS
 
 
-# TODO: remove dataset_file from pattern
-uri_regex = re.compile(r"^/api/v1/([a-z]{1,}|dataset_file)/[0-9]{1,}/$")
+uri_regex = re.compile(r"^/api/v1/([a-z_]{1,})/[0-9]{1,}/$")
 
 
 def validate_uri(value: Any) -> str:
