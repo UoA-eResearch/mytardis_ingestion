@@ -1,7 +1,12 @@
-# pylint: disable=missing-class-docstring,fixme
-"""Useful enunmerators for ingestion"""
+"""Definitions of fundamental data types used when interacting with MyTardis.
+
+Note that the specifications of the MyTardis objects are not included here; see
+objects.py for that."""
 
 from enum import Enum
+from typing import Literal
+
+HttpRequestMethod = Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
 
 
 class DataClassification(Enum):

@@ -2,8 +2,11 @@
 # nosec assert_used
 import pytest
 
-from src.mytardis_client.endpoints import URI, resource_uri_to_id
-from src.mytardis_client.objects import KNOWN_MYTARDIS_OBJECTS
+from src.mytardis_client.endpoints import (
+    URI,
+    list_mytardis_endpoints,
+    resource_uri_to_id,
+)
 
 
 def test_function_resource_uri_to_id() -> None:
@@ -19,7 +22,7 @@ def test_function_resource_uri_to_id() -> None:
 
 
 VALID_URIS = [
-    (f"/api/v1/{obj}/{id}/", id) for id, obj in enumerate(KNOWN_MYTARDIS_OBJECTS)
+    (f"/api/v1/{obj}/{id}/", id) for id, obj in enumerate(list_mytardis_endpoints())
 ]
 
 

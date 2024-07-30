@@ -10,8 +10,8 @@ from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import ISODateTime, MTUrl
+from src.mytardis_client.common_types import DataClassification, DataStatus
 from src.mytardis_client.endpoints import URI
-from src.mytardis_client.enumerators import DataClassification, DataStatus
 
 
 class BaseDataset(BaseModel, ABC):
