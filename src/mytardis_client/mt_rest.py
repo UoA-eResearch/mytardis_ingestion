@@ -16,7 +16,7 @@ from requests import Response
 from requests.exceptions import RequestException
 
 from src.config.config import AuthConfig, ConnectionConfig
-from src.mytardis_client.data_types import HttpRequestMethod
+from src.mytardis_client.common_types import HttpRequestMethod
 from src.mytardis_client.endpoints import URI, MyTardisEndpoint
 
 # Defines the valid values for the MyTardis API version
