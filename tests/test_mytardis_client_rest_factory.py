@@ -16,7 +16,7 @@ from responses import matchers
 
 from src.blueprints.datafile import Datafile
 from src.config.config import AuthConfig, ConnectionConfig
-from src.mytardis_client.data_types import URI
+from src.mytardis_client.endpoints import URI
 from src.mytardis_client.mt_rest import (
     GetRequestMetaParams,
     GetResponseMeta,

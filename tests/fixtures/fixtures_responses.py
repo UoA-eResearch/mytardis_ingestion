@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 from pytest import fixture
 
 from src.blueprints.project import Project
-from src.mytardis_client.data_types import URI
+from src.mytardis_client.endpoints import URI
 
 
 def generate_get_response_meta(**kwargs: Any) -> dict[str, Any]:

@@ -10,7 +10,7 @@ from pytz import BaseTzInfo
 from src.blueprints.common_models import GroupACL, Parameter, UserACL
 from src.blueprints.custom_data_types import ISODateTime, Username
 from src.blueprints.storage_boxes import StorageTypesEnum
-from src.mytardis_client.data_types import URI
+from src.mytardis_client.endpoints import URI
 
 
 @fixture
