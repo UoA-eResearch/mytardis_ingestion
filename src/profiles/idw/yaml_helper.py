@@ -24,7 +24,7 @@ from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
 from src.blueprints.common_models import GroupACL, UserACL
 from src.blueprints.custom_data_types import Username
 from src.miners.utils import datafile_metadata_helpers
-from src.mytardis_client.enumerators import DataClassification, DataStatus
+from src.mytardis_client.common_types import DataClassification, DataStatus
 
 # Constants
 logger = logging.getLogger(__name__)

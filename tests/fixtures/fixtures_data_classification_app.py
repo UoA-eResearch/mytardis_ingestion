@@ -4,7 +4,7 @@
 
 from pytest import fixture
 
-from src.mytardis_client.enumerators import DataClassification
+from src.mytardis_client.common_types import DataClassification
 
 
 @fixture
