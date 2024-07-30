@@ -22,7 +22,8 @@ def test_function_resource_uri_to_id() -> None:
 
 
 VALID_URIS = [
-    (f"/api/v1/{obj}/{id}/", id) for id, obj in enumerate(list_mytardis_endpoints())
+    (f"/api/v1{endpoint}/{id}/", id)
+    for id, endpoint in enumerate(list_mytardis_endpoints())
 ]
 
 
