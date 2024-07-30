@@ -1,32 +1,44 @@
-"""Definition of MyTardis API endpoints, and related types."""
+"""Information about MyTardis endpoints"""
 
 import re
-from typing import Any, Literal
+from typing import Any, Literal, get_args
 from urllib.parse import urlparse
 
 from pydantic import RootModel, field_serializer, field_validator
 
-from src.mytardis_client.objects import KNOWN_MYTARDIS_OBJECTS
-
 MyTardisEndpoint = Literal[
+    "/datafileparameter",
+    "/datafileparameterset",
     "/dataset",
+    "/datasetparameter",
     "/datasetparameterset",
     "/dataset_file",
     "/experiment",
+    "/experimentparameter",
     "/experimentparameterset",
     "/facility",
     "/group",
     "/institution",
     "/instrument",
     "/introspection",
+    "/parametername",
     "/project",
+    "/projectparameter",
     "/projectparameterset",
     "/schema",
     "/storagebox",
     "/user",
 ]
 
+_MYTARDIS_ENDPOINTS = list(get_args(MyTardisEndpoint))
 
+
+def list_mytardis_endpoints() -> list[str]:
+    """List the names of all MyTardis endpoints"""
+    return _MYTARDIS_ENDPOINTS
+
+
+# TODO: remove dataset_file from pattern
 uri_regex = re.compile(r"^/api/v1/([a-z]{1,}|dataset_file)/[0-9]{1,}/$")
 
 
@@ -34,14 +46,16 @@ def validate_uri(value: Any) -> str:
     """Validator for a URI string to ensure that it matches the expected form of a URI"""
     if not isinstance(value, str):
         raise TypeError(f'Unexpected type for URI: "{type(value)}"')
-    object_type = uri_regex.search(value.lower())
-    if not object_type:
+    endpoint = uri_regex.search(value.lower())
+    if not endpoint:
         raise ValueError(
             f'Passed string value "{value}" is not a well formatted MyTardis URI'
         )
-    object_type_str = object_type.group(1)
-    if object_type_str.lower() not in KNOWN_MYTARDIS_OBJECTS:
-        raise ValueError(f'Unknown object type: "{object_type_str}"')
+    endpoint_str = endpoint.group(1)
+
+    candidate_endpoint = f"/{endpoint_str.lower()}"
+    if candidate_endpoint not in _MYTARDIS_ENDPOINTS:
+        raise ValueError(f'Unknown endpoint: "{endpoint_str}"')
     return value
 
 
@@ -62,7 +76,10 @@ def resource_uri_to_id(uri: str) -> int:
 
 
 class URI(RootModel[str], frozen=True):
-    """A MyTardis URI string, with validation and serialization logic."""
+    """A URI string identifying a MyTardis object.
+
+    Expected to be of the form: /api/v1/<endpoint>/<id>/
+    """
 
     root: str
 
