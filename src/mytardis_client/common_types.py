@@ -6,9 +6,9 @@ objects.py for that."""
 from enum import Enum
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator
+from pydantic import AfterValidator, PlainSerializer, WithJsonSchema
 
-from src.utils.validate import validate_md5sum
+from src.utils.validate import validate_isodatetime, validate_md5sum, validate_url
 
 # The HTTP methods supported by MyTardis. Can be used to constrain the request interfaces
 # to ensure that only methods that are supported by MyTardis are used.
@@ -44,4 +44,18 @@ class DataStatus(Enum):
 MD5Sum = Annotated[
     str,
     AfterValidator(validate_md5sum),
+]
+
+ISODateTime = Annotated[
+    str,
+    AfterValidator(validate_isodatetime),
+    PlainSerializer(lambda x: str(x), return_type=str),
+    WithJsonSchema({"type": "string"}, mode="serialization"),
+]
+
+MTUrl = Annotated[
+    str,
+    AfterValidator(validate_url),
+    PlainSerializer(lambda x: str(x), return_type=str),
+    WithJsonSchema({"type": "string"}, mode="serialization"),
 ]

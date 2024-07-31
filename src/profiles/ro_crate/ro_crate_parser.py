@@ -17,7 +17,6 @@ from rocrate.rocrate import ROCrate
 from rocrate.utils import as_list, get_norm_value
 
 from src.blueprints.common_models import GroupACL, UserACL
-from src.blueprints.custom_data_types import validate_isodatetime, validate_url
 from src.blueprints.datafile import RawDatafile  # pylint: disable=duplicate-code
 from src.blueprints.dataset import RawDataset  # pylint: disable=duplicate-code
 from src.blueprints.experiment import RawExperiment  # pylint: disable=duplicate-code
@@ -38,6 +37,7 @@ from src.profiles.ro_crate.crate_to_tardis_mapper import CrateToTardisMapper
 from src.utils.filesystem import checksums, filters
 from src.utils.filesystem.filesystem_nodes import DirectoryNode
 from src.utils.filesystem.filters import PathFilterSet
+from src.utils.validate import validate_isodatetime, validate_url
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # set the level for which this logger will be printed.

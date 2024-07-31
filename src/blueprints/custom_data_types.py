@@ -9,8 +9,6 @@ from typing import Annotated, Any
 
 from pydantic import AfterValidator, PlainSerializer, WithJsonSchema
 
-from src.utils.validate import validate_isodatetime, validate_url
-
 user_regex = re.compile(
     r"^[a-z]{2,4}[0-9]{3}$"  # Define as a constant in case of future change
 )
@@ -33,20 +31,6 @@ def validate_username(value: Any) -> str:
 Username = Annotated[
     str,
     AfterValidator(validate_username),
-    PlainSerializer(lambda x: str(x), return_type=str),
-    WithJsonSchema({"type": "string"}, mode="serialization"),
-]
-
-ISODateTime = Annotated[
-    str,
-    AfterValidator(validate_isodatetime),
-    PlainSerializer(lambda x: str(x), return_type=str),
-    WithJsonSchema({"type": "string"}, mode="serialization"),
-]
-
-MTUrl = Annotated[
-    str,
-    AfterValidator(validate_url),
     PlainSerializer(lambda x: str(x), return_type=str),
     WithJsonSchema({"type": "string"}, mode="serialization"),
 ]
