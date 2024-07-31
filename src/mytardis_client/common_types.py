@@ -8,6 +8,8 @@ from typing import Literal
 
 from pydantic import RootModel, field_serializer, field_validator
 
+from src.utils.validators import is_hex
+
 # The HTTP methods supported by MyTardis. Can be used to constrain the request interfaces
 # to ensure that only methods that are supported by MyTardis are used.
 HttpRequestMethod = Literal["GET", "POST"]
@@ -37,16 +39,6 @@ class DataStatus(Enum):
     READY_FOR_INGESTION = 1
     INGESTED = 5
     FAILED = 10
-
-
-def is_hex(value: str) -> bool:
-    """Check if a string is a valid hexadecimal string."""
-    try:
-        _ = int(value, 16)
-    except ValueError:
-        return False
-
-    return True
 
 
 class MD5Sum(RootModel[str], frozen=True):
