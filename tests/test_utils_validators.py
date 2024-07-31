@@ -9,7 +9,7 @@ from datetime import datetime
 import pytest
 from dateutil import tz
 
-from src.utils.validate import is_hex, validate_isodatetime
+from src.utils.validate import is_hex, validate_isodatetime, validate_md5sum
 
 NZT = tz.gettz("Pacific/Auckland")
 
@@ -48,6 +48,48 @@ def test_is_hex_invalid_hex() -> None:
     assert not is_hex("0x0g")
     assert not is_hex("0X0g")
     assert not is_hex("abcdefABCDEF0123456789g")
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "0123456789abcdef0123456789abcdef",
+        "0123456789ABCDEF0123456789ABCDEF",
+        "ffffffffffffffffffffffffffffffff",
+        "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "00000000000000000000000000000000",
+    ],
+)
+def test_md5sum_valid(value: str) -> None:
+    """Test that a valid MD5Sum is accepted and serialized correctly."""
+
+    assert validate_md5sum(value) == value
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "0123456789abcdef0123456789abcdefa",
+        "0123456789ABCDEF0123456789ABCDEFA",
+        "fffffffffffffffffffffffffffffff",
+        "fffffffffffffffffffffffffffffffff",
+        "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+        "AAAAA",
+        "00000",
+        "A",
+        "F",
+        "0",
+        "&*%^%$%^$%&*&^()",
+        "banana",
+    ],
+)
+def test_md5sum_invalid(value: str) -> None:
+    """Test that an invalid MD5Sum is rejected."""
+
+    with pytest.raises(ValueError):
+        _ = validate_md5sum(value)
 
 
 @pytest.mark.parametrize(

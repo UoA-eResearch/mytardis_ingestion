@@ -16,6 +16,16 @@ def is_hex(value: str) -> bool:
     return True
 
 
+def validate_md5sum(value: str) -> str:
+    """Check that the input string is a well-formed MD5Sum."""
+    if len(value) != 32:
+        raise ValueError("MD5Sum must contain exactly 32 characters")
+    if not is_hex(value):
+        raise ValueError("MD5Sum must be a valid hexadecimal string")
+
+    return value
+
+
 def validate_isodatetime(value: Any) -> str:
     """Custom validator to ensure that the value is a string object and that it matches
     the regex defined for an ISO 8601 formatted datetime string"""
