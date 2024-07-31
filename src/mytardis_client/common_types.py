@@ -4,11 +4,11 @@ Note that the specifications of the MyTardis objects are not included here; see
 objects.py for that."""
 
 from enum import Enum
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import RootModel, field_serializer, field_validator
+from pydantic import AfterValidator
 
-from src.utils.validate import is_hex
+from src.utils.validate import validate_md5sum
 
 # The HTTP methods supported by MyTardis. Can be used to constrain the request interfaces
 # to ensure that only methods that are supported by MyTardis are used.
@@ -41,27 +41,7 @@ class DataStatus(Enum):
     FAILED = 10
 
 
-class MD5Sum(RootModel[str], frozen=True):
-    """A string representing an MD5Sum, validated to have the correct format."""
-
-    root: str
-
-    def __str__(self) -> str:
-        return self.root
-
-    @field_validator("root", mode="after")
-    @classmethod
-    def validate_format(cls, value: str) -> str:
-        """Check that the URI is well-formed"""
-        if len(value) != 32:
-            raise ValueError("MD5Sum must contain exactly 32 characters")
-        if not is_hex(value):
-            raise ValueError("MD5Sum must be a valid hexadecimal string")
-
-        return value
-
-    @field_serializer("root")
-    def serialize(self, md5sum: str) -> str:
-        """Serialize the MD5Sum as a simple string"""
-
-        return md5sum
+MD5Sum = Annotated[
+    str,
+    AfterValidator(validate_md5sum),
+]
