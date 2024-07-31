@@ -1,6 +1,17 @@
 """Tests for the validators module."""
 
-from src.utils.validators import is_hex
+# pylint: disable=missing-function-docstring
+# nosec assert_used
+# flake8: noqa S101
+
+from datetime import datetime
+
+import pytest
+from dateutil import tz
+
+from src.utils.validators import is_hex, validate_isodatetime
+
+NZT = tz.gettz("Pacific/Auckland")
 
 
 def test_is_hex_valid_hex() -> None:
@@ -37,3 +48,25 @@ def test_is_hex_invalid_hex() -> None:
     assert not is_hex("0x0g")
     assert not is_hex("0X0g")
     assert not is_hex("abcdefABCDEF0123456789g")
+
+
+@pytest.mark.parametrize(
+    "valid_iso_dt",
+    [
+        "2022-01-01T12:00:00",
+        "2022-01-01T12:00:00+12:00",
+        "2022-01-01T12:00:00.0+12:00",
+        "2022-01-01T12:00:00.00+12:00",
+        "2022-01-01T12:00:00.000+12:00",
+        "2022-01-01T12:00:00.0000+12:00",
+        "2022-01-01T12:00:00.00000+12:00",
+        "2022-01-01T12:00:00.000000+12:00",
+        datetime(2022, 1, 1, 12, 00, 00, 000000).isoformat(),
+        datetime(2022, 1, 1, tzinfo=NZT).isoformat(),
+        datetime(2022, 1, 1, 12, 00, 00, tzinfo=NZT).isoformat(),
+    ],
+)
+def test_good_ISO_DateTime_string(  # pylint: disable=invalid-name
+    valid_iso_dt: str,
+) -> None:
+    assert validate_isodatetime(valid_iso_dt) == valid_iso_dt
