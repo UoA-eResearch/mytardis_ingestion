@@ -265,28 +265,20 @@ class Overseer(metaclass=Singleton):
         Requests introspection info from MyTardis instance configured in connection
         """
 
-        response = self.rest_factory.request("GET", "/introspection")
+        objects, _ = self.rest_factory.get("/introspection")
 
-        response_dict = response.json()
-        if response_dict == {} or response_dict["objects"] == []:
+        if len(objects) != 1:
             raise ValueError(
                 (
-                    "MyTardis introspection did not return any data when called from "
-                    "ConfigFromEnv.get_mytardis_setup"
-                )
-            )
-        if len(response_dict["objects"]) > 1:
-            raise ValueError(
-                (
-                    """MyTardis introspection returned more than one object when called from
-                    ConfigFromEnv.get_mytardis_setup\n
-                    Returned response was: %s""",
-                    response_dict,
+                    f"Expected a single object from introspection endpoint, but got {len(objects)}."
+                    "MyTardis may be misconfigured. Objects returned: {objects}"
                 )
             )
 
-        introspection = MyTardisIntrospection.model_validate(
-            response_dict["objects"][0]
-        )
+        introspection = objects[0]
+        # Note: can we avoid the need for this check? Should be clear from the
+        # endpoint literal which data type we expect.
+        if not isinstance(introspection, MyTardisIntrospection):
+            raise TypeError("Introspection data is not of the expected type")
 
         return introspection
