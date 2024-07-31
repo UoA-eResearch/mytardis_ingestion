@@ -9,7 +9,7 @@ from datetime import datetime
 import pytest
 from dateutil import tz
 
-from src.utils.validators import is_hex, validate_isodatetime
+from src.utils.validate import is_hex, validate_isodatetime
 
 NZT = tz.gettz("Pacific/Auckland")
 

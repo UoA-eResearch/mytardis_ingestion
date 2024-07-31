@@ -8,7 +8,7 @@ from typing import Literal
 
 from pydantic import RootModel, field_serializer, field_validator
 
-from src.utils.validators import is_hex
+from src.utils.validate import is_hex
 
 # The HTTP methods supported by MyTardis. Can be used to constrain the request interfaces
 # to ensure that only methods that are supported by MyTardis are used.

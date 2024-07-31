@@ -9,7 +9,7 @@ from typing import Annotated, Any
 
 from pydantic import AfterValidator, PlainSerializer, WithJsonSchema
 
-from src.utils.validators import validate_isodatetime, validate_url
+from src.utils.validate import validate_isodatetime, validate_url
 
 user_regex = re.compile(
     r"^[a-z]{2,4}[0-9]{3}$"  # Define as a constant in case of future change
