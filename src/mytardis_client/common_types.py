@@ -6,7 +6,7 @@ objects.py for that."""
 from enum import Enum
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, PlainSerializer, WithJsonSchema
+from pydantic import AfterValidator
 
 from src.utils.validate import validate_isodatetime, validate_md5sum, validate_url
 
@@ -49,13 +49,9 @@ MD5Sum = Annotated[
 ISODateTime = Annotated[
     str,
     AfterValidator(validate_isodatetime),
-    PlainSerializer(lambda x: str(x), return_type=str),
-    WithJsonSchema({"type": "string"}, mode="serialization"),
 ]
 
 MTUrl = Annotated[
     str,
     AfterValidator(validate_url),
-    PlainSerializer(lambda x: str(x), return_type=str),
-    WithJsonSchema({"type": "string"}, mode="serialization"),
 ]
