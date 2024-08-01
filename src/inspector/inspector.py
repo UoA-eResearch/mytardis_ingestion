@@ -3,15 +3,20 @@
 """
 
 import logging
-from typing import Any, Optional
+from typing import Optional
 
 from src.blueprints.datafile import RawDatafile
 from src.config.config import ConfigFromEnv
 from src.crucible.crucible import Crucible
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject
+from src.mytardis_client.response_data import IngestedDatafile
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
+from src.utils.types.type_helpers import is_list_of
+
+# from typeguard import check_type
+
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +33,11 @@ class Inspector:
             default_schema=config.default_schema,
         )
         crucible = Crucible(overseer)
-        self._overseer = overseer
+        self._overseer: Overseer = overseer
         self._smelter = smelter
         self._crucible = crucible
 
-    def query_datafile(self, raw_df: RawDatafile) -> Optional[list[dict[str, Any]]]:
+    def query_datafile(self, raw_df: RawDatafile) -> Optional[list[IngestedDatafile]]:
         """Partially ingests raw datafile and queries MyTardis for matching instances.
 
         Args:
@@ -50,6 +55,13 @@ class Inspector:
             return None
 
         # Look up the datafile in MyTardis to check if it's ingested.
-        return self._overseer.get_matching_objects(
+        matches = self._overseer.get_matching_objects(
             MyTardisObject.DATAFILE, df.model_dump()
         )
+
+        # check_type(matches, list[IngestedDatafile])
+
+        if not is_list_of(matches, IngestedDatafile):
+            raise TypeError("Expected list of IngestedDatafile objects from MyTardis.")
+
+        return matches

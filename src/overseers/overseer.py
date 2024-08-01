@@ -6,13 +6,13 @@ import logging
 from collections.abc import Generator
 from typing import Any
 
-from pydantic import ValidationError
-from requests.exceptions import HTTPError
-
 from src.mytardis_client.endpoints import URI, MyTardisEndpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject, get_type_info
-from src.mytardis_client.response_data import MyTardisIntrospection
+from src.mytardis_client.response_data import (
+    MyTardisIntrospection,
+    MyTardisResourceBase,
+)
 from src.utils.types.singleton import Singleton
 
 logger = logging.getLogger(__name__)
@@ -149,44 +149,26 @@ class Overseer(metaclass=Singleton):
         self,
         object_type: MyTardisObject,
         query_params: dict[str, str],
-    ) -> list[dict[str, Any]]:
+    ) -> list[MyTardisResourceBase]:
         """Get objects from MyTardis that match the given query parameters"""
 
         endpoint = get_default_endpoint(object_type)
 
         try:
-            response = self.rest_factory.request(
-                "GET", endpoint=endpoint, params=query_params
-            )
-        except HTTPError as error:
-            logger.warning(
-                (
-                    "Failed HTTP request from Overseer.get_objects call\n"
-                    f"object_type = {object_type}\n"
-                    f"query_params = {query_params}"
-                ),
-                exc_info=True,
-            )
-            raise error
+            objects, _ = self.rest_factory.get(endpoint, query_params)
         except Exception as error:
-            logger.error(
-                (
-                    "Non-HTTP exception in Overseer.get_objects call\n"
-                    f"object_type = {object_type}\n"
-                    f"search_target = {query_params}"
-                ),
-                exc_info=True,
-            )
-            raise error
+            raise RuntimeError(
+                "Failed to query matching objects from MyTardis in Overseer."
+                f"Object type: {object_type}. Query: {query_params}"
+            ) from error
 
-        response_json: dict[str, Any] = response.json()
-        return list(response_json["objects"])
+        return objects
 
     def get_matching_objects(
         self,
         object_type: MyTardisObject,
         object_data: dict[str, str],
-    ) -> list[dict[str, Any]]:
+    ) -> list[MyTardisResourceBase]:
         """Retrieve objects from MyTardis with field values matching the ones in "field_values"
 
         The function extracts the type-dependent match keys from 'object_data' and uses them to
@@ -197,7 +179,7 @@ class Overseer(metaclass=Singleton):
 
         for match_keys in matchers:
             if objects := self._get_matches_from_mytardis(object_type, match_keys):
-                return list(objects)
+                return objects
 
         return []
 
@@ -220,35 +202,8 @@ class Overseer(metaclass=Singleton):
             A list of object URIs from the search request made.
         """
         objects = self._get_matches_from_mytardis(object_type, match_keys)
-        if not objects:
-            return []
 
-        return_list: list[URI] = []
-
-        for obj in objects:
-            try:
-                uri = URI(obj["resource_uri"])
-            except KeyError as error:
-                logger.error(
-                    (
-                        "Malformed return from MyTardis. No resource_uri found for "
-                        f"{object_type} searching with {match_keys}. Object in "
-                        f"question is {obj}."
-                    ),
-                    exc_info=True,
-                )
-                raise error
-            except ValidationError as error:
-                logger.error(
-                    (
-                        "Malformed return from MyTardis. Unable to conform "
-                        "resource_uri into URI format"
-                    ),
-                    exc_info=True,
-                )
-                raise error
-            return_list.append(uri)
-        return return_list
+        return [obj.resource_uri for obj in objects]
 
     def get_uris_by_identifier(
         self, object_type: MyTardisObject, identifier: str
