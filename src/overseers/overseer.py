@@ -6,6 +6,8 @@ import logging
 from collections.abc import Generator
 from typing import Any
 
+from typeguard import check_type
+
 from src.mytardis_client.endpoints import URI, MyTardisEndpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject, get_type_info
@@ -227,10 +229,4 @@ class Overseer(metaclass=Singleton):
                 )
             )
 
-        introspection = objects[0]
-        # Note: can we avoid the need for this check? Should be clear from the
-        # endpoint literal which data type we expect.
-        if not isinstance(introspection, MyTardisIntrospection):
-            raise TypeError("Introspection data is not of the expected type")
-
-        return introspection
+        return check_type(objects[0], MyTardisIntrospection)
