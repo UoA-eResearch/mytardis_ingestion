@@ -16,7 +16,7 @@ from src.conveyor.conveyor import Conveyor, FailedTransferException
 from src.crucible.crucible import Crucible
 from src.extraction.manifest import IngestionManifest
 from src.forges.forge import Forge
-from src.mytardis_client.data_types import URI
+from src.mytardis_client.endpoints.endpoints import URI
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject
 from src.overseers.overseer import Overseer
@@ -206,6 +206,15 @@ class IngestionFactory:
         """Ingest a set of datafiles into MyTardis."""
         result = IngestionResult()
         datafiles: list[Datafile] = []
+
+        datasets = set(raw_datafile.dataset for raw_datafile in raw_datafiles)
+        for dataset in datasets:
+            # Shouldn't need to declare object type here. Make it not so.
+            self._overseer.prefetch(
+                "/dataset",
+                object_type=Datafile,
+                query_params={"dataset": dataset},
+            )
 
         for raw_datafile in raw_datafiles:
             refined_datafile = self.smelter.smelt_datafile(raw_datafile)

@@ -15,10 +15,10 @@ from requests import HTTPError
 from responses import matchers
 
 from src.config.config import ConnectionConfig
-from src.mytardis_client.data_types import URI
+from src.mytardis_client.endpoints.endpoints import URI
+from src.mytardis_client.mt_dataclasses import MyTardisIntrospection
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject
-from src.mytardis_client.response_data import MyTardisIntrospection
 from src.overseers.overseer import Overseer
 
 logger = logging.getLogger(__name__)
@@ -422,7 +422,6 @@ def test_get_mytardis_setup_general_error(
 
 @responses.activate
 def test_get_mytardis_setup_no_objects(
-    caplog: LogCaptureFixture,
     overseer: Overseer,
     connection: ConnectionConfig,
     response_dict_not_found: dict[str, Any],
@@ -436,14 +435,10 @@ def test_get_mytardis_setup_no_objects(
         json=(response_dict_not_found),
         status=200,
     )
-    caplog.set_level(logging.ERROR)
-    error_str = (
-        "MyTardis introspection did not return any data when called from "
-        "ConfigFromEnv.get_mytardis_setup"
-    )
-    with pytest.raises(ValueError, match=error_str):
+
+    with pytest.raises(RuntimeError):
         _ = overseer.fetch_mytardis_setup()
-        assert error_str in caplog.text
+
     Overseer.clear()
 
 
@@ -454,7 +449,7 @@ def test_get_mytardis_setup_too_many_objects(
     introspection_response: dict[str, Any],
 ) -> None:
     test_dict = introspection_response
-    test_dict["objects"].append("Some Fake Data")
+    test_dict["objects"].append(test_dict["objects"][0])
     responses.add(
         responses.GET,
         urljoin(
@@ -465,7 +460,7 @@ def test_get_mytardis_setup_too_many_objects(
         status=200,
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(RuntimeError):
         _ = overseer.fetch_mytardis_setup()
 
     Overseer.clear()

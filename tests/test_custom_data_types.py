@@ -9,7 +9,8 @@ import pytest
 from dateutil import tz
 from pydantic import BaseModel
 
-from src.blueprints.custom_data_types import ISODateTime, Username
+from src.blueprints.custom_data_types import Username
+from src.mytardis_client.common_types import ISODateTime
 
 NZT = tz.gettz("Pacific/Auckland")
 

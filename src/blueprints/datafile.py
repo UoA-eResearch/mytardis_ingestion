@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, field_serializer
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.blueprints.custom_data_types import MTUrl
-from src.mytardis_client.data_types import URI
+from src.mytardis_client.endpoints.endpoints import URI
 from src.mytardis_client.enumerators import DataStatus
 
 
@@ -43,10 +43,7 @@ class BaseDatafile(BaseModel, ABC):
             the MIME type of the file to be ingested
         size: int
             the size in bytes of the file to be ingested
-        archive_date: ISODateTime
-            the date that the datafile will be automatically archived
-        delete_date: ISODateTime
-            the date that the datafile is able to be deleted"""
+    """
 
     filename: str = Field(min_length=1)
     directory: Optional[Path] = None
