@@ -67,7 +67,7 @@ class IngestionFactory:
         self.config = config
 
         mt_rest = mt_rest or MyTardisRESTFactory(config.auth, config.connection)
-        self._overseer = overseer or Overseer(mt_rest)
+        self._overseer: Overseer = overseer or Overseer(mt_rest)
 
         self.forge = forge or Forge(mt_rest)
         self.smelter = smelter or Smelter(

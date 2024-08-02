@@ -1,7 +1,7 @@
 """Dataclasses for validating/storing MyTardis API response data."""
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self
@@ -14,6 +14,14 @@ from src.mytardis_client.common_types import (
 )
 from src.mytardis_client.endpoints import URI
 from src.mytardis_client.objects import MyTardisObject
+
+
+# pylint: disable=too-few-public-methods
+class MyTardisResource(Protocol):
+    """Protocol for MyTardis resources."""
+
+    id: int
+    resource_uri: URI
 
 
 class MyTardisResourceBase(BaseModel):

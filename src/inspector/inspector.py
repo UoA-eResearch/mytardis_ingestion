@@ -5,6 +5,8 @@
 import logging
 from typing import Optional
 
+from typeguard import check_type
+
 from src.blueprints.datafile import RawDatafile
 from src.config.config import ConfigFromEnv
 from src.crucible.crucible import Crucible
@@ -13,10 +15,6 @@ from src.mytardis_client.objects import MyTardisObject
 from src.mytardis_client.response_data import IngestedDatafile
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
-from src.utils.types.type_helpers import is_list_of
-
-# from typeguard import check_type
-
 
 logger = logging.getLogger(__name__)
 
@@ -59,9 +57,4 @@ class Inspector:
             MyTardisObject.DATAFILE, df.model_dump()
         )
 
-        # check_type(matches, list[IngestedDatafile])
-
-        if not is_list_of(matches, IngestedDatafile):
-            raise TypeError("Expected list of IngestedDatafile objects from MyTardis.")
-
-        return matches
+        return check_type(matches, list[IngestedDatafile])

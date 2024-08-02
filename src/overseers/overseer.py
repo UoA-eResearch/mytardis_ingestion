@@ -9,10 +9,7 @@ from typing import Any
 from src.mytardis_client.endpoints import URI, MyTardisEndpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject, get_type_info
-from src.mytardis_client.response_data import (
-    MyTardisIntrospection,
-    MyTardisResourceBase,
-)
+from src.mytardis_client.response_data import MyTardisIntrospection, MyTardisResource
 from src.utils.types.singleton import Singleton
 
 logger = logging.getLogger(__name__)
@@ -149,7 +146,7 @@ class Overseer(metaclass=Singleton):
         self,
         object_type: MyTardisObject,
         query_params: dict[str, str],
-    ) -> list[MyTardisResourceBase]:
+    ) -> list[MyTardisResource]:
         """Get objects from MyTardis that match the given query parameters"""
 
         endpoint = get_default_endpoint(object_type)
@@ -168,7 +165,7 @@ class Overseer(metaclass=Singleton):
         self,
         object_type: MyTardisObject,
         object_data: dict[str, str],
-    ) -> list[MyTardisResourceBase]:
+    ) -> list[MyTardisResource]:
         """Retrieve objects from MyTardis with field values matching the ones in "field_values"
 
         The function extracts the type-dependent match keys from 'object_data' and uses them to
