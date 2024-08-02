@@ -310,7 +310,6 @@ class MyTardisRESTFactory:
 
         for object_json in response_objects:
             obj = object_type.model_validate(object_json)
-            # resource_uri = URI(object_json["resource_uri"])
             objects.append(obj)
 
         return objects, response_meta
