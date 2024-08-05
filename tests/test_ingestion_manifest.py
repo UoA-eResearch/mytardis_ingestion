@@ -13,7 +13,7 @@ from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
 from src.extraction.manifest import IngestionManifest
-from src.mytardis_client.enumerators import DataClassification
+from src.mytardis_client.common_types import DataClassification
 from src.utils.filesystem.filesystem_nodes import DirectoryNode
 
 # pylint: disable=line-too-long

@@ -45,7 +45,7 @@ from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
 from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
 from src.ingestion_factory.factory import IngestionFactory
-from src.mytardis_client.enumerators import DataStatus
+from src.mytardis_client.common_types import DataStatus
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.profiles.idw.yaml_wrapper import write_to_yaml
