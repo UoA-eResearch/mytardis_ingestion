@@ -6,7 +6,9 @@ objects.py for that."""
 from enum import Enum
 from typing import Literal
 
-HttpRequestMethod = Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
+# The HTTP methods supported by MyTardis. Can be used to constrain the request interfaces
+# to ensure that only methods that are supported by MyTardis are used.
+HttpRequestMethod = Literal["GET", "POST"]
 
 
 class DataClassification(Enum):
