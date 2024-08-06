@@ -274,13 +274,11 @@ class MyTardisRESTFactory:
         if endpoint_info.methods.GET is None:
             raise RuntimeError(f"GET method not supported for endpoint '{endpoint}'")
 
-        if meta_params is None:
-            meta_params = GetRequestMetaParams(limit=10, offset=0)
+        params = query_params
 
-        params = meta_params.model_dump()
-
-        if query_params is not None:
-            params |= query_params
+        if meta_params is not None:
+            params = params or {}
+            params |= meta_params.model_dump()
 
         response_data = self.request(
             "GET",
