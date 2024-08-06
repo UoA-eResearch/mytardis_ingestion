@@ -8,7 +8,7 @@ from typing import Annotated, Literal
 
 from pydantic import AfterValidator
 
-from src.utils.validate import validate_isodatetime, validate_md5sum, validate_url
+from src.utils.validation import validate_isodatetime, validate_md5sum, validate_url
 
 # The HTTP methods supported by MyTardis. Can be used to constrain the request interfaces
 # to ensure that only methods that are supported by MyTardis are used.
