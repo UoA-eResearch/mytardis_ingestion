@@ -225,7 +225,7 @@ class Overseer(metaclass=Singleton):
             raise ValueError(
                 (
                     f"Expected a single object from introspection endpoint, but got {len(objects)}."
-                    "MyTardis may be misconfigured. Objects returned: {objects}"
+                    f"MyTardis may be misconfigured. Objects returned: {objects}"
                 )
             )
 
