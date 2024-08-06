@@ -23,6 +23,8 @@ from src.mytardis_client.mt_rest import (
     MyTardisRESTFactory,
     sanitize_params,
 )
+from src.mytardis_client.response_data import IngestedDatafile
+from src.utils.types.type_helpers import is_list_of
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -98,12 +100,13 @@ def test_mytardis_client_rest_get_single(
         json=datafile_get_response_single,
     )
 
-    datafiles, meta = mt_client.get("/dataset_file", object_type=Datafile)
+    datafiles, meta = mt_client.get("/dataset_file")
 
     assert isinstance(datafiles, list)
+    assert is_list_of(datafiles, IngestedDatafile)
     assert len(datafiles) == 1
     assert datafiles[0].resource_uri == URI("/api/v1/dataset_file/0/")
-    assert datafiles[0].obj.filename == "test_filename.txt"
+    assert datafiles[0].filename == "test_filename.txt"
 
     assert isinstance(meta, GetResponseMeta)
     assert meta.total_count == 1
@@ -126,11 +129,10 @@ def test_mytardis_client_rest_get_multi(
 
     datafiles, meta = mt_client.get(
         "/dataset_file",
-        object_type=Datafile,
         meta_params=GetRequestMetaParams(offset=2, limit=3),
     )
 
-    assert isinstance(datafiles, list)
+    assert is_list_of(datafiles, IngestedDatafile)
     assert len(datafiles) == 30
     assert (isinstance(df, Datafile) for df in datafiles)
 
@@ -138,9 +140,9 @@ def test_mytardis_client_rest_get_multi(
     assert datafiles[1].resource_uri == URI("/api/v1/dataset_file/1/")
     assert datafiles[2].resource_uri == URI("/api/v1/dataset_file/2/")
 
-    assert datafiles[0].obj.filename == "test_filename_0.txt"
-    assert datafiles[1].obj.filename == "test_filename_1.txt"
-    assert datafiles[2].obj.filename == "test_filename_2.txt"
+    assert datafiles[0].filename == "test_filename_0.txt"
+    assert datafiles[1].filename == "test_filename_1.txt"
+    assert datafiles[2].filename == "test_filename_2.txt"
 
     assert isinstance(meta, GetResponseMeta)
     assert meta.total_count == 30
@@ -172,17 +174,16 @@ def test_mytardis_client_rest_get_all(
 
     datafiles, total_count = mt_client.get_all(
         "/dataset_file",
-        object_type=Datafile,
         batch_size=20,
     )
 
-    assert isinstance(datafiles, list)
+    assert is_list_of(datafiles, IngestedDatafile)
     assert len(datafiles) == 30
     assert (isinstance(df, Datafile) for df in datafiles)
 
     for i in range(30):
         assert datafiles[i].resource_uri == URI(f"/api/v1/dataset_file/{i}/")
-        assert datafiles[i].obj.filename == f"test_filename_{i}.txt"
+        assert datafiles[i].filename == f"test_filename_{i}.txt"
 
     assert total_count == 30
 
@@ -296,7 +297,6 @@ def test_mytardis_client_get_params_are_sanitized(
 
     _ = mt_client.get(
         "/dataset_file",
-        object_type=Datafile,
         query_params={"dataset": URI("/api/v1/dataset/0/")},
         meta_params=GetRequestMetaParams(limit=1, offset=0),
     )

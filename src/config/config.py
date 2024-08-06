@@ -21,8 +21,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from requests import PreparedRequest
 from requests.auth import AuthBase
 
-from src.blueprints.custom_data_types import MTUrl
 from src.blueprints.storage_boxes import StorageTypesEnum
+from src.mytardis_client.common_types import MTUrl
 
 logger = logging.getLogger(__name__)
 

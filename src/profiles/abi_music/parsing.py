@@ -13,14 +13,13 @@ from typing import Any, Mapping
 from slugify import slugify
 
 from src.blueprints.common_models import GroupACL, UserACL
-from src.blueprints.custom_data_types import MTUrl
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
 from src.extraction.manifest import IngestionManifest
 from src.extraction.metadata_extractor import IMetadataExtractor
-from src.mytardis_client.common_types import DataClassification
+from src.mytardis_client.common_types import DataClassification, MTUrl
 from src.profiles.abi_music.abi_music_consts import (
     ABI_MUSIC_DATASET_RAW_SCHEMA,
     ABI_MUSIC_DATASET_ZARR_SCHEMA,

@@ -67,7 +67,7 @@ class IngestionFactory:
         self.config = config
 
         mt_rest = mt_rest or MyTardisRESTFactory(config.auth, config.connection)
-        self._overseer = overseer or Overseer(mt_rest)
+        self._overseer: Overseer = overseer or Overseer(mt_rest)
 
         self.forge = forge or Forge(mt_rest)
         self.smelter = smelter or Smelter(
@@ -105,7 +105,7 @@ class IngestionFactory:
                 MyTardisObject.PROJECT, project.model_dump()
             )
             if len(matching_projects) > 0:
-                project_uri = URI(matching_projects[0]["resource_uri"])
+                project_uri = matching_projects[0].resource_uri
                 # Would we ever get multiple matches? If so, what should we do?
                 logging.info(
                     'Already ingested project "%s" as "%s". Skipping project ingestion.',
@@ -145,7 +145,7 @@ class IngestionFactory:
                 MyTardisObject.EXPERIMENT, experiment.model_dump()
             )
             if len(matching_experiments) > 0:
-                experiment_uri = URI(matching_experiments[0]["resource_uri"])
+                experiment_uri = matching_experiments[0].resource_uri
                 logging.info(
                     'Already ingested experiment "%s" as "%s". Skipping experiment ingestion.',
                     experiment.title,
@@ -184,7 +184,7 @@ class IngestionFactory:
                 MyTardisObject.DATASET, dataset.model_dump()
             )
             if len(matching_datasets) > 0:
-                dataset_uri = URI(matching_datasets[0]["resource_uri"])
+                dataset_uri = matching_datasets[0].resource_uri
                 logging.info(
                     'Already ingested dataset "%s" as "%s". Skipping dataset ingestion.',
                     dataset.description,

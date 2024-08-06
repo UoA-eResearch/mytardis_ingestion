@@ -165,13 +165,13 @@ def datafile_get_response_paginated_second() -> dict[str, Any]:
 def get_project_details(
     project_ids: list[str],
     project_description: str,
-    project_institutions: list[str],
     project_name: str,
     project_principal_investigator: str,
     project_url: str,
 ) -> List[Dict[str, Any]]:
     return [
         {
+            "classification": 25,
             "created_by": "api/v1/user/1/",
             "datafile_count": 2,
             "dataset_count": 1,
@@ -181,7 +181,9 @@ def get_project_details(
             "experiment_count": 1,
             "id": 1,
             "identifiers": project_ids,
-            "institution": project_institutions,
+            "institution": [
+                "/api/v1/institution/1/",
+            ],
             "locked": False,
             "name": project_name,
             "parameter_sets": [],

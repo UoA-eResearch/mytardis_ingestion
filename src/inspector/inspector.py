@@ -3,13 +3,16 @@
 """
 
 import logging
-from typing import Any, Optional
+from typing import Optional
+
+from typeguard import check_type
 
 from src.blueprints.datafile import RawDatafile
 from src.config.config import ConfigFromEnv
 from src.crucible.crucible import Crucible
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject
+from src.mytardis_client.response_data import IngestedDatafile
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
 
@@ -28,11 +31,11 @@ class Inspector:
             default_schema=config.default_schema,
         )
         crucible = Crucible(overseer)
-        self._overseer = overseer
+        self._overseer: Overseer = overseer
         self._smelter = smelter
         self._crucible = crucible
 
-    def query_datafile(self, raw_df: RawDatafile) -> Optional[list[dict[str, Any]]]:
+    def query_datafile(self, raw_df: RawDatafile) -> Optional[list[IngestedDatafile]]:
         """Partially ingests raw datafile and queries MyTardis for matching instances.
 
         Args:
@@ -50,6 +53,8 @@ class Inspector:
             return None
 
         # Look up the datafile in MyTardis to check if it's ingested.
-        return self._overseer.get_matching_objects(
+        matches = self._overseer.get_matching_objects(
             MyTardisObject.DATAFILE, df.model_dump()
         )
+
+        return check_type(matches, list[IngestedDatafile])
