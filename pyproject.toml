@@ -21,6 +21,7 @@ rocrate = "^0.10.0"
 typing-extensions = "^4.12.2"
 types-pyyaml = "^6.0.12.20240311"
 typeguard = "^4.3.0"
+hypothesis = "^6.111.0"
 
 [tool.poetry.group.dev.dependencies]
 wily = "^1.25.0"

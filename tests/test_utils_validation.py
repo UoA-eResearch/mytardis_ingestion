@@ -10,34 +10,23 @@ import pytest
 from dateutil import tz
 
 from src.utils.validation import is_hex, validate_isodatetime, validate_md5sum
+from hypothesis import given, strategies as st
+from hypothesis.extra.dateutil import timezones as hy_tz
 
 NZT = tz.gettz("Pacific/Auckland")
 
+HEXREGEX = r"(^(0x)?[0-9a-fA-F]+)"
+MD5REGEX = r"(^([A-Fa-f0-9]{32}))"
+BAD_MD5REGEX = r"(^((.{0,31})|(.{33,})|([G-Zg-z]{32})|(\W{32})))"
 
-def test_is_hex_valid_hex() -> None:
+@given(st.from_regex(HEXREGEX,fullmatch=True))
+def test_is_hex_valid_hex(value:str) -> None:
     """Test is_hex function with valid input."""
-    assert is_hex("0")
-    assert is_hex("1")
-    assert is_hex("a")
-    assert is_hex("f")
-    assert is_hex("A")
-    assert is_hex("F")
-    assert is_hex("ff")
-    assert is_hex("FF")
-    assert is_hex("0f")
-
-    assert is_hex("0x0")
-    assert is_hex("0X0")
-    assert is_hex("0x0f")
-    assert is_hex("0X0F")
-
-    assert is_hex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
-    assert is_hex("04578945702952854684859406729090019481057396748385407482570582857")
-
-
-def test_is_hex_invalid_hex() -> None:
+    assert is_hex(value=value)
+    
+@given(st.from_regex(HEXREGEX,fullmatch=True))
+def test_is_hex_invalid_hex(value:str) -> None:
     """Test is_hex function with invalid input."""
-    assert not is_hex("g")
     assert not is_hex("G")
     assert not is_hex("z")
     assert not is_hex("Z")
@@ -50,41 +39,12 @@ def test_is_hex_invalid_hex() -> None:
     assert not is_hex("abcdefABCDEF0123456789g")
 
 
-@pytest.mark.parametrize(
-    "value",
-    [
-        "0123456789abcdef0123456789abcdef",
-        "0123456789ABCDEF0123456789ABCDEF",
-        "ffffffffffffffffffffffffffffffff",
-        "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        "00000000000000000000000000000000",
-    ],
-)
+@given(st.from_regex(MD5REGEX,fullmatch=True))
 def test_md5sum_valid(value: str) -> None:
     """Test that a valid MD5Sum is accepted and serialized correctly."""
-
     assert validate_md5sum(value) == value
 
-
-@pytest.mark.parametrize(
-    "value",
-    [
-        "0123456789abcdef0123456789abcdefa",
-        "0123456789ABCDEF0123456789ABCDEFA",
-        "fffffffffffffffffffffffffffffff",
-        "fffffffffffffffffffffffffffffffff",
-        "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-        "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-        "AAAAA",
-        "00000",
-        "A",
-        "F",
-        "0",
-        "&*%^%$%^$%&*&^()",
-        "banana",
-    ],
-)
+@given(st.from_regex(BAD_MD5REGEX,fullmatch=True))
 def test_md5sum_invalid(value: str) -> None:
     """Test that an invalid MD5Sum is rejected."""
 
@@ -112,3 +72,11 @@ def test_good_ISO_DateTime_string(  # pylint: disable=invalid-name
     valid_iso_dt: str,
 ) -> None:
     assert validate_isodatetime(valid_iso_dt) == valid_iso_dt
+
+
+@given(st.datetimes())
+def test_hypothesis_ISO_DateTime_string(  # pylint: disable=invalid-name
+    valid_iso_dt: datetime,
+) -> None:
+    valid_iso_dt.isoformat()
+    assert validate_isodatetime(valid_iso_dt.isoformat()) == valid_iso_dt.isoformat()
