@@ -11,7 +11,6 @@ from dateutil import tz
 
 from src.utils.validation import is_hex, validate_isodatetime, validate_md5sum
 from hypothesis import given, strategies as st
-from hypothesis.extra.dateutil import timezones as hy_tz
 
 NZT = tz.gettz("Pacific/Auckland")
 
