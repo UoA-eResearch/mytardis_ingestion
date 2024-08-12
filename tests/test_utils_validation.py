@@ -24,7 +24,6 @@ def test_is_hex_valid_hex(value:str) -> None:
     """Test is_hex function with valid input."""
     assert is_hex(value=value)
     
-@given(st.from_regex(HEXREGEX,fullmatch=True))
 def test_is_hex_invalid_hex(value:str) -> None:
     """Test is_hex function with invalid input."""
     assert not is_hex("G")
