@@ -2,14 +2,12 @@
 # pylint: disable=missing-module-docstring
 
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List
 
 from pytest import fixture
 
 from src.blueprints.common_models import GroupACL, Parameter, ParameterSet, UserACL
-from src.blueprints.custom_data_types import Username
 from src.blueprints.datafile import (
     Datafile,
     DatafileReplica,
@@ -19,7 +17,7 @@ from src.blueprints.datafile import (
 from src.blueprints.dataset import Dataset, RawDataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RawExperiment, RefinedExperiment
 from src.blueprints.project import Project, RawProject, RefinedProject
-from src.mytardis_client.common_types import DataClassification, ISODateTime
+from src.mytardis_client.common_types import DataClassification
 from src.mytardis_client.endpoints import URI
 
 
@@ -46,14 +44,12 @@ def raw_project(  # pylint: disable=too-many-locals,too-many-arguments
     embargo_time_datetime: datetime,
     project_metadata: Dict[str, Any],
     project_url: str,
-    project_data_classification: Enum,
-    autoarchive_offset: int,
-    delete_offset: int,
+    project_data_classification: DataClassification,
 ) -> RawProject:
     return RawProject(
         name=project_name,
         description=project_description,
-        principal_investigator=Username(project_principal_investigator),
+        principal_investigator=project_principal_investigator,
         url=project_url,
         users=split_and_parse_users,
         groups=split_and_parse_groups,
@@ -65,8 +61,6 @@ def raw_project(  # pylint: disable=too-many-locals,too-many-arguments
         identifiers=project_ids,
         metadata=project_metadata,
         data_classification=project_data_classification,
-        autoarchive_offset=autoarchive_offset,
-        delete_offset=delete_offset,
     )
 
 
@@ -205,14 +199,13 @@ def refined_project(  # pylint:disable=too-many-arguments
     end_time_datetime: datetime,
     embargo_time_datetime: datetime,
     project_url: str,
-    project_data_classification: Enum,
+    project_data_classification: DataClassification,
 ) -> RefinedProject:
     return RefinedProject(
         name=project_name,
         description=project_description,
         data_classification=project_data_classification,
-        principal_investigator=Username(project_principal_investigator),
-        dataclassification=project_data_classification,
+        principal_investigator=project_principal_investigator,
         url=project_url,
         users=split_and_parse_users,
         groups=split_and_parse_groups,
@@ -312,7 +305,7 @@ def refined_datafile(
         users=split_and_parse_users,
         groups=split_and_parse_groups,
         dataset=datafile_dataset,
-        parameter_sets=raw_datafile_parameterset,
+        parameter_sets=[raw_datafile_parameterset],
     )
 
 
@@ -332,17 +325,17 @@ def project(
         created_by=refined_project.created_by,
         data_classification=refined_project.data_classification,
         start_time=(
-            ISODateTime(refined_project.start_time.isoformat())
+            refined_project.start_time.isoformat()
             if isinstance(refined_project.start_time, datetime)
             else None
         ),
         end_time=(
-            ISODateTime(refined_project.end_time.isoformat())
+            refined_project.end_time.isoformat()
             if isinstance(refined_project.end_time, datetime)
             else None
         ),
         embargo_until=(
-            ISODateTime(refined_project.embargo_until.isoformat())
+            refined_project.embargo_until.isoformat()
             if isinstance(refined_project.embargo_until, datetime)
             else None
         ),
@@ -429,8 +422,6 @@ def datafile(
     refined_datafile: RefinedDatafile,
     dataset_uri: URI,
     datafile_replica: DatafileReplica,
-    archive_date: datetime,
-    delete_date: datetime,
     archive_replica: DatafileReplica,
 ) -> Datafile:
     return Datafile(
@@ -443,8 +434,6 @@ def datafile(
         groups=refined_datafile.groups,
         dataset=dataset_uri,
         parameter_sets=refined_datafile.parameter_sets,
-        archive_date=ISODateTime(archive_date.isoformat()),
-        delete_date=ISODateTime(delete_date.isoformat()),
         replicas=[
             archive_replica,
             datafile_replica,

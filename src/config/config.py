@@ -177,8 +177,6 @@ class ConfigFromEnv(BaseSettings):
             instance of Pydantic storage model
         default_schema : SchemaConfig
             instance of Pydantic schema model
-        archive: TimeOffsetConfig
-            instance of Pydantic time offset model
 
     ## Usage
     Requires a .env file in the current working direction:
@@ -198,7 +196,6 @@ class ConfigFromEnv(BaseSettings):
     # DEFAULT_SCHEMA__EXPERIMENT=
     # DEFAULT_SCHEMA__DATASET=
     # DEFAULT_SCHEMA__DATAFILE=
-    # Archive, prefix with ARCHIVE__
 
     '''
     ## Example

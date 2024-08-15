@@ -265,10 +265,6 @@ class Smelter:
                 groups=raw_datafile.groups,
                 dataset=raw_datafile.dataset,
                 parameter_sets=[parameters] if parameters is not None else None,
-                # archive_date=raw_datafile.archive_date,
-                # delete_date=raw_datafile.delete_date,
-                # archive_offset=raw_datafile.archive_offset,
-                # delete_offset=raw_datafile.delete_offset,
             )
         except ValidationError:
             logger.warning(

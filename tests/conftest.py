@@ -106,22 +106,9 @@ institution_address = const.institution_address
 institution_ids = const.institution_ids
 institution_country = const.institution_country
 institution_name = const.institution_name
-datafile_archive_date = const.datafile_archive_date
-datafile_delete_date = const.datafile_delete_date
 storage_class = const.storage_class
 storage_options = const.storage_options
 storage_attributes = const.storage_attributes
-archive_class = const.archive_class
-archive_options = const.archive_options
-archive_attributes = const.archive_attributes
-autoarchive_offset = const.autoarchive_offset
-delete_offset = const.delete_offset
-archive_box_name = const.archive_box_name
-archive_box_uri = const.archive_box_uri
-archive_box_description = const.archive_box_description
-archive_box_dir = const.archive_box_dir
-archive_date = const.archive_date
-delete_date = const.delete_date
 datetime_now = const.datetime_now
 
 # =============================
@@ -558,16 +545,11 @@ get_project_details = rsps.get_project_details
 general = cfg.general
 auth = cfg.auth
 connection = cfg.connection
-active_store = cfg.active_store
-archive_store = cfg.archive_store
 default_schema = cfg.default_schema
 mytardis_settings = cfg.mytardis_settings
 storage_box_name = cfg.storage_box_name
 storage_attributes = cfg.storage_attributes
 storage_class = cfg.storage_class
-archive_box_name = cfg.archive_box_name
-archive_attributes = cfg.archive_attributes
-archive_class = cfg.archive_class
 
 # =========================================
 #
