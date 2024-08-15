@@ -6,6 +6,21 @@ from pydantic import BaseModel
 
 from src.mytardis_client.endpoints import MyTardisEndpoint
 from src.mytardis_client.objects import MyTardisObject
+from src.mytardis_client.response_data import (
+    DatasetParameterSet,
+    ExperimentParameterSet,
+    Facility,
+    IngestedDatafile,
+    IngestedDataset,
+    IngestedExperiment,
+    IngestedProject,
+    Institution,
+    Instrument,
+    MyTardisIntrospection,
+    MyTardisResourceBase,
+    ProjectParameterSet,
+    StorageBox,
+)
 
 
 class GetRequestProperties(BaseModel):
@@ -15,14 +30,13 @@ class GetRequestProperties(BaseModel):
     #       the response can be validated/deserialized without the requester needing
     #       to know the correct type. But the dataclasses are currently defined outside the
     #       mytardis_client module, and this module should ideally be self-contained.
-    response_obj_type: MyTardisObject
+    response_obj_type: type[MyTardisResourceBase]
 
 
 class PostRequestProperties(BaseModel):
     """Definition of behaviour/structure for a POST request to a MyTardis endpoint."""
 
     expect_response_json: bool
-    # response_obj_type: MyTardisObject
     request_body_obj_type: MyTardisObject
 
 
@@ -46,7 +60,7 @@ _MYTARDIS_ENDPOINTS: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         path="/project",
         methods=EndpointMethods(
             GET=GetRequestProperties(
-                response_obj_type=MyTardisObject.PROJECT,
+                response_obj_type=IngestedProject,
             ),
             POST=PostRequestProperties(
                 expect_response_json=True,
@@ -58,7 +72,7 @@ _MYTARDIS_ENDPOINTS: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         path="/experiment",
         methods=EndpointMethods(
             GET=GetRequestProperties(
-                response_obj_type=MyTardisObject.EXPERIMENT,
+                response_obj_type=IngestedExperiment,
             ),
             POST=PostRequestProperties(
                 expect_response_json=True,
@@ -70,7 +84,7 @@ _MYTARDIS_ENDPOINTS: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         path="/dataset",
         methods=EndpointMethods(
             GET=GetRequestProperties(
-                response_obj_type=MyTardisObject.DATASET,
+                response_obj_type=IngestedDataset,
             ),
             POST=PostRequestProperties(
                 expect_response_json=True,
@@ -82,7 +96,7 @@ _MYTARDIS_ENDPOINTS: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         path="/dataset_file",
         methods=EndpointMethods(
             GET=GetRequestProperties(
-                response_obj_type=MyTardisObject.DATAFILE,
+                response_obj_type=IngestedDatafile,
             ),
             POST=PostRequestProperties(
                 expect_response_json=False,
@@ -94,7 +108,7 @@ _MYTARDIS_ENDPOINTS: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         path="/institution",
         methods=EndpointMethods(
             GET=GetRequestProperties(
-                response_obj_type=MyTardisObject.INSTITUTION,
+                response_obj_type=Institution,
             ),
         ),
     ),
@@ -102,7 +116,7 @@ _MYTARDIS_ENDPOINTS: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         path="/instrument",
         methods=EndpointMethods(
             GET=GetRequestProperties(
-                response_obj_type=MyTardisObject.INSTRUMENT,
+                response_obj_type=Instrument,
             ),
         ),
     ),
@@ -110,7 +124,7 @@ _MYTARDIS_ENDPOINTS: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         path="/facility",
         methods=EndpointMethods(
             GET=GetRequestProperties(
-                response_obj_type=MyTardisObject.FACILITY,
+                response_obj_type=Facility,
             ),
         ),
     ),
@@ -118,7 +132,7 @@ _MYTARDIS_ENDPOINTS: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         path="/storagebox",
         methods=EndpointMethods(
             GET=GetRequestProperties(
-                response_obj_type=MyTardisObject.STORAGE_BOX,
+                response_obj_type=StorageBox,
             ),
         ),
     ),
@@ -126,7 +140,7 @@ _MYTARDIS_ENDPOINTS: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         path="/projectparameterset",
         methods=EndpointMethods(
             GET=GetRequestProperties(
-                response_obj_type=MyTardisObject.PROJECT_PARAMETER_SET,
+                response_obj_type=ProjectParameterSet,
             ),
             POST=PostRequestProperties(
                 expect_response_json=False,
@@ -138,7 +152,7 @@ _MYTARDIS_ENDPOINTS: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         path="/experimentparameterset",
         methods=EndpointMethods(
             GET=GetRequestProperties(
-                response_obj_type=MyTardisObject.EXPERIMENT_PARAMETER_SET,
+                response_obj_type=ExperimentParameterSet,
             ),
             POST=PostRequestProperties(
                 expect_response_json=False,
@@ -150,7 +164,7 @@ _MYTARDIS_ENDPOINTS: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         path="/datasetparameterset",
         methods=EndpointMethods(
             GET=GetRequestProperties(
-                response_obj_type=MyTardisObject.DATASET_PARAMETER_SET,
+                response_obj_type=DatasetParameterSet,
             ),
             POST=PostRequestProperties(
                 expect_response_json=False,
@@ -162,7 +176,7 @@ _MYTARDIS_ENDPOINTS: dict[MyTardisEndpoint, MyTardisEndpointInfo] = {
         path="/introspection",
         methods=EndpointMethods(
             GET=GetRequestProperties(
-                response_obj_type=MyTardisObject.INTROSPECTION,
+                response_obj_type=MyTardisIntrospection,
             ),
         ),
     ),

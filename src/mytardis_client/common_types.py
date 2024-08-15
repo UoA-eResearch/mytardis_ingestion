@@ -4,7 +4,11 @@ Note that the specifications of the MyTardis objects are not included here; see
 objects.py for that."""
 
 from enum import Enum
-from typing import Literal
+from typing import Annotated, Literal
+
+from pydantic import AfterValidator
+
+from src.utils.validation import validate_isodatetime, validate_md5sum, validate_url
 
 # The HTTP methods supported by MyTardis. Can be used to constrain the request interfaces
 # to ensure that only methods that are supported by MyTardis are used.
@@ -35,3 +39,19 @@ class DataStatus(Enum):
     READY_FOR_INGESTION = 1
     INGESTED = 5
     FAILED = 10
+
+
+MD5Sum = Annotated[
+    str,
+    AfterValidator(validate_md5sum),
+]
+
+ISODateTime = Annotated[
+    str,
+    AfterValidator(validate_isodatetime),
+]
+
+MTUrl = Annotated[
+    str,
+    AfterValidator(validate_url),
+]

@@ -5,7 +5,7 @@
 from pytest import fixture
 
 from src.blueprints.common_models import Parameter, ParameterSet
-from src.blueprints.custom_data_types import MTUrl
+from src.mytardis_client.common_types import MTUrl
 from src.mytardis_client.endpoints import URI
 
 
