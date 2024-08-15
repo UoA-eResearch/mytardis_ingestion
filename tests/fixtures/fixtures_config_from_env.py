@@ -13,7 +13,6 @@ from src.config.config import (
     GeneralConfig,
     ProxyConfig,
     SchemaConfig,
-    StorageBoxConfig,
 )
 
 
@@ -51,21 +50,6 @@ def storage_attributes() -> Dict[str, str]:
 
 
 @fixture
-def active_store(
-    storage_box_name: str,
-    storage_class: StorageTypesEnum,
-    storage_options: Dict[str, str],
-    storage_attributes: Dict[str, str],
-) -> StorageBoxConfig:
-    return StorageBoxConfig(
-        storage_name=storage_box_name,
-        storage_class=storage_class,
-        options=storage_options,
-        attributes=storage_attributes,
-    )
-
-
-@fixture
 def general(
     default_institution: str,
 ) -> GeneralConfig:
@@ -92,20 +76,6 @@ def connection(
         hostname=hostname,
         proxy=ProxyConfig(http=proxies["http"], https=proxies["https"]),
         verify_certificate=verify_certificate,
-    )
-
-
-@fixture
-def active_stores(
-    storage_class: StorageTypesEnum,
-    storage_options: Dict[str, str],
-    storage_attributes: Dict[str, str],
-) -> StorageBoxConfig:
-    return StorageBoxConfig(
-        storage_name="Test Active",
-        storage_class=storage_class,
-        options=storage_options,
-        attributes=storage_attributes,
     )
 
 

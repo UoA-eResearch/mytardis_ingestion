@@ -545,7 +545,6 @@ get_project_details = rsps.get_project_details
 general = cfg.general
 auth = cfg.auth
 connection = cfg.connection
-active_store = cfg.active_store
 default_schema = cfg.default_schema
 mytardis_settings = cfg.mytardis_settings
 storage_box_name = cfg.storage_box_name
