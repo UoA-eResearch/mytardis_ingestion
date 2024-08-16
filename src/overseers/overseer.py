@@ -8,10 +8,12 @@ from typing import Any
 
 from typeguard import check_type
 
+from src.mytardis_client.endpoint_info import get_endpoint_info
 from src.mytardis_client.endpoints import URI, MyTardisEndpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject, get_type_info
 from src.mytardis_client.response_data import MyTardisIntrospection, MyTardisResource
+from src.utils.types.type_helpers import is_list_of
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +66,29 @@ def extract_values_for_matching(
     return match_keys
 
 
+class MyTardisEndpointCache:
+    """A cache for URIs and objects from a specific MyTardis endpoint"""
+
+    def __init__(self, endpoint: MyTardisEndpoint) -> None:
+        self.endpoint = endpoint
+        self._objects: list[list[MyTardisResource]] = []
+        self._index: dict[dict[str, Any], int] = {}
+
+    def emplace(self, keys: dict[str, Any], obj: list[MyTardisResource]) -> None:
+        """Add objects to the cache"""
+        if keys in self._index:
+            raise ValueError(f"Duplicate keys {keys} in MyTardisEndpointCache")
+
+        self._index[keys] = len(self._objects)
+        self._objects.append(obj)
+
+    def get(self, keys: dict[str, Any]) -> list[MyTardisResource] | None:
+        """Get objects from the cache"""
+        if object_index := self._index.get(keys):
+            return self._objects[object_index]
+        return None
+
+
 class Overseer:
     """The Overseer class inspects MyTardis
 
@@ -99,6 +124,8 @@ class Overseer:
             mytardis_setup : MyTardisIntrospection
         """
         self.rest_factory = rest_factory
+
+        self._cache: dict[MyTardisEndpoint, MyTardisEndpointCache] = {}
 
     @property
     def mytardis_setup(self) -> MyTardisIntrospection:
@@ -152,8 +179,15 @@ class Overseer:
 
         endpoint = get_default_endpoint(object_type)
 
+        if self._cache.get(endpoint) is None:
+            self._cache[endpoint] = MyTardisEndpointCache(endpoint)
+
+        if objects := self._cache[endpoint].get(query_params):
+            return objects
+
         try:
             objects, _ = self.rest_factory.get(endpoint, query_params)
+            self._cache[endpoint].emplace(query_params, objects)
         except Exception as error:
             raise RuntimeError(
                 "Failed to query matching objects from MyTardis in Overseer."
@@ -161,6 +195,37 @@ class Overseer:
             ) from error
 
         return objects
+
+    def prefetch(
+        self,
+        endpoint: MyTardisEndpoint,
+        query_params: dict[str, Any],
+    ) -> None:
+        """Populate the cache for the given endpoint"""
+
+        endpoint_info = get_endpoint_info(endpoint)
+        if endpoint_info.methods.GET is None:
+            raise ValueError(f"Endpoint {endpoint} does not support GET requests")
+
+        if self._cache.get(endpoint) is None:
+            self._cache[endpoint] = MyTardisEndpointCache(endpoint)
+
+        objects, _ = self.rest_factory.get_all(endpoint, query_params)
+
+        # Need to check this to ensure model_dump() is available. Can we avoid somehow?
+        if not is_list_of(objects, endpoint_info.methods.GET.response_obj_type):
+            raise ValueError(
+                f"Expected GET request to yield list of "
+                f"{endpoint_info.methods.GET.response_obj_type}, "
+                f"but got {objects}"
+            )
+
+        for obj in objects:
+            mt_type = obj.mytardis_type
+            matchers = self.generate_object_matchers(mt_type, obj.model_dump())
+
+            for keys in matchers:
+                self._cache[endpoint].emplace(keys, [obj])
 
     def get_matching_objects(
         self,
