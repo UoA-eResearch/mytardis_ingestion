@@ -69,18 +69,11 @@ def extract_values_for_matching(
 class CacheKey:
     """A hashable key for caching objects from MyTardis"""
 
-    key_type = tuple[tuple[str, Any], ...]
-
     def __init__(self, keys: dict[str, Any]) -> None:
-        self.keys = type(self)._to_hashable(keys)
+        self.keys = tuple(keys.items())
 
     def __hash__(self) -> int:
         return hash(self.keys)
-
-    @classmethod
-    def _to_hashable(cls, d: dict[str, Any]) -> key_type:
-        """Return a hashable tuple from a dictionary"""
-        return tuple(d.items())
 
 
 class MyTardisEndpointCache:
