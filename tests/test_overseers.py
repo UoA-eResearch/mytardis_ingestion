@@ -90,8 +90,6 @@ def test_get_matches_from_mytardis(
         == expected_projects
     )
 
-    Overseer.clear()
-
 
 @responses.activate
 def test_get_objects_http_error(
@@ -125,8 +123,6 @@ def test_get_objects_http_error(
     with pytest.raises(RuntimeError):
         overseer.get_matching_objects(object_type, {"name": search_string})
 
-    Overseer.clear()
-
 
 @mock.patch("src.mytardis_client.mt_rest.MyTardisRESTFactory.request")
 def test_get_objects_general_error(
@@ -145,8 +141,6 @@ def test_get_objects_general_error(
     with pytest.raises(RuntimeError):
         _ = overseer.get_matching_objects(object_type, {"name": search_string})
         assert error_str in caplog.text
-
-    Overseer.clear()
 
 
 @responses.activate
@@ -183,8 +177,6 @@ def test_get_objects_no_objects(
 
     assert overseer.get_matching_objects(object_type, {"name": search_string}) == []
 
-    Overseer.clear()
-
 
 @responses.activate
 def test_get_uris(
@@ -211,8 +203,6 @@ def test_get_uris(
         MyTardisObject.PROJECT,
         search_string,
     ) == [URI("/api/v1/project/1/")]
-
-    Overseer.clear()
 
 
 @responses.activate
@@ -252,7 +242,6 @@ def test_get_uris_no_objects(
         )
         == []
     )
-    Overseer.clear()
 
 
 @responses.activate
@@ -296,8 +285,6 @@ def test_get_uris_malformed_return_dict(
             search_string,
         )
 
-    Overseer.clear()
-
 
 @responses.activate
 def test_get_uris_ensure_http_errors_caught_by_get_objects(
@@ -333,8 +320,6 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
             search_string,
         )
 
-    Overseer.clear()
-
 
 @mock.patch("src.mytardis_client.mt_rest.MyTardisRESTFactory.request")
 def test_get_uris_general_error(
@@ -349,7 +334,6 @@ def test_get_uris_general_error(
             object_type,
             search_string,
         )
-    Overseer.clear()
 
 
 @responses.activate
@@ -373,7 +357,6 @@ def test_get_mytardis_setup(
     )
 
     assert overseer_plain.mytardis_setup == mytardis_introspection
-    Overseer.clear()
 
 
 @responses.activate
@@ -393,7 +376,6 @@ def test_get_mytardis_setup_http_error(
     with pytest.raises(HTTPError):
         _ = overseer.fetch_mytardis_setup()
         assert error_str in caplog.text
-    Overseer.clear()
 
 
 @mock.patch("src.overseers.overseer.Overseer.fetch_mytardis_setup")
@@ -407,7 +389,6 @@ def test_get_mytardis_setup_general_error(
     with pytest.raises(IOError):
         _ = overseer.fetch_mytardis_setup()
         assert error_str in caplog.text
-    Overseer.clear()
 
 
 @responses.activate
@@ -428,8 +409,6 @@ def test_get_mytardis_setup_no_objects(
 
     with pytest.raises(ValueError):
         _ = overseer.fetch_mytardis_setup()
-
-    Overseer.clear()
 
 
 @responses.activate
@@ -452,5 +431,3 @@ def test_get_mytardis_setup_too_many_objects(
 
     with pytest.raises(ValueError):
         _ = overseer.fetch_mytardis_setup()
-
-    Overseer.clear()
