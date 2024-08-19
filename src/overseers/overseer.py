@@ -66,25 +66,43 @@ def extract_values_for_matching(
     return match_keys
 
 
+class CacheKey:
+    """A hashable key for caching objects from MyTardis"""
+
+    key_type = tuple[tuple[str, Any], ...]
+
+    def __init__(self, keys: dict[str, Any]) -> None:
+        self.keys = type(self)._to_hashable(keys)
+
+    def __hash__(self) -> int:
+        return hash(self.keys)
+
+    @classmethod
+    def _to_hashable(cls, d: dict[str, Any]) -> key_type:
+        """Return a hashable tuple from a dictionary"""
+        return tuple(d.items())
+
+
 class MyTardisEndpointCache:
     """A cache for URIs and objects from a specific MyTardis endpoint"""
 
     def __init__(self, endpoint: MyTardisEndpoint) -> None:
         self.endpoint = endpoint
         self._objects: list[list[MyTardisObjectData]] = []
-        self._index: dict[dict[str, Any], int] = {}
+        self._index: dict[CacheKey, int] = {}
 
     def emplace(self, keys: dict[str, Any], obj: list[MyTardisObjectData]) -> None:
         """Add objects to the cache"""
-        if keys in self._index:
-            raise ValueError(f"Duplicate keys {keys} in MyTardisEndpointCache")
+        hashable_keys = CacheKey(keys)
+        if hashable_keys in self._index:
+            raise ValueError(f"Duplicate keys {hashable_keys} in MyTardisEndpointCache")
 
-        self._index[keys] = len(self._objects)
+        self._index[hashable_keys] = len(self._objects)
         self._objects.append(obj)
 
     def get(self, keys: dict[str, Any]) -> list[MyTardisObjectData] | None:
         """Get objects from the cache"""
-        if object_index := self._index.get(keys):
+        if object_index := self._index.get(CacheKey(keys)):
             return self._objects[object_index]
         return None
 
