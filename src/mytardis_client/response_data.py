@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, ClassVar, Optional, Protocol  # , TypeVar
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import Self
@@ -17,21 +17,8 @@ from src.mytardis_client.endpoints import URI
 from src.mytardis_client.objects import MyTardisObject
 
 
-class MyTardisResource(Protocol):
-    """Protocol for MyTardis resources."""
-
-    # pylint: disable=unnecessary-ellipsis
-    @property
-    def mytardis_type(self) -> MyTardisObject:
-        """The type of the MyTardis object."""
-        ...
-
-    id: int
-    resource_uri: URI
-
-
-class MyTardisResourceBase(BaseModel, MyTardisResource):
-    """Base class for data retrieved from MyTardis, associated with an ingested object."""
+class MyTardisObjectData(BaseModel):
+    """Base class for object data retrieved from MyTardis. Defines minimal fields, e.g. URI"""
 
     @property
     @abstractmethod
@@ -43,18 +30,22 @@ class MyTardisResourceBase(BaseModel, MyTardisResource):
     resource_uri: URI
 
 
-class Group(MyTardisResourceBase):
+class Group(MyTardisObjectData):
     """Metadata associated with a group in MyTardis."""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.GROUP
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.GROUP
 
     name: str
 
 
-class Facility(MyTardisResourceBase):
+class Facility(MyTardisObjectData):
     """Metadata associated with a facility in MyTardis."""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.FACILITY
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.FACILITY
 
     created_time: ISODateTime
     manager_group: Group
@@ -62,20 +53,24 @@ class Facility(MyTardisResourceBase):
     name: str
 
 
-class Institution(MyTardisResourceBase):
+class Institution(MyTardisObjectData):
     """Metadata associated with an institution in MyTardis."""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.INSTITUTION
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.INSTITUTION
 
     aliases: Optional[list[str]]
     identifiers: list[str]
     name: str
 
 
-class Instrument(MyTardisResourceBase):
+class Instrument(MyTardisObjectData):
     """Metadata associated with an instrument in MyTardis."""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.INSTRUMENT
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.INSTRUMENT
 
     created_time: ISODateTime
     facility: Facility
@@ -83,7 +78,7 @@ class Instrument(MyTardisResourceBase):
     name: str
 
 
-class MyTardisIntrospection(MyTardisResourceBase):
+class MyTardisIntrospection(MyTardisObjectData):
     """MyTardis introspection data (the configuration of the MyTardis instance).
 
     NOTE: this class relies on data from the MyTardis introspection API and
@@ -93,7 +88,9 @@ class MyTardisIntrospection(MyTardisResourceBase):
 
     model_config = ConfigDict(use_enum_values=False)
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.INTROSPECTION
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.INTROSPECTION
 
     data_classification_enabled: Optional[bool]
     identifiers_enabled: bool
@@ -141,10 +138,12 @@ class MyTardisIntrospection(MyTardisResourceBase):
         return self
 
 
-class ParameterName(MyTardisResourceBase):
+class ParameterName(MyTardisObjectData):
     """Schema parameter information"""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.PARAMETER_NAME
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.PARAMETER_NAME
 
     full_name: str
     immutable: bool
@@ -155,10 +154,12 @@ class ParameterName(MyTardisResourceBase):
     units: str
 
 
-class Replica(MyTardisResourceBase):
+class Replica(MyTardisObjectData):
     """Metadata associated with a Datafile replica in MyTardis."""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.REPLICA
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.REPLICA
 
     created_time: ISODateTime
     datafile: URI
@@ -168,10 +169,12 @@ class Replica(MyTardisResourceBase):
     verified: bool
 
 
-class Schema(MyTardisResourceBase):
+class Schema(MyTardisObjectData):
     """Metadata associated with a metadata schema in MyTardis."""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.SCHEMA
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.SCHEMA
 
     hidden: bool
     immutable: bool
@@ -180,10 +183,12 @@ class Schema(MyTardisResourceBase):
     parameter_names: list[ParameterName]
 
 
-class StorageBoxOption(MyTardisResourceBase):
+class StorageBoxOption(MyTardisObjectData):
     """Data associated with a storage box option in MyTardis."""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.STORAGE_BOX_OPTION
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.STORAGE_BOX_OPTION
 
     key: str
     storage_box: URI
@@ -191,10 +196,12 @@ class StorageBoxOption(MyTardisResourceBase):
     value_type: str
 
 
-class StorageBox(MyTardisResourceBase):
+class StorageBox(MyTardisObjectData):
     """Metadata associated with a storage box in MyTardis."""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.STORAGE_BOX
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.STORAGE_BOX
 
     attributes: list[str]
     description: str
@@ -205,10 +212,12 @@ class StorageBox(MyTardisResourceBase):
     status: str
 
 
-class User(MyTardisResourceBase):
+class User(MyTardisObjectData):
     """Dataa associated with a user in MyTardis."""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.USER
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.USER
 
     email: Optional[str]
     first_name: Optional[str]
@@ -217,34 +226,44 @@ class User(MyTardisResourceBase):
     username: str
 
 
-class ProjectParameterSet(MyTardisResourceBase):
+class ProjectParameterSet(MyTardisObjectData):
     """Metadata associated with a project parameter set in MyTardis."""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.PROJECT_PARAMETER_SET
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.PROJECT_PARAMETER_SET
 
 
-class ExperimentParameterSet(MyTardisResourceBase):
+class ExperimentParameterSet(MyTardisObjectData):
     """Metadata associated with an experiment parameter set in MyTardis."""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.EXPERIMENT_PARAMETER_SET
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.EXPERIMENT_PARAMETER_SET
 
 
-class DatasetParameterSet(MyTardisResourceBase):
+class DatasetParameterSet(MyTardisObjectData):
     """Metadata associated with a dataset parameter set in MyTardis."""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.DATASET_PARAMETER_SET
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.DATASET_PARAMETER_SET
 
 
-class DatafileParameterSet(MyTardisResourceBase):
+class DatafileParameterSet(MyTardisObjectData):
     """Metadata associated with a datafile parameter set in MyTardis."""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.DATAFILE_PARAMETER_SET
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.DATAFILE_PARAMETER_SET
 
 
-class IngestedProject(MyTardisResourceBase):
+class IngestedProject(MyTardisObjectData):
     """Metadata associated with a project that has been ingested into MyTardis."""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.PROJECT
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.PROJECT
 
     classification: DataClassification
     description: str
@@ -255,10 +274,12 @@ class IngestedProject(MyTardisResourceBase):
     principal_investigator: str
 
 
-class IngestedExperiment(MyTardisResourceBase):
+class IngestedExperiment(MyTardisObjectData):
     """Metadata associated with an experiment that has been ingested into MyTardis."""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.EXPERIMENT
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.EXPERIMENT
 
     classification: int
     description: str
@@ -268,10 +289,12 @@ class IngestedExperiment(MyTardisResourceBase):
     title: str
 
 
-class IngestedDataset(MyTardisResourceBase):
+class IngestedDataset(MyTardisObjectData):
     """Metadata associated with a dataset that has been ingested into MyTardis."""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.DATASET
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.DATASET
 
     classification: DataClassification
     created_time: ISODateTime
@@ -286,10 +309,12 @@ class IngestedDataset(MyTardisResourceBase):
     public_access: bool
 
 
-class IngestedDatafile(MyTardisResourceBase):
+class IngestedDatafile(MyTardisObjectData):
     """Metadata associated with a datafile that has been ingested into MyTardis."""
 
-    mytardis_type: ClassVar[MyTardisObject] = MyTardisObject.DATAFILE
+    @property
+    def mytardis_type(self) -> MyTardisObject:
+        return MyTardisObject.DATAFILE
 
     created_time: Optional[ISODateTime]
     dataset: URI

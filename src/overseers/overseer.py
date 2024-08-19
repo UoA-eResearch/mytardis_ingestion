@@ -12,7 +12,7 @@ from src.mytardis_client.endpoint_info import get_endpoint_info
 from src.mytardis_client.endpoints import URI, MyTardisEndpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject, get_type_info
-from src.mytardis_client.response_data import MyTardisIntrospection, MyTardisResource
+from src.mytardis_client.response_data import MyTardisIntrospection, MyTardisObjectData
 from src.utils.types.type_helpers import is_list_of
 
 logger = logging.getLogger(__name__)
@@ -71,10 +71,10 @@ class MyTardisEndpointCache:
 
     def __init__(self, endpoint: MyTardisEndpoint) -> None:
         self.endpoint = endpoint
-        self._objects: list[list[MyTardisResource]] = []
+        self._objects: list[list[MyTardisObjectData]] = []
         self._index: dict[dict[str, Any], int] = {}
 
-    def emplace(self, keys: dict[str, Any], obj: list[MyTardisResource]) -> None:
+    def emplace(self, keys: dict[str, Any], obj: list[MyTardisObjectData]) -> None:
         """Add objects to the cache"""
         if keys in self._index:
             raise ValueError(f"Duplicate keys {keys} in MyTardisEndpointCache")
@@ -82,7 +82,7 @@ class MyTardisEndpointCache:
         self._index[keys] = len(self._objects)
         self._objects.append(obj)
 
-    def get(self, keys: dict[str, Any]) -> list[MyTardisResource] | None:
+    def get(self, keys: dict[str, Any]) -> list[MyTardisObjectData] | None:
         """Get objects from the cache"""
         if object_index := self._index.get(keys):
             return self._objects[object_index]
@@ -174,7 +174,7 @@ class Overseer:
         self,
         object_type: MyTardisObject,
         query_params: dict[str, str],
-    ) -> list[MyTardisResource]:
+    ) -> list[MyTardisObjectData]:
         """Get objects from MyTardis that match the given query parameters"""
 
         endpoint = get_default_endpoint(object_type)
@@ -231,7 +231,7 @@ class Overseer:
         self,
         object_type: MyTardisObject,
         object_data: dict[str, str],
-    ) -> list[MyTardisResource]:
+    ) -> list[MyTardisObjectData]:
         """Retrieve objects from MyTardis with field values matching the ones in "field_values"
 
         The function extracts the type-dependent match keys from 'object_data' and uses them to

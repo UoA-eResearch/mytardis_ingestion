@@ -7,7 +7,7 @@ is heavily based on the NGS ingestor for MyTardis found at
 
 import logging
 from copy import deepcopy
-from typing import Any, Callable, Dict, Generic, Literal, Optional, TypeVar
+from typing import Any, Callable, Dict, Literal, Optional
 from urllib.parse import urljoin
 
 import requests
@@ -25,7 +25,7 @@ from src.config.config import AuthConfig, ConnectionConfig
 from src.mytardis_client.common_types import HttpRequestMethod
 from src.mytardis_client.endpoint_info import get_endpoint_info
 from src.mytardis_client.endpoints import URI, MyTardisEndpoint
-from src.mytardis_client.response_data import MyTardisResource
+from src.mytardis_client.response_data import MyTardisObjectData
 
 # Defines the valid values for the MyTardis API version
 MyTardisApiVersion = Literal["v1"]
@@ -74,25 +74,6 @@ class GetResponseMeta(BaseModel):
     total_count: int
     next: Optional[str]
     previous: Optional[str]
-
-
-MyTardisObjectData = TypeVar("MyTardisObjectData", bound=BaseModel)
-
-
-class GetResponse(BaseModel, Generic[MyTardisObjectData]):
-    """A Pydantic model to handle the response from a GET request to the MyTardis API"""
-
-    meta: GetResponseMeta
-    objects: list[MyTardisObjectData]
-
-
-class Ingested(BaseModel, Generic[MyTardisObjectData]):
-    """A Pydantic model to store the data of an ingested object, i.e. the response from a GET
-    request to the MyTardis API, along with the URI.
-    """
-
-    obj: MyTardisObjectData
-    resource_uri: URI
 
 
 def sanitize_params(params: dict[str, Any]) -> dict[str, Any]:
@@ -281,7 +262,7 @@ class MyTardisRESTFactory:
         endpoint: MyTardisEndpoint,
         query_params: Optional[dict[str, Any]] = None,
         meta_params: Optional[GetRequestMetaParams] = None,
-    ) -> tuple[list[MyTardisResource], GetResponseMeta]:
+    ) -> tuple[list[MyTardisObjectData], GetResponseMeta]:
         """Submit a GET request to the MyTardis API and return the response as a list of objects.
 
         Note that the response is paginated, so the function may not return all objects matching
@@ -309,7 +290,7 @@ class MyTardisRESTFactory:
 
         response_meta = GetResponseMeta.model_validate(response_json["meta"])
 
-        objects: list[MyTardisResource] = []
+        objects: list[MyTardisObjectData] = []
 
         response_objects = response_json.get("objects")
         if response_objects is None:
@@ -336,7 +317,7 @@ class MyTardisRESTFactory:
         endpoint: MyTardisEndpoint,
         query_params: Optional[dict[str, Any]] = None,
         batch_size: int = 500,
-    ) -> tuple[list[MyTardisResource], int]:
+    ) -> tuple[list[MyTardisObjectData], int]:
         """Get all objects of the given type that match 'query_params'.
 
         Sends repeated GET requests to the MyTardis API until all objects have been retrieved.
@@ -344,7 +325,7 @@ class MyTardisRESTFactory:
         each request
         """
 
-        objects: list[MyTardisResource] = []
+        objects: list[MyTardisObjectData] = []
 
         while True:
             request_meta = GetRequestMetaParams(limit=batch_size, offset=len(objects))
