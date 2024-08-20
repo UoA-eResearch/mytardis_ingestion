@@ -7,7 +7,7 @@ is heavily based on the NGS ingestor for MyTardis found at
 
 import logging
 from copy import deepcopy
-from typing import Any, Callable, Dict, Literal, Optional
+from typing import Any, Callable, Dict, Generic, Literal, Optional, TypeVar
 from urllib.parse import urljoin
 
 import requests
@@ -74,6 +74,16 @@ class GetResponseMeta(BaseModel):
     total_count: int
     next: Optional[str]
     previous: Optional[str]
+
+
+T = TypeVar("T", bound=BaseModel)
+
+
+class GetResponse(BaseModel, Generic[T]):
+    """Data model for a response from a GET request to the MyTardis API"""
+
+    meta: GetResponseMeta
+    objects: list[T]
 
 
 def sanitize_params(params: dict[str, Any]) -> dict[str, Any]:

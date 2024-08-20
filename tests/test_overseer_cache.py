@@ -7,12 +7,15 @@ Tests for caching in the Overseer.
 from typing import Any
 
 import responses
-from pydantic import BaseModel
 from responses import matchers
 
 from src.config.config import AuthConfig, ConnectionConfig
 from src.mytardis_client.endpoints import URI
-from src.mytardis_client.mt_rest import GetResponseMeta, MyTardisRESTFactory
+from src.mytardis_client.mt_rest import (
+    GetResponse,
+    GetResponseMeta,
+    MyTardisRESTFactory,
+)
 from src.mytardis_client.objects import MyTardisObject, get_type_info
 from src.mytardis_client.response_data import IngestedDatafile, MyTardisObjectData
 from src.overseers.overseer import MyTardisEndpointCache, Overseer
@@ -38,11 +41,6 @@ def test_overseer_endpoint_cache(
     df_cache.emplace(keys, objects)
 
     assert df_cache.get(keys) == objects
-
-
-class MockGetResponse(BaseModel):
-    meta: GetResponseMeta
-    objects: list[IngestedDatafile]
 
 
 @responses.activate
@@ -72,7 +70,7 @@ def test_overseer_prefetch(
             ),
         ],
         status=200,
-        json=MockGetResponse(
+        json=GetResponse(
             objects=ingested_datafiles,
             meta=GetResponseMeta(
                 limit=500, offset=0, total_count=1, next=None, previous=None
