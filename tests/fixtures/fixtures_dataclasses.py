@@ -456,6 +456,19 @@ class TestModelFactory(Protocol[T_co]):
 
 
 _DEFAULT_DATACLASS_ARGS: dict[type, dict[str, Any]] = {
+    Datafile: {
+        "filename": "test_file.txt",
+        "directory": Path("path/to/datafile"),
+        "md5sum": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+        "mimetype": "text/plain",
+        "size": 1024,
+        "users": None,
+        "groups": None,
+        "data_status": None,
+        "replicas": [],
+        "parameter_sets": None,
+        "dataset": URI("/api/v1/dataset/1/"),
+    },
     IngestedDatafile: {
         "resource_uri": URI("/api/v1/dataset_file/1/"),
         "id": 1,
@@ -474,7 +487,7 @@ _DEFAULT_DATACLASS_ARGS: dict[type, dict[str, Any]] = {
         "deleted_time": None,
         "modification_time": None,
         "identifiers": ["dataset-id-1"],
-    }
+    },
 }
 
 
@@ -504,6 +517,11 @@ def make_dataclass_factory(dc_type: type[T_co]) -> TestModelFactory[T_co]:
         return dc_type.model_validate(result)
 
     return _make_dataclass
+
+
+@fixture
+def make_datafile() -> TestModelFactory[Datafile]:
+    return make_dataclass_factory(Datafile)
 
 
 @fixture

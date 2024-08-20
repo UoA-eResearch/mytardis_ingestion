@@ -11,14 +11,12 @@ from pydantic import BaseModel
 from responses import matchers
 
 from src.config.config import AuthConfig, ConnectionConfig
+from src.mytardis_client.endpoints import URI
 from src.mytardis_client.mt_rest import GetResponseMeta, MyTardisRESTFactory
-from src.mytardis_client.objects import MyTardisObject
+from src.mytardis_client.objects import MyTardisObject, get_type_info
 from src.mytardis_client.response_data import IngestedDatafile, MyTardisObjectData
-from src.overseers.overseer import (
-    MyTardisEndpointCache,
-    Overseer,
-    extract_values_for_matching,
-)
+from src.overseers.overseer import MyTardisEndpointCache, Overseer
+from src.utils.container import subdict
 from tests.fixtures.fixtures_dataclasses import TestModelFactory
 
 
@@ -33,7 +31,7 @@ def test_overseer_endpoint_cache(
     objects: list[MyTardisObjectData] = [df_1]
 
     object_dict = df_1.model_dump()
-    keys = {key: object_dict[key] for key in ["filename", "directory", "dataset"]}
+    keys = subdict(object_dict, ["filename", "directory", "dataset"])
 
     assert df_cache.get(keys) is None
 
@@ -58,7 +56,12 @@ def test_overseer_prefetch(
     mt_client = MyTardisRESTFactory(auth, connection)
     overseer = Overseer(mt_client)
 
-    ingested_datafile = make_ingested_datafile()
+    ingested_datafiles = [
+        make_ingested_datafile(
+            filename=f"ingested-file-{i}.txt", dataset=URI("/api/v1/dataset/1/")
+        )
+        for i in range(1, 100)
+    ]
 
     responses.add(
         responses.GET,
@@ -70,7 +73,7 @@ def test_overseer_prefetch(
         ],
         status=200,
         json=MockGetResponse(
-            objects=[ingested_datafile],
+            objects=ingested_datafiles,
             meta=GetResponseMeta(
                 limit=500, offset=0, total_count=1, next=None, previous=None
             ),
@@ -86,15 +89,10 @@ def test_overseer_prefetch(
 
     overseer.prefetch("/dataset_file", {"dataset": "dataset-id-1"})
 
-    matching_vals = extract_values_for_matching(
-        MyTardisObject.DATAFILE, ingested_datafile.model_dump()
-    )
+    match_fields = get_type_info(MyTardisObject.DATAFILE).match_fields
 
-    # NOTE: slightly wrong here to use IngestedDatafile for match values. Need to be sure of differences
-    #       between IngestedDatafile and Datafile (dataset reference format etc.), as the latter is what
-    #       we will be querying with.
-    match_df = overseer.get_matching_objects(MyTardisObject.DATAFILE, matching_vals)
-
-    assert match_df == [ingested_datafile]
-
-    # Query for some individual objects, and ensure the cache is hit, and no request is made.
+    for df in ingested_datafiles:
+        match_keys = subdict(df.model_dump(), match_fields)
+        matches = overseer.get_matching_objects(MyTardisObject.DATAFILE, match_keys)
+        assert len(matches) == 1
+        assert matches[0] == df
