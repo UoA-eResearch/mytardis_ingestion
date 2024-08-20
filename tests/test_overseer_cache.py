@@ -2,18 +2,15 @@
 Tests for caching in the Overseer.
 """
 
-# pylint: disable=missing-function-docstring
+# pylint: disable=missing-function-docstring, missing-class-docstring
 
-from pathlib import Path
-from typing import Any, Protocol, TypeVar
+from typing import Any
 
-import pytest
 import responses
 from pydantic import BaseModel
 from responses import matchers
 
 from src.config.config import AuthConfig, ConnectionConfig
-from src.mytardis_client.endpoints import URI
 from src.mytardis_client.mt_rest import GetResponseMeta, MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject
 from src.mytardis_client.response_data import IngestedDatafile, MyTardisObjectData
@@ -22,44 +19,7 @@ from src.overseers.overseer import (
     Overseer,
     extract_values_for_matching,
 )
-
-T_co = TypeVar("T_co", bound=IngestedDatafile, covariant=True)
-
-
-class TestModelFactory(Protocol[T_co]):
-    """Protocol for a factory function that creates pydantic models to be used in tests."""
-
-    def __call__(self, **kwargs: Any) -> T_co: ...
-
-
-@pytest.fixture(name="make_ingested_datafile")
-def _make_ingested_datafile() -> TestModelFactory[IngestedDatafile]:
-    def _make_ingested_datafile(**kwargs: Any) -> IngestedDatafile:
-
-        defaults = {
-            "resource_uri": URI("/api/v1/dataset_file/1/"),
-            "id": 1,
-            "dataset": URI("/api/v1/dataset/1/"),
-            "deleted": False,
-            "directory": Path("path/to/df_1"),
-            "filename": "df_1.txt",
-            "md5sum": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-            "mimetype": "text/plain",
-            "parameter_sets": [],
-            "public_access": False,
-            "replicas": [],
-            "size": 1024,
-            "version": 1,
-            "created_time": None,
-            "deleted_time": None,
-            "modification_time": None,
-            "identifiers": ["dataset-id-1"],
-        }
-
-        result = {**defaults, **kwargs}
-        return IngestedDatafile.model_validate(result)
-
-    return _make_ingested_datafile
+from tests.fixtures.fixtures_dataclasses import TestModelFactory
 
 
 def test_overseer_endpoint_cache(

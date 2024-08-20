@@ -158,6 +158,7 @@ project = dcls.project
 experiment = dcls.experiment
 dataset = dcls.dataset
 datafile = dcls.datafile
+make_ingested_datafile = dcls.make_ingested_datafile
 
 # =========================================
 #
