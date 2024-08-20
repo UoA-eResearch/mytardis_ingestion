@@ -66,27 +66,20 @@ def extract_values_for_matching(
     return match_keys
 
 
-class CacheKey:
-    """A hashable key for caching objects from MyTardis"""
-
-    def __init__(self, keys: dict[str, Any]) -> None:
-        self.keys = tuple(keys.items())
-
-    def __hash__(self) -> int:
-        return hash(self.keys)
-
-
 class MyTardisEndpointCache:
     """A cache for URIs and objects from a specific MyTardis endpoint"""
 
     def __init__(self, endpoint: MyTardisEndpoint) -> None:
         self.endpoint = endpoint
         self._objects: list[list[MyTardisObjectData]] = []
-        self._index: dict[CacheKey, int] = {}
+        self._index: dict[tuple[tuple[str, Any], ...], int] = {}
+
+    def _to_hashable(self, keys: dict[str, Any]) -> tuple[tuple[str, Any], ...]:
+        return tuple(keys.items())
 
     def emplace(self, keys: dict[str, Any], obj: list[MyTardisObjectData]) -> None:
         """Add objects to the cache"""
-        hashable_keys = CacheKey(keys)
+        hashable_keys = self._to_hashable(keys)
         if hashable_keys in self._index:
             raise ValueError(f"Duplicate keys {hashable_keys} in MyTardisEndpointCache")
 
@@ -95,7 +88,9 @@ class MyTardisEndpointCache:
 
     def get(self, keys: dict[str, Any]) -> list[MyTardisObjectData] | None:
         """Get objects from the cache"""
-        if object_index := self._index.get(CacheKey(keys)):
+        hashable_keys = self._to_hashable(keys)
+        object_index = self._index.get(hashable_keys)
+        if object_index is not None:
             return self._objects[object_index]
         return None
 
