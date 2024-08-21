@@ -49,7 +49,7 @@ class Facility(MyTardisResourceBase):
 class Institution(MyTardisResourceBase):
     """Metadata associated with an institution in MyTardis."""
 
-    aliases: list[str]
+    aliases: Optional[list[str]]
     identifiers: list[str]
     name: str
 
