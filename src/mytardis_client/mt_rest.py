@@ -5,6 +5,7 @@ is heavily based on the NGS ingestor for MyTardis found at
     https://github.com/mytardis/mytardis_ngs_ingestor
 """
 
+import logging
 from copy import deepcopy
 from typing import Any, Callable, Dict, Generic, Literal, Optional, TypeVar
 from urllib.parse import urljoin
@@ -14,6 +15,7 @@ from pydantic import BaseModel, ValidationError
 from requests import Response
 from requests.exceptions import ReadTimeout, RequestException
 from tenacity import (
+    RetryCallState,
     retry,
     retry_if_exception_type,
     stop_after_attempt,
@@ -28,6 +30,8 @@ from src.mytardis_client.response_data import MyTardisResource
 
 # Defines the valid values for the MyTardis API version
 MyTardisApiVersion = Literal["v1"]
+
+logger = logging.getLogger(__name__)
 
 
 def make_api_stub(version: MyTardisApiVersion) -> str:
@@ -129,6 +133,21 @@ def sanitize_params(params: dict[str, Any]) -> dict[str, Any]:
     return updated_params
 
 
+def log_retry_info(retry_state: RetryCallState) -> None:
+    """Log function retry information at the appropriate level"""
+    if retry_state.attempt_number < 1:
+        loglevel = logging.INFO
+    else:
+        loglevel = logging.WARNING
+    logger.log(
+        loglevel,
+        "Retrying %s: attempt %s ended with: %s",
+        retry_state.fn,
+        retry_state.attempt_number,
+        retry_state.outcome,
+    )
+
+
 class MyTardisRESTFactory:
     """Class to interact with MyTardis by calling the REST API
 
@@ -200,6 +219,7 @@ class MyTardisRESTFactory:
         retry=retry_if_exception_type((BadGateWayException, ReadTimeout)),
         wait=wait_exponential(),
         stop=stop_after_attempt(8),
+        before_sleep=log_retry_info,
         reraise=True,
     )
     def request(
