@@ -12,7 +12,7 @@ from urllib.parse import urljoin
 import requests
 from pydantic import BaseModel, ValidationError
 from requests import Response
-from requests.exceptions import RequestException
+from requests.exceptions import ReadTimeout, RequestException
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -152,6 +152,7 @@ class MyTardisRESTFactory:
         self,
         auth: AuthConfig,
         connection: ConnectionConfig,
+        request_timeout: int = 30,
     ) -> None:
         """MyTardisRESTFactory initialisation using a configuration dictionary.
 
@@ -180,6 +181,8 @@ class MyTardisRESTFactory:
         self.user_agent = f"{self.user_agent_name}/2.0 ({self.user_agent_url})"
         self._session = requests.Session()
 
+        self._request_timeout = request_timeout
+
     @property
     def hostname(self) -> str:
         """The hostname of the MyTardis instance"""
@@ -194,7 +197,7 @@ class MyTardisRESTFactory:
         return urljoin(self._url_base, path)
 
     @retry(
-        retry=retry_if_exception_type(BadGateWayException),
+        retry=retry_if_exception_type((BadGateWayException, ReadTimeout)),
         wait=wait_exponential(),
         stop=stop_after_attempt(8),
         reraise=True,
@@ -258,7 +261,7 @@ class MyTardisRESTFactory:
             auth=self.auth,
             verify=self.verify_certificate,
             proxies=self.proxies,
-            timeout=5,
+            timeout=self._request_timeout,
         )
 
         if response.status_code == 502:
