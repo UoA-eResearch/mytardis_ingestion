@@ -9,11 +9,16 @@ from copy import deepcopy
 from typing import Any, Callable, Dict, Generic, Literal, Optional, TypeVar
 from urllib.parse import urljoin
 
-import backoff
 import requests
 from pydantic import BaseModel, ValidationError
 from requests import Response
 from requests.exceptions import RequestException
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from src.config.config import AuthConfig, ConnectionConfig
 from src.mytardis_client.common_types import HttpRequestMethod
@@ -188,7 +193,12 @@ class MyTardisRESTFactory:
         # Note: it's important here that the base URL ends with a slash and the path does not
         return urljoin(self._url_base, path)
 
-    @backoff.on_exception(backoff.expo, BadGateWayException, max_tries=8)
+    @retry(
+        retry=retry_if_exception_type(BadGateWayException),
+        wait=wait_exponential(),
+        stop=stop_after_attempt(8),
+        reraise=True,
+    )
     def request(
         self,
         method: HttpRequestMethod,
