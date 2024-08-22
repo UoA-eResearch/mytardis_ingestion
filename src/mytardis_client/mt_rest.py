@@ -5,15 +5,21 @@ is heavily based on the NGS ingestor for MyTardis found at
     https://github.com/mytardis/mytardis_ngs_ingestor
 """
 
+import logging
 from copy import deepcopy
 from typing import Any, Callable, Dict, Generic, Literal, Optional, TypeVar
 from urllib.parse import urljoin
 
-import backoff
 import requests
 from pydantic import BaseModel, ValidationError
-from requests import Response
-from requests.exceptions import RequestException
+from requests import ConnectTimeout, ReadTimeout, RequestException, Response
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from src.config.config import AuthConfig, ConnectionConfig
 from src.mytardis_client.common_types import HttpRequestMethod
@@ -23,6 +29,8 @@ from src.mytardis_client.response_data import MyTardisResource
 
 # Defines the valid values for the MyTardis API version
 MyTardisApiVersion = Literal["v1"]
+
+logger = logging.getLogger(__name__)
 
 
 def make_api_stub(version: MyTardisApiVersion) -> str:
@@ -147,6 +155,7 @@ class MyTardisRESTFactory:
         self,
         auth: AuthConfig,
         connection: ConnectionConfig,
+        request_timeout: int = 30,
     ) -> None:
         """MyTardisRESTFactory initialisation using a configuration dictionary.
 
@@ -175,6 +184,8 @@ class MyTardisRESTFactory:
         self.user_agent = f"{self.user_agent_name}/2.0 ({self.user_agent_url})"
         self._session = requests.Session()
 
+        self._request_timeout = request_timeout
+
     @property
     def hostname(self) -> str:
         """The hostname of the MyTardis instance"""
@@ -188,7 +199,15 @@ class MyTardisRESTFactory:
         # Note: it's important here that the base URL ends with a slash and the path does not
         return urljoin(self._url_base, path)
 
-    @backoff.on_exception(backoff.expo, BadGateWayException, max_tries=8)
+    @retry(
+        retry=retry_if_exception_type(
+            (BadGateWayException, ConnectTimeout, ReadTimeout)
+        ),
+        wait=wait_exponential(),
+        stop=stop_after_attempt(8),
+        before_sleep=before_sleep_log(logger, logging.INFO),
+        reraise=True,
+    )
     def request(
         self,
         method: HttpRequestMethod,
@@ -248,7 +267,7 @@ class MyTardisRESTFactory:
             auth=self.auth,
             verify=self.verify_certificate,
             proxies=self.proxies,
-            timeout=5,
+            timeout=self._request_timeout,
         )
 
         if response.status_code == 502:

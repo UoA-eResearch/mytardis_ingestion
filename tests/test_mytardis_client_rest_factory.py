@@ -13,6 +13,7 @@ import responses
 from mock import MagicMock
 from requests import HTTPError, Request, RequestException, Response
 from responses import matchers
+from tenacity import wait_fixed
 
 from src.blueprints.datafile import Datafile
 from src.config.config import AuthConfig, ConnectionConfig
@@ -56,7 +57,7 @@ def test_mytardis_rest_factory_setup(
 
 
 @mock.patch("requests.Session.request")
-def test_backoff_on_mytardis_rest_factory_doesnt_trigger_on_httperror(
+def test_retry_on_mytardis_rest_factory_doesnt_trigger_on_httperror(
     mock_requests_request: MagicMock, auth: AuthConfig, connection: ConnectionConfig
 ) -> None:
     mock_response = Response()
@@ -70,7 +71,7 @@ def test_backoff_on_mytardis_rest_factory_doesnt_trigger_on_httperror(
 
 @mock.patch("requests.Session.request")
 @pytest.mark.long
-def test_backoff_on_mytardis_rest_factory(
+def test_retry_on_mytardis_rest_factory(
     mock_requests_request: MagicMock, auth: AuthConfig, connection: ConnectionConfig
 ) -> None:
     backoff_max_tries = 8
@@ -80,6 +81,11 @@ def test_backoff_on_mytardis_rest_factory(
     mock_response.reason = "Test reason"
     mock_requests_request.return_value = mock_response
     test_factory = MyTardisRESTFactory(auth, connection)
+
+    # Disable the exponential backoff wait time to keep the test duration short.
+    # This uses a facility from tenacity (retry field added by the decorator).
+    test_factory.request.retry.wait = wait_fixed(0.1)  # type: ignore[attr-defined]
+
     with pytest.raises(RequestException):
         _ = test_factory.request("GET", "/project")
     assert mock_requests_request.call_count == backoff_max_tries
