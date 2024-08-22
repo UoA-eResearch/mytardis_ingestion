@@ -209,7 +209,7 @@ class IngestionFactory:
 
         datasets = set(raw_datafile.dataset for raw_datafile in raw_datafiles)
         for dataset in datasets:
-            self._overseer.prefetch("/dataset", query_params={"dataset": dataset})
+            self._overseer.prefetch("/dataset_file", query_params={"dataset": dataset})
 
         for raw_datafile in raw_datafiles:
             refined_datafile = self.smelter.smelt_datafile(raw_datafile)
