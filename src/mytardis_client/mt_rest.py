@@ -12,8 +12,7 @@ from urllib.parse import urljoin
 
 import requests
 from pydantic import BaseModel, ValidationError
-from requests import Response
-from requests.exceptions import ReadTimeout, RequestException
+from requests import ConnectTimeout, ReadTimeout, RequestException, Response
 from tenacity import (
     before_sleep_log,
     retry,
@@ -201,7 +200,9 @@ class MyTardisRESTFactory:
         return urljoin(self._url_base, path)
 
     @retry(
-        retry=retry_if_exception_type((BadGateWayException, ReadTimeout)),
+        retry=retry_if_exception_type(
+            (BadGateWayException, ConnectTimeout, ReadTimeout)
+        ),
         wait=wait_exponential(),
         stop=stop_after_attempt(8),
         before_sleep=before_sleep_log(logger, logging.INFO),
