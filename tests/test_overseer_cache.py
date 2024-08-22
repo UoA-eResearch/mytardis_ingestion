@@ -54,11 +54,13 @@ def test_overseer_prefetch(
     mt_client = MyTardisRESTFactory(auth, connection)
     overseer = Overseer(mt_client)
 
+    total_count = 100
+
     ingested_datafiles = [
         make_ingested_datafile(
             filename=f"ingested-file-{i}.txt", dataset=URI("/api/v1/dataset/1/")
         )
-        for i in range(1, 100)
+        for i in range(0, total_count)
     ]
 
     responses.add(
@@ -85,7 +87,9 @@ def test_overseer_prefetch(
         json=introspection_response,
     )
 
-    overseer.prefetch("/dataset_file", {"dataset": "dataset-id-1"})
+    num_objects = overseer.prefetch("/dataset_file", {"dataset": "dataset-id-1"})
+
+    assert num_objects == total_count
 
     match_fields = get_type_info(MyTardisObject.DATAFILE).match_fields
 

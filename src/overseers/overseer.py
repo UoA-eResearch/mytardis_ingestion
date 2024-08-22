@@ -206,8 +206,11 @@ class Overseer:
         self,
         endpoint: MyTardisEndpoint,
         query_params: dict[str, Any],
-    ) -> None:
-        """Populate the cache for the given endpoint"""
+    ) -> int:
+        """Populate the cache for the given endpoint.
+
+        Returns the number of objects prefetched.
+        """
 
         endpoint_info = get_endpoint_info(endpoint)
         if endpoint_info.methods.GET is None:
@@ -232,6 +235,8 @@ class Overseer:
 
             for keys in matchers:
                 self._cache[endpoint].emplace(keys, [obj])
+
+        return len(objects)
 
     def get_matching_objects(
         self,

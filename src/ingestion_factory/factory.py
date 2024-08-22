@@ -207,9 +207,7 @@ class IngestionFactory:
         result = IngestionResult()
         datafiles: list[Datafile] = []
 
-        datasets = set(raw_datafile.dataset for raw_datafile in raw_datafiles)
-        for dataset in datasets:
-            self._overseer.prefetch("/dataset_file", query_params={"dataset": dataset})
+        datafiles_prefetched: dict[URI, bool] = {}
 
         for raw_datafile in raw_datafiles:
             refined_datafile = self.smelter.smelt_datafile(raw_datafile)
@@ -221,6 +219,18 @@ class IngestionFactory:
             if not datafile:
                 result.error.append(refined_datafile.display_name)
                 continue
+
+            if not datafiles_prefetched.get(datafile.dataset):
+                num_objects = self._overseer.prefetch(
+                    "/dataset_file", query_params={"dataset": datafile.dataset}
+                )
+                datafiles_prefetched[datafile.dataset] = True
+                logging.info(
+                    "Prefetched %d datafiles for dataset %s",
+                    num_objects,
+                    datafile.dataset,
+                )
+
             # Add a replica to represent the copy transferred by the Conveyor.
             datafile.replicas.append(self.conveyor.create_replica(datafile))
 
