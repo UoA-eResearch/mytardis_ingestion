@@ -15,7 +15,7 @@ from pydantic import BaseModel, ValidationError
 from requests import Response
 from requests.exceptions import ReadTimeout, RequestException
 from tenacity import (
-    RetryCallState,
+    before_sleep_log,
     retry,
     retry_if_exception_type,
     stop_after_attempt,
@@ -133,21 +133,6 @@ def sanitize_params(params: dict[str, Any]) -> dict[str, Any]:
     return updated_params
 
 
-def log_retry_info(retry_state: RetryCallState) -> None:
-    """Log function retry information at the appropriate level"""
-    if retry_state.attempt_number < 1:
-        loglevel = logging.INFO
-    else:
-        loglevel = logging.WARNING
-    logger.log(
-        loglevel,
-        "Retrying %s: attempt %s ended with: %s",
-        retry_state.fn,
-        retry_state.attempt_number,
-        retry_state.outcome,
-    )
-
-
 class MyTardisRESTFactory:
     """Class to interact with MyTardis by calling the REST API
 
@@ -219,7 +204,7 @@ class MyTardisRESTFactory:
         retry=retry_if_exception_type((BadGateWayException, ReadTimeout)),
         wait=wait_exponential(),
         stop=stop_after_attempt(8),
-        before_sleep=log_retry_info,
+        before_sleep=before_sleep_log(logger, logging.INFO),
         reraise=True,
     )
     def request(
