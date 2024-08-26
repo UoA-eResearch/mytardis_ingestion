@@ -121,6 +121,7 @@ def _delete_datafiles(df_paths: list[Path]) -> None:
             )
 
 
+# pylint: disable=too-many-locals
 def clean(
     source_data_path: SourceDataPathArg,
     profile_name: ProfileNameOption,
