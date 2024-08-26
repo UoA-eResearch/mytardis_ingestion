@@ -7,7 +7,9 @@ import sys
 from typing import Optional
 
 
-def init_logging(file_name: Optional[str] = None, level: int = logging.DEBUG) -> None:
+def init_logging(
+    file_name: Optional[str] = None, level: int | str = logging.DEBUG
+) -> None:
     """
     Configure a basic default logging setup. Logs to the console, and optionally
     to a file, if a filename is passed.
