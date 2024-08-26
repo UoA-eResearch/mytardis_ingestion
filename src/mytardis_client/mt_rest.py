@@ -33,6 +33,9 @@ MyTardisApiVersion = Literal["v1"]
 
 logger = logging.getLogger(__name__)
 
+# requests_cache is quite verbose in DEBUG - can crowd out other log messages
+logging.getLogger("requests_cache").setLevel(logging.INFO)
+
 
 def make_api_stub(version: MyTardisApiVersion) -> str:
     """Creates a stub for the MyTardis API URL
