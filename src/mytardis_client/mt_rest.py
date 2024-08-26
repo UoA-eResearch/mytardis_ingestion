@@ -7,12 +7,13 @@ is heavily based on the NGS ingestor for MyTardis found at
 
 import logging
 from copy import deepcopy
+from datetime import timedelta
 from typing import Any, Callable, Dict, Generic, Literal, Optional, TypeVar
 from urllib.parse import urljoin
 
-import requests
 from pydantic import BaseModel, ValidationError
-from requests import ConnectTimeout, ReadTimeout, RequestException, Response
+from requests import ConnectTimeout, ReadTimeout, RequestException, Response, Session
+from requests_cache import CachedSession
 from tenacity import (
     before_sleep_log,
     retry,
@@ -147,6 +148,7 @@ class MyTardisRESTFactory:
         auth: AuthConfig,
         connection: ConnectionConfig,
         request_timeout: int = 30,
+        use_cache: bool = True,
     ) -> None:
         """MyTardisRESTFactory initialisation using a configuration dictionary.
 
@@ -173,7 +175,12 @@ class MyTardisRESTFactory:
         self._url_base = urljoin(self._hostname, self._api_stub)
 
         self.user_agent = f"{self.user_agent_name}/2.0 ({self.user_agent_url})"
-        self._session = requests.Session()
+
+        self._session = (
+            CachedSession(backend="memory", expire_after=timedelta(hours=1))
+            if use_cache
+            else Session()
+        )
 
         self._request_timeout = request_timeout
 
@@ -355,3 +362,8 @@ class MyTardisRESTFactory:
                 break
 
         return objects, response_meta.total_count
+
+    def clear_cache(self) -> None:
+        """Clear the cache of the requests session"""
+        if isinstance(self._session, CachedSession):
+            self._session.cache.clear()  # type: ignore[no-untyped-call]

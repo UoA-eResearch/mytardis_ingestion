@@ -35,7 +35,7 @@ def rest_factory(
     auth: AuthConfig,
     connection: ConnectionConfig,
 ) -> MyTardisRESTFactory:
-    return MyTardisRESTFactory(auth, connection)
+    return MyTardisRESTFactory(auth, connection, use_cache=False)
 
 
 @fixture
