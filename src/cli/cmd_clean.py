@@ -11,6 +11,7 @@ import typer
 from src.blueprints.datafile import RawDatafile
 from src.cli.common import (
     LogFileOption,
+    LogLevelOption,
     ProfileNameOption,
     ProfileVersionOption,
     SourceDataPathArg,
@@ -120,6 +121,7 @@ def _delete_datafiles(df_paths: list[Path]) -> None:
             )
 
 
+# pylint: disable=too-many-locals
 def clean(
     source_data_path: SourceDataPathArg,
     profile_name: ProfileNameOption,
@@ -144,9 +146,10 @@ def clean(
         ),
     ] = None,
     log_file: LogFileOption = Path("clean.log"),
+    log_level: LogLevelOption = "INFO",
 ) -> None:
     """Delete datafiles in source data source after ingestion is complete."""
-    log_utils.init_logging(file_name=str(log_file))
+    log_utils.init_logging(file_name=str(log_file), level=log_level)
 
     logger.info("Extracting list of datafiles using %s profile", profile_name)
     profile = load_profile(profile_name, profile_version)

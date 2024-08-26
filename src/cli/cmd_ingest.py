@@ -8,6 +8,7 @@ import typer
 
 from src.cli.common import (
     LogFileOption,
+    LogLevelOption,
     ProfileNameOption,
     ProfileVersionOption,
     SourceDataPathArg,
@@ -35,6 +36,7 @@ def extract(
     profile_name: ProfileNameOption,
     profile_version: ProfileVersionOption = None,
     log_file: LogFileOption = Path("extraction.log"),
+    log_level: LogLevelOption = "INFO",
 ) -> None:
     """
     Extract metadata from a directory tree, parse it into a MyTardis PEDD structure,
@@ -43,7 +45,7 @@ def extract(
     The 'upload' command be used to ingest this extracted data into MyTardis.
     """
 
-    log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
+    log_utils.init_logging(file_name=str(log_file), level=log_level)
     timer = Timer(start=True)
 
     profile = load_profile(profile_name, profile_version)
@@ -73,11 +75,12 @@ def upload(
     ],
     storage: StorageBoxOption = None,
     log_file: LogFileOption = Path("upload.log"),
+    log_level: LogLevelOption = "INFO",
 ) -> None:
     """
     Submit the extracted metadata to MyTardis, and transfer the data to the storage directory.
     """
-    log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
+    log_utils.init_logging(file_name=str(log_file), level=log_level)
     config = get_config(storage)
     if DirectoryNode(manifest_dir).empty():
         raise ValueError(
@@ -106,11 +109,12 @@ def ingest(
     storage: StorageBoxOption = None,
     profile_version: ProfileVersionOption = None,
     log_file: LogFileOption = Path("ingestion.log"),
+    log_level: LogLevelOption = "INFO",
 ) -> None:
     """
     Run the full ingestion process, from extracting metadata to ingesting it into MyTardis.
     """
-    log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
+    log_utils.init_logging(file_name=str(log_file), level=log_level)
     config = get_config(storage)
     timer = Timer(start=True)
 

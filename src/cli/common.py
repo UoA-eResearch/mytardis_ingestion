@@ -43,6 +43,24 @@ LogFileOption: TypeAlias = Annotated[
     typer.Option(help="Path to be used for the log file"),
 ]
 
+LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
+
+
+def validate_log_level(value: str) -> str:
+    """Validate the log level passed in as a string."""
+    if value.upper() not in LOG_LEVELS:
+        raise typer.BadParameter(message=f"'{value}'. Valid values are {LOG_LEVELS}.")
+    return value.upper()
+
+
+LogLevelOption: TypeAlias = Annotated[
+    str,
+    typer.Option(
+        help=f"Logging verbosity level. Options: {LOG_LEVELS}",
+        callback=validate_log_level,
+    ),
+]
+
 StorageBoxOption: TypeAlias = Annotated[
     Optional[tuple[str, Path]],
     typer.Option(
