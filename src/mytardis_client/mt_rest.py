@@ -177,7 +177,11 @@ class MyTardisRESTFactory:
         self.user_agent = f"{self.user_agent_name}/2.0 ({self.user_agent_url})"
 
         self._session = (
-            CachedSession(backend="memory", expire_after=timedelta(hours=1))
+            CachedSession(
+                backend="memory",
+                expire_after=timedelta(hours=1),
+                allowable_methods=("GET",),
+            )
             if use_cache
             else Session()
         )
