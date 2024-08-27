@@ -85,12 +85,16 @@ class MyTardisEndpointCache:
 
         self._index[hashable_keys] = len(self._objects)
         self._objects.append(obj)
+        logger.debug("Cache entry added. keys: %s, objects: %s", keys, obj)
 
     def get(self, keys: dict[str, Any]) -> list[MyTardisObjectData] | None:
         """Get objects from the cache"""
         hashable_keys = self._to_hashable(keys)
         object_index = self._index.get(hashable_keys)
         if object_index is not None:
+            logger.debug(
+                "Cache hit. keys: %s, objects: %s", keys, self._objects[object_index]
+            )
             return self._objects[object_index]
         return None
 
@@ -216,6 +220,8 @@ class Overseer:
         if endpoint_info.methods.GET is None:
             raise ValueError(f"Endpoint {endpoint} does not support GET requests")
 
+        logger.info(f"Prefetching from {endpoint} with query params {query_params}")
+
         if self._cache.get(endpoint) is None:
             self._cache[endpoint] = MyTardisEndpointCache(endpoint)
 
@@ -235,6 +241,8 @@ class Overseer:
 
             for keys in matchers:
                 self._cache[endpoint].emplace(keys, [obj])
+
+        logger.info(f"Prefetched {len(objects)} objects from {endpoint}")
 
         return len(objects)
 
