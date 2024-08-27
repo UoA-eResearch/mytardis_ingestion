@@ -77,15 +77,21 @@ class MyTardisEndpointCache:
     def _to_hashable(self, keys: dict[str, Any]) -> tuple[tuple[str, Any], ...]:
         return tuple(keys.items())
 
-    def emplace(self, keys: dict[str, Any], obj: list[MyTardisObjectData]) -> None:
+    def emplace(self, keys: dict[str, Any], objects: list[MyTardisObjectData]) -> None:
         """Add objects to the cache"""
         hashable_keys = self._to_hashable(keys)
         if hashable_keys in self._index:
             raise ValueError(f"Duplicate keys {hashable_keys} in MyTardisEndpointCache")
 
         self._index[hashable_keys] = len(self._objects)
-        self._objects.append(obj)
-        logger.debug("Cache entry added. keys: %s, objects: %s", keys, obj)
+        self._objects.append(objects)
+        # Note: not ideal to instantiate list in the logger call, maybe remove for PR.
+        #       Forwarding a generator to the logger seems not to work (not evaluated).
+        logger.debug(
+            "Cache entry added. keys: %s, objects: %s",
+            keys,
+            [obj.resource_uri for obj in objects],
+        )
 
     def get(self, keys: dict[str, Any]) -> list[MyTardisObjectData] | None:
         """Get objects from the cache"""
@@ -93,7 +99,9 @@ class MyTardisEndpointCache:
         object_index = self._index.get(hashable_keys)
         if object_index is not None:
             logger.debug(
-                "Cache hit. keys: %s, objects: %s", keys, self._objects[object_index]
+                "Cache hit. keys: %s, objects: %s",
+                keys,
+                [obj.resource_uri for obj in self._objects[object_index]],
             )
             return self._objects[object_index]
         return None
