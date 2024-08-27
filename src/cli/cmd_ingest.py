@@ -87,6 +87,8 @@ def upload(
             "Manifest directory is empty. Extract data into a manifest using 'extract' command."
         )
 
+    logging.info("Loading metadata manifest from %s", manifest_dir)
+
     manifest = IngestionManifest.deserialize(manifest_dir)
 
     logging.info("Successfully loaded metadata manifest from %s", manifest_dir)
