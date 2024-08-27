@@ -240,8 +240,9 @@ class IngestionFactory:
             )
             if len(matching_datafiles) > 0:
                 logging.info(
-                    'Already ingested datafile "%s". Skipping datafile ingestion.',
-                    datafile.directory,
+                    'Already ingested datafile "%s" as %s. Skipping datafile ingestion.',
+                    datafile.filepath,
+                    matching_datafiles[0].resource_uri,
                 )
                 result.skipped.append((datafile.display_name, None))
                 continue
