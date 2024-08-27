@@ -55,7 +55,7 @@ def _is_completed_df(
             pth,
         )
     replica = _get_verified_replica(query_result[0])
-    if replica is None:
+    if replica is None or replica.last_verified_time is None:
         # No verified replica yet created.
         return False
     if min_file_age:
