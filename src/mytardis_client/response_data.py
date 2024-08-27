@@ -136,7 +136,7 @@ class Replica(MyTardisResourceBase):
 
     created_time: ISODateTime
     datafile: URI
-    last_verified_time: ISODateTime
+    last_verified_time: Optional[ISODateTime]
     location: str
     uri: str  # Note: not a MyTardis resource URI
     verified: bool
