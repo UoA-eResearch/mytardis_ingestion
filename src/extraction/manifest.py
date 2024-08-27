@@ -144,8 +144,11 @@ class IngestionManifest:
             objects_dir = root_dir / dir_name
             objects_dir.mkdir()
 
+            max_name_digits = len(str(len(objects)))
+
             for i, obj in enumerate(objects):
-                file_path = (objects_dir / str(i)).with_suffix(".json")
+                file_stem = str(i).rjust(max_name_digits, "0")
+                file_path = (objects_dir / file_stem).with_suffix(".json")
                 with file_path.open("w", encoding="utf-8") as f:
                     f.write(obj.model_dump_json(by_alias=True))
 
