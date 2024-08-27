@@ -207,7 +207,8 @@ class Overseer:
 
         try:
             objects, _ = self.rest_factory.get(endpoint, query_params)
-            self._cache[endpoint].emplace(query_params, objects)
+            if len(objects) > 0:
+                self._cache[endpoint].emplace(query_params, objects)
         except Exception as error:
             raise RuntimeError(
                 "Failed to query matching objects from MyTardis in Overseer."
