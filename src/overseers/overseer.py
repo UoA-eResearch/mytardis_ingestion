@@ -89,7 +89,7 @@ class MyTardisEndpointCache:
         #       Forwarding a generator to the logger seems not to work (not evaluated).
         logger.debug(
             "Cache entry added. keys: %s, objects: %s",
-            keys,
+            hashable_keys,
             [obj.resource_uri for obj in objects],
         )
 
@@ -100,10 +100,12 @@ class MyTardisEndpointCache:
         if object_index is not None:
             logger.debug(
                 "Cache hit. keys: %s, objects: %s",
-                keys,
+                hashable_keys,
                 [obj.resource_uri for obj in self._objects[object_index]],
             )
             return self._objects[object_index]
+
+        logger.debug("Cache miss. keys: %s", hashable_keys)
         return None
 
 
