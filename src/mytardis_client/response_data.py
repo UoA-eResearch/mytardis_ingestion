@@ -4,7 +4,7 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, model_validator
 from typing_extensions import Self
 
 from src.mytardis_client.common_types import (
@@ -331,3 +331,13 @@ class IngestedDatafile(MyTardisObjectData):
     replicas: list[Replica]
     size: int
     version: int
+
+    @field_serializer("directory")
+    def dir_as_posix_path(self, directory: Optional[Path]) -> Optional[str]:
+        """Ensures the directory is always serialized as a posix path, or `None` if not set.
+
+        Note: this is mainly for parity with `Datafile`, as otherwise we fail to match
+        corresponding pre-ingest/ingested datafiles, because one stores directory as
+        a string, and the other as a Path object.
+        """
+        return directory.as_posix() if directory else None
