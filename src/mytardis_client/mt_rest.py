@@ -35,7 +35,8 @@ MyTardisApiVersion = Literal["v1"]
 logger = logging.getLogger(__name__)
 
 # requests_cache is quite verbose in DEBUG - can crowd out other log messages
-logging.getLogger("requests_cache").setLevel(logging.INFO)
+caching_logger = logging.getLogger("requests_cache")
+caching_logger.setLevel(logging.INFO)
 
 
 def make_api_stub(version: MyTardisApiVersion) -> str:
@@ -128,6 +129,9 @@ def sanitize_params(params: dict[str, Any]) -> dict[str, Any]:
     return updated_params
 
 
+caching_logger = logging.getLogger("requests_cache")
+
+
 def make_endpoint_filter(
     endpoints: tuple[MyTardisEndpoint],
 ) -> Callable[[requests.Response], bool]:
@@ -139,7 +143,7 @@ def make_endpoint_filter(
         path = urlparse(response.url).path.rstrip("/")
         for endpoint in endpoints:
             if path.endswith(endpoint):
-                logger.debug(
+                caching_logger.debug(
                     "Request cache filter excluded response from: %s", response.url
                 )
                 return False
