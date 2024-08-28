@@ -9,8 +9,9 @@ import logging
 from copy import deepcopy
 from datetime import timedelta
 from typing import Any, Callable, Dict, Generic, Literal, Optional, TypeVar
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
+import requests
 from pydantic import BaseModel, ValidationError
 from requests import ConnectTimeout, ReadTimeout, RequestException, Response, Session
 from requests_cache import CachedSession
@@ -127,6 +128,26 @@ def sanitize_params(params: dict[str, Any]) -> dict[str, Any]:
     return updated_params
 
 
+def make_endpoint_filter(
+    endpoints: tuple[MyTardisEndpoint],
+) -> Callable[[requests.Response], bool]:
+    """Create a filter predicate to exclude responses from certain endpoints from
+    being cached.
+    """
+
+    def retain_response(response: requests.Response) -> bool:
+        path = urlparse(response.url).path.rstrip("/")
+        for endpoint in endpoints:
+            if path.endswith(endpoint):
+                logger.debug(
+                    "Request cache filter excluded response from: %s", response.url
+                )
+                return False
+        return True
+
+    return retain_response
+
+
 class MyTardisRESTFactory:
     """Class to interact with MyTardis by calling the REST API
 
@@ -179,11 +200,13 @@ class MyTardisRESTFactory:
 
         self.user_agent = f"{self.user_agent_name}/2.0 ({self.user_agent_url})"
 
+        # Don't cache datafile responses as they are voluminous and not likely to be reused.
         self._session = (
             CachedSession(
                 backend="memory",
                 expire_after=timedelta(hours=1),
                 allowable_methods=("GET",),
+                filter_fn=make_endpoint_filter(("/dataset_file",)),
             )
             if use_cache
             else Session()

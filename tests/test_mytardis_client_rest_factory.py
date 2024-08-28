@@ -17,11 +17,12 @@ from tenacity import wait_fixed
 
 from src.blueprints.datafile import Datafile
 from src.config.config import AuthConfig, ConnectionConfig
-from src.mytardis_client.endpoints import URI
+from src.mytardis_client.endpoints import URI, MyTardisEndpoint
 from src.mytardis_client.mt_rest import (
     GetRequestMetaParams,
     GetResponseMeta,
     MyTardisRESTFactory,
+    make_endpoint_filter,
     sanitize_params,
 )
 from src.mytardis_client.response_data import IngestedDatafile
@@ -306,3 +307,30 @@ def test_mytardis_client_get_params_are_sanitized(
         query_params={"dataset": URI("/api/v1/dataset/0/")},
         meta_params=GetRequestMetaParams(limit=1, offset=0),
     )
+
+
+@pytest.mark.parametrize(
+    "endpoints,url,expected_output",
+    [
+        pytest.param(("/dataset_file",), "https://example.com/dataset_file", False),
+        pytest.param(("/dataset",), "https://example.com/dataset_file/", True),
+        pytest.param(("/dataset",), "https://example.com/dataset/", False),
+        pytest.param(("/dataset",), "https://example.com/dataset", False),
+        pytest.param(
+            (
+                "/dataset",
+                "/dataset_file",
+            ),
+            "https://example.com/dataset",
+            False,
+        ),
+    ],
+)
+def test_make_endpoint_filter(
+    endpoints: tuple[MyTardisEndpoint], url: str, expected_output: bool
+) -> None:
+
+    response = MagicMock()
+    response.url = url
+
+    assert make_endpoint_filter(endpoints)(response) == expected_output
