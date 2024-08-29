@@ -13,6 +13,7 @@ from src.mytardis_client.endpoints import URI, MyTardisEndpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject, get_type_info
 from src.mytardis_client.response_data import MyTardisIntrospection, MyTardisObjectData
+from src.utils.container import lazyjoin
 from src.utils.types.type_helpers import is_list_of
 
 logger = logging.getLogger(__name__)
@@ -80,17 +81,17 @@ class MyTardisEndpointCache:
     def emplace(self, keys: dict[str, Any], objects: list[MyTardisObjectData]) -> None:
         """Add objects to the cache"""
         hashable_keys = self._to_hashable(keys)
-        if hashable_keys in self._index:
-            raise ValueError(f"Duplicate keys {hashable_keys} in MyTardisEndpointCache")
 
-        self._index[hashable_keys] = len(self._objects)
-        self._objects.append(objects)
-        # Note: not ideal to instantiate list in the logger call, maybe remove for PR.
-        #       Forwarding a generator to the logger seems not to work (not evaluated).
+        if index := self._index.get(hashable_keys):
+            self._objects[index].extend(objects)
+        else:
+            self._index[hashable_keys] = len(self._objects)
+            self._objects.append(objects)
+
         logger.debug(
-            "Cache entry added. keys: %s, objects: %s",
+            "Cache entry added. key: %s, objects: %s",
             hashable_keys,
-            [obj.resource_uri for obj in objects],
+            lazyjoin(", ", (obj.resource_uri for obj in objects)),
         )
 
     def get(self, keys: dict[str, Any]) -> list[MyTardisObjectData] | None:
