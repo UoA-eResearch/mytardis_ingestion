@@ -1,6 +1,6 @@
 """Helpers for working with types and type-checking."""
 
-from typing import Any, TypeGuard, TypeVar
+from typing import Any, Protocol, TypeGuard, TypeVar
 
 T = TypeVar("T")
 
@@ -14,3 +14,9 @@ def is_list_of(obj: Any, query_type: type[T]) -> TypeGuard[list[T]]:
     """Check if an object is a list with elements of a certain type."""
 
     return isinstance(obj, list) and all(isinstance(entry, query_type) for entry in obj)
+
+
+class Stringable(Protocol):
+    """Protocol for objects that can be converted to a string."""
+
+    def __str__(self) -> str: ...

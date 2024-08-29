@@ -38,6 +38,7 @@ class MyTardisObject(str, Enum):
     REPLICA = "replica"
     SCHEMA = "schema"
     STORAGE_BOX = "storagebox"
+    STORAGE_BOX_OPTION = "storageboxoption"
     USER = "user"
 
 

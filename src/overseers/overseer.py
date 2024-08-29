@@ -8,10 +8,13 @@ from typing import Any
 
 from typeguard import check_type
 
+from src.mytardis_client.endpoint_info import get_endpoint_info
 from src.mytardis_client.endpoints import URI, MyTardisEndpoint
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject, get_type_info
-from src.mytardis_client.response_data import MyTardisIntrospection, MyTardisResource
+from src.mytardis_client.response_data import MyTardisIntrospection, MyTardisObjectData
+from src.utils.container import lazyjoin
+from src.utils.types.type_helpers import is_list_of
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +67,53 @@ def extract_values_for_matching(
     return match_keys
 
 
+class MyTardisEndpointCache:
+    """A cache for URIs and objects from a specific MyTardis endpoint"""
+
+    def __init__(self, endpoint: MyTardisEndpoint) -> None:
+        self.endpoint = endpoint
+        self._objects: list[list[MyTardisObjectData]] = []
+        self._index: dict[tuple[tuple[str, Any], ...], int] = {}
+
+    def _to_hashable(self, keys: dict[str, Any]) -> tuple[tuple[str, Any], ...]:
+        return tuple(keys.items())
+
+    def emplace(self, keys: dict[str, Any], objects: list[MyTardisObjectData]) -> None:
+        """Add objects to the cache"""
+        hashable_keys = self._to_hashable(keys)
+
+        if index := self._index.get(hashable_keys):
+            logger.warning(
+                "Cache entry already exists for keys: %s. Merging values.",
+                hashable_keys,
+            )
+            self._objects[index].extend(objects)
+        else:
+            self._index[hashable_keys] = len(self._objects)
+            self._objects.append(objects)
+
+        logger.debug(
+            "Cache entry added. key: %s, objects: %s",
+            hashable_keys,
+            lazyjoin(", ", (obj.resource_uri for obj in objects)),
+        )
+
+    def get(self, keys: dict[str, Any]) -> list[MyTardisObjectData] | None:
+        """Get objects from the cache"""
+        hashable_keys = self._to_hashable(keys)
+        object_index = self._index.get(hashable_keys)
+        if object_index is not None:
+            logger.debug(
+                "Cache hit. keys: %s, objects: %s",
+                hashable_keys,
+                [obj.resource_uri for obj in self._objects[object_index]],
+            )
+            return self._objects[object_index]
+
+        logger.debug("Cache miss. keys: %s", hashable_keys)
+        return None
+
+
 class Overseer:
     """The Overseer class inspects MyTardis
 
@@ -99,6 +149,8 @@ class Overseer:
             mytardis_setup : MyTardisIntrospection
         """
         self.rest_factory = rest_factory
+
+        self._cache: dict[MyTardisEndpoint, MyTardisEndpointCache] = {}
 
     @property
     def mytardis_setup(self) -> MyTardisIntrospection:
@@ -147,10 +199,14 @@ class Overseer:
         self,
         object_type: MyTardisObject,
         query_params: dict[str, str],
-    ) -> list[MyTardisResource]:
+    ) -> list[MyTardisObjectData]:
         """Get objects from MyTardis that match the given query parameters"""
 
         endpoint = get_default_endpoint(object_type)
+
+        if self._cache.get(endpoint):
+            if objects := self._cache[endpoint].get(query_params):
+                return objects
 
         try:
             objects, _ = self.rest_factory.get(endpoint, query_params)
@@ -162,11 +218,51 @@ class Overseer:
 
         return objects
 
+    def prefetch(
+        self,
+        endpoint: MyTardisEndpoint,
+        query_params: dict[str, Any],
+    ) -> int:
+        """Populate the cache for the given endpoint.
+
+        Returns the number of objects prefetched.
+        """
+
+        endpoint_info = get_endpoint_info(endpoint)
+        if endpoint_info.methods.GET is None:
+            raise ValueError(f"Endpoint {endpoint} does not support GET requests")
+
+        logger.info(f"Prefetching from {endpoint} with query params {query_params}")
+
+        if self._cache.get(endpoint) is None:
+            self._cache[endpoint] = MyTardisEndpointCache(endpoint)
+
+        objects, _ = self.rest_factory.get_all(endpoint, query_params)
+
+        # Need to check this to ensure model_dump() is available. Can we avoid somehow?
+        if not is_list_of(objects, endpoint_info.methods.GET.response_obj_type):
+            raise ValueError(
+                f"Expected GET request to yield list of "
+                f"{endpoint_info.methods.GET.response_obj_type}, "
+                f"but got {objects}"
+            )
+
+        for obj in objects:
+            mt_type = obj.mytardis_type
+            matchers = self.generate_object_matchers(mt_type, obj.model_dump())
+
+            for keys in matchers:
+                self._cache[endpoint].emplace(keys, [obj])
+
+        logger.info(f"Prefetched {len(objects)} objects from {endpoint}")
+
+        return len(objects)
+
     def get_matching_objects(
         self,
         object_type: MyTardisObject,
         object_data: dict[str, str],
-    ) -> list[MyTardisResource]:
+    ) -> list[MyTardisObjectData]:
         """Retrieve objects from MyTardis with field values matching the ones in "field_values"
 
         The function extracts the type-dependent match keys from 'object_data' and uses them to

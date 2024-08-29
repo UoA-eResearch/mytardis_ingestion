@@ -7,12 +7,14 @@ is heavily based on the NGS ingestor for MyTardis found at
 
 import logging
 from copy import deepcopy
+from datetime import timedelta
 from typing import Any, Callable, Dict, Generic, Literal, Optional, TypeVar
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import requests
 from pydantic import BaseModel, ValidationError
-from requests import ConnectTimeout, ReadTimeout, RequestException, Response
+from requests import ConnectTimeout, ReadTimeout, RequestException, Response, Session
+from requests_cache import CachedSession
 from tenacity import (
     before_sleep_log,
     retry,
@@ -25,12 +27,16 @@ from src.config.config import AuthConfig, ConnectionConfig
 from src.mytardis_client.common_types import HttpRequestMethod
 from src.mytardis_client.endpoint_info import get_endpoint_info
 from src.mytardis_client.endpoints import URI, MyTardisEndpoint
-from src.mytardis_client.response_data import MyTardisResource
+from src.mytardis_client.response_data import MyTardisObjectData
 
 # Defines the valid values for the MyTardis API version
 MyTardisApiVersion = Literal["v1"]
 
 logger = logging.getLogger(__name__)
+
+# requests_cache is quite verbose in DEBUG - can crowd out other log messages
+caching_logger = logging.getLogger("requests_cache")
+caching_logger.setLevel(logging.INFO)
 
 
 def make_api_stub(version: MyTardisApiVersion) -> str:
@@ -76,23 +82,14 @@ class GetResponseMeta(BaseModel):
     previous: Optional[str]
 
 
-MyTardisObjectData = TypeVar("MyTardisObjectData", bound=BaseModel)
+T = TypeVar("T", bound=BaseModel)
 
 
-class GetResponse(BaseModel, Generic[MyTardisObjectData]):
-    """A Pydantic model to handle the response from a GET request to the MyTardis API"""
+class GetResponse(BaseModel, Generic[T]):
+    """Data model for a response from a GET request to the MyTardis API"""
 
     meta: GetResponseMeta
-    objects: list[MyTardisObjectData]
-
-
-class Ingested(BaseModel, Generic[MyTardisObjectData]):
-    """A Pydantic model to store the data of an ingested object, i.e. the response from a GET
-    request to the MyTardis API, along with the URI.
-    """
-
-    obj: MyTardisObjectData
-    resource_uri: URI
+    objects: list[T]
 
 
 def sanitize_params(params: dict[str, Any]) -> dict[str, Any]:
@@ -132,6 +129,29 @@ def sanitize_params(params: dict[str, Any]) -> dict[str, Any]:
     return updated_params
 
 
+caching_logger = logging.getLogger("requests_cache")
+
+
+def make_endpoint_filter(
+    endpoints: tuple[MyTardisEndpoint],
+) -> Callable[[requests.Response], bool]:
+    """Create a filter predicate to exclude responses from certain endpoints from
+    being cached.
+    """
+
+    def retain_response(response: requests.Response) -> bool:
+        path = urlparse(response.url).path.rstrip("/")
+        for endpoint in endpoints:
+            if path.endswith(endpoint):
+                caching_logger.debug(
+                    "Request cache filter excluded response from: %s", response.url
+                )
+                return False
+        return True
+
+    return retain_response
+
+
 class MyTardisRESTFactory:
     """Class to interact with MyTardis by calling the REST API
 
@@ -156,6 +176,7 @@ class MyTardisRESTFactory:
         auth: AuthConfig,
         connection: ConnectionConfig,
         request_timeout: int = 30,
+        use_cache: bool = True,
     ) -> None:
         """MyTardisRESTFactory initialisation using a configuration dictionary.
 
@@ -182,7 +203,18 @@ class MyTardisRESTFactory:
         self._url_base = urljoin(self._hostname, self._api_stub)
 
         self.user_agent = f"{self.user_agent_name}/2.0 ({self.user_agent_url})"
-        self._session = requests.Session()
+
+        # Don't cache datafile responses as they are voluminous and not likely to be reused.
+        self._session = (
+            CachedSession(
+                backend="memory",
+                expire_after=timedelta(hours=1),
+                allowable_methods=("GET",),
+                filter_fn=make_endpoint_filter(("/dataset_file",)),
+            )
+            if use_cache
+            else Session()
+        )
 
         self._request_timeout = request_timeout
 
@@ -281,7 +313,7 @@ class MyTardisRESTFactory:
         endpoint: MyTardisEndpoint,
         query_params: Optional[dict[str, Any]] = None,
         meta_params: Optional[GetRequestMetaParams] = None,
-    ) -> tuple[list[MyTardisResource], GetResponseMeta]:
+    ) -> tuple[list[MyTardisObjectData], GetResponseMeta]:
         """Submit a GET request to the MyTardis API and return the response as a list of objects.
 
         Note that the response is paginated, so the function may not return all objects matching
@@ -309,7 +341,7 @@ class MyTardisRESTFactory:
 
         response_meta = GetResponseMeta.model_validate(response_json["meta"])
 
-        objects: list[MyTardisResource] = []
+        objects: list[MyTardisObjectData] = []
 
         response_objects = response_json.get("objects")
         if response_objects is None:
@@ -336,7 +368,7 @@ class MyTardisRESTFactory:
         endpoint: MyTardisEndpoint,
         query_params: Optional[dict[str, Any]] = None,
         batch_size: int = 500,
-    ) -> tuple[list[MyTardisResource], int]:
+    ) -> tuple[list[MyTardisObjectData], int]:
         """Get all objects of the given type that match 'query_params'.
 
         Sends repeated GET requests to the MyTardis API until all objects have been retrieved.
@@ -344,7 +376,7 @@ class MyTardisRESTFactory:
         each request
         """
 
-        objects: list[MyTardisResource] = []
+        objects: list[MyTardisObjectData] = []
 
         while True:
             request_meta = GetRequestMetaParams(limit=batch_size, offset=len(objects))
@@ -364,3 +396,8 @@ class MyTardisRESTFactory:
                 break
 
         return objects, response_meta.total_count
+
+    def clear_cache(self) -> None:
+        """Clear the cache of the requests session"""
+        if isinstance(self._session, CachedSession):
+            self._session.cache.clear()  # type: ignore[no-untyped-call]

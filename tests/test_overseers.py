@@ -67,12 +67,12 @@ def test_get_matches_from_mytardis(
         status=200,
     )
 
-    # pylint: disable=protected-access
     expected_projects = [
         IngestedProject.model_validate(proj)
         for proj in project_response_dict["objects"]
     ]
 
+    # pylint: disable=protected-access
     retrieved_projects = overseer._get_matches_from_mytardis(
         object_type,
         {"name": project_name},
@@ -82,13 +82,11 @@ def test_get_matches_from_mytardis(
     assert retrieved_projects == expected_projects
 
     # pylint: disable=protected-access
-    assert (
-        overseer._get_matches_from_mytardis(
-            object_type,
-            {"identifier": project_identifiers[0]},
-        )
-        == expected_projects
+    identifier_matches = overseer._get_matches_from_mytardis(
+        object_type, {"identifier": project_identifiers[0]}
     )
+
+    assert identifier_matches == expected_projects
 
 
 @responses.activate

@@ -3,8 +3,9 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Protocol, TypeVar
 
+from pydantic import BaseModel
 from pytest import fixture
 
 from src.blueprints.common_models import GroupACL, Parameter, ParameterSet, UserACL
@@ -19,6 +20,7 @@ from src.blueprints.experiment import Experiment, RawExperiment, RefinedExperime
 from src.blueprints.project import Project, RawProject, RefinedProject
 from src.mytardis_client.common_types import DataClassification
 from src.mytardis_client.endpoints import URI
+from src.mytardis_client.response_data import IngestedDatafile
 
 
 @fixture
@@ -439,3 +441,89 @@ def datafile(
             datafile_replica,
         ],
     )
+
+
+T_co = TypeVar("T_co", bound=BaseModel, covariant=True)
+
+
+class TestModelFactory(Protocol[T_co]):
+    """Protocol for a factory function that creates pydantic models to be used in tests.
+
+    Used in place of Callable[] as it is difficult to declare a Callable taking **kwargs
+    """
+
+    def __call__(self, **kwargs: Any) -> T_co: ...
+
+
+_DEFAULT_DATACLASS_ARGS: dict[type, dict[str, Any]] = {
+    Datafile: {
+        "filename": "test_file.txt",
+        "directory": Path("path/to/datafile"),
+        "md5sum": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+        "mimetype": "text/plain",
+        "size": 1024,
+        "users": None,
+        "groups": None,
+        "data_status": None,
+        "replicas": [],
+        "parameter_sets": None,
+        "dataset": URI("/api/v1/dataset/1/"),
+    },
+    IngestedDatafile: {
+        "resource_uri": URI("/api/v1/dataset_file/1/"),
+        "id": 1,
+        "dataset": URI("/api/v1/dataset/1/"),
+        "deleted": False,
+        "directory": Path("path/to/df_1"),
+        "filename": "df_1.txt",
+        "md5sum": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+        "mimetype": "text/plain",
+        "parameter_sets": [],
+        "public_access": False,
+        "replicas": [],
+        "size": 1024,
+        "version": 1,
+        "created_time": None,
+        "deleted_time": None,
+        "modification_time": None,
+        "identifiers": ["dataset-id-1"],
+    },
+}
+
+
+def make_dataclass_factory(dc_type: type[T_co]) -> TestModelFactory[T_co]:
+    """Factory function for creating factories for specific dataclasses.
+
+    Returns a function that creates instances of the specified dataclass with default
+    argument values. These values can be overridden by passing keyword arguments to the
+    factory function. This allows testers to easily create instances of dataclasses,
+    while only specifying the values that are relevant to the test.
+
+    Args:
+        dc_type: The dataclass type for which to create a factory function.
+
+    Returns:
+        A factory function that creates instances of the specified dataclass 'dc_type'.
+    """
+
+    default_args = _DEFAULT_DATACLASS_ARGS[dc_type]
+
+    def _make_dataclass(**kwargs: Any) -> T_co:
+        """Create an instance of the dataclass with the specified keyword arguments and
+        and default values (kwargs are given priority over default values).
+        """
+
+        result = {**default_args, **kwargs}
+        return dc_type.model_validate(result)
+
+    return _make_dataclass
+
+
+@fixture
+def make_datafile() -> TestModelFactory[Datafile]:
+    return make_dataclass_factory(Datafile)
+
+
+@fixture
+def make_ingested_datafile() -> TestModelFactory[IngestedDatafile]:
+    return make_dataclass_factory(IngestedDatafile)
