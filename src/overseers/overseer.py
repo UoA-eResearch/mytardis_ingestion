@@ -83,6 +83,10 @@ class MyTardisEndpointCache:
         hashable_keys = self._to_hashable(keys)
 
         if index := self._index.get(hashable_keys):
+            logger.warning(
+                "Cache entry already exists for keys: %s. Merging values.",
+                hashable_keys,
+            )
             self._objects[index].extend(objects)
         else:
             self._index[hashable_keys] = len(self._objects)
