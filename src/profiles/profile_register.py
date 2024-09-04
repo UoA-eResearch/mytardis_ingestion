@@ -4,11 +4,14 @@ for loading profiles.
 """
 
 import importlib
+import logging
 from typing import Optional
 
 from src.profiles.profile_base import IProfile
 
 _PROFILE_ROOT = "src.profiles."
+
+logger = logging.getLogger(__name__)
 
 """
 This is the record of all profiles, and the location of the module
@@ -61,5 +64,7 @@ def load_profile(name: str, version: Optional[str] = None) -> IProfile:
         raise ImportError(
             f"An error occurred while loading the profile '{name}'"
         ) from e
+
+    logger.info("Loaded profile %s", name)
 
     return profile

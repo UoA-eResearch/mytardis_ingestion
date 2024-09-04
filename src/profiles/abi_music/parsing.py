@@ -29,6 +29,8 @@ from src.profiles.abi_music.abi_music_consts import (
 from src.utils.filesystem import checksums, filters
 from src.utils.filesystem.filesystem_nodes import DirectoryNode, FileNode
 
+logger = logging.getLogger(__name__)
+
 # Expected datetime format is "yymmdd-DDMMSS"
 datetime_pattern = re.compile("^[0-9]{6}-[0-9]{6}$")
 
@@ -290,7 +292,7 @@ def parse_raw_data(
     )
 
     for project_dir in project_dirs:
-        logging.info("Project directory: %s", project_dir.name())
+        logger.info("Project directory: %s", project_dir.name())
 
         manifest.add_project(parse_project_info(project_dir))
 
@@ -301,7 +303,7 @@ def parse_raw_data(
         ]
 
         for experiment_dir in experiment_dirs:
-            logging.info("Experiment directory: %s", experiment_dir.name())
+            logger.info("Experiment directory: %s", experiment_dir.name())
 
             experiment, experiment_id = parse_experiment_info(experiment_dir)
             manifest.add_experiment(experiment)
@@ -313,7 +315,7 @@ def parse_raw_data(
             ]
 
             for dataset_dir in dataset_dirs:
-                logging.info("Dataset directory: %s", dataset_dir.name())
+                logger.info("Dataset directory: %s", dataset_dir.name())
 
                 dataset, dataset_id = parse_raw_dataset(dataset_dir, experiment_id)
 
@@ -329,7 +331,10 @@ def parse_raw_data(
 
                 for file in dataset_dir.iter_files(recursive=True):
                     if file_filter.exclude(file.path()):
+                        logger.debug("Ignoring file: %s", file.path())
                         continue
+
+                    logger.debug("Extracting metadata for %s", file.path())
 
                     datafile = collate_datafile_info(file, root.path(), dataset_id)
                     manifest.add_datafile(datafile)

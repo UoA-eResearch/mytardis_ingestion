@@ -51,6 +51,9 @@ def extract(
     profile = load_profile(profile_name, profile_version)
 
     extractor = profile.get_extractor()
+
+    logger.info("Extracting metadata from %s", source_data_path)
+
     metadata = extractor.extract(source_data_path)
 
     elapsed = timer.stop()
@@ -123,6 +126,9 @@ def ingest(
     profile = load_profile(profile_name, profile_version)
 
     extractor = profile.get_extractor()
+
+    logger.info("Extracting metadata from %s", source_data_path)
+
     manifest = extractor.extract(source_data_path)
 
     elapsed = timer.stop()
