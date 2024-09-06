@@ -299,7 +299,7 @@ class IngestedDataset(MyTardisObjectData):
     classification: DataClassification
     created_time: ISODateTime
     description: str
-    directory: Path
+    directory: Optional[Path]
     experiments: list[URI]
     identifiers: list[str]
     immutable: bool
