@@ -28,6 +28,7 @@ from src.mytardis_client.common_types import HttpRequestMethod
 from src.mytardis_client.endpoint_info import get_endpoint_info
 from src.mytardis_client.endpoints import URI, MyTardisEndpoint
 from src.mytardis_client.response_data import MyTardisObjectData
+from src.utils.types.type_helpers import all_true
 
 # Defines the valid values for the MyTardis API version
 MyTardisApiVersion = Literal["v1"]
@@ -129,14 +130,11 @@ def sanitize_params(params: dict[str, Any]) -> dict[str, Any]:
     return updated_params
 
 
-caching_logger = logging.getLogger("requests_cache")
-
-
-def make_endpoint_filter(
+def endpoint_is_not(
     endpoints: tuple[MyTardisEndpoint],
 ) -> Callable[[requests.Response], bool]:
-    """Create a filter predicate to exclude responses from certain endpoints from
-    being cached.
+    """Factory for a filter predicate which can be used to prevent responses from certain
+    endpoints from being cached.
     """
 
     def retain_response(response: requests.Response) -> bool:
@@ -150,6 +148,14 @@ def make_endpoint_filter(
         return True
 
     return retain_response
+
+
+def has_objects(response: Response) -> bool:
+    """Check whether a response contains any objects or not"""
+    if objects := response.json().get("objects"):
+        return len(objects) > 0
+
+    return False
 
 
 class MyTardisRESTFactory:
@@ -210,7 +216,7 @@ class MyTardisRESTFactory:
                 backend="memory",
                 expire_after=timedelta(hours=1),
                 allowable_methods=("GET",),
-                filter_fn=make_endpoint_filter(("/dataset_file",)),
+                filter_fn=all_true([has_objects, endpoint_is_not(("/dataset_file",))]),
             )
             if use_cache
             else Session()
