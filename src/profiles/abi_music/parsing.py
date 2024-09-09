@@ -8,11 +8,13 @@ import mimetypes
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
+from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 from slugify import slugify
 
 from src.blueprints.common_models import GroupACL, UserACL
+from src.blueprints.custom_data_types import Username
 from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
@@ -33,6 +35,56 @@ logger = logging.getLogger(__name__)
 
 # Expected datetime format is "yymmdd-DDMMSS"
 datetime_pattern = re.compile("^[0-9]{6}-[0-9]{6}$")
+
+
+class Permissions(BaseModel):
+    """Permissions for a user or group"""
+
+    is_owner: bool = False
+    can_download: bool = False
+    see_sensitive: bool = False
+
+    @model_validator(mode="before")
+    def validate_model(cls, v: dict[str, bool]) -> dict[str, bool]:
+        is_admin = v.get("admin") is True
+
+        v["is_owner"] = is_admin or v.get("is_owner") is True
+        v["can_download"] = is_admin or v.get("can_download") is True
+        v["see_sensitive"] = is_admin or v.get("see_sensitive") is True
+
+        return v
+
+
+class GroupPermissions(Permissions):
+    """Permissions for a group"""
+
+    name: str = Field(serialization_alias="group")
+
+    def to_acl(self) -> GroupACL:
+        """Convert the permissions to a GroupACL object"""
+        return GroupACL(**self.model_dump())
+
+
+class UserPermissions(Permissions):
+    """Permissions for a user"""
+
+    user: Username
+
+    def to_acl(self) -> UserACL:
+        """Convert the permissions to a UserACL object"""
+        return UserACL(**self.model_dump())
+
+
+class ProjectDefinition(BaseModel):
+    """Schema for the project.json file"""
+
+    project_name: str
+    project_description: str
+    principal_investigator: Username
+    contributors: list[Username]
+    groups: list[GroupPermissions]
+    users: list[UserPermissions]
+    project_ids: list[str]
 
 
 def join_ids(*args: str) -> str:
@@ -67,24 +119,10 @@ def parse_project_info(directory: DirectoryNode) -> RawProject:
 
     json_data = read_json(directory.file("project.json"))
 
-    def read_permissions(json_node: Mapping[str, Any]) -> dict[str, bool]:
-        is_admin: bool = json_node.get("admin") is True
+    project_def = ProjectDefinition.model_validate(json_data)
 
-        return {
-            "is_owner": is_admin or json_node.get("is_owner") is True,
-            "can_download": is_admin or json_node.get("can_download") is True,
-            "see_sensitive": is_admin or json_node.get("see_sensitive") is True,
-        }
-
-    groups: list[GroupACL] = []
-    for group_node in json_data.get("groups", []):
-        permissions = read_permissions(group_node)
-        groups.append(GroupACL(group=group_node["name"], **permissions))
-
-    users: list[UserACL] = []
-    for user_node in json_data.get("users", []):
-        permissions = read_permissions(user_node)
-        users.append(UserACL(user=user_node["user"], **permissions))
+    groups = [group.to_acl() for group in project_def.groups]
+    users = [user.to_acl() for user in project_def.users]
 
     raw_project = RawProject(
         name=json_data["project_name"],
