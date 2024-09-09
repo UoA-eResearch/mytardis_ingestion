@@ -22,7 +22,7 @@ from src.mytardis_client.mt_rest import (
     GetRequestMetaParams,
     GetResponseMeta,
     MyTardisRESTFactory,
-    make_endpoint_filter,
+    endpoint_is_not,
     sanitize_params,
 )
 from src.mytardis_client.response_data import IngestedDatafile
@@ -333,4 +333,4 @@ def test_make_endpoint_filter(
     response = MagicMock()
     response.url = url
 
-    assert make_endpoint_filter(endpoints)(response) == expected_output
+    assert endpoint_is_not(endpoints)(response) == expected_output
