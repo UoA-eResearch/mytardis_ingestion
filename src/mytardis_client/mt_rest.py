@@ -152,7 +152,13 @@ def endpoint_is_not(
 
 def has_objects(response: Response) -> bool:
     """Check whether a response contains any objects or not"""
-    if objects := response.json().get("objects"):
+
+    try:
+        response_json = response.json()
+    except requests.exceptions.JSONDecodeError:
+        return False
+
+    if objects := response_json.get("objects"):
         return len(objects) > 0
 
     return False
