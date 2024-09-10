@@ -22,8 +22,8 @@ Predicate: TypeAlias = Callable[[T], bool]
 def all_true(predicates: list[Predicate[T]]) -> Predicate[T]:
     """Compose a list of predicates into a single predicate.
 
-    The composed predicate will return True if any of the predicates in the list
-    return True for the object being tested.
+    The composed predicate will return True if all of the predicates in the list
+    return True for the given argument.
     """
 
     def all_preds_true(obj: T) -> bool:
