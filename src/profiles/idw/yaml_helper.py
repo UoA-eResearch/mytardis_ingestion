@@ -23,6 +23,7 @@ from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
 from src.blueprints.common_models import GroupACL, UserACL
 from src.blueprints.custom_data_types import Username
 from src.mytardis_client.common_types import DataClassification, DataStatus
+from src.profiles.idw.idw_utils import replace_micrometer_values
 
 # Constants
 logger = logging.getLogger(__name__)
