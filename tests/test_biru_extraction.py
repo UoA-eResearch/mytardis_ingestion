@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 logger.propagate = True
 
 
-def test_beneficiate() -> None:
+def test_idw_extraction() -> None:
     """Tests that beneficiation for BIRU is successful and extracts metadata."""
     extractor = IDWMetadataExtractor()
     fpath = Path("tests/testdata/ingestion.yaml")
