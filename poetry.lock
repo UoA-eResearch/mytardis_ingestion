@@ -2435,13 +2435,13 @@ diagrams = ["jinja2", "railroad-diagrams"]
 
 [[package]]
 name = "pyproject-pre-commit"
-version = "0.2.1"
+version = "0.2.4"
 description = "pre-commit hooks for python projects using pyproject.toml."
 optional = false
 python-versions = "<4.0.0,>=3.9.0"
 files = [
-    {file = "pyproject_pre_commit-0.2.1-py3-none-any.whl", hash = "sha256:53fc9f0ce8dc3547ddcf589f7e10e98e3c984aab0716442f9f6f8b28ab33651c"},
-    {file = "pyproject_pre_commit-0.2.1.tar.gz", hash = "sha256:3eefbaebf593c95837d02a14f000b4c0ffe31ee07ac4e6b3e0857d65f7db0c57"},
+    {file = "pyproject_pre_commit-0.2.4-py3-none-any.whl", hash = "sha256:ff5a7e6abd20451bc0638c9c0600ca948587e7eaad5d3695ec3795b1d3642ec6"},
+    {file = "pyproject_pre_commit-0.2.4.tar.gz", hash = "sha256:dfdc44efa82a700236248f9efd925be99e87be353ada9d62fa28614ce8182646"},
 ]
 
 [package.dependencies]
@@ -3836,4 +3836,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "8a8b76905a3ce61fbf54ff54ceda0283e8cc8cc15e5da28b5b59ab80680059b3"
+content-hash = "e4da61df149a86915bac5570a61c13c1bd819637410aeb4f2e106884b5aae740"
