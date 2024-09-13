@@ -9,7 +9,7 @@ packages = [{include = "src"}]
 python = ">=3.10,<3.12"
 requests = "^2.31.0"
 PyYAML = "^6.0"
-pydantic = "^2.9.0"
+pydantic = "^2.9.1"
 pytz = "^2024.1"
 types-pytz = "^2024.1.0.20240417"
 python-slugify = "^8.0.1"
