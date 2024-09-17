@@ -2,14 +2,24 @@
 """Pydantic model defining a Dataset for ingestion into MyTardis"""
 
 from abc import ABC
+from functools import cached_property
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import (
+    BaseModel,
+    Field,
+    FilePath,
+    computed_field,
+    field_serializer,
+    model_validator,
+)
+from typing_extensions import Self
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
 from src.mytardis_client.common_types import DataStatus, MTUrl
 from src.mytardis_client.endpoints import URI
+from src.utils.filesystem.checksums import calculate_md5
 
 
 class DatafileReplica(BaseModel):
@@ -46,7 +56,11 @@ class BaseDatafile(BaseModel, ABC):
 
     filename: str = Field(min_length=1)
     directory: Optional[Path] = None
-    md5sum: str
+    full_path: Optional[FilePath] = Field(
+        default=None,
+        exclude=True,
+    )  # Used for checksum calculation
+    md5sum_: Optional[str] = Field(default=None, validation_alias="md5sum")
     mimetype: str
     size: int
     users: Optional[List[UserACL]] = None
@@ -64,6 +78,25 @@ class BaseDatafile(BaseModel, ABC):
         if self.directory is not None:
             return self.directory / self.filename
         return Path(self.filename)
+
+    @model_validator(mode="after")
+    def validate_(self) -> Self:
+        """Validate the coherence of the metadata"""
+        if self.md5sum_ is None and self.full_path is None:
+            raise ValueError(
+                "Must provide either md5sum or full_path for calculating it"
+            )
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @cached_property
+    def md5sum(self) -> str:
+        """Calculates the md5 checksum of the file"""
+        if self.md5sum_ is not None:
+            return self.md5sum_
+        if self.full_path is None:
+            raise ValueError("Cannot calculate checksum without full path to the file")
+        return calculate_md5(self.full_path)
 
     @field_serializer("directory")
     def dir_as_posix_path(self, directory: Optional[Path]) -> Optional[str]:
