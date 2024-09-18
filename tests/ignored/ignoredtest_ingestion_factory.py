@@ -36,7 +36,7 @@ from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
 from src.ingestion_factory import IngestionFactory
 from src.ingestion_factory.factory import IngestionResult
-from src.mytardis_client.data_types import URI
+from src.mytardis_client.endpoints import URI
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject
 from src.overseers.overseer import Overseer
@@ -156,7 +156,6 @@ def test_ingest_project(
 
     assert ingestion_factory.ingest_projects([raw_project]) == expected_result
     assert warning in caplog.text
-    Overseer.clear()
     Smelter.clear()
     Crucible.clear()
     MyTardisRESTFactory.clear()
@@ -207,7 +206,6 @@ def test_ingest_experiment(
 
     assert ingestion_factory.ingest_experiments([raw_experiment]) == expected_result
     assert warning in caplog.text
-    Overseer.clear()
     Smelter.clear()
     Crucible.clear()
     MyTardisRESTFactory.clear()
@@ -258,7 +256,6 @@ def test_ingest_dataset(
 
     assert ingestion_factory.ingest_datasets([raw_dataset]) == expected_result
     assert warning in caplog.text
-    Overseer.clear()
     Smelter.clear()
     Crucible.clear()
     MyTardisRESTFactory.clear()
@@ -309,7 +306,6 @@ def test_ingest_datafile(
 
     assert ingestion_factory.ingest_datafiles([raw_datafile]) == expected_result
     assert warning in caplog.text
-    Overseer.clear()
     Smelter.clear()
     Crucible.clear()
     MyTardisRESTFactory.clear()

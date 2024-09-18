@@ -8,6 +8,7 @@ import typer
 
 from src.cli.common import (
     LogFileOption,
+    LogLevelOption,
     ProfileNameOption,
     ProfileVersionOption,
     SourceDataPathArg,
@@ -35,6 +36,7 @@ def extract(
     profile_name: ProfileNameOption,
     profile_version: ProfileVersionOption = None,
     log_file: LogFileOption = Path("extraction.log"),
+    log_level: LogLevelOption = "INFO",
 ) -> None:
     """
     Extract metadata from a directory tree, parse it into a MyTardis PEDD structure,
@@ -43,12 +45,15 @@ def extract(
     The 'upload' command be used to ingest this extracted data into MyTardis.
     """
 
-    log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
+    log_utils.init_logging(file_name=str(log_file), level=log_level)
     timer = Timer(start=True)
 
     profile = load_profile(profile_name, profile_version)
 
     extractor = profile.get_extractor()
+
+    logger.info("Extracting metadata from %s", source_data_path)
+
     metadata = extractor.extract(source_data_path)
 
     elapsed = timer.stop()
@@ -73,16 +78,19 @@ def upload(
     ],
     storage: StorageBoxOption = None,
     log_file: LogFileOption = Path("upload.log"),
+    log_level: LogLevelOption = "INFO",
 ) -> None:
     """
     Submit the extracted metadata to MyTardis, and transfer the data to the storage directory.
     """
-    log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
+    log_utils.init_logging(file_name=str(log_file), level=log_level)
     config = get_config(storage)
     if DirectoryNode(manifest_dir).empty():
         raise ValueError(
             "Manifest directory is empty. Extract data into a manifest using 'extract' command."
         )
+
+    logging.info("Loading metadata manifest from %s", manifest_dir)
 
     manifest = IngestionManifest.deserialize(manifest_dir)
 
@@ -106,17 +114,21 @@ def ingest(
     storage: StorageBoxOption = None,
     profile_version: ProfileVersionOption = None,
     log_file: LogFileOption = Path("ingestion.log"),
+    log_level: LogLevelOption = "INFO",
 ) -> None:
     """
     Run the full ingestion process, from extracting metadata to ingesting it into MyTardis.
     """
-    log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
+    log_utils.init_logging(file_name=str(log_file), level=log_level)
     config = get_config(storage)
     timer = Timer(start=True)
 
     profile = load_profile(profile_name, profile_version)
 
     extractor = profile.get_extractor()
+
+    logger.info("Extracting metadata from %s", source_data_path)
+
     manifest = extractor.extract(source_data_path)
 
     elapsed = timer.stop()

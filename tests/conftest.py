@@ -6,12 +6,12 @@ from typing import Any, Dict, List
 
 from pytest import FixtureRequest, fixture
 
-import tests.fixtures.fixtures_archive_app as arch
 import tests.fixtures.fixtures_config_from_env as cfg
 import tests.fixtures.fixtures_constants as const
 import tests.fixtures.fixtures_data_classification_app as dclass
 import tests.fixtures.fixtures_dataclasses as dcls
 import tests.fixtures.fixtures_ingestion_classes as ingestion_classes
+import tests.fixtures.fixtures_mytardis_client as mt_client
 import tests.fixtures.fixtures_responses as rsps
 import tests.fixtures.mock_rest_factory as mock_rest
 from src.blueprints.common_models import GroupACL, UserACL
@@ -106,22 +106,9 @@ institution_address = const.institution_address
 institution_ids = const.institution_ids
 institution_country = const.institution_country
 institution_name = const.institution_name
-datafile_archive_date = const.datafile_archive_date
-datafile_delete_date = const.datafile_delete_date
 storage_class = const.storage_class
 storage_options = const.storage_options
 storage_attributes = const.storage_attributes
-archive_class = const.archive_class
-archive_options = const.archive_options
-archive_attributes = const.archive_attributes
-autoarchive_offset = const.autoarchive_offset
-delete_offset = const.delete_offset
-archive_box_name = const.archive_box_name
-archive_box_uri = const.archive_box_uri
-archive_box_description = const.archive_box_description
-archive_box_dir = const.archive_box_dir
-archive_date = const.archive_date
-delete_date = const.delete_date
 datetime_now = const.datetime_now
 
 # =============================
@@ -155,9 +142,6 @@ def datadir(tmpdir: str, request: FixtureRequest) -> Path:
 #
 # ==============================
 
-storage_box = dcls.storage_box
-datafile_replica = dcls.datafile_replica
-archive_replica = dcls.archive_replica
 raw_project_parameterset = dcls.raw_project_parameterset
 raw_project = dcls.raw_project
 raw_experiment_parameterset = dcls.raw_experiment_parameterset
@@ -174,6 +158,8 @@ project = dcls.project
 experiment = dcls.experiment
 dataset = dcls.dataset
 datafile = dcls.datafile
+make_datafile = dcls.make_datafile
+make_ingested_datafile = dcls.make_ingested_datafile
 
 # =========================================
 #
@@ -545,7 +531,7 @@ dataset_response_dict = rsps.dataset_response_dict
 experiment_response_dict = rsps.experiment_response_dict
 project_response_dict = rsps.project_response_dict
 instrument_response_dict = rsps.instrument_response_dict
-introspection_response_dict = rsps.introspection_response_dict
+introspection_response = rsps.introspection_response
 institution_response_dict = rsps.institution_response_dict
 storage_box_response_dict = rsps.storage_box_response_dict
 project_creation_response_dict = rsps.project_creation_response_dict
@@ -558,21 +544,14 @@ get_project_details = rsps.get_project_details
 #
 # =========================================
 
-processed_introspection_response = cfg.processed_introspection_response
 general = cfg.general
 auth = cfg.auth
 connection = cfg.connection
-active_store = cfg.active_store
-archive_store = cfg.archive_store
 default_schema = cfg.default_schema
-mytardis_setup = cfg.mytardis_setup
 mytardis_settings = cfg.mytardis_settings
 storage_box_name = cfg.storage_box_name
 storage_attributes = cfg.storage_attributes
 storage_class = cfg.storage_class
-archive_box_name = cfg.archive_box_name
-archive_attributes = cfg.archive_attributes
-archive_class = cfg.archive_class
 
 # =========================================
 #
@@ -593,24 +572,6 @@ factory = ingestion_classes.factory
 
 # ========================================
 #
-# Archive in X days app
-#
-# =========================================
-
-archive_in_days = arch.archive_in_days
-delete_in_days = arch.delete_in_days
-storage_options = arch.storage_options
-storage_options_reduced = arch.storage_options_reduced
-archive_options = arch.archive_options
-archive_options_reduced = arch.archive_options_reduced
-s3_bucket = arch.s3_bucket
-target_key = arch.target_key
-project_archive_box_name = arch.project_archive_box_name
-project_storage_box_name = arch.project_storage_box_name
-
-
-# ========================================
-#
 # Data Classification app
 #
 # =========================================
@@ -618,3 +579,12 @@ project_storage_box_name = arch.project_storage_box_name
 project_data_classification = dclass.project_data_classification
 experiment_data_classification = dclass.experiment_data_classification
 dataset_data_classification = dclass.dataset_data_classification
+
+
+# ========================================
+#
+# MyTardis client data fixtures
+#
+# =========================================
+
+mytardis_introspection = mt_client.mytardis_introspection

@@ -14,11 +14,13 @@ from pytest import LogCaptureFixture
 from requests import HTTPError
 from responses import matchers
 
-from src.config.config import ConnectionConfig, IntrospectionConfig
-from src.mytardis_client.data_types import URI
+from src.config.config import ConnectionConfig
+from src.mytardis_client.endpoints import URI
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject
+from src.mytardis_client.response_data import IngestedProject, MyTardisIntrospection
 from src.overseers.overseer import Overseer
+from src.utils.types.type_helpers import is_list_of
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -65,30 +67,30 @@ def test_get_matches_from_mytardis(
         status=200,
     )
 
-    # pylint: disable=protected-access
-    assert (
-        overseer._get_matches_from_mytardis(
-            object_type,
-            {"name": project_name},
-        )
-        == project_response_dict["objects"]
-    )
+    expected_projects = [
+        IngestedProject.model_validate(proj)
+        for proj in project_response_dict["objects"]
+    ]
 
     # pylint: disable=protected-access
-    assert (
-        overseer._get_matches_from_mytardis(
-            object_type,
-            {"identifier": project_identifiers[0]},
-        )
-        == project_response_dict["objects"]
+    retrieved_projects = overseer._get_matches_from_mytardis(
+        object_type,
+        {"name": project_name},
     )
 
-    Overseer.clear()
+    assert is_list_of(retrieved_projects, IngestedProject)
+    assert retrieved_projects == expected_projects
+
+    # pylint: disable=protected-access
+    identifier_matches = overseer._get_matches_from_mytardis(
+        object_type, {"identifier": project_identifiers[0]}
+    )
+
+    assert identifier_matches == expected_projects
 
 
 @responses.activate
 def test_get_objects_http_error(
-    caplog: LogCaptureFixture,
     connection: ConnectionConfig,
     overseer: Overseer,
 ) -> None:
@@ -115,16 +117,9 @@ def test_get_objects_http_error(
         ],
         status=504,
     )
-    caplog.set_level(logging.WARNING)
 
-    with pytest.raises(HTTPError):
+    with pytest.raises(RuntimeError):
         overseer.get_matching_objects(object_type, {"name": search_string})
-
-    assert "Failed HTTP request" in caplog.text
-    assert "Overseer" in caplog.text
-    assert f"{object_type}" in caplog.text
-
-    Overseer.clear()
 
 
 @mock.patch("src.mytardis_client.mt_rest.MyTardisRESTFactory.request")
@@ -141,11 +136,9 @@ def test_get_objects_general_error(
         f"object_type = {object_type}\n"
         "query_params"
     )
-    with pytest.raises(IOError):
+    with pytest.raises(RuntimeError):
         _ = overseer.get_matching_objects(object_type, {"name": search_string})
         assert error_str in caplog.text
-
-    Overseer.clear()
 
 
 @responses.activate
@@ -182,8 +175,6 @@ def test_get_objects_no_objects(
 
     assert overseer.get_matching_objects(object_type, {"name": search_string}) == []
 
-    Overseer.clear()
-
 
 @responses.activate
 def test_get_uris(
@@ -210,8 +201,6 @@ def test_get_uris(
         MyTardisObject.PROJECT,
         search_string,
     ) == [URI("/api/v1/project/1/")]
-
-    Overseer.clear()
 
 
 @responses.activate
@@ -251,20 +240,18 @@ def test_get_uris_no_objects(
         )
         == []
     )
-    Overseer.clear()
 
 
 @responses.activate
 def test_get_uris_malformed_return_dict(
-    caplog: LogCaptureFixture,
     connection: ConnectionConfig,
     overseer: Overseer,
     project_response_dict: dict[str, Any],
 ) -> None:
-    caplog.set_level(logging.ERROR)
+
     test_dict = project_response_dict
     test_dict["objects"][0].pop("resource_uri")
-    object_type = MyTardisObject.PROJECT
+
     endpoint = "project"
     search_string = "Project_1"
     responses.add(
@@ -289,27 +276,19 @@ def test_get_uris_malformed_return_dict(
         ],
         status=200,
     )
-    error_str = (
-        "Malformed return from MyTardis. No resource_uri found for "
-        f"{object_type} searching with {search_string}"
-    )
-    with pytest.raises(KeyError):
+
+    with pytest.raises(RuntimeError):
         _ = overseer.get_uris_by_identifier(
             MyTardisObject.PROJECT,
             search_string,
         )
-        assert error_str in caplog.text
-    Overseer.clear()
 
 
 @responses.activate
 def test_get_uris_ensure_http_errors_caught_by_get_objects(
-    caplog: LogCaptureFixture,
     connection: ConnectionConfig,
     overseer: Overseer,
 ) -> None:
-    caplog.set_level(logging.WARNING)
-    object_type = MyTardisObject.PROJECT
     endpoint = "project"
     search_string = "Project_1"
     responses.add(
@@ -333,16 +312,11 @@ def test_get_uris_ensure_http_errors_caught_by_get_objects(
         status=504,
     )
 
-    with pytest.raises(HTTPError):
+    with pytest.raises(RuntimeError):
         overseer.get_uris_by_identifier(
             MyTardisObject.PROJECT,
             search_string,
         )
-
-    assert "Failed HTTP request from Overseer" in caplog.text
-    assert f"{object_type}" in caplog.text
-
-    Overseer.clear()
 
 
 @mock.patch("src.mytardis_client.mt_rest.MyTardisRESTFactory.request")
@@ -353,20 +327,19 @@ def test_get_uris_general_error(
     mock_mytardis_api_request.side_effect = IOError()
     object_type = MyTardisObject.PROJECT
     search_string = "Project_1"
-    with pytest.raises(IOError):
+    with pytest.raises(RuntimeError):
         _ = overseer.get_uris_by_identifier(
             object_type,
             search_string,
         )
-    Overseer.clear()
 
 
 @responses.activate
 def test_get_mytardis_setup(
     overseer_plain: Overseer,
     connection: ConnectionConfig,
-    introspection_response_dict: dict[str, Any],
-    mytardis_setup: IntrospectionConfig,
+    introspection_response: dict[str, Any],
+    mytardis_introspection: MyTardisIntrospection,
 ) -> None:
     overseer_plain._mytardis_setup = None  # pylint: disable=protected-access
     assert overseer_plain._mytardis_setup is None  # pylint: disable=protected-access
@@ -377,12 +350,11 @@ def test_get_mytardis_setup(
             connection.api_template,
             "introspection",
         ),
-        json=(introspection_response_dict),
+        json=(introspection_response),
         status=200,
     )
 
-    assert overseer_plain.mytardis_setup == mytardis_setup
-    Overseer.clear()
+    assert overseer_plain.mytardis_setup == mytardis_introspection
 
 
 @responses.activate
@@ -400,12 +372,11 @@ def test_get_mytardis_setup_http_error(
     caplog.set_level(logging.ERROR)
     error_str = "Introspection returned error:"
     with pytest.raises(HTTPError):
-        _ = overseer.get_mytardis_setup()
+        _ = overseer.fetch_mytardis_setup()
         assert error_str in caplog.text
-    Overseer.clear()
 
 
-@mock.patch("src.overseers.overseer.Overseer.get_mytardis_setup")
+@mock.patch("src.overseers.overseer.Overseer.fetch_mytardis_setup")
 def test_get_mytardis_setup_general_error(
     mock_get_mytardis_setup: Any,
     caplog: LogCaptureFixture,
@@ -414,14 +385,12 @@ def test_get_mytardis_setup_general_error(
     mock_get_mytardis_setup.side_effect = IOError()
     error_str = "Non-HTTP exception in ConfigFromEnv.get_mytardis_setup"
     with pytest.raises(IOError):
-        _ = overseer.get_mytardis_setup()
+        _ = overseer.fetch_mytardis_setup()
         assert error_str in caplog.text
-    Overseer.clear()
 
 
 @responses.activate
 def test_get_mytardis_setup_no_objects(
-    caplog: LogCaptureFixture,
     overseer: Overseer,
     connection: ConnectionConfig,
     response_dict_not_found: dict[str, Any],
@@ -435,25 +404,18 @@ def test_get_mytardis_setup_no_objects(
         json=(response_dict_not_found),
         status=200,
     )
-    caplog.set_level(logging.ERROR)
-    error_str = (
-        "MyTardis introspection did not return any data when called from "
-        "ConfigFromEnv.get_mytardis_setup"
-    )
-    with pytest.raises(ValueError, match=error_str):
-        _ = overseer.get_mytardis_setup()
-        assert error_str in caplog.text
-    Overseer.clear()
+
+    with pytest.raises(ValueError):
+        _ = overseer.fetch_mytardis_setup()
 
 
 @responses.activate
 def test_get_mytardis_setup_too_many_objects(
-    caplog: LogCaptureFixture,
     overseer: Overseer,
     connection: ConnectionConfig,
-    introspection_response_dict: dict[str, Any],
+    introspection_response: dict[str, Any],
 ) -> None:
-    test_dict = introspection_response_dict
+    test_dict = introspection_response
     test_dict["objects"].append("Some Fake Data")
     responses.add(
         responses.GET,
@@ -464,16 +426,6 @@ def test_get_mytardis_setup_too_many_objects(
         json=(test_dict),
         status=200,
     )
-    caplog.set_level(logging.ERROR)
-    log_error_str = f"""MyTardis introspection returned more than one object when called from
-        ConfigFromEnv.get_mytardis_setup\n
-        Returned response was: {test_dict}"""
-    error_str = (
-        "MyTardis introspection returned more than one object when called from "
-        "ConfigFromEnv.get_mytardis_setup"
-    )
 
-    with pytest.raises(ValueError, match=error_str):
-        _ = overseer.get_mytardis_setup()
-        assert log_error_str in caplog.text
-    Overseer.clear()
+    with pytest.raises(ValueError):
+        _ = overseer.fetch_mytardis_setup()

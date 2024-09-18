@@ -14,7 +14,7 @@ from src.blueprints.project import RawProject
 from src.config.config import ConfigFromEnv
 from src.crucible.crucible import Crucible
 from src.forges.forge import Forge
-from src.mytardis_client.enumerators import DataClassification
+from src.mytardis_client.common_types import DataClassification
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
 from src.smelters.smelter import Smelter
@@ -94,8 +94,6 @@ def create_project_example(smelter: Smelter, crucible: Crucible, forge: Forge) -
         start_time=None,
         end_time=None,
         embargo_until=None,
-        delete_in_days=-1,
-        archive_in_days=-1,
     )
 
     smelt_result = smelter.smelt_project(raw_project)

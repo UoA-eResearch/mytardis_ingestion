@@ -4,32 +4,6 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-# NOTE: moved from blueprints module, as it's thematically part of the MyTardis client.
-#       Should try to unify with MyTardisObject below though.
-KNOWN_MYTARDIS_OBJECTS = [
-    "datafileparameterset",
-    "datafileparameter",
-    "dataset",
-    "dataset_file",
-    "datasetparameter",
-    "datasetparameterset",
-    "experiment",
-    "experimentparameter",
-    "experimentparameterset",
-    "facility",
-    "group",
-    "institution",
-    "instrument",
-    "parametername",
-    "project",
-    "projectparameter",
-    "projectparameterset",
-    "replica",
-    "schema",
-    "storagebox",
-    "user",
-]
-
 
 class MyTardisObject(str, Enum):
     """
@@ -43,19 +17,37 @@ class MyTardisObject(str, Enum):
     used at the boundaries of the application, when communicating with MyTardis.
     """
 
-    PROJECT = "project"
-    EXPERIMENT = "experiment"
-    DATASET = "dataset"
     DATAFILE = "datafile"
-    INSTRUMENT = "instrument"
-    INSTITUTION = "institution"
-    FACILITY = "facility"
-    STORAGE_BOX = "storagebox"
-    USER = "user"
-    PROJECT_PARAMETER_SET = "projectparameterset"
-    EXPERIMENT_PARAMETER_SET = "experimentparameterset"
+    DATAFILE_PARAMETER = "datafileparameter"
+    DATAFILE_PARAMETER_SET = "datafileparameterset"
+    DATASET = "dataset"
+    DATASET_PARAMETER = "datasetparameter"
     DATASET_PARAMETER_SET = "datasetparameterset"
+    EXPERIMENT = "experiment"
+    EXPERIMENT_PARAMETER = "experimentparameter"
+    EXPERIMENT_PARAMETER_SET = "experimentparameterset"
+    FACILITY = "facility"
+    GROUP = "group"
+    INSTITUTION = "institution"
+    INSTRUMENT = "instrument"
     INTROSPECTION = "introspection"
+    PARAMETER_NAME = "parametername"
+    PROJECT = "project"
+    PROJECT_PARAMETER = "projectparameter"
+    PROJECT_PARAMETER_SET = "projectparameterset"
+    REPLICA = "replica"
+    SCHEMA = "schema"
+    STORAGE_BOX = "storagebox"
+    STORAGE_BOX_OPTION = "storageboxoption"
+    USER = "user"
+
+
+_MYTARDIS_OBJECTS = [e.value for e in MyTardisObject]
+
+
+def list_mytardis_objects() -> list[str]:
+    """List the names of all MyTardis objects"""
+    return _MYTARDIS_OBJECTS
 
 
 class MyTardisTypeInfo(BaseModel):

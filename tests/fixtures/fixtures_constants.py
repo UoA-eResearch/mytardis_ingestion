@@ -1,5 +1,5 @@
 # pylint: disable=missing-function-docstring,redefined-outer-name,missing-module-docstring
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -8,9 +8,9 @@ from pytest import fixture
 from pytz import BaseTzInfo
 
 from src.blueprints.common_models import GroupACL, Parameter, UserACL
-from src.blueprints.custom_data_types import ISODateTime, Username
+from src.blueprints.custom_data_types import Username
 from src.blueprints.storage_boxes import StorageTypesEnum
-from src.mytardis_client.data_types import URI
+from src.mytardis_client.endpoints import URI
 
 
 @fixture
@@ -582,28 +582,8 @@ def institution_name() -> str:
 
 
 @fixture
-def datafile_archive_date() -> ISODateTime:
-    return ISODateTime("2023-12-31T12:00:00+13:00")
-
-
-@fixture
-def datafile_delete_date() -> ISODateTime:
-    return ISODateTime("2025-12-31T12:00:00+13:00")
-
-
-@fixture
-def archive_class() -> StorageTypesEnum:
-    return StorageTypesEnum.S3
-
-
-@fixture
 def storage_class() -> StorageTypesEnum:
     return StorageTypesEnum.FILE_SYSTEM
-
-
-@fixture
-def archive_box_name() -> str:
-    return "Test archive box"
 
 
 @fixture
@@ -612,18 +592,8 @@ def storage_box_name() -> str:
 
 
 @fixture
-def archive_box_uri() -> str:
-    return "/api/v1/storagebox/2/"
-
-
-@fixture
 def storage_box_uri() -> str:
     return "/api/v1/storagebox/1/"
-
-
-@fixture
-def archive_box_description() -> str:
-    return "A test archive box"
 
 
 @fixture
@@ -632,21 +602,8 @@ def storage_box_description() -> str:
 
 
 @fixture
-def archive_options() -> Dict[str, str]:
-    return {
-        "S3_Key": "mykey",
-        "S3_password": "mypassword",
-    }
-
-
-@fixture
 def storage_options() -> Dict[str, str]:
     return {"Location": "/srv/test"}
-
-
-@fixture
-def archive_attributes() -> Dict[str, str]:
-    return {"type": "tape"}
 
 
 @fixture
@@ -660,36 +617,5 @@ def datetime_now(timezone: BaseTzInfo) -> datetime:
 
 
 @fixture
-def autoarchive_offset() -> int:
-    return 547
-
-
-@fixture
-def delete_offset() -> int:
-    return 5470
-
-
-@fixture
-def archive_box_dir() -> Path:
-    return Path("/an/archive/target/")
-
-
-@fixture
 def storage_box_dir() -> Path:
     return Path("/an/active/target/")
-
-
-@fixture
-def archive_date(
-    datetime_now: datetime,
-    autoarchive_offset: int,
-) -> datetime:
-    return datetime_now + timedelta(days=autoarchive_offset)
-
-
-@fixture
-def delete_date(
-    datetime_now: datetime,
-    delete_offset: int,
-) -> datetime:
-    return datetime_now + timedelta(days=delete_offset)

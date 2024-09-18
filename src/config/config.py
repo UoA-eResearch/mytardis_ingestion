@@ -16,14 +16,13 @@ from pathlib import Path
 from typing import Dict, Optional
 from urllib.parse import urljoin
 
-from pydantic import BaseModel, ConfigDict, PrivateAttr
+from pydantic import BaseModel, PrivateAttr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from requests import PreparedRequest
 from requests.auth import AuthBase
 
-from src.blueprints.custom_data_types import MTUrl
 from src.blueprints.storage_boxes import StorageTypesEnum
-from src.mytardis_client.objects import MyTardisObject
+from src.mytardis_client.common_types import MTUrl
 
 logger = logging.getLogger(__name__)
 
@@ -161,37 +160,11 @@ class FilesystemStorageBoxConfig(StorageBoxConfig):
     target_root_dir: Path
 
 
-class IntrospectionConfig(BaseModel):
-    """MyTardis introspection data.
-
-    Pydantic model for MyTardis introspection data. NOTE: this class relies on
-    data from the MyTardis introspection API and therefore can't be instantiated
-    without a request to the specific MyTardis instance.
-
-    Attributes:
-        old_acls : bool
-            the MyTardis instance uses experiment only ACLs if `True`
-        projects_enabled : bool
-            the MyTardis instance uses projects if `True`
-        objects_with_ids : Optional[list[MyTardisObject]]
-    """
-
-    model_config = ConfigDict(use_enum_values=False)
-
-    old_acls: bool
-    projects_enabled: bool
-    identifiers_enabled: bool
-    profiles_enabled: bool
-    objects_with_ids: list[MyTardisObject]
-    objects_with_profiles: list[MyTardisObject]
-
-
 class ConfigFromEnv(BaseSettings):
     """Full MyTardis settings model.
 
     This class holds the configuration to access and run an ingestion on
-    MyTardis. It also provides access to the introspection API via the
-    mytardis_setup property.
+    MyTardis.
 
     Attributes:
         general : GeneralConfig
@@ -204,14 +177,6 @@ class ConfigFromEnv(BaseSettings):
             instance of Pydantic storage model
         default_schema : SchemaConfig
             instance of Pydantic schema model
-        archive: TimeOffsetConfig
-            instance of Pydantic time offset model
-
-
-    Properties:
-        mytardis_setup : Optional[IntrospectionConfig] (default: None)
-            instance of Pydantic introspection model either from private
-            attribute or new request
 
     ## Usage
     Requires a .env file in the current working direction:
@@ -231,13 +196,11 @@ class ConfigFromEnv(BaseSettings):
     # DEFAULT_SCHEMA__EXPERIMENT=
     # DEFAULT_SCHEMA__DATASET=
     # DEFAULT_SCHEMA__DATAFILE=
-    # Archive, prefix with ARCHIVE__
 
     '''
     ## Example
     '''python
     settings = ConfigFromEnv()
-    setup = settings.mytardis_setup # <- only has value after first call
     '''
     """
 

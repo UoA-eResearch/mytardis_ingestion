@@ -2,14 +2,13 @@
 # pylint: disable=missing-module-docstring
 
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Protocol, TypeVar
 
+from pydantic import BaseModel
 from pytest import fixture
 
 from src.blueprints.common_models import GroupACL, Parameter, ParameterSet, UserACL
-from src.blueprints.custom_data_types import ISODateTime, Username
 from src.blueprints.datafile import (
     Datafile,
     DatafileReplica,
@@ -19,67 +18,9 @@ from src.blueprints.datafile import (
 from src.blueprints.dataset import Dataset, RawDataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RawExperiment, RefinedExperiment
 from src.blueprints.project import Project, RawProject, RefinedProject
-from src.blueprints.storage_boxes import StorageBox
-from src.mytardis_client.data_types import URI
-from src.mytardis_client.enumerators import DataClassification
-
-
-@fixture
-def archive_box(
-    archive_box_name: str,
-    archive_box_dir: str,
-    archive_box_uri: str,
-    archive_box_description: str,
-) -> StorageBox:
-    return StorageBox(
-        name=archive_box_name,
-        location=Path(archive_box_dir),
-        uri=URI(archive_box_uri),
-        description=archive_box_description,
-    )
-
-
-@fixture
-def storage_box(
-    storage_box_name: str,
-    storage_box_dir: str,
-    storage_box_uri: str,
-    storage_box_description: str,
-) -> StorageBox:
-    return StorageBox(
-        name=storage_box_name,
-        location=Path(storage_box_dir),
-        uri=URI(storage_box_uri),
-        description=storage_box_description,
-    )
-
-
-@fixture
-def datafile_replica(
-    storage_box: StorageBox,
-    dataset_dir: Path,
-    filename: str,
-    target_dir: Path,
-) -> DatafileReplica:
-    return DatafileReplica(
-        uri=Path(target_dir / dataset_dir / filename).as_posix(),
-        location=storage_box.name,
-        protocol="file",
-    )
-
-
-@fixture
-def archive_replica(
-    archive_box: StorageBox,
-    dataset_dir: Path,
-    filename: str,
-    target_dir: Path,
-) -> DatafileReplica:
-    return DatafileReplica(
-        uri=Path(target_dir / dataset_dir / filename).as_posix(),
-        location=archive_box.name,
-        protocol="file",
-    )
+from src.mytardis_client.common_types import DataClassification
+from src.mytardis_client.endpoints import URI
+from src.mytardis_client.response_data import IngestedDatafile
 
 
 @fixture
@@ -105,14 +46,12 @@ def raw_project(  # pylint: disable=too-many-locals,too-many-arguments
     embargo_time_datetime: datetime,
     project_metadata: Dict[str, Any],
     project_url: str,
-    project_data_classification: Enum,
-    autoarchive_offset: int,
-    delete_offset: int,
+    project_data_classification: DataClassification,
 ) -> RawProject:
     return RawProject(
         name=project_name,
         description=project_description,
-        principal_investigator=Username(project_principal_investigator),
+        principal_investigator=project_principal_investigator,
         url=project_url,
         users=split_and_parse_users,
         groups=split_and_parse_groups,
@@ -124,8 +63,6 @@ def raw_project(  # pylint: disable=too-many-locals,too-many-arguments
         identifiers=project_ids,
         metadata=project_metadata,
         data_classification=project_data_classification,
-        autoarchive_offset=autoarchive_offset,
-        delete_offset=delete_offset,
     )
 
 
@@ -264,14 +201,13 @@ def refined_project(  # pylint:disable=too-many-arguments
     end_time_datetime: datetime,
     embargo_time_datetime: datetime,
     project_url: str,
-    project_data_classification: Enum,
+    project_data_classification: DataClassification,
 ) -> RefinedProject:
     return RefinedProject(
         name=project_name,
         description=project_description,
         data_classification=project_data_classification,
-        principal_investigator=Username(project_principal_investigator),
-        dataclassification=project_data_classification,
+        principal_investigator=project_principal_investigator,
         url=project_url,
         users=split_and_parse_users,
         groups=split_and_parse_groups,
@@ -371,7 +307,7 @@ def refined_datafile(
         users=split_and_parse_users,
         groups=split_and_parse_groups,
         dataset=datafile_dataset,
-        parameter_sets=raw_datafile_parameterset,
+        parameter_sets=[raw_datafile_parameterset],
     )
 
 
@@ -391,17 +327,17 @@ def project(
         created_by=refined_project.created_by,
         data_classification=refined_project.data_classification,
         start_time=(
-            ISODateTime(refined_project.start_time.isoformat())
+            refined_project.start_time.isoformat()
             if isinstance(refined_project.start_time, datetime)
             else None
         ),
         end_time=(
-            ISODateTime(refined_project.end_time.isoformat())
+            refined_project.end_time.isoformat()
             if isinstance(refined_project.end_time, datetime)
             else None
         ),
         embargo_until=(
-            ISODateTime(refined_project.embargo_until.isoformat())
+            refined_project.embargo_until.isoformat()
             if isinstance(refined_project.embargo_until, datetime)
             else None
         ),
@@ -488,8 +424,6 @@ def datafile(
     refined_datafile: RefinedDatafile,
     dataset_uri: URI,
     datafile_replica: DatafileReplica,
-    archive_date: datetime,
-    delete_date: datetime,
     archive_replica: DatafileReplica,
 ) -> Datafile:
     return Datafile(
@@ -502,10 +436,94 @@ def datafile(
         groups=refined_datafile.groups,
         dataset=dataset_uri,
         parameter_sets=refined_datafile.parameter_sets,
-        archive_date=ISODateTime(archive_date.isoformat()),
-        delete_date=ISODateTime(delete_date.isoformat()),
         replicas=[
             archive_replica,
             datafile_replica,
         ],
     )
+
+
+T_co = TypeVar("T_co", bound=BaseModel, covariant=True)
+
+
+class TestModelFactory(Protocol[T_co]):
+    """Protocol for a factory function that creates pydantic models to be used in tests.
+
+    Used in place of Callable[] as it is difficult to declare a Callable taking **kwargs
+    """
+
+    def __call__(self, **kwargs: Any) -> T_co: ...
+
+
+_DEFAULT_DATACLASS_ARGS: dict[type, dict[str, Any]] = {
+    Datafile: {
+        "filename": "test_file.txt",
+        "directory": Path("path/to/datafile"),
+        "md5sum": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+        "mimetype": "text/plain",
+        "size": 1024,
+        "users": None,
+        "groups": None,
+        "data_status": None,
+        "replicas": [],
+        "parameter_sets": None,
+        "dataset": URI("/api/v1/dataset/1/"),
+    },
+    IngestedDatafile: {
+        "resource_uri": URI("/api/v1/dataset_file/1/"),
+        "id": 1,
+        "dataset": URI("/api/v1/dataset/1/"),
+        "deleted": False,
+        "directory": Path("path/to/df_1"),
+        "filename": "df_1.txt",
+        "md5sum": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+        "mimetype": "text/plain",
+        "parameter_sets": [],
+        "public_access": False,
+        "replicas": [],
+        "size": 1024,
+        "version": 1,
+        "created_time": None,
+        "deleted_time": None,
+        "modification_time": None,
+        "identifiers": ["dataset-id-1"],
+    },
+}
+
+
+def make_dataclass_factory(dc_type: type[T_co]) -> TestModelFactory[T_co]:
+    """Factory function for creating factories for specific dataclasses.
+
+    Returns a function that creates instances of the specified dataclass with default
+    argument values. These values can be overridden by passing keyword arguments to the
+    factory function. This allows testers to easily create instances of dataclasses,
+    while only specifying the values that are relevant to the test.
+
+    Args:
+        dc_type: The dataclass type for which to create a factory function.
+
+    Returns:
+        A factory function that creates instances of the specified dataclass 'dc_type'.
+    """
+
+    default_args = _DEFAULT_DATACLASS_ARGS[dc_type]
+
+    def _make_dataclass(**kwargs: Any) -> T_co:
+        """Create an instance of the dataclass with the specified keyword arguments and
+        and default values (kwargs are given priority over default values).
+        """
+
+        result = {**default_args, **kwargs}
+        return dc_type.model_validate(result)
+
+    return _make_dataclass
+
+
+@fixture
+def make_datafile() -> TestModelFactory[Datafile]:
+    return make_dataclass_factory(Datafile)
+
+
+@fixture
+def make_ingested_datafile() -> TestModelFactory[IngestedDatafile]:
+    return make_dataclass_factory(IngestedDatafile)

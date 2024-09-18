@@ -13,16 +13,20 @@ import responses
 from mock import MagicMock
 from requests import HTTPError, Request, RequestException, Response
 from responses import matchers
+from tenacity import wait_fixed
 
 from src.blueprints.datafile import Datafile
 from src.config.config import AuthConfig, ConnectionConfig
-from src.mytardis_client.data_types import URI
+from src.mytardis_client.endpoints import URI, MyTardisEndpoint
 from src.mytardis_client.mt_rest import (
     GetRequestMetaParams,
     GetResponseMeta,
     MyTardisRESTFactory,
+    endpoint_is_not,
     sanitize_params,
 )
+from src.mytardis_client.response_data import IngestedDatafile
+from src.utils.types.type_helpers import is_list_of
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -54,7 +58,7 @@ def test_mytardis_rest_factory_setup(
 
 
 @mock.patch("requests.Session.request")
-def test_backoff_on_mytardis_rest_factory_doesnt_trigger_on_httperror(
+def test_retry_on_mytardis_rest_factory_doesnt_trigger_on_httperror(
     mock_requests_request: MagicMock, auth: AuthConfig, connection: ConnectionConfig
 ) -> None:
     mock_response = Response()
@@ -68,7 +72,7 @@ def test_backoff_on_mytardis_rest_factory_doesnt_trigger_on_httperror(
 
 @mock.patch("requests.Session.request")
 @pytest.mark.long
-def test_backoff_on_mytardis_rest_factory(
+def test_retry_on_mytardis_rest_factory(
     mock_requests_request: MagicMock, auth: AuthConfig, connection: ConnectionConfig
 ) -> None:
     backoff_max_tries = 8
@@ -78,6 +82,11 @@ def test_backoff_on_mytardis_rest_factory(
     mock_response.reason = "Test reason"
     mock_requests_request.return_value = mock_response
     test_factory = MyTardisRESTFactory(auth, connection)
+
+    # Disable the exponential backoff wait time to keep the test duration short.
+    # This uses a facility from tenacity (retry field added by the decorator).
+    test_factory.request.retry.wait = wait_fixed(0.1)  # type: ignore[attr-defined]
+
     with pytest.raises(RequestException):
         _ = test_factory.request("GET", "/project")
     assert mock_requests_request.call_count == backoff_max_tries
@@ -98,12 +107,13 @@ def test_mytardis_client_rest_get_single(
         json=datafile_get_response_single,
     )
 
-    datafiles, meta = mt_client.get("/dataset_file", object_type=Datafile)
+    datafiles, meta = mt_client.get("/dataset_file")
 
     assert isinstance(datafiles, list)
+    assert is_list_of(datafiles, IngestedDatafile)
     assert len(datafiles) == 1
     assert datafiles[0].resource_uri == URI("/api/v1/dataset_file/0/")
-    assert datafiles[0].obj.filename == "test_filename.txt"
+    assert datafiles[0].filename == "test_filename.txt"
 
     assert isinstance(meta, GetResponseMeta)
     assert meta.total_count == 1
@@ -126,11 +136,10 @@ def test_mytardis_client_rest_get_multi(
 
     datafiles, meta = mt_client.get(
         "/dataset_file",
-        object_type=Datafile,
         meta_params=GetRequestMetaParams(offset=2, limit=3),
     )
 
-    assert isinstance(datafiles, list)
+    assert is_list_of(datafiles, IngestedDatafile)
     assert len(datafiles) == 30
     assert (isinstance(df, Datafile) for df in datafiles)
 
@@ -138,9 +147,9 @@ def test_mytardis_client_rest_get_multi(
     assert datafiles[1].resource_uri == URI("/api/v1/dataset_file/1/")
     assert datafiles[2].resource_uri == URI("/api/v1/dataset_file/2/")
 
-    assert datafiles[0].obj.filename == "test_filename_0.txt"
-    assert datafiles[1].obj.filename == "test_filename_1.txt"
-    assert datafiles[2].obj.filename == "test_filename_2.txt"
+    assert datafiles[0].filename == "test_filename_0.txt"
+    assert datafiles[1].filename == "test_filename_1.txt"
+    assert datafiles[2].filename == "test_filename_2.txt"
 
     assert isinstance(meta, GetResponseMeta)
     assert meta.total_count == 30
@@ -172,17 +181,16 @@ def test_mytardis_client_rest_get_all(
 
     datafiles, total_count = mt_client.get_all(
         "/dataset_file",
-        object_type=Datafile,
         batch_size=20,
     )
 
-    assert isinstance(datafiles, list)
+    assert is_list_of(datafiles, IngestedDatafile)
     assert len(datafiles) == 30
     assert (isinstance(df, Datafile) for df in datafiles)
 
     for i in range(30):
         assert datafiles[i].resource_uri == URI(f"/api/v1/dataset_file/{i}/")
-        assert datafiles[i].obj.filename == f"test_filename_{i}.txt"
+        assert datafiles[i].filename == f"test_filename_{i}.txt"
 
     assert total_count == 30
 
@@ -258,6 +266,17 @@ def test_mytardis_client_rest_get_all(
             },
             id="doubly-nested",
         ),
+        pytest.param(
+            {
+                "uri_string": "/api/v1/dataset/34/",
+                "uri_strings": ["/api/v1/dataset/34/", "/api/v1/dataset/35/"],
+            },
+            {
+                "uri_string": 34,
+                "uri_strings": [34, 35],
+            },
+            id="uris-stored-as-strings",
+        ),
     ],
 )
 def test_mytardis_client_sanitize_params(
@@ -285,7 +304,33 @@ def test_mytardis_client_get_params_are_sanitized(
 
     _ = mt_client.get(
         "/dataset_file",
-        object_type=Datafile,
         query_params={"dataset": URI("/api/v1/dataset/0/")},
         meta_params=GetRequestMetaParams(limit=1, offset=0),
     )
+
+
+@pytest.mark.parametrize(
+    "endpoints,url,expected_output",
+    [
+        pytest.param(("/dataset_file",), "https://example.com/dataset_file", False),
+        pytest.param(("/dataset",), "https://example.com/dataset_file/", True),
+        pytest.param(("/dataset",), "https://example.com/dataset/", False),
+        pytest.param(("/dataset",), "https://example.com/dataset", False),
+        pytest.param(
+            (
+                "/dataset",
+                "/dataset_file",
+            ),
+            "https://example.com/dataset",
+            False,
+        ),
+    ],
+)
+def test_make_endpoint_filter(
+    endpoints: tuple[MyTardisEndpoint], url: str, expected_output: bool
+) -> None:
+
+    response = MagicMock()
+    response.url = url
+
+    assert endpoint_is_not(endpoints)(response) == expected_output

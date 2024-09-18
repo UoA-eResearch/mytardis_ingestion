@@ -11,13 +11,13 @@ from typing import Optional, Tuple
 from pydantic import ValidationError
 
 from src.blueprints.common_models import Parameter, ParameterSet
-from src.blueprints.custom_data_types import MTUrl
 from src.blueprints.datafile import RawDatafile, RefinedDatafile
 from src.blueprints.dataset import RawDataset, RefinedDataset
 from src.blueprints.experiment import RawExperiment, RefinedExperiment
 from src.blueprints.project import RawProject, RefinedProject
 from src.config.config import GeneralConfig, SchemaConfig
-from src.mytardis_client.data_types import URI
+from src.mytardis_client.common_types import MTUrl
+from src.mytardis_client.endpoints import URI
 from src.overseers.overseer import MYTARDIS_PROJECTS_DISABLED_MESSAGE, Overseer
 
 logger = logging.getLogger(__name__)
@@ -265,10 +265,6 @@ class Smelter:
                 groups=raw_datafile.groups,
                 dataset=raw_datafile.dataset,
                 parameter_sets=[parameters] if parameters is not None else None,
-                # archive_date=raw_datafile.archive_date,
-                # delete_date=raw_datafile.delete_date,
-                # archive_offset=raw_datafile.archive_offset,
-                # delete_offset=raw_datafile.delete_offset,
             )
         except ValidationError:
             logger.warning(

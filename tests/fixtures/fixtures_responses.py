@@ -6,8 +6,7 @@ from typing import Any, Dict, List
 from pytest import fixture
 
 from src.blueprints.project import Project
-from src.blueprints.storage_boxes import StorageBox
-from src.mytardis_client.data_types import URI
+from src.mytardis_client.endpoints import URI
 
 
 def generate_get_response_meta(**kwargs: Any) -> dict[str, Any]:
@@ -163,45 +162,16 @@ def datafile_get_response_paginated_second() -> dict[str, Any]:
 
 
 @fixture
-def autoarchive_details(
-    autoarchive_offset: int,
-    delete_offset: int,
-    archive_box: StorageBox,
-    storage_box: StorageBox,
-) -> Dict[str, Any]:
-    return {
-        "offset": autoarchive_offset,
-        "delete_offset": delete_offset,
-        "archives": [
-            {
-                "name": archive_box.name,
-                "description": archive_box.description,
-                "uri": archive_box.uri,
-                "location": archive_box.location.as_posix(),
-            }
-        ],
-        "active_stores": [
-            {
-                "name": storage_box.name,
-                "description": storage_box.description,
-                "uri": storage_box.uri,
-                "location": storage_box.location.as_posix(),
-            }
-        ],
-    }
-
-
-@fixture
 def get_project_details(
     project_ids: list[str],
     project_description: str,
-    project_institutions: list[str],
     project_name: str,
     project_principal_investigator: str,
     project_url: str,
 ) -> List[Dict[str, Any]]:
     return [
         {
+            "classification": 25,
             "created_by": "api/v1/user/1/",
             "datafile_count": 2,
             "dataset_count": 1,
@@ -211,7 +181,9 @@ def get_project_details(
             "experiment_count": 1,
             "id": 1,
             "identifiers": project_ids,
-            "institution": project_institutions,
+            "institution": [
+                "/api/v1/institution/1/",
+            ],
             "locked": False,
             "name": project_name,
             "parameter_sets": [],
@@ -387,7 +359,7 @@ def instrument_response_dict(
 
 
 @fixture
-def introspection_response_dict() -> Dict[str, Any]:
+def introspection_response() -> dict[str, Any]:
     return {
         "meta": {
             "limit": 20,
@@ -398,6 +370,7 @@ def introspection_response_dict() -> Dict[str, Any]:
         },
         "objects": [
             {
+                "data_classification_enabled": None,
                 "experiment_only_acls": False,
                 "identified_objects": [
                     "dataset",

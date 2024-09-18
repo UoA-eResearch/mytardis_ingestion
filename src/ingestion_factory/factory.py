@@ -16,7 +16,7 @@ from src.conveyor.conveyor import Conveyor, FailedTransferException
 from src.crucible.crucible import Crucible
 from src.extraction.manifest import IngestionManifest
 from src.forges.forge import Forge
-from src.mytardis_client.data_types import URI
+from src.mytardis_client.endpoints import URI
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.mytardis_client.objects import MyTardisObject
 from src.overseers.overseer import Overseer
@@ -67,7 +67,7 @@ class IngestionFactory:
         self.config = config
 
         mt_rest = mt_rest or MyTardisRESTFactory(config.auth, config.connection)
-        self._overseer = overseer or Overseer(mt_rest)
+        self._overseer: Overseer = overseer or Overseer(mt_rest)
 
         self.forge = forge or Forge(mt_rest)
         self.smelter = smelter or Smelter(
@@ -105,7 +105,7 @@ class IngestionFactory:
                 MyTardisObject.PROJECT, project.model_dump()
             )
             if len(matching_projects) > 0:
-                project_uri = URI(matching_projects[0]["resource_uri"])
+                project_uri = matching_projects[0].resource_uri
                 # Would we ever get multiple matches? If so, what should we do?
                 logging.info(
                     'Already ingested project "%s" as "%s". Skipping project ingestion.',
@@ -145,7 +145,7 @@ class IngestionFactory:
                 MyTardisObject.EXPERIMENT, experiment.model_dump()
             )
             if len(matching_experiments) > 0:
-                experiment_uri = URI(matching_experiments[0]["resource_uri"])
+                experiment_uri = matching_experiments[0].resource_uri
                 logging.info(
                     'Already ingested experiment "%s" as "%s". Skipping experiment ingestion.',
                     experiment.title,
@@ -184,7 +184,7 @@ class IngestionFactory:
                 MyTardisObject.DATASET, dataset.model_dump()
             )
             if len(matching_datasets) > 0:
-                dataset_uri = URI(matching_datasets[0]["resource_uri"])
+                dataset_uri = matching_datasets[0].resource_uri
                 logging.info(
                     'Already ingested dataset "%s" as "%s". Skipping dataset ingestion.',
                     dataset.description,
@@ -205,7 +205,9 @@ class IngestionFactory:
     ) -> IngestionResult:
         """Ingest a set of datafiles into MyTardis."""
         result = IngestionResult()
-        datafiles: list[Datafile] = []
+        datafiles_to_transfer: list[Datafile] = []
+
+        datafiles_prefetched: dict[URI, bool] = {}
 
         for raw_datafile in raw_datafiles:
             refined_datafile = self.smelter.smelt_datafile(raw_datafile)
@@ -217,6 +219,18 @@ class IngestionFactory:
             if not datafile:
                 result.error.append(refined_datafile.display_name)
                 continue
+
+            if not datafiles_prefetched.get(datafile.dataset):
+                num_objects = self._overseer.prefetch(
+                    "/dataset_file", query_params={"dataset": datafile.dataset}
+                )
+                datafiles_prefetched[datafile.dataset] = True
+                logging.info(
+                    "Prefetched %d datafiles for dataset %s",
+                    num_objects,
+                    datafile.dataset,
+                )
+
             # Add a replica to represent the copy transferred by the Conveyor.
             datafile.replicas.append(self.conveyor.create_replica(datafile))
 
@@ -226,14 +240,16 @@ class IngestionFactory:
             )
             if len(matching_datafiles) > 0:
                 logging.info(
-                    'Already ingested datafile "%s". Skipping datafile ingestion.',
-                    datafile.directory,
+                    'Already ingested datafile "%s" as %s. Skipping datafile ingestion.',
+                    datafile.filepath,
+                    matching_datafiles[0].resource_uri,
                 )
+                datafiles_to_transfer.append(datafile)
                 result.skipped.append((datafile.display_name, None))
                 continue
 
             self.forge.forge_datafile(datafile)
-            datafiles.append(datafile)
+            datafiles_to_transfer.append(datafile)
             result.success.append((datafile.display_name, None))
 
         logger.info(
@@ -251,7 +267,7 @@ class IngestionFactory:
         # Create a file transfer with the conveyor
         logger.info("Starting transfer of datafiles.")
         try:
-            self.conveyor.transfer(source_data_root, datafiles)
+            self.conveyor.transfer(source_data_root, datafiles_to_transfer)
             logger.info("Finished transferring datafiles.")
         except FailedTransferException:
             logger.error(

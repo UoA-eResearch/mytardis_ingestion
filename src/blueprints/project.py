@@ -8,9 +8,14 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from src.blueprints.common_models import GroupACL, ParameterSet, UserACL
-from src.blueprints.custom_data_types import ISODateTime, MTUrl, Username
-from src.mytardis_client.data_types import URI
-from src.mytardis_client.enumerators import DataClassification, DataStatus
+from src.blueprints.custom_data_types import Username
+from src.mytardis_client.common_types import (
+    DataClassification,
+    DataStatus,
+    ISODateTime,
+    MTUrl,
+)
+from src.mytardis_client.endpoints import URI
 
 
 class BaseProject(BaseModel, ABC):
@@ -45,8 +50,6 @@ class RawProject(BaseProject):
     start_time: Optional[datetime | str] = None
     end_time: Optional[datetime | str] = None
     embargo_until: Optional[datetime | str] = None
-    delete_in_days: int = -1
-    archive_in_days: int = 365
 
 
 class RefinedProject(BaseProject):

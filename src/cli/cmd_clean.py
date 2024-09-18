@@ -5,13 +5,14 @@ import logging
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Any, Optional, Tuple
+from typing import Annotated, Optional, Tuple
 
 import typer
 
 from src.blueprints.datafile import RawDatafile
 from src.cli.common import (
     LogFileOption,
+    LogLevelOption,
     ProfileNameOption,
     ProfileVersionOption,
     SourceDataPathArg,
@@ -20,6 +21,7 @@ from src.cli.common import (
 )
 from src.config.config import ConfigFromEnv
 from src.inspector.inspector import Inspector
+from src.mytardis_client.response_data import IngestedDatafile, Replica
 from src.profiles.profile_register import load_profile
 from src.utils import log_utils
 from src.utils.timing import Timer
@@ -27,20 +29,20 @@ from src.utils.timing import Timer
 logger = logging.getLogger(__name__)
 
 
-def _get_verified_replica(queried_df: dict[str, Any]) -> Optional[dict[str, Any]]:
+def _get_verified_replica(queried_df: IngestedDatafile) -> Optional[Replica]:
     """Returns the first Replica that is verified, or None if there isn't any."""
-    replicas: list[dict[str, Any]] = queried_df["replicas"]
+
     # Iterate through all replicas. If one replica is verified, then
     # return it.
-    for replica in replicas:
-        if replica["verified"]:
+    for replica in queried_df.replicas:
+        if replica.verified:
             return replica
     return None
 
 
 def _is_completed_df(
     df: RawDatafile,
-    query_result: Optional[list[dict[str, Any]]],
+    query_result: Optional[list[IngestedDatafile]],
     min_file_age: Optional[int],
 ) -> bool:
     """Checks if a datafile has been ingested, verified, and its age is higher
@@ -54,12 +56,12 @@ def _is_completed_df(
             pth,
         )
     replica = _get_verified_replica(query_result[0])
-    if replica is None:
+    if replica is None or replica.last_verified_time is None:
         # No verified replica yet created.
         return False
     if min_file_age:
         # Check file age for the replica.
-        vtime = datetime.fromisoformat(replica["last_verified_time"])
+        vtime = datetime.fromisoformat(replica.last_verified_time)
         days_from_vtime = (datetime.now() - vtime).days
         logger.info("%s was last verified %i days ago.", pth, days_from_vtime)
         if days_from_vtime < min_file_age:
@@ -171,6 +173,7 @@ def _save_data_status(
     print(f"Data written to {output_csv_path}")
 
 
+# pylint: disable=too-many-locals
 def clean(
     source_data_path: SourceDataPathArg,
     profile_name: ProfileNameOption,
@@ -195,9 +198,10 @@ def clean(
         ),
     ] = None,
     log_file: LogFileOption = Path("clean.log"),
+    log_level: LogLevelOption = "INFO",
 ) -> None:
     """Delete datafiles in source data source after ingestion is complete."""
-    log_utils.init_logging(file_name=str(log_file))
+    log_utils.init_logging(file_name=str(log_file), level=log_level)
 
     logger.info("Extracting list of datafiles using %s profile", profile_name)
     profile = load_profile(profile_name, profile_version)

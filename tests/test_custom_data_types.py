@@ -3,26 +3,14 @@
 # nosec assert_used
 # flake8: noqa S101
 
-from datetime import datetime
-from typing import List
-
 import pytest
-from dateutil import tz
 from pydantic import BaseModel
 
-from src.blueprints.custom_data_types import ISODateTime, Username
-from src.mytardis_client.data_types import URI
-from src.mytardis_client.objects import KNOWN_MYTARDIS_OBJECTS
-
-NZT = tz.gettz("Pacific/Auckland")
+from src.blueprints.custom_data_types import Username
 
 
 class DummyUsernames(BaseModel):
     user: Username
-
-
-class DummyISODateTime(BaseModel):
-    iso_time: ISODateTime
 
 
 @pytest.mark.parametrize("upis", ["test001", "ts001", "tst001"])
@@ -46,7 +34,7 @@ def test_UPI_wrong_type() -> None:  # pylint: disable=invalid-name
 )
 def test_malformed_UPI(upis: Username) -> None:  # pylint: disable=invalid-name
     with pytest.raises(ValueError) as e_info:
-        test_class = DummyUsernames(user=upis)
+        _ = DummyUsernames(user=upis)
     assert (
         (
             "1 validation error for DummyUsernames\nuser\n  "
@@ -55,36 +43,3 @@ def test_malformed_UPI(upis: Username) -> None:  # pylint: disable=invalid-name
             "input_type=str]\n    "
         )
     ) in str(e_info.value)
-
-
-@pytest.mark.parametrize(
-    "iso_strings, expected",
-    (
-        ("2022-01-01T12:00:00", "2022-01-01T12:00:00"),
-        ("2022-01-01T12:00:00+12:00", "2022-01-01T12:00:00+12:00"),
-        ("2022-01-01T12:00:00.0+12:00", "2022-01-01T12:00:00.0+12:00"),
-        ("2022-01-01T12:00:00.00+12:00", "2022-01-01T12:00:00.00+12:00"),
-        ("2022-01-01T12:00:00.000+12:00", "2022-01-01T12:00:00.000+12:00"),
-        ("2022-01-01T12:00:00.0000+12:00", "2022-01-01T12:00:00.0000+12:00"),
-        ("2022-01-01T12:00:00.00000+12:00", "2022-01-01T12:00:00.00000+12:00"),
-        (
-            "2022-01-01T12:00:00.000000+12:00",
-            "2022-01-01T12:00:00.000000+12:00",
-        ),
-        (
-            datetime(2022, 1, 1, 12, 00, 00, 000000).isoformat(),
-            "2022-01-01T12:00:00",
-        ),
-        (datetime(2022, 1, 1, tzinfo=NZT).isoformat(), "2022-01-01T00:00:00+13:00"),
-        (
-            datetime(2022, 1, 1, 12, 00, 00, tzinfo=NZT).isoformat(),
-            "2022-01-01T12:00:00+13:00",
-        ),
-    ),
-)
-def test_good_ISO_DateTime_string(  # pylint: disable=invalid-name
-    iso_strings: str,
-    expected: str,
-) -> None:
-    test_class = DummyISODateTime(iso_time=iso_strings)
-    assert test_class.iso_time == expected
