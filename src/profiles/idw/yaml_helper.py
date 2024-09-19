@@ -8,7 +8,6 @@ appropriate dataclasses.
 """
 
 import logging
-import os
 
 # Standard library imports
 from pathlib import Path, PosixPath
@@ -23,8 +22,8 @@ from yaml.nodes import MappingNode, Node
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
 from src.blueprints.common_models import GroupACL, UserACL
 from src.blueprints.custom_data_types import Username
-from src.miners.utils import datafile_metadata_helpers
 from src.mytardis_client.common_types import DataClassification, DataStatus
+from src.profiles.idw.idw_utils import replace_micrometer_values
 
 # Constants
 logger = logging.getLogger(__name__)
@@ -204,9 +203,7 @@ class YamlParser:
         # data["md5sum"] = md5sum
         metadata = data.pop("metadata", {})
         # TO DO: change back when debugging from the API side
-        metadata_replaced = datafile_metadata_helpers.replace_micrometer_values(
-            metadata, "um"
-        )
+        metadata_replaced = replace_micrometer_values(metadata, "um")
         data["metadata"] = metadata_replaced
         datafile = RawDatafile(**data)
         return datafile

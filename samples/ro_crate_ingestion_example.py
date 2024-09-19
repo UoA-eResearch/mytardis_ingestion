@@ -9,7 +9,6 @@ from src.config.config import ConfigFromEnv
 from src.ingestion_factory.factory import IngestionFactory
 from src.mytardis_client.mt_rest import MyTardisRESTFactory
 from src.overseers.overseer import Overseer
-from src.profiles.profile_loader import ProfileLoader
 from src.profiles.ro_crate.ro_crate_parser import ROCrateExtractor
 from src.smelters.smelter import Smelter
 
@@ -32,8 +31,6 @@ logger = logging.getLogger(__name__)
 
 # Constants
 config = ConfigFromEnv()
-PROFILE_NAME = "ro_crate"
-profile_loader = ProfileLoader(PROFILE_NAME)
 
 
 def ingest_data(ro_crate_path: Path) -> None:

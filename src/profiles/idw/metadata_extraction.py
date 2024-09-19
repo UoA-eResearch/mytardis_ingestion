@@ -1,7 +1,3 @@
-# pylint: disable-all
-# type: ignore
-# This needs a lot of refactoring so disable checks
-
 """
 YAML parser module. This module is used for parsing YAML files into
 appropriate dataclasses.
@@ -16,11 +12,11 @@ from pathlib import Path
 import yaml
 
 # User-defined imports
-from src.beneficiations.abstract_custom_beneficiation import AbstractCustomBeneficiation
 from src.blueprints import RawDatafile, RawDataset, RawExperiment, RawProject
 from src.extraction.manifest import IngestionManifest
-from src.miners.utils import datafile_metadata_helpers
-from src.profiles.idw.yaml_helper import YamlParser
+from src.extraction.metadata_extractor import IMetadataExtractor
+from src.profiles.idw.yaml_helper import YamlParser  # type: ignore[attr-defined]
+from src.utils.filesystem.checksums import calculate_md5
 
 # Constants
 logger = logging.getLogger(__name__)
@@ -30,13 +26,13 @@ logger = logging.getLogger(__name__)
 YamlParser = YamlParser()
 
 
-class CustomBeneficiation(AbstractCustomBeneficiation):
+class IDWMetadataExtractor(IMetadataExtractor):
     """
-    CustomBeneficiation class for parsing
-    YAML files into appropriate dataclasses.
+    Extractor class for parsing IDW-specific YAML files into ingestible dataclasses.
     """
 
-    def beneficiate(self, yaml_path: Path) -> IngestionManifest:
+    # pylint: disable=arguments-renamed
+    def extract(self, yaml_path: Path) -> IngestionManifest:
         """
         Parse a YAML file at the specified path and return a list of loaded objects.
 
@@ -44,15 +40,16 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
             fpath (str): The path to the YAML file.
 
         Returns:
-            List[Union[RawDatafile, RawDataset, RawExperiment, RawProject]]: A list of loaded objects.
+            List[Union[RawDatafile, RawDataset, RawExperiment, RawProject]]: A list of loaded
+            objects.
         """
         if not yaml_path.is_file() or yaml_path.suffix != ".yaml":
             raise ValueError(f"{yaml_path} is not a valid YAML file.")
 
         ingestible_dclasses = IngestionManifest(source_data_root=yaml_path.parent)
-        logger.info("parsing {0}".format(yaml_path))
+        logger.info("parsing %s", yaml_path)
 
-        with open(yaml_path) as f:
+        with open(yaml_path, encoding="utf-8") as f:
             data = yaml.safe_load_all(f)
             for obj in data:
                 if isinstance(obj, RawProject):
@@ -63,6 +60,6 @@ class CustomBeneficiation(AbstractCustomBeneficiation):
                     ingestible_dclasses.add_dataset(obj)
                 if isinstance(obj, RawDatafile):
                     df_path = yaml_path.parent / obj.filepath
-                    obj.md5sum = datafile_metadata_helpers.calculate_md5sum(df_path)
+                    obj.md5sum = calculate_md5(df_path)
                     ingestible_dclasses.add_datafile(obj)
         return ingestible_dclasses
