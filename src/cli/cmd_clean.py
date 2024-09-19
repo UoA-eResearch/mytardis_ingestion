@@ -220,10 +220,8 @@ def clean(
     verified_dfs, unverified_dfs = _filter_completed_dfs(
         config, manifest.get_datafiles(), min_file_age
     )
-    verified_df_paths = [
-        manifest.get_data_root() / df.filepath for df in verified_dfs
-    ]
-    
+    verified_df_paths = [manifest.get_data_root() / df.filepath for df in verified_dfs]
+
     if len(verified_dfs) != len(manifest.get_datafiles()):
         logger.error(
             "Could not proceed with deleting this data source. Ingestion is not complete."
