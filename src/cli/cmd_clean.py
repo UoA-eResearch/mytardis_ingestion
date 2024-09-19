@@ -127,6 +127,7 @@ def _save_data_status(
     datafiles_verified: list[RawDatafile],
     datafiles_unverified: list[RawDatafile],
 ) -> None:
+    """Saves the status of verified and unverified data files to a CSV file."""
     # Get the current date and time
     current_datetime = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -219,9 +220,10 @@ def clean(
     verified_dfs, unverified_dfs = _filter_completed_dfs(
         config, manifest.get_datafiles(), min_file_age
     )
-    # verified_df_paths = [  # pylint: disable=unused-variable
-    #     manifest.get_data_root() / df.filepath for df in verified_dfs
-    # ]  # pylint: disable=unused-variable
+    verified_df_paths = [
+        manifest.get_data_root() / df.filepath for df in verified_dfs
+    ]
+    
     if len(verified_dfs) != len(manifest.get_datafiles()):
         logger.error(
             "Could not proceed with deleting this data source. Ingestion is not complete."
@@ -239,8 +241,8 @@ def clean(
         logger.info("Saving files verification status into a csv file.")
         _save_data_status(source_data_path, verified_dfs, unverified_dfs)
     # Delete all datafiles.
-    # _delete_datafiles(verified_df_paths)
+    _delete_datafiles(verified_df_paths)
     # Call profile-specific cleanup code.
-    # logger.info("Running profile-specific cleanup code.")
-    # profile.cleanup(source_data_path)
-    # logger.info("Finished deleting verified files.")
+    logger.info("Running profile-specific cleanup code.")
+    profile.cleanup(source_data_path)
+    logger.info("Finished deleting verified files.")
