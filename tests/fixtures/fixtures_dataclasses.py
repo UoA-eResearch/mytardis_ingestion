@@ -24,6 +24,11 @@ from src.mytardis_client.response_data import IngestedDatafile, Institution
 
 
 @fixture
+def datafile_replica() -> DatafileReplica:
+    return DatafileReplica(uri="ds-1/test/file.txt", location="test_location")
+
+
+@fixture
 def raw_project_parameterset(
     project_schema: str,
     project_metadata_processed: List[Parameter],
@@ -424,7 +429,6 @@ def datafile(
     refined_datafile: RefinedDatafile,
     dataset_uri: URI,
     datafile_replica: DatafileReplica,
-    archive_replica: DatafileReplica,
 ) -> Datafile:
     return Datafile(
         filename=refined_datafile.filename,
@@ -437,7 +441,6 @@ def datafile(
         dataset=dataset_uri,
         parameter_sets=refined_datafile.parameter_sets,
         replicas=[
-            archive_replica,
             datafile_replica,
         ],
     )
