@@ -6,6 +6,7 @@ import copy
 import logging
 from datetime import datetime
 from typing import Any, Dict
+from unittest.mock import MagicMock
 from urllib.parse import urljoin
 
 import pytest
@@ -18,31 +19,40 @@ from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
 from src.config.config import ConnectionConfig
 from src.crucible.crucible import Crucible
+from src.mytardis_client.objects import MyTardisObject
+from src.mytardis_client.response_data import Institution
+from src.overseers.overseer import Overseer
+from tests.fixtures.fixtures_dataclasses import TestModelFactory
 
 
-@pytest.mark.xfail
-@responses.activate
 def test_prepare_project(
-    connection: ConnectionConfig,
-    crucible: Crucible,
-    refined_project: RefinedProject,
-    project: Project,
-    institution_response_dict: Dict[str, Any],
-    response_dict_not_found: Dict[str, Any],
+    overseer: Overseer,
+    make_refined_project: TestModelFactory[RefinedProject],
+    make_project: TestModelFactory[Project],
+    make_institution: TestModelFactory[Institution],
 ) -> None:
-    url = urljoin(connection.api_template, "institution")
-    responses.get(
-        url,
-        match=[
-            matchers.query_param_matcher(
-                {"identifiers": refined_project.institution[0]}
-            ),
-        ],
-        status=200,
-        json=(institution_response_dict),
+
+    institution = make_institution(
+        name="Test Institution", identifiers=["test-institution-1"]
     )
-    responses.get(url, status=200, json=response_dict_not_found)
-    assert crucible.prepare_project(refined_project) == project
+
+    refined_project = make_refined_project(
+        institution=institution.identifiers,
+        start_time=datetime(2000, 1, 1, 12, 0, 0),
+    )
+    expected_project = make_project(start_time="2000-01-01T12:00:00")
+
+    overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
+    overseer.get_uris_by_identifier.return_value = [institution.resource_uri]
+
+    crucible = Crucible(overseer)
+    prepared_project = crucible.prepare_project(refined_project)
+
+    overseer.get_uris_by_identifier.assert_called_once_with(
+        MyTardisObject.INSTITUTION, refined_project.institution[0]
+    )
+
+    assert prepared_project == expected_project
 
 
 @pytest.mark.xfail

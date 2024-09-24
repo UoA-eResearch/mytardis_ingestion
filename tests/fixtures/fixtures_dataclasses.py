@@ -20,7 +20,7 @@ from src.blueprints.experiment import Experiment, RawExperiment, RefinedExperime
 from src.blueprints.project import Project, RawProject, RefinedProject
 from src.mytardis_client.common_types import DataClassification
 from src.mytardis_client.endpoints import URI
-from src.mytardis_client.response_data import IngestedDatafile
+from src.mytardis_client.response_data import IngestedDatafile, Institution
 
 
 @fixture
@@ -456,6 +456,18 @@ class TestModelFactory(Protocol[T_co]):
 
 
 _DEFAULT_DATACLASS_ARGS: dict[type, dict[str, Any]] = {
+    Project: {
+        "name": "Test Project",
+        "description": "Test project description",
+        "principal_investigator": "test001",
+        "institution": ["/api/v1/institution/1/"],
+    },
+    RefinedProject: {
+        "name": "Test Project",
+        "description": "Test project description",
+        "principal_investigator": "test001",
+        "institution": ["test-institution-1"],
+    },
     Datafile: {
         "filename": "test_file.txt",
         "directory": Path("path/to/datafile"),
@@ -487,6 +499,12 @@ _DEFAULT_DATACLASS_ARGS: dict[type, dict[str, Any]] = {
         "deleted_time": None,
         "modification_time": None,
         "identifiers": ["dataset-id-1"],
+    },
+    Institution: {
+        "name": "Test Institution",
+        "identifiers": ["test-institution-1"],
+        "id": 1,
+        "resource_uri": URI("/api/v1/institution/1/"),
     },
 }
 
@@ -520,6 +538,16 @@ def make_dataclass_factory(dc_type: type[T_co]) -> TestModelFactory[T_co]:
 
 
 @fixture
+def make_project() -> TestModelFactory[Project]:
+    return make_dataclass_factory(Project)
+
+
+@fixture
+def make_refined_project() -> TestModelFactory[RefinedProject]:
+    return make_dataclass_factory(RefinedProject)
+
+
+@fixture
 def make_datafile() -> TestModelFactory[Datafile]:
     return make_dataclass_factory(Datafile)
 
@@ -527,3 +555,8 @@ def make_datafile() -> TestModelFactory[Datafile]:
 @fixture
 def make_ingested_datafile() -> TestModelFactory[IngestedDatafile]:
     return make_dataclass_factory(IngestedDatafile)
+
+
+@fixture
+def make_institution() -> TestModelFactory[Institution]:
+    return make_dataclass_factory(Institution)

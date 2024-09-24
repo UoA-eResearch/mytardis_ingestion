@@ -60,7 +60,7 @@ class Institution(MyTardisObjectData):
     def mytardis_type(self) -> MyTardisObject:
         return MyTardisObject.INSTITUTION
 
-    aliases: Optional[list[str]]
+    aliases: Optional[list[str]] = None
     identifiers: list[str]
     name: str
 
