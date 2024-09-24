@@ -1,7 +1,7 @@
-# pylint: disable=fixme
 """The Crucible class takes a refined object and replaces the str values for
 fields that exist within the MyTardis Database with their equivalent URIs.
 """
+
 import logging
 from datetime import datetime
 
@@ -33,18 +33,21 @@ class Crucible:
     def prepare_project(self, refined_project: RefinedProject) -> Project | None:
         """Refine a project by getting the objects that need to exist in
         MyTardis and finding their URIs"""
-        institutions: list[URI] = []
+
+        institutions: set[URI] = set()
+
         for institution in refined_project.institution:
-            if institution_uri := self.overseer.get_uris_by_identifier(
+            if institution_uris := self.overseer.get_uris_by_identifier(
                 MyTardisObject.INSTITUTION, institution
             ):
-                institutions.append(*institution_uri)
-        institutions = list(set(institutions))
+                institutions.update(institution_uris)
+
         if not institutions:
             logger.warning(
                 "Unable to identify any institutions that were listed for this project."
             )
             return None
+
         return Project(
             name=refined_project.name,
             description=refined_project.description,
@@ -55,6 +58,7 @@ class Crucible:
             users=refined_project.users,
             groups=refined_project.groups,
             identifiers=refined_project.identifiers,
+            institution=list(institutions),
             start_time=normalize_datetime(refined_project.start_time),
             end_time=normalize_datetime(refined_project.end_time),
             embargo_until=normalize_datetime(refined_project.embargo_until),
@@ -65,17 +69,17 @@ class Crucible:
     ) -> Experiment | None:
         """Refine an experiment by getting the objects that need to exist
         in MyTardis and finding their URIs"""
-        projects: list[URI] = []
+        projects: set[URI] = set()
         if (
             refined_experiment.projects
             and self.overseer.mytardis_setup.projects_enabled
         ):
             for project_identifier in refined_experiment.projects:
-                if project_uri := self.overseer.get_uris_by_identifier(
+                if project_uris := self.overseer.get_uris_by_identifier(
                     MyTardisObject.PROJECT, project_identifier
                 ):
-                    projects.append(*project_uri)
-            projects = list(set(projects))
+                    projects.update(project_uris)
+
         if not projects and self.overseer.mytardis_setup.projects_enabled:
             logger.warning(
                 "No projects identified for this experiment and projects enabled in MyTardis."
@@ -91,7 +95,7 @@ class Crucible:
             users=refined_experiment.users,
             groups=refined_experiment.groups,
             identifiers=refined_experiment.identifiers,
-            projects=projects,
+            projects=list(projects),
             institution_name=refined_experiment.institution_name,
             start_time=normalize_datetime(refined_experiment.start_time),
             end_time=normalize_datetime(refined_experiment.end_time),
@@ -103,39 +107,39 @@ class Crucible:
     def prepare_dataset(self, refined_dataset: RefinedDataset) -> Dataset | None:
         """Refine a dataset by finding URIs from MyTardis for the
         relevant fields of interest"""
-        experiment_uris: list[URI] = []
+        experiment_uris: set[URI] = set()
+
         for experiment_identifier in refined_dataset.experiments:
             if uris := self.overseer.get_uris_by_identifier(
                 MyTardisObject.EXPERIMENT, experiment_identifier
             ):
-                experiment_uris.extend(uris)
+                experiment_uris.update(uris)
             else:
                 logger.warning("No URI found for experiment %s.", experiment_identifier)
 
-        experiment_uris = list(set(experiment_uris))
+        # experiment_uris = list(set(experiment_uris))
         if not experiment_uris:
             logger.warning("Unable to find experiments associated with this dataset.")
             return None
-        instruments = self.overseer.get_uris_by_identifier(
+
+        instrument_uris = self.overseer.get_uris_by_identifier(
             MyTardisObject.INSTRUMENT, refined_dataset.instrument
         )
-        if instruments:
-            instruments = list(set(instruments))
-        else:
+        if len(instrument_uris) == 0:
             logger.warning(
                 "Unable to find the instrument associated with this dataset in MyTardis."
             )
             return None
-        if len(instruments) > 1:
+        if len(instrument_uris) > 1:
             logger.warning(
                 (
                     "Unable to uniquely identify the instrument associated with the name or "
                     "identifier provided. Possible candidates are: %s"
                 ),
-                instruments,
+                instrument_uris,
             )
             return None
-        instrument = instruments[0]
+        instrument_uri = instrument_uris[0]
 
         return Dataset(
             description=refined_dataset.description,
@@ -145,8 +149,8 @@ class Crucible:
             groups=refined_dataset.groups,
             immutable=refined_dataset.immutable,
             identifiers=refined_dataset.identifiers,
-            experiments=experiment_uris,
-            instrument=instrument,
+            experiments=list(experiment_uris),
+            instrument=instrument_uri,
             created_time=normalize_datetime(refined_dataset.created_time),
             modified_time=normalize_datetime(refined_dataset.modified_time),
         )
@@ -154,26 +158,27 @@ class Crucible:
     def prepare_datafile(self, refined_datafile: RefinedDatafile) -> Datafile | None:
         """Refine a datafile by finding URIs from MyTardis for the
         relevant fields of interest."""
-        datasets = self.overseer.get_uris_by_identifier(
+
+        dataset_uris = self.overseer.get_uris_by_identifier(
             MyTardisObject.DATASET, refined_datafile.dataset
         )
-        if not datasets:
+        if len(dataset_uris) == 0:
             logger.warning(
                 "Unable to find the dataset associated with this datafile in MyTardis."
             )
             return None
-        datasets = list(set(datasets))
-        if len(datasets) > 1:
+        if len(dataset_uris) > 1:
             logger.warning(
                 (
                     "Unable to uniquely identify the dataset associated with this datafile "
                     "in MyTardis. Possible candidates are: %s"
                 ),
-                datasets,
+                dataset_uris,
             )
             return None
-        dataset = datasets[0]
-        # TODO revisit the logic here to see if we need to push this out to individual DFOs
+
+        dataset_uri = dataset_uris[0]
+
         return Datafile(
             filename=refined_datafile.filename,
             directory=refined_datafile.directory,
@@ -182,7 +187,7 @@ class Crucible:
             size=refined_datafile.size,
             users=refined_datafile.users,
             groups=refined_datafile.groups,
-            dataset=dataset,
+            dataset=dataset_uri,
             parameter_sets=refined_datafile.parameter_sets,
             replicas=[],
         )
