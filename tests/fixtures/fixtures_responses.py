@@ -247,7 +247,7 @@ def get_experiment_details(
             "parameter_sets": [],
             "public_access": 1,
             "projects": get_project_details,
-            "resource_uri": experiment_uri,
+            "resource_uri": str(experiment_uri),
             "start_time": "2000-01-01T00:00:00",
             "tags": [],
             "title": experiment_name,
