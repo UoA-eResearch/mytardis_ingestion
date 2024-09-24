@@ -350,8 +350,8 @@ def dataset_description() -> str:
 @fixture
 def dataset_experiments() -> List[str]:
     return [
-        "Experiment_1",
-        "Test_Experiment",
+        "Test_Experiment_1",
+        "Test_Experiment_2",
     ]
 
 

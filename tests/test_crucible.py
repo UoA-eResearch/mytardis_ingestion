@@ -126,47 +126,35 @@ def test_prepare_experiment_no_matching_projects(
     assert warning in caplog.text
 
 
-@pytest.mark.xfail
 @responses.activate
 def test_prepare_dataset(
-    connection: ConnectionConfig,
-    crucible: Crucible,
+    overseer: Overseer,
     refined_dataset: RefinedDataset,
     dataset: Dataset,
-    experiment_response_dict: Dict[str, Any],
-    instrument_response_dict: Dict[str, Any],
-    response_dict_not_found: Dict[str, Any],
 ) -> None:
-    responses.get(
-        urljoin(connection.api_template, "experiment"),
-        match=[
-            matchers.query_param_matcher(
-                {"identifiers": refined_dataset.experiments[0]}
-            )
-        ],
-        status=200,
-        json=experiment_response_dict,
-    )
-    responses.get(
-        urljoin(connection.api_template, "experiment"),
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.get(
-        urljoin(connection.api_template, "instrument"),
-        match=[
-            matchers.query_param_matcher({"identifiers": refined_dataset.instrument})
-        ],
-        status=200,
-        json=(instrument_response_dict),
-    )
-    responses.get(
-        urljoin(connection.api_template, "instrument"),
-        status=200,
-        json=(response_dict_not_found),
-    )
 
-    assert crucible.prepare_dataset(refined_dataset) == dataset
+    dataset.experiments = [URI("/api/v1/experiment/1/"), URI("/api/v1/experiment/2/")]
+    dataset.instrument = URI("/api/v1/instrument/1/")
+
+    overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
+
+    def return_uris(object_type: MyTardisObject, identifier: str) -> list[URI]:
+        match (object_type, identifier):
+            case (MyTardisObject.EXPERIMENT, "Test_Experiment_1"):
+                return [dataset.experiments[0]]
+            case (MyTardisObject.EXPERIMENT, "Test_Experiment_2"):
+                return [dataset.experiments[1]]
+            case (MyTardisObject.INSTRUMENT, "Test_Instrument"):
+                return [dataset.instrument]
+            case _:
+                assert False, f"Unexpected args: {(object_type, identifier)}"
+
+    overseer.get_uris_by_identifier.side_effect = return_uris
+
+    crucible = Crucible(overseer)
+
+    prepared_dataset = crucible.prepare_dataset(refined_dataset)
+    assert prepared_dataset == dataset
 
 
 @responses.activate
