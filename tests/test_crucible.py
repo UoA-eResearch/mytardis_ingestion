@@ -19,6 +19,7 @@ from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
 from src.config.config import ConnectionConfig
 from src.crucible.crucible import Crucible
+from src.mytardis_client.endpoints import URI
 from src.mytardis_client.objects import MyTardisObject
 from src.mytardis_client.response_data import Institution
 from src.overseers.overseer import Overseer
@@ -75,33 +76,32 @@ def test_prepare_project_no_matching_institution(
     assert warning in caplog.text
 
 
-@pytest.mark.xfail
 @responses.activate
 def test_prepare_experiment(
-    connection: ConnectionConfig,
-    crucible: Crucible,
+    overseer: Overseer,
     refined_experiment: RefinedExperiment,
     experiment: Experiment,
-    project_response_dict: Dict[str, Any],
-    response_dict_not_found: Dict[str, Any],
 ) -> None:
-    if refined_experiment.projects:
-        responses.get(
-            urljoin(connection.api_template, "project"),
-            match=[
-                matchers.query_param_matcher(
-                    {"identifiers": refined_experiment.projects[0]}
-                )
-            ],
-            status=200,
-            json=(project_response_dict),
-        )
-    responses.get(
-        urljoin(connection.api_template, "project"),
-        status=200,
-        json=(response_dict_not_found),
-    )
-    assert crucible.prepare_experiment(refined_experiment) == experiment
+
+    refined_experiment.projects = ["test-project-1", "test-project-2"]
+
+    project_uris = [URI("/api/v1/project/1/"), URI("/api/v1/project/2/")]
+
+    expected_experiment = experiment
+    expected_experiment.projects = project_uris
+
+    overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
+    overseer.get_uris_by_identifier.side_effect = [[uri] for uri in project_uris]
+
+    crucible = Crucible(overseer)
+    prepared_experiment = crucible.prepare_experiment(refined_experiment)
+
+    assert overseer.get_uris_by_identifier.call_args_list == [
+        ((MyTardisObject.PROJECT, refined_experiment.projects[0]),),
+        ((MyTardisObject.PROJECT, refined_experiment.projects[1]),),
+    ]
+
+    assert prepared_experiment == expected_experiment
 
 
 @responses.activate
