@@ -1,8 +1,10 @@
 """Helpers for working with types and type-checking."""
 
-from typing import Any, Callable, Protocol, TypeAlias, TypeGuard, TypeVar
+from typing import Any, Callable, Optional, Protocol, TypeAlias, TypeGuard, TypeVar
 
 T = TypeVar("T")
+X = TypeVar("X")
+Y = TypeVar("Y")
 
 
 def elements_are(elems: list[Any], query_type: type[T]) -> TypeGuard[list[T]]:
@@ -36,3 +38,18 @@ class Stringable(Protocol):
     """Protocol for objects that can be converted to a string."""
 
     def __str__(self) -> str: ...
+
+
+def forward_none(function: Callable[[X], Y]) -> Callable[[Optional[X]], Optional[Y]]:
+    """Decorator which can be used to enable passthrough of None values.
+
+    The resuting function will return None if the input is None, otherwise it will
+    call the original function with the input.
+    """
+
+    def wrapper(obj: Optional[X]) -> Optional[Y]:
+        if obj is None:
+            return None
+        return function(obj)
+
+    return wrapper

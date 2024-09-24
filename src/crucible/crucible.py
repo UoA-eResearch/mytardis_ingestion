@@ -12,8 +12,15 @@ from src.blueprints.project import Project, RefinedProject
 from src.mytardis_client.endpoints import URI
 from src.mytardis_client.objects import MyTardisObject
 from src.overseers.overseer import Overseer
+from src.utils.types.type_helpers import forward_none
 
 logger = logging.getLogger(__name__)
+
+
+@forward_none
+def normalize_datetime(value: datetime | str) -> str:
+    """Normalize a datetime or string to a string."""
+    return value.isoformat() if isinstance(value, datetime) else value
 
 
 class Crucible:
@@ -48,22 +55,9 @@ class Crucible:
             users=refined_project.users,
             groups=refined_project.groups,
             identifiers=refined_project.identifiers,
-            institution=institutions,
-            start_time=(
-                refined_project.start_time.isoformat()
-                if isinstance(refined_project.start_time, datetime)
-                else refined_project.start_time
-            ),
-            end_time=(
-                refined_project.end_time.isoformat()
-                if isinstance(refined_project.end_time, datetime)
-                else refined_project.end_time
-            ),
-            embargo_until=(
-                refined_project.embargo_until.isoformat()
-                if isinstance(refined_project.embargo_until, datetime)
-                else refined_project.embargo_until
-            ),
+            start_time=normalize_datetime(refined_project.start_time),
+            end_time=normalize_datetime(refined_project.end_time),
+            embargo_until=normalize_datetime(refined_project.embargo_until),
         )
 
     def prepare_experiment(
@@ -99,31 +93,11 @@ class Crucible:
             identifiers=refined_experiment.identifiers,
             projects=projects,
             institution_name=refined_experiment.institution_name,
-            start_time=(
-                refined_experiment.start_time.isoformat()
-                if isinstance(refined_experiment.start_time, datetime)
-                else refined_experiment.start_time
-            ),
-            end_time=(
-                refined_experiment.end_time.isoformat()
-                if isinstance(refined_experiment.end_time, datetime)
-                else refined_experiment.end_time
-            ),
-            created_time=(
-                refined_experiment.created_time.isoformat()
-                if isinstance(refined_experiment.created_time, datetime)
-                else refined_experiment.created_time
-            ),
-            update_time=(
-                refined_experiment.update_time.isoformat()
-                if isinstance(refined_experiment.update_time, datetime)
-                else refined_experiment.update_time
-            ),
-            embargo_until=(
-                refined_experiment.embargo_until.isoformat()
-                if isinstance(refined_experiment.embargo_until, datetime)
-                else refined_experiment.embargo_until
-            ),
+            start_time=normalize_datetime(refined_experiment.start_time),
+            end_time=normalize_datetime(refined_experiment.end_time),
+            created_time=normalize_datetime(refined_experiment.created_time),
+            update_time=normalize_datetime(refined_experiment.update_time),
+            embargo_until=normalize_datetime(refined_experiment.embargo_until),
         )
 
     def prepare_dataset(self, refined_dataset: RefinedDataset) -> Dataset | None:
@@ -173,16 +147,8 @@ class Crucible:
             identifiers=refined_dataset.identifiers,
             experiments=experiment_uris,
             instrument=instrument,
-            created_time=(
-                refined_dataset.created_time.isoformat()
-                if isinstance(refined_dataset.created_time, datetime)
-                else refined_dataset.created_time
-            ),
-            modified_time=(
-                refined_dataset.modified_time.isoformat()
-                if isinstance(refined_dataset.modified_time, datetime)
-                else refined_dataset.modified_time
-            ),
+            created_time=normalize_datetime(refined_dataset.created_time),
+            modified_time=normalize_datetime(refined_dataset.modified_time),
         )
 
     def prepare_datafile(self, refined_datafile: RefinedDatafile) -> Datafile | None:
