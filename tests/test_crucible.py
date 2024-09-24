@@ -225,46 +225,34 @@ def fixture_duplicate_instrument_response_dict(
     return response_dict
 
 
-@pytest.mark.xfail
 @responses.activate
 def test_prepare_dataset_too_many_instruments(
     caplog: pytest.LogCaptureFixture,
-    connection: ConnectionConfig,
-    crucible: Crucible,
+    overseer: Overseer,
     refined_dataset: RefinedDataset,
-    experiment_response_dict: Dict[str, Any],
-    duplicate_instrument_response_dict: Dict[str, Any],
-    response_dict_not_found: Dict[str, Any],
 ) -> None:
     caplog.set_level(logging.WARNING)
-    responses.get(
-        urljoin(connection.api_template, "experiment"),
-        match=[
-            matchers.query_param_matcher(
-                {"identifiers": refined_dataset.experiments[0]}
-            )
-        ],
-        status=200,
-        json=experiment_response_dict,
-    )
-    responses.get(
-        urljoin(connection.api_template, "experiment"),
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.get(
-        urljoin(connection.api_template, "instrument"),
-        match=[
-            matchers.query_param_matcher({"identifiers": refined_dataset.instrument})
-        ],
-        status=200,
-        json=(duplicate_instrument_response_dict),
-    )
-    responses.get(
-        urljoin(connection.api_template, "instrument"),
-        status=200,
-        json=(response_dict_not_found),
-    )
+
+    arg_matcher = {
+        MyTardisObject.EXPERIMENT: {
+            "Test_Experiment_1": [URI("/api/v1/experiment/1/")],
+            "Test_Experiment_2": [URI("/api/v1/experiment/2/")],
+        },
+        MyTardisObject.INSTRUMENT: {
+            "Test_Instrument": [
+                URI("/api/v1/instrument/1/"),
+                URI("/api/v1/instrument/2/"),
+            ],
+        },
+    }
+
+    def return_uris(object_type: MyTardisObject, identifier: str) -> list[URI]:
+        return arg_matcher[object_type][identifier]
+
+    overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
+    overseer.get_uris_by_identifier.side_effect = return_uris
+
+    crucible = Crucible(overseer)
 
     warning = (
         "Unable to uniquely identify the instrument associated with the "
@@ -272,7 +260,8 @@ def test_prepare_dataset_too_many_instruments(
     )
 
     assert crucible.prepare_dataset(refined_dataset) is None
-    assert len(list(filter(lambda m: m.startswith(warning), caplog.messages))) == 1
+
+    assert any(message.startswith(warning) for message in caplog.messages)
 
 
 @pytest.mark.xfail

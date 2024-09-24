@@ -352,7 +352,7 @@ def instrument_response_dict(
                 "identifiers": instrument_ids,
                 "modified_time": modified_time_datetime.isoformat(),
                 "name": instrument_name,
-                "resource_uri": instrument_uri,
+                "resource_uri": str(instrument_uri),
             },
         ],
     }
