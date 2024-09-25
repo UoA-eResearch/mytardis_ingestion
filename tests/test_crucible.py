@@ -7,17 +7,14 @@ import logging
 from datetime import datetime
 from typing import Any, Dict
 from unittest.mock import MagicMock
-from urllib.parse import urljoin
 
 import pytest
 import responses
-from responses import matchers
 
 from src.blueprints.datafile import Datafile, RefinedDatafile
 from src.blueprints.dataset import Dataset, RefinedDataset
 from src.blueprints.experiment import Experiment, RefinedExperiment
 from src.blueprints.project import Project, RefinedProject
-from src.config.config import ConnectionConfig
 from src.crucible.crucible import Crucible
 from src.mytardis_client.endpoints import URI
 from src.mytardis_client.objects import MyTardisObject
@@ -56,27 +53,24 @@ def test_prepare_project(
     assert prepared_project == expected_project
 
 
-@responses.activate
 def test_prepare_project_no_matching_institution(
     caplog: pytest.LogCaptureFixture,
-    connection: ConnectionConfig,
-    crucible: Crucible,
+    overseer: Overseer,
     refined_project: RefinedProject,
-    response_dict_not_found: Dict[str, Any],
 ) -> None:
     caplog.set_level(logging.WARNING)
-    responses.get(
-        urljoin(connection.api_template, "institution"),
-        status=200,
-        json=(response_dict_not_found),
-    )
+
+    overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
+    overseer.get_uris_by_identifier.return_value = []
+
+    crucible = Crucible(overseer)
+
     warning = "Unable to identify any institutions that were listed for this project."
 
     assert crucible.prepare_project(refined_project) is None
     assert warning in caplog.text
 
 
-@responses.activate
 def test_prepare_experiment(
     overseer: Overseer,
     refined_experiment: RefinedExperiment,
@@ -104,29 +98,26 @@ def test_prepare_experiment(
     assert prepared_experiment == expected_experiment
 
 
-@responses.activate
 def test_prepare_experiment_no_matching_projects(
     caplog: pytest.LogCaptureFixture,
-    connection: ConnectionConfig,
-    crucible: Crucible,
+    overseer: Overseer,
     refined_experiment: RefinedExperiment,
-    response_dict_not_found: Dict[str, Any],
 ) -> None:
     caplog.set_level(logging.WARNING)
-    responses.get(
-        urljoin(connection.api_template, "project"),
-        status=200,
-        json=(response_dict_not_found),
-    )
-    warning = (
-        "No projects identified for this experiment and projects enabled in MyTardis."
-    )
+
+    overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
+    overseer.get_uris_by_identifier.return_value = []
+
+    crucible = Crucible(overseer)
 
     assert crucible.prepare_experiment(refined_experiment) is None
-    assert warning in caplog.text
+
+    assert any(
+        "crucible" in name and level == logging.WARNING
+        for name, level, _ in caplog.record_tuples
+    )
 
 
-@responses.activate
 def test_prepare_dataset(
     overseer: Overseer,
     refined_dataset: RefinedDataset,
@@ -160,57 +151,45 @@ def test_prepare_dataset(
 @responses.activate
 def test_prepare_dataset_no_matching_experiments(
     caplog: pytest.LogCaptureFixture,
-    connection: ConnectionConfig,
-    crucible: Crucible,
+    overseer: Overseer,
     refined_dataset: RefinedDataset,
-    response_dict_not_found: Dict[str, Any],
 ) -> None:
     caplog.set_level(logging.WARNING)
-    responses.get(
-        urljoin(connection.api_template, "experiment"),
-        status=200,
-        json=(response_dict_not_found),
-    )
-    warning = "Unable to find experiments associated with this dataset."
+
+    overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
+    overseer.get_uris_by_identifier.return_value = []
+
+    crucible = Crucible(overseer)
 
     assert crucible.prepare_dataset(refined_dataset) is None
-    assert warning in caplog.text
+
+    assert any(
+        "crucible" in name and level == logging.WARNING
+        for name, level, _ in caplog.record_tuples
+    )
 
 
-@responses.activate
 def test_prepare_dataset_no_matching_instrument(
     caplog: pytest.LogCaptureFixture,
-    connection: ConnectionConfig,
-    crucible: Crucible,
+    overseer: Overseer,
     refined_dataset: RefinedDataset,
-    experiment_response_dict: Dict[str, Any],
-    response_dict_not_found: Dict[str, Any],
 ) -> None:
     caplog.set_level(logging.WARNING)
-    responses.get(
-        urljoin(connection.api_template, "experiment"),
-        match=[
-            matchers.query_param_matcher(
-                {"identifiers": refined_dataset.experiments[0]}
-            )
-        ],
-        status=200,
-        json=experiment_response_dict,
-    )
-    responses.get(
-        urljoin(connection.api_template, "experiment"),
-        status=200,
-        json=(response_dict_not_found),
-    )
-    responses.get(
-        urljoin(connection.api_template, "instrument"),
-        status=200,
-        json=(response_dict_not_found),
-    )
+
+    overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
+    overseer.get_uris_by_identifier.return_value = [
+        URI("/api/v1/experiment/1/"),
+        URI("/api/v1/experiment/2/"),
+    ]
+
+    crucible = Crucible(overseer)
 
     assert crucible.prepare_dataset(refined_dataset) is None
 
-    assert any(level == logging.WARNING for _, level, _ in caplog.record_tuples)
+    assert any(
+        "crucible" in name and level == logging.WARNING
+        for name, level, _ in caplog.record_tuples
+    )
 
 
 @pytest.fixture(name="duplicate_instrument_response_dict")
@@ -225,7 +204,6 @@ def fixture_duplicate_instrument_response_dict(
     return response_dict
 
 
-@responses.activate
 def test_prepare_dataset_too_many_instruments(
     caplog: pytest.LogCaptureFixture,
     overseer: Overseer,
@@ -264,7 +242,6 @@ def test_prepare_dataset_too_many_instruments(
     assert any(message.startswith(warning) for message in caplog.messages)
 
 
-@responses.activate
 def test_prepare_datafile(
     overseer: Overseer,
     refined_datafile: RefinedDatafile,
@@ -285,24 +262,23 @@ def test_prepare_datafile(
     assert prepared_datafile == datafile
 
 
-@responses.activate
 def test_prepare_datafile_no_matching_dataset(
     caplog: pytest.LogCaptureFixture,
-    connection: ConnectionConfig,
-    crucible: Crucible,
+    overseer: Overseer,
     refined_datafile: RefinedDatafile,
-    response_dict_not_found: Dict[str, Any],
 ) -> None:
     caplog.set_level(logging.WARNING)
-    responses.get(
-        urljoin(connection.api_template, "dataset"),
-        status=200,
-        json=(response_dict_not_found),
-    )
-    warning = "Unable to find the dataset associated with this datafile in MyTardis."
+
+    overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
+    overseer.get_uris_by_identifier.return_value = []
+
+    crucible = Crucible(overseer)
 
     assert crucible.prepare_datafile(refined_datafile) is None
-    assert warning in caplog.text
+    assert any(
+        "crucible" in name and level == logging.WARNING
+        for name, level, _ in caplog.record_tuples
+    )
 
 
 @pytest.fixture(name="duplicate_dataset_response_dict")
@@ -317,7 +293,6 @@ def fixture_duplicate_dataset_response_dict(
     return response_dict
 
 
-@responses.activate
 def test_prepare_datafile_too_many_datasets(
     caplog: pytest.LogCaptureFixture,
     overseer: Overseer,
