@@ -23,6 +23,13 @@ from src.overseers.overseer import Overseer
 from tests.fixtures.fixtures_dataclasses import TestModelFactory
 
 
+@pytest.fixture(name="overseer_no_uri_matches")
+def _overseer_no_uri_matches(overseer: Overseer) -> Overseer:
+    overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
+    overseer.get_uris_by_identifier.return_value = []
+    return overseer
+
+
 def test_prepare_project(
     overseer: Overseer,
     make_refined_project: TestModelFactory[RefinedProject],
@@ -55,15 +62,12 @@ def test_prepare_project(
 
 def test_prepare_project_no_matching_institution(
     caplog: pytest.LogCaptureFixture,
-    overseer: Overseer,
+    overseer_no_uri_matches: Overseer,
     refined_project: RefinedProject,
 ) -> None:
     caplog.set_level(logging.WARNING)
 
-    overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
-    overseer.get_uris_by_identifier.return_value = []
-
-    crucible = Crucible(overseer)
+    crucible = Crucible(overseer_no_uri_matches)
 
     warning = "Unable to identify any institutions that were listed for this project."
 
@@ -100,15 +104,12 @@ def test_prepare_experiment(
 
 def test_prepare_experiment_no_matching_projects(
     caplog: pytest.LogCaptureFixture,
-    overseer: Overseer,
+    overseer_no_uri_matches: Overseer,
     refined_experiment: RefinedExperiment,
 ) -> None:
     caplog.set_level(logging.WARNING)
 
-    overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
-    overseer.get_uris_by_identifier.return_value = []
-
-    crucible = Crucible(overseer)
+    crucible = Crucible(overseer_no_uri_matches)
 
     assert crucible.prepare_experiment(refined_experiment) is None
 
@@ -151,15 +152,12 @@ def test_prepare_dataset(
 @responses.activate
 def test_prepare_dataset_no_matching_experiments(
     caplog: pytest.LogCaptureFixture,
-    overseer: Overseer,
+    overseer_no_uri_matches: Overseer,
     refined_dataset: RefinedDataset,
 ) -> None:
     caplog.set_level(logging.WARNING)
 
-    overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
-    overseer.get_uris_by_identifier.return_value = []
-
-    crucible = Crucible(overseer)
+    crucible = Crucible(overseer_no_uri_matches)
 
     assert crucible.prepare_dataset(refined_dataset) is None
 
@@ -264,15 +262,12 @@ def test_prepare_datafile(
 
 def test_prepare_datafile_no_matching_dataset(
     caplog: pytest.LogCaptureFixture,
-    overseer: Overseer,
+    overseer_no_uri_matches: Overseer,
     refined_datafile: RefinedDatafile,
 ) -> None:
     caplog.set_level(logging.WARNING)
 
-    overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
-    overseer.get_uris_by_identifier.return_value = []
-
-    crucible = Crucible(overseer)
+    crucible = Crucible(overseer_no_uri_matches)
 
     assert crucible.prepare_datafile(refined_datafile) is None
     assert any(
