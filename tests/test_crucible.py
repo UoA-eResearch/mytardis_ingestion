@@ -190,18 +190,6 @@ def test_prepare_dataset_no_matching_instrument(
     )
 
 
-@pytest.fixture(name="duplicate_instrument_response_dict")
-def fixture_duplicate_instrument_response_dict(
-    instrument_response_dict: Dict[str, Any]
-) -> Dict[str, Any]:
-    instrument = copy.deepcopy(instrument_response_dict["objects"][0])
-    instrument["resource_uri"] = "/api/v1/instrument/2/"
-    response_dict = copy.deepcopy(instrument_response_dict)
-    response_dict["objects"].append(instrument)
-
-    return response_dict
-
-
 def test_prepare_dataset_too_many_instruments(
     caplog: pytest.LogCaptureFixture,
     overseer: Overseer,
