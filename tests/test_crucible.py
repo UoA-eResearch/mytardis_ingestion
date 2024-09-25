@@ -21,6 +21,7 @@ from src.mytardis_client.objects import MyTardisObject
 from src.mytardis_client.response_data import Institution
 from src.overseers.overseer import Overseer
 from tests.fixtures.fixtures_dataclasses import TestModelFactory
+from tests.testing_helpers import ArgMatcher
 
 
 @pytest.fixture(name="overseer_no_uri_matches")
@@ -129,19 +130,17 @@ def test_prepare_dataset(
     dataset.instrument = URI("/api/v1/instrument/1/")
 
     overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
-
-    def return_uris(object_type: MyTardisObject, identifier: str) -> list[URI]:
-        match (object_type, identifier):
-            case (MyTardisObject.EXPERIMENT, "Test_Experiment_1"):
-                return [dataset.experiments[0]]
-            case (MyTardisObject.EXPERIMENT, "Test_Experiment_2"):
-                return [dataset.experiments[1]]
-            case (MyTardisObject.INSTRUMENT, "Test_Instrument"):
-                return [dataset.instrument]
-            case _:
-                assert False, f"Unexpected args: {(object_type, identifier)}"
-
-    overseer.get_uris_by_identifier.side_effect = return_uris
+    overseer.get_uris_by_identifier.side_effect = ArgMatcher(
+        {
+            MyTardisObject.EXPERIMENT: {
+                "Test_Experiment_1": [dataset.experiments[0]],
+                "Test_Experiment_2": [dataset.experiments[1]],
+            },
+            MyTardisObject.INSTRUMENT: {
+                "Test_Instrument": [dataset.instrument],
+            },
+        }
+    )
 
     crucible = Crucible(overseer)
 
@@ -197,24 +196,21 @@ def test_prepare_dataset_too_many_instruments(
 ) -> None:
     caplog.set_level(logging.WARNING)
 
-    arg_matcher = {
-        MyTardisObject.EXPERIMENT: {
-            "Test_Experiment_1": [URI("/api/v1/experiment/1/")],
-            "Test_Experiment_2": [URI("/api/v1/experiment/2/")],
-        },
-        MyTardisObject.INSTRUMENT: {
-            "Test_Instrument": [
-                URI("/api/v1/instrument/1/"),
-                URI("/api/v1/instrument/2/"),
-            ],
-        },
-    }
-
-    def return_uris(object_type: MyTardisObject, identifier: str) -> list[URI]:
-        return arg_matcher[object_type][identifier]
-
     overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
-    overseer.get_uris_by_identifier.side_effect = return_uris
+    overseer.get_uris_by_identifier.side_effect = ArgMatcher(
+        {
+            MyTardisObject.EXPERIMENT: {
+                "Test_Experiment_1": [URI("/api/v1/experiment/1/")],
+                "Test_Experiment_2": [URI("/api/v1/experiment/2/")],
+            },
+            MyTardisObject.INSTRUMENT: {
+                "Test_Instrument": [
+                    URI("/api/v1/instrument/1/"),
+                    URI("/api/v1/instrument/2/"),
+                ],
+            },
+        }
+    )
 
     crucible = Crucible(overseer)
 
