@@ -306,7 +306,7 @@ def dataset_response_dict(
                 "modified_time": "2000-01-01T00:00:00",
                 "parameter_sets": [],
                 "public_access": 1,
-                "resource_uri": dataset_uri,
+                "resource_uri": str(dataset_uri),
                 "tags": [],
             }
         ],

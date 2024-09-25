@@ -264,38 +264,25 @@ def test_prepare_dataset_too_many_instruments(
     assert any(message.startswith(warning) for message in caplog.messages)
 
 
-@pytest.mark.xfail
 @responses.activate
 def test_prepare_datafile(
-    mocker: Any,
-    datetime_now: datetime,
-    connection: ConnectionConfig,
-    crucible: Crucible,
+    overseer: Overseer,
     refined_datafile: RefinedDatafile,
     datafile: Datafile,
-    dataset_response_dict: Dict[str, Any],
-    response_dict_not_found: Dict[str, Any],
 ) -> None:
-    mock_date = mocker.patch("src.crucible.crucible.datetime")
-    mock_date.now.return_value = datetime_now
-    responses.get(
-        urljoin(connection.api_template, "dataset"),
-        match=[matchers.query_param_matcher({"identifiers": refined_datafile.dataset})],
-        status=200,
-        json=(dataset_response_dict),
-    )
-    responses.get(
-        urljoin(connection.api_template, "dataset/1/"),
-        status=200,
-        json=(dataset_response_dict),
-    )
-    responses.get(
-        urljoin(connection.api_template, "dataset"),
-        status=200,
-        json=(response_dict_not_found),
-    )
 
-    assert crucible.prepare_datafile(refined_datafile) == datafile
+    # Assume they are all identifiers for the same dataset, so return same URI repeatedly
+    dataset_uris = [[URI("/api/v1/dataset/1/")]] * len(refined_datafile.dataset)
+    overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
+    overseer.get_uris_by_identifier.side_effect = dataset_uris
+
+    crucible = Crucible(overseer)
+
+    prepared_datafile = crucible.prepare_datafile(refined_datafile)
+
+    datafile.replicas = []  # Replicas are handled after crucible stage
+
+    assert prepared_datafile == datafile
 
 
 @responses.activate
