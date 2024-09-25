@@ -40,7 +40,9 @@ class Stringable(Protocol):
     def __str__(self) -> str: ...
 
 
-def forward_none(function: Callable[[X], Y]) -> Callable[[Optional[X]], Optional[Y]]:
+def passthrough_none(
+    function: Callable[[X], Y]
+) -> Callable[[Optional[X]], Optional[Y]]:
     """Decorator which can be used to enable passthrough of None values.
 
     The resuting function will return None if the input is None, otherwise it will

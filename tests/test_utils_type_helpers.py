@@ -2,12 +2,12 @@
 
 # pylint: disable=missing-function-docstring
 
-from src.utils.types.type_helpers import forward_none
+from src.utils.types.type_helpers import passthrough_none
 
 
 def test_forward_none() -> None:
 
-    @forward_none
+    @passthrough_none
     def double_val(value: int | float | str) -> int | float | str:
         """Double a value."""
         return value * 2
