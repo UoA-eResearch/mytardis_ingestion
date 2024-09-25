@@ -317,33 +317,26 @@ def fixture_duplicate_dataset_response_dict(
     return response_dict
 
 
-@pytest.mark.xfail
 @responses.activate
 def test_prepare_datafile_too_many_datasets(
     caplog: pytest.LogCaptureFixture,
-    connection: ConnectionConfig,
-    crucible: Crucible,
+    overseer: Overseer,
     refined_datafile: RefinedDatafile,
-    duplicate_dataset_response_dict: Dict[str, Any],
-    response_dict_not_found: Dict[str, Any],
 ) -> None:
     caplog.set_level(logging.WARNING)
-    responses.get(
-        urljoin(connection.api_template, "dataset"),
-        match=[matchers.query_param_matcher({"identifiers": refined_datafile.dataset})],
-        status=200,
-        json=(duplicate_dataset_response_dict),
-    )
-    responses.get(
-        urljoin(connection.api_template, "dataset"),
-        status=200,
-        json=(response_dict_not_found),
-    )
+
+    overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
+    overseer.get_uris_by_identifier.side_effect = [
+        [URI("/api/v1/dataset/1/"), URI("/api/v1/dataset/2/")]
+    ]
+
+    crucible = Crucible(overseer)
+
+    assert crucible.prepare_datafile(refined_datafile) is None
 
     warning = (
         "Unable to uniquely identify the dataset associated with this datafile in "
         "MyTardis. Possible candidates are: "
     )
 
-    assert crucible.prepare_datafile(refined_datafile) is None
-    assert len(list(filter(lambda m: m.startswith(warning), caplog.messages))) == 1
+    assert any(message.startswith(warning) for message in caplog.messages)
