@@ -117,7 +117,6 @@ class Crucible:
             else:
                 logger.warning("No URI found for experiment %s.", experiment_identifier)
 
-        # experiment_uris = list(set(experiment_uris))
         if not experiment_uris:
             logger.warning("Unable to find experiments associated with this dataset.")
             return None
