@@ -2,14 +2,11 @@
 # nosec assert_used
 # flake8: noqa S101
 
-import copy
 import logging
 from datetime import datetime
-from typing import Any, Dict
 from unittest.mock import MagicMock
 
 import pytest
-import responses
 
 from src.blueprints.datafile import Datafile, RefinedDatafile
 from src.blueprints.dataset import Dataset, RefinedDataset
@@ -148,7 +145,6 @@ def test_prepare_dataset(
     assert prepared_dataset == dataset
 
 
-@responses.activate
 def test_prepare_dataset_no_matching_experiments(
     caplog: pytest.LogCaptureFixture,
     overseer_no_uri_matches: Overseer,
@@ -258,18 +254,6 @@ def test_prepare_datafile_no_matching_dataset(
         "crucible" in name and level == logging.WARNING
         for name, level, _ in caplog.record_tuples
     )
-
-
-@pytest.fixture(name="duplicate_dataset_response_dict")
-def fixture_duplicate_dataset_response_dict(
-    dataset_response_dict: Dict[str, Any],
-) -> Dict[str, Any]:
-    dataset = copy.deepcopy(dataset_response_dict["objects"][0])
-    dataset["resource_uri"] = "/api/v1/dataset/2/"
-    response_dict = copy.deepcopy(dataset_response_dict)
-    response_dict["objects"].append(dataset)
-
-    return response_dict
 
 
 def test_prepare_datafile_too_many_datasets(
