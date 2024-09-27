@@ -14,7 +14,7 @@ from pytest import LogCaptureFixture
 
 from src.blueprints.project import Project
 from src.config.config import ConnectionConfig
-from src.forges.forge import Forge
+from src.forges.forge import Forge, ForgeError
 from src.mytardis_client.endpoints import URI
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,6 @@ TEST_OBJECT_TYPE = "project"
 TEST_OBJECT_ID = 1
 
 
-@pytest.mark.xfail
 @responses.activate
 def test_post_returns_URI_on_success(  # pylint: disable=invalid-name
     caplog: LogCaptureFixture,
@@ -40,7 +39,7 @@ def test_post_returns_URI_on_success(  # pylint: disable=invalid-name
     caplog.set_level(logging.INFO)
     responses.add(
         responses.POST,
-        urljoin(connection.api_template, TEST_OBJECT_TYPE),
+        urljoin(connection.api_template, TEST_OBJECT_TYPE) + "/",
         status=200,
         json=(project_creation_response_dict),
     )
@@ -49,7 +48,6 @@ def test_post_returns_URI_on_success(  # pylint: disable=invalid-name
     assert test_value == project_uri
 
 
-@pytest.mark.xfail
 @responses.activate
 def test_post_returns_none_on_missing_body(
     caplog: LogCaptureFixture,
@@ -60,19 +58,21 @@ def test_post_returns_none_on_missing_body(
     caplog.set_level(logging.INFO)
     responses.add(
         responses.POST,
-        urljoin(connection.api_template, TEST_OBJECT_TYPE),
+        urljoin(connection.api_template, TEST_OBJECT_TYPE) + "/",
         status=201,
     )
-    test_value = forge.forge_object("/project", project)
 
-    info_str = (
-        f"Expected a JSON return from the POST request "
-        "but no return was found. The object may not have "
-        "been properly created and needs investigating.\n"
-        f"Object in question is: {project}"
+    with pytest.raises(ForgeError) as exc_info:
+        _ = forge.forge_object("/project", project)
+
+    error_message = "Expected a JSON return from the POST request"
+
+    assert error_message in exc_info.value.args[0]
+
+    assert any(
+        level == logging.WARNING and error_message in message
+        for _, level, message in caplog.record_tuples
     )
-    assert test_value is None
-    assert info_str in caplog.text
 
 
 @pytest.mark.xfail
@@ -91,14 +91,17 @@ def test_HTTPError_logs_warning(  # pylint: disable=invalid-name
         status=504,
     )
     caplog.set_level(logging.WARNING)
-    test_value = forge.forge_object("/project", project)
 
-    warning_str = (
-        "Failed HTTP request from forge_object call\n"
-        f"Url: {url}\nAction: {responses.POST}\nData: {project.json(exclude_none=True)}"
+    with pytest.raises(ForgeError) as exc_info:
+        _ = forge.forge_object("/project", project)
+
+    warning_substr = "Failed HTTP request from forge_object call"
+    assert warning_substr in exc_info.value.args[0]
+    assert any(
+        level == logging.WARNING and warning_substr in message
+        for _, level, message in caplog.record_tuples
     )
-    assert warning_str in caplog.text
-    assert test_value is None
+    # assert test_value is None
 
 
 @pytest.mark.xfail

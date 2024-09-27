@@ -463,7 +463,7 @@ def project_creation_response_dict(
     project: Project, project_uri: URI, institution_uri: URI, user_uri: URI
 ) -> Dict[str, Any]:
     return {
-        "created_by": user_uri,
+        "created_by": str(user_uri),
         "datafile_count": 2,
         "dataset_count": 1,
         "description": project.description,
@@ -473,14 +473,14 @@ def project_creation_response_dict(
         "id": 1,
         "identifers": project.identifiers,
         "institution": [
-            institution_uri,
+            str(institution_uri),
         ],
         "locked": False,
         "name": project.name,
         "parameter_sets": [],
         "principal_investigator": project.principal_investigator,
         "public_access": 1,
-        "resource_uri": project_uri,
+        "resource_uri": str(project_uri),
         "size": 1000000,
         "start_time": project.start_time,
         "tags": [],
