@@ -15,7 +15,8 @@ from pytest import LogCaptureFixture
 from src.blueprints.project import Project
 from src.config.config import ConnectionConfig
 from src.forges.forge import Forge, ForgeError
-from src.mytardis_client.endpoints import URI
+from src.mytardis_client.endpoints import URI, MyTardisEndpoint
+from src.mytardis_client.mt_rest import MyTardisRESTFactory
 
 logger = logging.getLogger(__name__)
 logger.propagate = True
@@ -75,33 +76,32 @@ def test_post_returns_none_on_missing_body(
     )
 
 
-@pytest.mark.xfail
 @pytest.mark.dependency()
 @responses.activate
 def test_HTTPError_logs_warning(  # pylint: disable=invalid-name
     caplog: LogCaptureFixture,
-    connection: ConnectionConfig,
-    forge: Forge,
+    rest_factory: MyTardisRESTFactory,
     project: Project,
 ) -> None:
-    url = urljoin(connection.api_template, TEST_OBJECT_TYPE)
+
+    endpoint: MyTardisEndpoint = "/project"
+
     responses.add(
         responses.POST,
-        url,
+        rest_factory.compose_url(endpoint),
         status=504,
     )
     caplog.set_level(logging.WARNING)
 
-    with pytest.raises(ForgeError) as exc_info:
-        _ = forge.forge_object("/project", project)
+    forge = Forge(rest_factory)
 
-    warning_substr = "Failed HTTP request from forge_object call"
-    assert warning_substr in exc_info.value.args[0]
+    with pytest.raises(ForgeError):
+        _ = forge.forge_object(endpoint, project)
+
     assert any(
-        level == logging.WARNING and warning_substr in message
-        for _, level, message in caplog.record_tuples
+        "forge" in name and level == logging.ERROR
+        for name, level, _ in caplog.record_tuples
     )
-    # assert test_value is None
 
 
 @pytest.mark.xfail
