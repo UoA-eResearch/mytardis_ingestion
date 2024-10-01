@@ -247,7 +247,7 @@ def get_experiment_details(
             "parameter_sets": [],
             "public_access": 1,
             "projects": get_project_details,
-            "resource_uri": experiment_uri,
+            "resource_uri": str(experiment_uri),
             "start_time": "2000-01-01T00:00:00",
             "tags": [],
             "title": experiment_name,
@@ -306,7 +306,7 @@ def dataset_response_dict(
                 "modified_time": "2000-01-01T00:00:00",
                 "parameter_sets": [],
                 "public_access": 1,
-                "resource_uri": dataset_uri,
+                "resource_uri": str(dataset_uri),
                 "tags": [],
             }
         ],
@@ -352,7 +352,7 @@ def instrument_response_dict(
                 "identifiers": instrument_ids,
                 "modified_time": modified_time_datetime.isoformat(),
                 "name": instrument_name,
-                "resource_uri": instrument_uri,
+                "resource_uri": str(instrument_uri),
             },
         ],
     }

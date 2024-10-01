@@ -83,6 +83,9 @@ class URI(RootModel[str], frozen=True):
 
     root: str
 
+    def __lt__(self, other: "URI") -> bool:
+        return self.root < other.root
+
     def __str__(self) -> str:
         return self.root
 

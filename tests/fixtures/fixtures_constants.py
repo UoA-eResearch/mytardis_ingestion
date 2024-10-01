@@ -350,8 +350,8 @@ def dataset_description() -> str:
 @fixture
 def dataset_experiments() -> List[str]:
     return [
-        "Experiment_1",
-        "Test_Experiment",
+        "Test_Experiment_1",
+        "Test_Experiment_2",
     ]
 
 
@@ -527,37 +527,37 @@ def directory_relative_to_storage_box(
 
 
 @fixture
-def project_uri() -> str:
+def project_uri() -> URI:
     return URI("/api/v1/project/1/")
 
 
 @fixture
-def experiment_uri() -> str:
+def experiment_uri() -> URI:
     return URI("/api/v1/experiment/1/")
 
 
 @fixture
-def dataset_uri() -> str:
+def dataset_uri() -> URI:
     return URI("/api/v1/dataset/1/")
 
 
 @fixture
-def datafile_uri() -> str:
+def datafile_uri() -> URI:
     return URI("/api/v1/dataset_file/1002735/")
 
 
 @fixture
-def institution_uri() -> str:
+def institution_uri() -> URI:
     return URI("/api/v1/institution/1/")
 
 
 @fixture
-def instrument_uri() -> str:
+def instrument_uri() -> URI:
     return URI("/api/v1/instrument/1/")
 
 
 @fixture
-def user_uri() -> str:
+def user_uri() -> URI:
     return URI("/api/v1/user/1/")
 
 

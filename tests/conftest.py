@@ -158,8 +158,12 @@ project = dcls.project
 experiment = dcls.experiment
 dataset = dcls.dataset
 datafile = dcls.datafile
+datafile_replica = dcls.datafile_replica
+make_project = dcls.make_project
+make_refined_project = dcls.make_refined_project
 make_datafile = dcls.make_datafile
 make_ingested_datafile = dcls.make_ingested_datafile
+make_institution = dcls.make_institution
 
 # =========================================
 #
