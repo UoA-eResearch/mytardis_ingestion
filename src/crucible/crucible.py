@@ -12,13 +12,11 @@ from src.blueprints.project import Project, RefinedProject
 from src.mytardis_client.endpoints import URI
 from src.mytardis_client.objects import MyTardisObject
 from src.overseers.overseer import Overseer
-from src.utils.types.type_helpers import passthrough_none
 
 logger = logging.getLogger(__name__)
 
 
-@passthrough_none
-def normalize_datetime(value: datetime | str) -> str:
+def normalize_datetime(value: datetime | str | None) -> str | None:
     """Normalize a datetime or string to a string."""
     return value.isoformat() if isinstance(value, datetime) else value
 
