@@ -10,8 +10,8 @@ import pytest
 from src.blueprints.datafile import Datafile, DatafileReplica
 from src.config.config import FilesystemStorageBoxConfig
 from src.conveyor.conveyor import Conveyor, is_rsync_on_path
-from src.miners.utils.datafile_metadata_helpers import calculate_md5sum
 from src.mytardis_client.endpoints import URI
+from src.utils.filesystem.checksums import calculate_md5
 
 DatafileFixture = tuple[Path, list[Datafile], Path]
 
@@ -47,7 +47,7 @@ def fixtures_datafile_list(tmp_path: Path) -> Callable[[int], DatafileFixture]:
             with f_path.open("wb") as f:
                 f.write(random.randbytes(100))
             # Calculate the md5sum.
-            digest = calculate_md5sum(f_path)
+            digest = calculate_md5(f_path)
             # Create a datafile.
             df = Datafile(
                 filename=f_path.name,
