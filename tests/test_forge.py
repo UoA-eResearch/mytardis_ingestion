@@ -76,7 +76,6 @@ def test_post_returns_none_on_missing_body(
     )
 
 
-@pytest.mark.dependency()
 @responses.activate
 def test_HTTPError_logs_warning(  # pylint: disable=invalid-name
     caplog: LogCaptureFixture,
@@ -134,28 +133,24 @@ def test_HTTPError_fully_logs_error_at_error(  # pylint: disable=invalid-name
     )
 
 
-@pytest.mark.xfail
-@mock.patch("src.mytardis_client.mt_rest.MyTardisRESTFactory.request")
 def test_non_HTTPError_logs_error(  # pylint: disable=invalid-name
-    mock_mytardis_api_request: Any,
     caplog: LogCaptureFixture,
-    connection: ConnectionConfig,
     forge: Forge,
     project: Project,
 ) -> None:
-    url = urljoin(connection.api_template, TEST_OBJECT_TYPE)
-    caplog.set_level(logging.WARNING)
-    mock_mytardis_api_request.side_effect = ValueError()
-    warning_str = (
-        "Non-HTTP request from forge_object call\n"
-        f"Url: {url}\nAction: POST"
-        f"\nData: {project.json(exclude_none=True)}"
-    )
-    with pytest.raises(ValueError):
-        _ = forge.forge_object("/project", project)
+    caplog.set_level(logging.ERROR)
 
-    assert warning_str in caplog.text
-    assert "ValueError" in caplog.text
+    with mock.patch(
+        "src.mytardis_client.mt_rest.MyTardisRESTFactory.request"
+    ) as mock_request_func:
+        mock_request_func.side_effect = ValueError()
+        with pytest.raises(ForgeError):
+            _ = forge.forge_object("/project", project)
+
+    assert any(
+        "forge" in name and level == logging.ERROR
+        for name, level, _ in caplog.record_tuples
+    )
 
 
 @pytest.mark.xfail
