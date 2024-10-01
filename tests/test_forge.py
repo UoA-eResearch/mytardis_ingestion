@@ -104,25 +104,34 @@ def test_HTTPError_logs_warning(  # pylint: disable=invalid-name
     )
 
 
-@pytest.mark.xfail
-@pytest.mark.dependency(depends=["test_HTTPError_logs_warning"])
 @responses.activate
 def test_HTTPError_fully_logs_error_at_error(  # pylint: disable=invalid-name
     caplog: LogCaptureFixture,
-    connection: ConnectionConfig,
-    forge: Forge,
+    rest_factory: MyTardisRESTFactory,
     project: Project,
 ) -> None:
-    url = urljoin(connection.api_template, TEST_OBJECT_TYPE)
+
+    endpoint: MyTardisEndpoint = "/project"
+    url = rest_factory.compose_url(endpoint) + "/"
+
     responses.add(
         responses.POST,
         url,
         status=504,
     )
+
+    forge = Forge(rest_factory)
+
     caplog.set_level(logging.ERROR)
-    _ = forge.forge_object("/project", project)
+
+    with pytest.raises(ForgeError):
+        _ = forge.forge_object(endpoint, project)
+
     info_str = "504 Server Error: Gateway Timeout for url: " f"{url}"
-    assert info_str in caplog.text
+    assert any(
+        "forge" in name and level == logging.ERROR and info_str in message
+        for name, level, message in caplog.record_tuples
+    )
 
 
 @pytest.mark.xfail
