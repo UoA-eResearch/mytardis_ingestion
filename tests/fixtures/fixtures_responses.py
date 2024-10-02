@@ -394,7 +394,7 @@ def introspection_response() -> dict[str, Any]:
 def institution_response_dict(
     institution_uri: URI,
     institution_address: str,
-    institution_ids: List[str],
+    institution_identifiers: List[str],
     institution_country: str,
     institution_name: str,
 ) -> Dict[str, Any]:
@@ -411,7 +411,7 @@ def institution_response_dict(
                 "address": institution_address,
                 "aliases": 1,
                 "country": institution_country,
-                "identifiers": institution_ids,
+                "identifiers": institution_identifiers,
                 "name": institution_name,
                 "resource_uri": institution_uri,
             }

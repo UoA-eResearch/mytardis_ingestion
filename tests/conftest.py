@@ -103,7 +103,8 @@ institution_uri = const.institution_uri
 instrument_uri = const.instrument_uri
 user_uri = const.user_uri
 institution_address = const.institution_address
-institution_ids = const.institution_ids
+institution_identifiers = const.institution_identifiers
+institution_id = const.institution_id
 institution_country = const.institution_country
 institution_name = const.institution_name
 storage_class = const.storage_class
@@ -158,12 +159,9 @@ project = dcls.project
 experiment = dcls.experiment
 dataset = dcls.dataset
 datafile = dcls.datafile
+ingested_datafile = dcls.ingested_datafile
+institution = dcls.institution
 datafile_replica = dcls.datafile_replica
-make_project = dcls.make_project
-make_refined_project = dcls.make_refined_project
-make_datafile = dcls.make_datafile
-make_ingested_datafile = dcls.make_ingested_datafile
-make_institution = dcls.make_institution
 
 # =========================================
 #

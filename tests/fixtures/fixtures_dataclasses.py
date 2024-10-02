@@ -3,9 +3,8 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Protocol, TypeVar
+from typing import Any, Dict, List
 
-from pydantic import BaseModel
 from pytest import fixture
 
 from src.blueprints.common_models import GroupACL, Parameter, ParameterSet, UserACL
@@ -446,120 +445,39 @@ def datafile(
     )
 
 
-T_co = TypeVar("T_co", bound=BaseModel, covariant=True)
-
-
-class TestModelFactory(Protocol[T_co]):
-    """Protocol for a factory function that creates pydantic models to be used in tests.
-
-    Used in place of Callable[] as it is difficult to declare a Callable taking **kwargs
-    """
-
-    def __call__(self, **kwargs: Any) -> T_co: ...
-
-
-_DEFAULT_DATACLASS_ARGS: dict[type, dict[str, Any]] = {
-    Project: {
-        "name": "Test Project",
-        "description": "Test project description",
-        "principal_investigator": "test001",
-        "institution": ["/api/v1/institution/1/"],
-    },
-    RefinedProject: {
-        "name": "Test Project",
-        "description": "Test project description",
-        "principal_investigator": "test001",
-        "institution": ["test-institution-1"],
-    },
-    Datafile: {
-        "filename": "test_file.txt",
-        "directory": Path("path/to/datafile"),
-        "md5sum": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-        "mimetype": "text/plain",
-        "size": 1024,
-        "users": None,
-        "groups": None,
-        "data_status": None,
-        "replicas": [],
-        "parameter_sets": None,
-        "dataset": URI("/api/v1/dataset/1/"),
-    },
-    IngestedDatafile: {
-        "resource_uri": URI("/api/v1/dataset_file/1/"),
-        "id": 1,
-        "dataset": URI("/api/v1/dataset/1/"),
-        "deleted": False,
-        "directory": Path("path/to/df_1"),
-        "filename": "df_1.txt",
-        "md5sum": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-        "mimetype": "text/plain",
-        "parameter_sets": [],
-        "public_access": False,
-        "replicas": [],
-        "size": 1024,
-        "version": 1,
-        "created_time": None,
-        "deleted_time": None,
-        "modification_time": None,
-        "identifiers": ["dataset-id-1"],
-    },
-    Institution: {
-        "name": "Test Institution",
-        "identifiers": ["test-institution-1"],
-        "id": 1,
-        "resource_uri": URI("/api/v1/institution/1/"),
-    },
-}
-
-
-def make_dataclass_factory(dc_type: type[T_co]) -> TestModelFactory[T_co]:
-    """Factory function for creating factories for specific dataclasses.
-
-    Returns a function that creates instances of the specified dataclass with default
-    argument values. These values can be overridden by passing keyword arguments to the
-    factory function. This allows testers to easily create instances of dataclasses,
-    while only specifying the values that are relevant to the test.
-
-    Args:
-        dc_type: The dataclass type for which to create a factory function.
-
-    Returns:
-        A factory function that creates instances of the specified dataclass 'dc_type'.
-    """
-
-    default_args = _DEFAULT_DATACLASS_ARGS[dc_type]
-
-    def _make_dataclass(**kwargs: Any) -> T_co:
-        """Create an instance of the dataclass with the specified keyword arguments and
-        and default values (kwargs are given priority over default values).
-        """
-
-        result = {**default_args, **kwargs}
-        return dc_type.model_validate(result)
-
-    return _make_dataclass
+@fixture
+def institution(
+    institution_name: str,
+    institution_identifiers: list[str],
+    institution_id: int,
+    institution_uri: URI,
+) -> Institution:
+    return Institution(
+        name=institution_name,
+        identifiers=institution_identifiers,
+        id=institution_id,
+        resource_uri=institution_uri,
+    )
 
 
 @fixture
-def make_project() -> TestModelFactory[Project]:
-    return make_dataclass_factory(Project)
-
-
-@fixture
-def make_refined_project() -> TestModelFactory[RefinedProject]:
-    return make_dataclass_factory(RefinedProject)
-
-
-@fixture
-def make_datafile() -> TestModelFactory[Datafile]:
-    return make_dataclass_factory(Datafile)
-
-
-@fixture
-def make_ingested_datafile() -> TestModelFactory[IngestedDatafile]:
-    return make_dataclass_factory(IngestedDatafile)
-
-
-@fixture
-def make_institution() -> TestModelFactory[Institution]:
-    return make_dataclass_factory(Institution)
+def ingested_datafile() -> IngestedDatafile:
+    return IngestedDatafile(
+        resource_uri=URI("/api/v1/dataset_file/1/"),
+        id=1,
+        dataset=URI("/api/v1/dataset/1/"),
+        deleted=False,
+        directory=Path("path/to/df_1"),
+        filename="df_1.txt",
+        md5sum="FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+        mimetype="text/plain",
+        parameter_sets=[],
+        public_access=False,
+        replicas=[],
+        size=1024,
+        version=1,
+        created_time=None,
+        deleted_time=None,
+        modification_time=None,
+        identifiers=["dataset-id-1"],
+    )
