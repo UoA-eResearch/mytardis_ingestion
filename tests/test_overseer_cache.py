@@ -10,7 +10,6 @@ import responses
 from responses import matchers
 
 from src.config.config import AuthConfig, ConnectionConfig
-from src.mytardis_client.endpoints import URI
 from src.mytardis_client.mt_rest import (
     GetResponse,
     GetResponseMeta,
@@ -20,20 +19,17 @@ from src.mytardis_client.objects import MyTardisObject, get_type_info
 from src.mytardis_client.response_data import IngestedDatafile, MyTardisObjectData
 from src.overseers.overseer import MyTardisEndpointCache, Overseer
 from src.utils.container import subdict
-from tests.fixtures.fixtures_dataclasses import TestModelFactory
 
 
 def test_overseer_endpoint_cache(
-    make_ingested_datafile: TestModelFactory[IngestedDatafile],
+    ingested_datafile: IngestedDatafile,
 ) -> None:
 
     df_cache = MyTardisEndpointCache("/dataset_file")
 
-    df_1 = make_ingested_datafile()
+    objects: list[MyTardisObjectData] = [ingested_datafile]
 
-    objects: list[MyTardisObjectData] = [df_1]
-
-    object_dict = df_1.model_dump()
+    object_dict = ingested_datafile.model_dump()
     keys = subdict(object_dict, ["filename", "directory", "dataset"])
 
     assert df_cache.get(keys) is None
@@ -47,7 +43,7 @@ def test_overseer_endpoint_cache(
 def test_overseer_prefetch(
     auth: AuthConfig,
     connection: ConnectionConfig,
-    make_ingested_datafile: TestModelFactory[IngestedDatafile],
+    ingested_datafile: IngestedDatafile,
     introspection_response: dict[str, Any],
 ) -> None:
 
@@ -56,12 +52,12 @@ def test_overseer_prefetch(
 
     total_count = 100
 
-    ingested_datafiles = [
-        make_ingested_datafile(
-            filename=f"ingested-file-{i}.txt", dataset=URI("/api/v1/dataset/1/")
-        )
-        for i in range(0, total_count)
-    ]
+    def make_ingested_datafile(i: int) -> IngestedDatafile:
+        idf = ingested_datafile.model_copy()
+        idf.filename = f"ingested-file-{i}.txt"
+        return idf
+
+    ingested_datafiles = [make_ingested_datafile(i) for i in range(total_count)]
 
     responses.add(
         responses.GET,

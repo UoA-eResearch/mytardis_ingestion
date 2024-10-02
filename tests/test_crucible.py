@@ -4,7 +4,7 @@
 
 import logging
 from datetime import datetime
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 import pytest
 
@@ -17,7 +17,6 @@ from src.mytardis_client.endpoints import URI
 from src.mytardis_client.objects import MyTardisObject
 from src.mytardis_client.response_data import Institution
 from src.overseers.overseer import Overseer
-from tests.fixtures.fixtures_dataclasses import TestModelFactory
 from tests.testing_helpers import ArgMatcher
 
 
@@ -30,20 +29,16 @@ def _overseer_no_uri_matches(overseer: Overseer) -> Overseer:
 
 def test_prepare_project(
     overseer: Overseer,
-    make_refined_project: TestModelFactory[RefinedProject],
-    make_project: TestModelFactory[Project],
-    make_institution: TestModelFactory[Institution],
+    refined_project: RefinedProject,
+    project: Project,
+    institution: Institution,
 ) -> None:
 
-    institution = make_institution(
-        name="Test Institution", identifiers=["test-institution-1"]
-    )
+    refined_project.institution = institution.identifiers
+    refined_project.start_time = datetime(2000, 1, 1, 12, 0, 0)
 
-    refined_project = make_refined_project(
-        institution=institution.identifiers,
-        start_time=datetime(2000, 1, 1, 12, 0, 0),
-    )
-    expected_project = make_project(start_time="2000-01-01T12:00:00")
+    expected_project = project
+    expected_project.start_time = "2000-01-01T12:00:00"
 
     overseer.get_uris_by_identifier = MagicMock()  # type: ignore[method-assign]
     overseer.get_uris_by_identifier.return_value = [institution.resource_uri]
@@ -51,8 +46,12 @@ def test_prepare_project(
     crucible = Crucible(overseer)
     prepared_project = crucible.prepare_project(refined_project)
 
-    overseer.get_uris_by_identifier.assert_called_once_with(
-        MyTardisObject.INSTITUTION, refined_project.institution[0]
+    overseer.get_uris_by_identifier.assert_has_calls(
+        [
+            call(MyTardisObject.INSTITUTION, refined_project.institution[0]),
+            call(MyTardisObject.INSTITUTION, refined_project.institution[1]),
+            call(MyTardisObject.INSTITUTION, refined_project.institution[2]),
+        ]
     )
 
     assert prepared_project == expected_project

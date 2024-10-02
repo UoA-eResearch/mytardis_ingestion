@@ -547,11 +547,6 @@ def datafile_uri() -> URI:
 
 
 @fixture
-def institution_uri() -> URI:
-    return URI("/api/v1/institution/1/")
-
-
-@fixture
 def instrument_uri() -> URI:
     return URI("/api/v1/instrument/1/")
 
@@ -562,12 +557,22 @@ def user_uri() -> URI:
 
 
 @fixture
+def institution_id() -> int:
+    return 1
+
+
+@fixture
+def institution_uri(institution_id: int) -> URI:
+    return URI(f"/api/v1/institution/{institution_id}/")
+
+
+@fixture
 def institution_address() -> str:
     return "23 Symonds Street"
 
 
 @fixture
-def institution_ids() -> List[str]:
+def institution_identifiers() -> List[str]:
     return ["UoA123", "UoA", "Uni"]
 
 
