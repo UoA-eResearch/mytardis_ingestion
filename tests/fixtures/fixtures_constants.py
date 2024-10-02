@@ -8,7 +8,6 @@ from pytest import fixture
 from pytz import BaseTzInfo
 
 from src.blueprints.common_models import GroupACL, Parameter, UserACL
-from src.blueprints.custom_data_types import Username
 from src.blueprints.storage_boxes import StorageTypesEnum
 from src.mytardis_client.endpoints import URI
 
@@ -452,7 +451,7 @@ def split_and_parse_users(
 ) -> List[UserACL]:
     return_list = [
         UserACL(
-            user=Username(admin_user),
+            user=admin_user,
             is_owner=True,
             can_download=True,
             see_sensitive=True,
@@ -471,7 +470,7 @@ def split_and_parse_users(
             sensitive = True
         return_list.append(
             UserACL(
-                user=Username(user),
+                user=user,
                 is_owner=False,
                 can_download=download,
                 see_sensitive=sensitive,
