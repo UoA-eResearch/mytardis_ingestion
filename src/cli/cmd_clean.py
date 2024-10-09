@@ -1,10 +1,11 @@
 # pylint: disable=duplicate-code
 """Module for the cleaning command."""
+import csv
 import logging
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Tuple
 
 import typer
 
@@ -72,7 +73,7 @@ def _is_completed_df(
 
 def _filter_completed_dfs(
     config: ConfigFromEnv, datafiles: list[RawDatafile], min_file_age: Optional[int]
-) -> list[RawDatafile]:
+) -> Tuple[list[RawDatafile], list[RawDatafile]]:
     """Inspects through a list of datafiles, return datafiles which have completed ingestion."""
     logger.info("Retrieving status...")
     # Check ingestion status for each file.
@@ -97,9 +98,9 @@ def _filter_completed_dfs(
         )
         for datafile in unverified_dfs:
             logger.info(datafile.filepath)
-        return verified_dfs
-    logger.info("Ingestion for this data source is complete.")
-    return verified_dfs
+    else:
+        logger.info("Ingestion for this data source is complete.")
+    return verified_dfs, unverified_dfs
 
 
 def _delete_datafiles(df_paths: list[Path]) -> None:
@@ -119,6 +120,58 @@ def _delete_datafiles(df_paths: list[Path]) -> None:
                 "File does not exist or isn't a file, skipping: %s",
                 pth,
             )
+
+
+def _save_data_status(
+    source_path: SourceDataPathArg,
+    datafiles_verified: list[RawDatafile],
+    datafiles_unverified: list[RawDatafile],
+) -> None:
+    """Saves the status of verified and unverified data files to a CSV file."""
+    # Get the current date and time
+    current_datetime = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # Replace the base part of the source path with the network path
+    network_base_path = Path(
+        "//files.auckland.ac.nz/research/resmed202000005-biru-shared-drive"
+    )
+    modified_source_path_base = network_base_path / source_path.parent.relative_to(
+        "/mnt/biru_shared_drive"
+    )
+
+    # Prepare the CSV file for writing with the current date and time in the filename
+    output_csv_path = source_path.parent / f"verified_datafiles_{current_datetime}.csv"
+
+    data_to_write = []
+    for df in datafiles_verified:
+        data_to_write.append(
+            {
+                "filename": df.filename,
+                "filepath": str(modified_source_path_base / df.filepath),
+                "dataset": df.dataset,
+                "ingestion_verified": True,  # Assuming verified status is True for all
+            }
+        )
+
+    for df in datafiles_unverified:
+        data_to_write.append(
+            {
+                "filename": df.filename,
+                "filepath": str(modified_source_path_base / df.filepath),
+                "dataset": df.dataset,
+                "ingestion_verified": False,  # Assuming unverified status is False for all
+            }
+        )
+
+    # Write data to CSV
+    with open(output_csv_path, "w", newline="", encoding="utf-8") as csvfile:
+        fieldnames = ["filename", "filepath", "dataset", "ingestion_verified"]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+        for row in data_to_write:
+            writer.writerow(row)
+    print(f"Data written to {output_csv_path}")
 
 
 # pylint: disable=too-many-locals
@@ -164,8 +217,11 @@ def clean(
 
     config = get_config(storage)
     # Check verification status.
-    verified_dfs = _filter_completed_dfs(config, manifest.get_datafiles(), min_file_age)
+    verified_dfs, unverified_dfs = _filter_completed_dfs(
+        config, manifest.get_datafiles(), min_file_age
+    )
     verified_df_paths = [manifest.get_data_root() / df.filepath for df in verified_dfs]
+
     if len(verified_dfs) != len(manifest.get_datafiles()):
         logger.error(
             "Could not proceed with deleting this data source. Ingestion is not complete."
@@ -177,6 +233,11 @@ def clean(
         )
         if not should_delete:
             sys.exit()
+
+    # save file verification status to a csv file for idw project
+    if profile_name == "idw":
+        logger.info("Saving files verification status into a csv file.")
+        _save_data_status(source_data_path, verified_dfs, unverified_dfs)
     # Delete all datafiles.
     _delete_datafiles(verified_df_paths)
     # Call profile-specific cleanup code.

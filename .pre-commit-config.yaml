@@ -1,18 +1,18 @@
 ---
 repos:
 -   repo: https://github.com/rcmdnk/pyproject-pre-commit
-    rev: v0.1.5
+    rev: v0.1.10
     hooks:
     - id: black
     - id: isort
     - id: bandit
     - id: mypy
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
     -   id: trailing-whitespace
 -   repo: https://github.com/PyCQA/pylint
-    rev: v3.0.3
+    rev: v3.2.6
     hooks:
     - id: pylint
       stages: [commit]
