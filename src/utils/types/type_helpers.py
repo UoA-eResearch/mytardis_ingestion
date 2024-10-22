@@ -1,8 +1,10 @@
 """Helpers for working with types and type-checking."""
 
-from typing import Any, Callable, Protocol, TypeAlias, TypeGuard, TypeVar
+from typing import Any, Callable, Optional, Protocol, TypeAlias, TypeGuard, TypeVar
 
 T = TypeVar("T")
+X = TypeVar("X")
+Y = TypeVar("Y")
 
 
 def elements_are(elems: list[Any], query_type: type[T]) -> TypeGuard[list[T]]:

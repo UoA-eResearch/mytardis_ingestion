@@ -8,7 +8,6 @@ from pytest import fixture
 from pytz import BaseTzInfo
 
 from src.blueprints.common_models import GroupACL, Parameter, UserACL
-from src.blueprints.custom_data_types import Username
 from src.blueprints.storage_boxes import StorageTypesEnum
 from src.mytardis_client.endpoints import URI
 
@@ -350,8 +349,8 @@ def dataset_description() -> str:
 @fixture
 def dataset_experiments() -> List[str]:
     return [
-        "Experiment_1",
-        "Test_Experiment",
+        "Test_Experiment_1",
+        "Test_Experiment_2",
     ]
 
 
@@ -452,7 +451,7 @@ def split_and_parse_users(
 ) -> List[UserACL]:
     return_list = [
         UserACL(
-            user=Username(admin_user),
+            user=admin_user,
             is_owner=True,
             can_download=True,
             see_sensitive=True,
@@ -471,7 +470,7 @@ def split_and_parse_users(
             sensitive = True
         return_list.append(
             UserACL(
-                user=Username(user),
+                user=user,
                 is_owner=False,
                 can_download=download,
                 see_sensitive=sensitive,
@@ -527,38 +526,43 @@ def directory_relative_to_storage_box(
 
 
 @fixture
-def project_uri() -> str:
+def project_uri() -> URI:
     return URI("/api/v1/project/1/")
 
 
 @fixture
-def experiment_uri() -> str:
+def experiment_uri() -> URI:
     return URI("/api/v1/experiment/1/")
 
 
 @fixture
-def dataset_uri() -> str:
+def dataset_uri() -> URI:
     return URI("/api/v1/dataset/1/")
 
 
 @fixture
-def datafile_uri() -> str:
+def datafile_uri() -> URI:
     return URI("/api/v1/dataset_file/1002735/")
 
 
 @fixture
-def institution_uri() -> str:
-    return URI("/api/v1/institution/1/")
-
-
-@fixture
-def instrument_uri() -> str:
+def instrument_uri() -> URI:
     return URI("/api/v1/instrument/1/")
 
 
 @fixture
-def user_uri() -> str:
+def user_uri() -> URI:
     return URI("/api/v1/user/1/")
+
+
+@fixture
+def institution_id() -> int:
+    return 1
+
+
+@fixture
+def institution_uri(institution_id: int) -> URI:
+    return URI(f"/api/v1/institution/{institution_id}/")
 
 
 @fixture
@@ -567,7 +571,7 @@ def institution_address() -> str:
 
 
 @fixture
-def institution_ids() -> List[str]:
+def institution_identifiers() -> List[str]:
     return ["UoA123", "UoA", "Uni"]
 
 

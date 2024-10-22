@@ -247,7 +247,7 @@ def get_experiment_details(
             "parameter_sets": [],
             "public_access": 1,
             "projects": get_project_details,
-            "resource_uri": experiment_uri,
+            "resource_uri": str(experiment_uri),
             "start_time": "2000-01-01T00:00:00",
             "tags": [],
             "title": experiment_name,
@@ -306,7 +306,7 @@ def dataset_response_dict(
                 "modified_time": "2000-01-01T00:00:00",
                 "parameter_sets": [],
                 "public_access": 1,
-                "resource_uri": dataset_uri,
+                "resource_uri": str(dataset_uri),
                 "tags": [],
             }
         ],
@@ -352,7 +352,7 @@ def instrument_response_dict(
                 "identifiers": instrument_ids,
                 "modified_time": modified_time_datetime.isoformat(),
                 "name": instrument_name,
-                "resource_uri": instrument_uri,
+                "resource_uri": str(instrument_uri),
             },
         ],
     }
@@ -394,7 +394,7 @@ def introspection_response() -> dict[str, Any]:
 def institution_response_dict(
     institution_uri: URI,
     institution_address: str,
-    institution_ids: List[str],
+    institution_identifiers: List[str],
     institution_country: str,
     institution_name: str,
 ) -> Dict[str, Any]:
@@ -411,7 +411,7 @@ def institution_response_dict(
                 "address": institution_address,
                 "aliases": 1,
                 "country": institution_country,
-                "identifiers": institution_ids,
+                "identifiers": institution_identifiers,
                 "name": institution_name,
                 "resource_uri": institution_uri,
             }
@@ -463,7 +463,7 @@ def project_creation_response_dict(
     project: Project, project_uri: URI, institution_uri: URI, user_uri: URI
 ) -> Dict[str, Any]:
     return {
-        "created_by": user_uri,
+        "created_by": str(user_uri),
         "datafile_count": 2,
         "dataset_count": 1,
         "description": project.description,
@@ -473,14 +473,14 @@ def project_creation_response_dict(
         "id": 1,
         "identifers": project.identifiers,
         "institution": [
-            institution_uri,
+            str(institution_uri),
         ],
         "locked": False,
         "name": project.name,
         "parameter_sets": [],
         "principal_investigator": project.principal_investigator,
         "public_access": 1,
-        "resource_uri": project_uri,
+        "resource_uri": str(project_uri),
         "size": 1000000,
         "start_time": project.start_time,
         "tags": [],
