@@ -13,10 +13,10 @@ class AbiMusicProfile(IProfile):
     """Profile defining the ingestion behaviour for the 'ABI MuSIC' Microscope"""
 
     def __init__(self) -> None:
-        pass
+        print("ABI MuSIC Profile Loaded")
 
-    @property
-    def name(self) -> str:
+    @classmethod
+    def name(cls) -> str:
         return "abi_music"
 
     def get_extractor(self) -> IMetadataExtractor:

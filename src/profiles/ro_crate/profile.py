@@ -16,8 +16,8 @@ class ROCrateProfile(IProfile):
     def __init__(self) -> None:
         pass
 
-    @property
-    def name(self) -> str:
+    @classmethod
+    def name(cls) -> str:
         return "ro_crate"
 
     def get_extractor(self) -> IMetadataExtractor:

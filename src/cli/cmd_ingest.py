@@ -16,6 +16,7 @@ from src.cli.common import (
 )
 from src.extraction.manifest import IngestionManifest
 from src.ingestion_factory.factory import IngestionFactory
+from src.profiles.profile_manager import ProfileManager
 from src.profiles.profile_register import load_profile
 from src.utils import log_utils
 from src.utils.filesystem.filesystem_nodes import DirectoryNode
@@ -46,7 +47,11 @@ def extract(
     log_utils.init_logging(file_name=str(log_file), level=logging.DEBUG)
     timer = Timer(start=True)
 
-    profile = load_profile(profile_name, profile_version)
+    profile_manager = ProfileManager()
+    profile_manager.discover_profiles([Path("src/profiles")])
+
+    # Need to add support for profile_version
+    profile = profile_manager.load_profile(profile_name)
 
     extractor = profile.get_extractor()
     metadata = extractor.extract(source_data_path)

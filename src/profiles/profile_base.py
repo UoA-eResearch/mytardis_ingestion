@@ -5,6 +5,7 @@ different groups and/or instruments.
 
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Any, ClassVar
 
 from src.extraction.metadata_extractor import IMetadataExtractor
 
@@ -12,9 +13,15 @@ from src.extraction.metadata_extractor import IMetadataExtractor
 class IProfile(ABC):
     """Abstract base class defining the interface for an ingestion profile"""
 
-    @property
+    profiles: ClassVar[dict[str, type["IProfile"]]] = {}
+
+    def __init_subclass__(cls, *args: Any, **kwargs: Any) -> None:
+        super().__init_subclass__(*args, **kwargs)
+        IProfile.profiles[cls.name()] = cls
+
+    @classmethod
     @abstractmethod
-    def name(self) -> str:
+    def name(cls) -> str:
         """Get the name of this profile"""
         raise NotImplementedError("Concrete implementations must specify their name")
 
