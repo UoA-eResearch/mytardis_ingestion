@@ -36,7 +36,7 @@ def _save_data_status(
     current_datetime = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     # Modify the source path to match the required structure
-    # TODO: replace the following line with the general path to the research drive
+    # to do: replace the following line with the general path to the research drive
     modified_source_path_base = research_drive_path / source_path.parent.relative_to(
         "/mnt/biru_shared_drive"
     )
