@@ -44,8 +44,7 @@ from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
 from src.cli.cmd_clean import clean
-
-# from src.cli.cmd_clean import clean
+from src.cli.cmd_report import report
 from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
 from src.ingestion_factory.factory import IngestionFactory
 from src.mytardis_client.common_types import DataStatus
@@ -191,6 +190,9 @@ if __name__ == "__main__":
         ),
     )
     parser.add_argument("yaml_pth", type=str, help="Path to the yaml file")
+    parser.add_argument(
+        "researchdrive_path", type=str, help="Path to the research drive"
+    )  # the actual research drive path, eg: "//files.auckland.ac.nz/research/resmedXXXXXXXX-XXXXXXXXX"
     parser.add_argument("storage_dir", type=str, help="Path to the storage directory")
     parser.add_argument("storage_name", type=str, help="Name of staging storagebox")
 
@@ -201,4 +203,5 @@ if __name__ == "__main__":
 
     script = IDSIngestionScript(args.yaml_pth, args.storage_dir, args.storage_name)
     script.run_ingestion()
+    report(args.yaml_pth, args.researchdrive_path, "idw", args.storage_dir)
     clean(Path(args.yaml_pth), "idw", args.storage_dir, ask_first=False, min_file_age=0)
