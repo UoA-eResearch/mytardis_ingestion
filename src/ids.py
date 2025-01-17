@@ -8,6 +8,7 @@ import typer
 
 from src.cli.cmd_clean import clean
 from src.cli.cmd_ingest import extract, ingest, upload
+from src.cli.cmd_report import report
 
 app = typer.Typer()
 logger = logging.getLogger(__name__)
@@ -22,6 +23,8 @@ app.command()(ingest)
 app.command()(extract)
 # Add upload command, for uploading serialised, extracted metadata.
 app.command()(upload)
+# Add report command, for generating a report on the status of datafiles.
+app.command()(report)
 # Add clean command, for deleting datafiles that have been successfully ingested and verified.
 app.command()(clean)
 

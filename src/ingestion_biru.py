@@ -43,6 +43,7 @@ from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
+from src.cli.cmd_report import report
 from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
 from src.ingestion_factory.factory import IngestionFactory
 from src.mytardis_client.common_types import DataStatus
@@ -198,3 +199,4 @@ if __name__ == "__main__":
 
     script = IDSIngestionScript(args.yaml_pth, args.storage_dir, args.storage_name)
     script.run_ingestion()
+    report(args.yaml_pth, "idw")
