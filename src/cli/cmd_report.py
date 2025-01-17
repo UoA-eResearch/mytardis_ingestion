@@ -4,7 +4,7 @@ import csv
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 
