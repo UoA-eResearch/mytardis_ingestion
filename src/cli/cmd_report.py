@@ -100,6 +100,4 @@ def report(
 
     # save file verification status to a csv file to be stored in the research drive
     logger.info("Saving files verification status into a csv file.")
-    _save_data_status(
-        source_data_path, verified_dfs, unverified_dfs
-    )
+    _save_data_status(source_data_path, verified_dfs, unverified_dfs)
