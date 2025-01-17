@@ -42,7 +42,7 @@ class Inspector:
             raw_df (RawDatafile): The raw datafile to query.
 
         Returns:
-            Optional[list[dict[str, Any]]]: A list of matching datafiles, or None if the raw
+            Optional[list[IngestedDatafile]]: A list of matching datafiles, or None if the raw
             datafile is unable to be smelted or prepared.
         """
         smelted_df = self._smelter.smelt_datafile(raw_df)

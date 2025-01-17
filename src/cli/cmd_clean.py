@@ -39,68 +39,58 @@ def _get_verified_replica(queried_df: IngestedDatafile) -> Optional[Replica]:
     return None
 
 
-def _is_completed_df(
-    df: RawDatafile,
-    query_result: Optional[list[IngestedDatafile]],
-    min_file_age: Optional[int],
-) -> bool:
-    """Checks if a datafile has been ingested, verified, and its age is higher
-    than the minimum age."""
-    pth = df.filepath
-    if query_result is None or len(query_result) == 0:
-        return False
-    if len(query_result) > 1:
-        logger.warning(
-            "More than one datafile in MyTardis matched file, using the first match: %s",
-            pth,
-        )
-    replica = _get_verified_replica(query_result[0])
-    if replica is None or replica.last_verified_time is None:
-        # No verified replica yet created.
-        return False
-    if min_file_age:
-        # Check file age for the replica.
-        vtime = datetime.fromisoformat(replica.last_verified_time)
-        days_from_vtime = (datetime.now() - vtime).days
-        logger.info("%s was last verified %i days ago.", pth, days_from_vtime)
-        if days_from_vtime < min_file_age:
-            # If file is not old enough, consider the datafile not complete.
-            return False
-    # This datafile has completed ingestion. Add to list.
-    return True
+def _get_verified_replicas(df: IngestedDatafile) -> list[Replica]:
+    """Given a datafile, return verified replicas."""
+    return [replica for replica in df.replicas if replica.verified]
 
 
-def _filter_completed_dfs(
+def _get_oldest_replica(replicas: list[Replica]) -> Optional[Replica]:
+    """Given a list of replicas, return the oldest verified replica."""
+    if len(replicas) == 0:
+        return None
+    return sorted(replicas, key=lambda replica: replica.last_verified_time)[0]
+
+
+def is_complete_df(df: IngestedDatafile, min_file_age: int = 0):
+    """Returns whether the datafile is complete - metadata ingested, file transferred,
+    and at least one verified replica that exceeds minimum file page."""
+    oldest_replica = _get_oldest_replica(_get_verified_replicas(df))
+    if oldest_replica is None:
+        # If there are no verified replicas, return false.
+        return False
+    vtime = datetime.fromisoformat(oldest_replica.last_verified_time)
+    days_from_vtime = (datetime.now() - vtime).days
+    # Returns whether the complete replica exceeds minimum file age we want. Defaults to 0,
+    # which means any verified replica will do.
+    return days_from_vtime >= min_file_age
+
+
+def filter_completed_dfs(
     config: ConfigFromEnv, datafiles: list[RawDatafile], min_file_age: Optional[int]
 ) -> Tuple[list[RawDatafile], list[RawDatafile]]:
     """Inspects through a list of datafiles and returns two lists: one with the datafiles
     that have been ingested and verified, and another with the datafiles that have not been
     ingested or verified."""
-    logger.info("Retrieving status...")
-    # Check ingestion status for each file.
-    timer = Timer(start=True)
     # Query the API about the datafiles.
-    insepctor = Inspector(config)
-    results = [insepctor.query_datafile(raw_df) for raw_df in datafiles]
+    inspector = Inspector(config)
     unverified_dfs = []
     verified_dfs = []
-    for ind, query_result in enumerate(results):
+    for df in datafiles:
         # Checks whether the datafile has completed ingestion, and group into two lists.
-        df = datafiles[ind]
-        if _is_completed_df(df, query_result, min_file_age):
+        query_result = inspector.query_datafile(df)
+        if query_result is None:
+            # Could not find datafile.
+            unverified_dfs.append(df)
+            continue
+        if len(query_result) > 1:
+            logger.warning(
+                "More than one datafile in MyTardis matched file, using the first match: %s",
+                df.filepath,
+            )
+        if is_complete_df(query_result[0], min_file_age):
             verified_dfs.append(df)
         else:
             unverified_dfs.append(df)
-    logger.info("Retrieved datafile status in %f seconds.", timer.stop())
-    if len(unverified_dfs) > 0:
-        # If there were unverified datafiles, print them out.
-        logger.info(
-            "Datafiles pending ingestion, verification or do not meet minimum file age:"
-        )
-        for datafile in unverified_dfs:
-            logger.info(datafile.filepath)
-    else:
-        logger.info("Ingestion for this data source is complete.")
     return verified_dfs, unverified_dfs
 
 
@@ -165,10 +155,24 @@ def clean(
         logger.info(file)
 
     config = get_config(storage)
+    logger.info("Retrieving status...")
+    # Check ingestion status for each file.
+    timer = Timer(start=True)
     # Check verification status.
-    verified_dfs, _ = _filter_completed_dfs(
+    verified_dfs, unverified_dfs = filter_completed_dfs(
         config, manifest.get_datafiles(), min_file_age
     )
+    logger.info("Retrieved datafile status in %f seconds.", timer.stop())
+    if len(unverified_dfs) > 0:
+        # If there were unverified datafiles, print them out.
+        logger.info(
+            "Datafiles pending ingestion, verification or do not meet minimum file age:"
+        )
+        for datafile in unverified_dfs:
+            logger.info(datafile.filepath)
+    else:
+        logger.info("Ingestion for this data source is complete.")
+
     verified_df_paths = [manifest.get_data_root() / df.filepath for df in verified_dfs]
 
     if len(verified_dfs) != len(manifest.get_datafiles()):

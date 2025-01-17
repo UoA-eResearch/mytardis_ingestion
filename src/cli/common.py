@@ -69,7 +69,7 @@ StorageBoxOption: TypeAlias = Annotated[
 ]
 
 
-def get_config(storage: StorageBoxOption) -> ConfigFromEnv:
+def get_config(storage: StorageBoxOption | None = None) -> ConfigFromEnv:
     """Returns ingestion configuration parsed from the.env file.
 
     Args:
