@@ -16,7 +16,6 @@ from src.cli.common import (
     ProfileNameOption,
     ProfileVersionOption,
     SourceDataPathArg,
-    StorageBoxOption,
     get_config,
 )
 from src.profiles.profile_register import load_profile
@@ -26,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 
 def _save_data_status(
-    research_drive_path: str,
     source_path: SourceDataPathArg,
     datafiles_verified: list[RawDatafile],
     datafiles_unverified: list[RawDatafile],
@@ -42,7 +40,7 @@ def _save_data_status(
     data_to_write = [
         {
             "filename": df.filename,
-            "filepath": df.filepath,
+            "filepath": source_path.parent / df.filepath,
             "dataset": df.dataset,
             "ingestion_verified": verified,
         }
@@ -56,6 +54,7 @@ def _save_data_status(
     with open(output_csv_path, "w", newline="", encoding="utf-8") as csvfile:
         fieldnames = ["filename", "filepath", "dataset", "ingestion_verified"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
         writer.writeheader()
         writer.writerows(data_to_write)
 
@@ -64,7 +63,6 @@ def _save_data_status(
 
 # pylint: disable=too-many-locals
 def report(
-    research_drive_path: str,
     source_data_path: SourceDataPathArg,
     profile_name: ProfileNameOption,
     profile_version: ProfileVersionOption = None,
@@ -101,8 +99,7 @@ def report(
     )
 
     # save file verification status to a csv file to be stored in the research drive
-    if profile_name == "idw":
-        logger.info("Saving files verification status into a csv file.")
-        _save_data_status(
-            research_drive_path, source_data_path, verified_dfs, unverified_dfs
-        )
+    logger.info("Saving files verification status into a csv file.")
+    _save_data_status(
+        source_data_path, verified_dfs, unverified_dfs
+    )
