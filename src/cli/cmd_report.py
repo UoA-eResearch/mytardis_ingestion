@@ -67,14 +67,14 @@ def report(
     profile_name: ProfileNameOption,
     profile_version: ProfileVersionOption = None,
     min_file_age: Annotated[
-        Optional[int],
+        int,
         typer.Option(
             help=(
                 "Minimum age of files, in days, before they are considered for deletion."
                 " Defaults to no minimum age."
             )
         ),
-    ] = None,
+    ] = 0,
     log_file: LogFileOption = Path("report.log"),
     log_level: LogLevelOption = "INFO",
 ) -> None:

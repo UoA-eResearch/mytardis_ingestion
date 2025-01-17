@@ -28,37 +28,33 @@ from src.utils.timing import Timer
 logger = logging.getLogger(__name__)
 
 
-def _get_verified_replica(queried_df: IngestedDatafile) -> Optional[Replica]:
-    """Returns the first Replica that is verified, or None if there isn't any."""
-
-    # Iterate through all replicas. If one replica is verified, then
-    # return it.
-    for replica in queried_df.replicas:
-        if replica.verified:
-            return replica
-    return None
-
-
-def _get_verified_replicas(df: IngestedDatafile) -> list[Replica]:
-    """Given a datafile, return verified replicas."""
-    return [replica for replica in df.replicas if replica.verified]
-
-
-def _get_oldest_replica(replicas: list[Replica]) -> Optional[Replica]:
-    """Given a list of replicas, return the oldest verified replica."""
+def _get_oldest_replica(df: IngestedDatafile) -> Optional[Replica]:
+    """Given a Datafile, return the oldest verified replica."""
+    replicas = [replica for replica in df.replicas if replica.verified]
     if len(replicas) == 0:
         return None
-    return sorted(replicas, key=lambda replica: replica.last_verified_time)[0]
+    return sorted(
+        replicas,
+        key=lambda replica: datetime.fromisoformat(
+            # If there's no verified time, assume today.
+            # This situation is not possible, because a verified replica
+            # will have a verification time.
+            replica.last_verified_time
+            or datetime.today().isoformat()
+        ),
+    )[0]
 
 
-def is_complete_df(df: IngestedDatafile, min_file_age: int = 0):
+def is_complete_df(df: IngestedDatafile, min_file_age: int = 0) -> bool:
     """Returns whether the datafile is complete - metadata ingested, file transferred,
     and at least one verified replica that exceeds minimum file page."""
-    oldest_replica = _get_oldest_replica(_get_verified_replicas(df))
+    oldest_replica = _get_oldest_replica(df)
     if oldest_replica is None:
         # If there are no verified replicas, return false.
         return False
-    vtime = datetime.fromisoformat(oldest_replica.last_verified_time)
+    vtime = datetime.fromisoformat(
+        oldest_replica.last_verified_time or datetime.today().isoformat()
+    )
     days_from_vtime = (datetime.now() - vtime).days
     # Returns whether the complete replica exceeds minimum file age we want. Defaults to 0,
     # which means any verified replica will do.
@@ -66,7 +62,7 @@ def is_complete_df(df: IngestedDatafile, min_file_age: int = 0):
 
 
 def filter_completed_dfs(
-    config: ConfigFromEnv, datafiles: list[RawDatafile], min_file_age: Optional[int]
+    config: ConfigFromEnv, datafiles: list[RawDatafile], min_file_age: int
 ) -> Tuple[list[RawDatafile], list[RawDatafile]]:
     """Inspects through a list of datafiles and returns two lists: one with the datafiles
     that have been ingested and verified, and another with the datafiles that have not been
@@ -129,14 +125,14 @@ def clean(
         ),
     ] = True,
     min_file_age: Annotated[
-        Optional[int],
+        int,
         typer.Option(
             help=(
                 "Minimum age of files, in days, before we try to delete the data"
                 " root. Defaults to no minimum age."
             )
         ),
-    ] = None,
+    ] = 0,
     log_file: LogFileOption = Path("clean.log"),
     log_level: LogLevelOption = "INFO",
 ) -> None:
