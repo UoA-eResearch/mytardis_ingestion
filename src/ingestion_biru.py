@@ -43,7 +43,6 @@ from src.blueprints.datafile import RawDatafile
 from src.blueprints.dataset import RawDataset
 from src.blueprints.experiment import RawExperiment
 from src.blueprints.project import RawProject
-from src.cli.cmd_clean import clean
 from src.cli.cmd_report import report
 from src.config.config import ConfigFromEnv, FilesystemStorageBoxConfig
 from src.ingestion_factory.factory import IngestionFactory
